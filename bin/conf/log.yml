@@ -1,0 +1,13 @@
+logs:
+  - name: root
+    level: info
+    appenders:
+      - type: FileLogAppender
+        file: /home/chen/workspace/Blog/logs/root.txt
+      - type: StdoutLogAppender
+  - name: system
+    level: info
+    appenders:
+      - type: FileLogAppender
+        file: /home/chen/workspace/Blog/logs/system.txt
+      - type: StdoutLogAppender

@@ -1,0 +1,8 @@
+/.cache
+/.vscode
+/build
+lib*.so
+/bin/blog
+/logs
+test*
+!/tests
