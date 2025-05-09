@@ -2,8 +2,7 @@
 /.vscode
 /build
 lib*.so
-/bin
 !/bin/conf
-!/bin/module
+/bin/orm
+/bin/blog
 /logs
-/thirdpart

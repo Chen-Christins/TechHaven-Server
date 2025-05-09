@@ -1,0 +1,3 @@
+server:
+  work_path: /home/chen/apps/blog
+  pid_file: blog.pid
