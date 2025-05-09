@@ -2,8 +2,8 @@
 /.vscode
 /build
 lib*.so
-/bin/blog
+/bin
+!/bin/conf
+!/bin/module
 /logs
-test*
-!/tests
 /thirdpart
