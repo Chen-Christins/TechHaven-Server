@@ -34,8 +34,11 @@ public:
     const std::string& getName() { return m_name; }
     void setName(const std::string& v);
 
-    const std::string& getState() { return m_state; }
-    void setState(const std::string& v);
+    const std::string& getCode() { return m_code; }
+    void setCode(const std::string& v);
+
+    const int32_t& getState() { return m_state; }
+    void setState(const int32_t& v);
 
     const int32_t& getIsDeleted() { return m_isDeleted; }
     void setIsDeleted(const int32_t& v);
@@ -49,13 +52,14 @@ public:
     std::string toJsonString() const;
 
 private:
+    int32_t m_state;
     int32_t m_isDeleted;
     int64_t m_id;
     std::string m_account;
     std::string m_email;
     std::string m_passwd;
     std::string m_name;
-    std::string m_state;
+    std::string m_code;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

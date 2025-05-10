@@ -5,7 +5,8 @@
         <column name="email" type="string"/>
         <column name="passwd" type="string"/>
         <column name="name" type="string"/>
-        <column name="state" type="string"/>
+        <column name="code" type="string"/>
+        <column name="state" type="int32"/>
         <column name="is_deleted" type="int32"/>
         <column name="create_time" type="datetime" default="current_timestamp"/>
         <column name="update_time" type="datetime" default="current_timestamp"/>

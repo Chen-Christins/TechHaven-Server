@@ -1,6 +1,17 @@
-#include "module.h"
+/**
+ * @file my_module.h
+ * @brief 项目模块
+ * @author Christins
+ * @date 2025-05-10
+ * @copyright Apache 2.0
+ */
+#ifndef __BLOG_MY_MODULE_H__
+#define __BLOG_MY_MODULE_H__
 
-namespace chat {
+#include "module.h"
+#include "db/sqlite3.h"
+
+namespace blog {
 
 class MyModule : public sylar::Module {
 public:
@@ -12,4 +23,8 @@ public:
     bool onServerUp() override;
 };
 
+sylar::SQLite3::ptr GetSQLite3();
+
 }
+
+#endif // __BLOG_MY_MODULE_H__
