@@ -11,9 +11,9 @@ public:
     typedef std::shared_ptr<UserLoginServlet> ptr;
     UserLoginServlet();
     virtual int32_t handle(sylar::http::HttpRequest::ptr request
-                ,sylar::http::HttpResponse::ptr response
-                ,sylar::http::HttpSession::ptr session
-                ,Result::ptr result) override;
+                    ,sylar::http::HttpResponse::ptr response
+                    ,sylar::http::HttpSession::ptr session
+                    ,Result::ptr result) override;
 };
 
 }

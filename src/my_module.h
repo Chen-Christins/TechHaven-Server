@@ -9,7 +9,6 @@
 #define __BLOG_MY_MODULE_H__
 
 #include "module.h"
-#include "db/sqlite3.h"
 
 namespace blog {
 
@@ -22,8 +21,6 @@ public:
     bool onServerReady() override;
     bool onServerUp() override;
 };
-
-sylar::SQLite3::ptr GetSQLite3();
 
 }
 

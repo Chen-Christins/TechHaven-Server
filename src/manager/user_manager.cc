@@ -1,15 +1,15 @@
 #include "user_manager.h"
-#include "../my_module.h"
 #include "log/log.h"
-
+#include "../util.h"
 
 namespace blog {
 
 static sylar::Logger::ptr logger = LOG_ROOT();
 
 bool UserManager::loadAll() {
-    auto db = blog::GetSQLite3();
+    auto db = GetDB();
     if (!db) {
+        ERROR(logger) << "Get SQLite3 connection fail";
         return false;
     }
     std::vector<data::UserInfo::ptr> results;
@@ -35,7 +35,6 @@ bool UserManager::loadAll() {
     m_accounts.swap(accounts);
     m_emails.swap(emails);
     m_names.swap(names);
-
     return true;
 }
 

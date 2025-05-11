@@ -6,6 +6,7 @@
 #include "blog/data/user_info.h"
 #include "application.h"
 #include "servlets/user_create_servlet.h"
+#include "servlets/user_login_servlet.h"
 #include "manager/user_manager.h"
 
 namespace blog {
@@ -45,7 +46,7 @@ bool MyModule::onServerReady() {
     sylar::SQLite3::ptr db;
     db = sylar::SQLite3::Create(db_path, sylar::SQLite3::READWRITE);
     if (!db) {
-        INFO(logger) << "init database";
+        INFO(logger) << "init database begin";
         db = sylar::SQLite3::Create(db_path);
         if (!db) {
             INFO(logger) << "open database db=" << db_path
@@ -65,7 +66,7 @@ bool MyModule::onServerReady() {
         return false;
     }
 
-    if (!blog::UserMgr::GetInstance()->loadAll()) {
+    if (!UserMgr::GetInstance()->loadAll()) {
         ERROR(logger) << "user load all fail";
     }
 
@@ -74,10 +75,9 @@ bool MyModule::onServerReady() {
         auto dp = hs->getServletDispatch();
 
 #define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
-
         dp->addServlet("/user/create", XX(UserCreateServlet));
+        dp->addServlet("/user/login", XX(UserLoginServlet));
         dp->addServlet("/user/active", handle_request);
-        dp->addServlet("/user/login", handle_request);
         dp->addServlet("/user/update", handle_request);
         dp->addServlet("/user/exists", handle_request);
     }
@@ -88,13 +88,6 @@ bool MyModule::onServerReady() {
 bool MyModule::onServerUp() {
     INFO(logger) << "onServerUp";
     return true;
-}
-
-sylar::SQLite3::ptr GetSQLite3() {
-    auto work_path = sylar::Config::Lookup<std::string>("server.work_path");
-    auto db_path = work_path->getValue() + "/" + sqlite3_db_name->getValue();
-    sylar::SQLite3::ptr db = sylar::SQLite3::Create(db_path);
-    return db;
 }
 
 }

@@ -1,7 +1,6 @@
 #include "user_create_servlet.h"
 #include "log/log.h"
 #include "../manager/user_manager.h"
-#include "../my_module.h"
 #include "email/email.h"
 #include "email/smtp.h"
 #include "../util.h"
@@ -17,7 +16,6 @@ UserCreateServlet::UserCreateServlet()
 
 int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
         , sylar::http::HttpSession::ptr session, Result::ptr result) {
-    
     do {
         DEFINE_AND_CHECK_STRING(result, account, "account");
         DEFINE_AND_CHECK_STRING(result, email, "email");
