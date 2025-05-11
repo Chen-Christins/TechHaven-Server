@@ -11,7 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 
-include_directories(${PROJECT_SOURCE_DIR}/chen/src)
+include_directories(${PROJECT_SOURCE_DIR}/chen)
 include_directories(${PROJECT_SOURCE_DIR}/orm_out)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/chen)
@@ -21,6 +21,7 @@ include_directories(.)
 
 set(LIB_SRC
     src/manager/user_manager.cc
+    src/servlets/user_active_servlet.cc
     src/servlets/user_create_servlet.cc
     src/servlets/user_login_servlet.cc
     src/my_module.cc

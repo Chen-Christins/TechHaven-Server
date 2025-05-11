@@ -1,12 +1,13 @@
 #include "my_module.h"
-#include "http/http_server.h"
-#include "log/log.h"
-#include "db/sqlite3.h"
-#include "config/config.h"
+#include "chen/http/http_server.h"
+#include "chen/log/log.h"
+#include "chen/db/sqlite3.h"
+#include "chen/config/config.h"
 #include "blog/data/user_info.h"
-#include "application.h"
+#include "chen/application.h"
 #include "servlets/user_create_servlet.h"
 #include "servlets/user_login_servlet.h"
+#include "servlets/user_active_servlet.h"
 #include "manager/user_manager.h"
 
 namespace blog {
@@ -29,9 +30,8 @@ bool MyModule::onUnload() {
     return true;
 }
 
-int32_t handle_request(sylar::http::HttpRequest::ptr request
-                    ,sylar::http::HttpResponse::ptr response
-                    ,sylar::http::HttpSession::ptr session) {
+int32_t handle_request(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
+        ,sylar::http::HttpSession::ptr session) {
     INFO(logger) << *request;
     response->setBody("ok");
     return 0;
@@ -77,7 +77,7 @@ bool MyModule::onServerReady() {
 #define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/create", XX(UserCreateServlet));
         dp->addServlet("/user/login", XX(UserLoginServlet));
-        dp->addServlet("/user/active", handle_request);
+        dp->addServlet("/user/active", XX(UserActiveServlet));
         dp->addServlet("/user/update", handle_request);
         dp->addServlet("/user/exists", handle_request);
     }

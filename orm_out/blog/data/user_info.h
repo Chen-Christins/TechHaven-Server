@@ -3,9 +3,8 @@
 
 #include <json/json.h>
 #include <vector>
-#include "db/db.h"
-#include "db/sqlite3.h"
-#include "util/util.h"
+#include "chen/db/db.h"
+#include "chen/util/util.h"
 
 
 namespace blog {

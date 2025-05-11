@@ -1,7 +1,7 @@
 #ifndef __BLOG_UTIL_H__
 #define __BLOG_UTIL_H__
 
-#include "db/sqlite3.h"
+#include "chen/db/sqlite3.h"
 #include <regex>
 
 namespace blog {
@@ -18,6 +18,10 @@ inline bool is_vaild_account(const std::string& str) {
 
 inline sylar::IDB::ptr GetDB() {
     return sylar::SQLite3Mgr::GetInstance()->get("blog");
+}
+
+inline void SendWX(const std::string& group, const std::string& msg) {
+    // TODO: ...    
 }
 
 #define DEFINE_AND_CHECK_STRING(result, var, param)         \

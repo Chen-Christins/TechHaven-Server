@@ -1,5 +1,5 @@
 #include "user_info.h"
-#include "log/log.h"
+#include "chen/log/log.h"
 
 namespace blog {
 namespace data {

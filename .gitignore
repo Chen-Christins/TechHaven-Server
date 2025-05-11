@@ -6,3 +6,4 @@ lib*.so
 /bin/orm
 /bin/blog
 /logs
+/thirdpart

@@ -1,5 +1,5 @@
 #include "user_manager.h"
-#include "log/log.h"
+#include "chen/log/log.h"
 #include "../util.h"
 
 namespace blog {
@@ -17,7 +17,7 @@ bool UserManager::loadAll() {
         ERROR(logger) << "UserManager loadAll fail";
         return false;
     }
-
+    
     std::unordered_map<int64_t, blog::data::UserInfo::ptr> datas;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> accounts;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> emails;

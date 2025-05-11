@@ -2,7 +2,7 @@
 #include "../util.h"
 #include "blog/data/user_info.h"
 #include "../manager/user_manager.h"
-#include "log/log.h"
+#include "chen/log/log.h"
 
 namespace blog {
 namespace servlet {
