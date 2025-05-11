@@ -37,8 +37,14 @@ public:
     const std::string& getCode() { return m_code; }
     void setCode(const std::string& v);
 
+    const std::string& getRole() { return m_role; }
+    void setRole(const std::string& v);
+
     const int32_t& getState() { return m_state; }
     void setState(const int32_t& v);
+
+    const int64_t& getLoginTime() { return m_loginTime; }
+    void setLoginTime(const int64_t& v);
 
     const int32_t& getIsDeleted() { return m_isDeleted; }
     void setIsDeleted(const int32_t& v);
@@ -60,6 +66,8 @@ private:
     std::string m_passwd;
     std::string m_name;
     std::string m_code;
+    std::string m_role;
+    int64_t m_loginTime;
     int64_t m_createTime;
     int64_t m_updateTime;
 };
@@ -68,22 +76,22 @@ private:
 class UserInfoDao {
 public:
     typedef std::shared_ptr<UserInfoDao> ptr;
-    static int Update(UserInfo::ptr info, sylar::SQLite3::ptr conn);
-    static int Insert(UserInfo::ptr info, sylar::SQLite3::ptr conn);
-    static int InsertOrUpdate(UserInfo::ptr info, sylar::SQLite3::ptr conn);
-    static int Delete(UserInfo::ptr info, sylar::SQLite3::ptr conn);
-    static int Delete(const int64_t& id, sylar::SQLite3::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::SQLite3::ptr conn);
-    static int DeleteByAccount( const std::string& account, sylar::SQLite3::ptr conn);
-    static int DeleteByEmail( const std::string& email, sylar::SQLite3::ptr conn);
-    static int DeleteByName( const std::string& name, sylar::SQLite3::ptr conn);
-    static int QueryAll(std::vector<UserInfo::ptr>& results, sylar::SQLite3::ptr conn);
-    static UserInfo::ptr Query( const int64_t& id, sylar::SQLite3::ptr conn);
-    static UserInfo::ptr QueryByAccount( const std::string& account, sylar::SQLite3::ptr conn);
-    static UserInfo::ptr QueryByEmail( const std::string& email, sylar::SQLite3::ptr conn);
-    static UserInfo::ptr QueryByName( const std::string& name, sylar::SQLite3::ptr conn);
-    static int CreateTableSQLite3(sylar::SQLite3::ptr info);
-    static int CreateTableMySQL(sylar::SQLite3::ptr info);
+    static int Update(UserInfo::ptr info, sylar::IDB::ptr conn);
+    static int Insert(UserInfo::ptr info, sylar::IDB::ptr conn);
+    static int InsertOrUpdate(UserInfo::ptr info, sylar::IDB::ptr conn);
+    static int Delete(UserInfo::ptr info, sylar::IDB::ptr conn);
+    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
+    static int DeleteByAccount( const std::string& account, sylar::IDB::ptr conn);
+    static int DeleteByEmail( const std::string& email, sylar::IDB::ptr conn);
+    static int DeleteByName( const std::string& name, sylar::IDB::ptr conn);
+    static int QueryAll(std::vector<UserInfo::ptr>& results, sylar::IDB::ptr conn);
+    static UserInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
+    static UserInfo::ptr QueryByAccount( const std::string& account, sylar::IDB::ptr conn);
+    static UserInfo::ptr QueryByEmail( const std::string& email, sylar::IDB::ptr conn);
+    static UserInfo::ptr QueryByName( const std::string& name, sylar::IDB::ptr conn);
+    static int CreateTableSQLite3(sylar::IDB::ptr info);
+    static int CreateTableMySQL(sylar::IDB::ptr info);
 };
 
 } //namespace data

@@ -1,3 +1,7 @@
 [submodule "chen"]
     path = chen
     url = https://gitee.com/Chen-Christins/chen.git
+
+[submodule "templates"]
+    path = templates
+    url = https://gitee.com/Chen-Christins/templates.git

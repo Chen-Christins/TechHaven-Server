@@ -47,6 +47,16 @@ void UserManager::add(blog::data::UserInfo::ptr info) {
     m_names[info->getName()] = info;
 }
 
+std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us) {
+    std::stringstream ss;
+    ss << info->getId()
+       << "|" << info->getAccount()
+       << "|" << info->getEmail()
+       << "|" << info->getPasswd()
+       << "|" << us;
+    return sylar::md5(ss.str()); 
+}
+
 #define XX(map, key)                                   \
     std::shared_lock<std::shared_mutex> lock(m_mutex); \
     auto it = map.find(key);                           \

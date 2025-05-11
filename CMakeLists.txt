@@ -23,6 +23,7 @@ set(LIB_SRC
     src/manager/user_manager.cc
     src/servlets/user_create_servlet.cc
     src/my_module.cc
+    src/struct.cc
 )
 
 add_library(blog SHARED ${LIB_SRC})
