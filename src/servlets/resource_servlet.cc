@@ -33,7 +33,35 @@ int32_t ResourceServlet::handle(HttpRequest::ptr request, HttpResponse::ptr resp
         ss << line << std::endl;
     }
     response->setBody(ss.str());
-    response->setHeader("content-type", "text/html;charset=utf-8");
+    auto it = path.find_last_of(".");
+    if (it != std::string::npos) {
+        auto ext = path.substr(it + 1);
+        if (ext == "html") {
+            response->setHeader("Content-Type", "text/html");
+        } else if (ext == "json") {
+            response->setHeader("Content-Type", "application/json");
+        } else if (ext == "xml") {
+            response->setHeader("Content-Type", "application/xml");
+        } else if (ext == "css") {
+            response->setHeader("Content-Type", "text/css");
+        } else if (ext == "js") {
+            response->setHeader("Content-Type", "application/javascript");
+        } else if (ext == "png") {
+            response->setHeader("Content-Type", "image/png");
+        } else if (ext == "jpg" || ext == "jpeg") {
+            response->setHeader("Content-Type", "image/jpeg");
+        } else if (ext == "gif") {
+            response->setHeader("Content-Type", "image/gif");
+        } else if (ext == "ico") {
+            response->setHeader("Content-Type", "image/x-icon");
+        } else if (ext == "txt") {
+            response->setHeader("Content-Type", "text/plain");
+        } else {
+            response->setHeader("Content-Type", "application/octet-stream");
+        }
+    } else {
+        response->setHeader("Content-Type", "text/plain");
+    }
     return 0;
 }
 
