@@ -46,7 +46,7 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
         }
         // 开启事务
         sylar::ITransaction::ptr trans = db->openTransaction();
-        std::string v = sylar::random_string(16);
+        std::string v = sylar::random_string(6);
         data::UserInfo::ptr info(new data::UserInfo);
         info->setAccount(account);
         info->setEmail(email);

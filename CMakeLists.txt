@@ -28,6 +28,8 @@ set(LIB_SRC
     src/struct.cc
 )
 
+add_executable(gen generator/generator.cc)
+
 add_library(blog SHARED ${LIB_SRC})
 # 将orm_data和blog链接到一起
 target_link_libraries(blog PRIVATE orm_data)
