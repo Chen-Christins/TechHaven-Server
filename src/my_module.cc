@@ -9,7 +9,7 @@
 #include "servlets/user_login_servlet.h"
 #include "servlets/user_active_servlet.h"
 #include "manager/user_manager.h"
-#include "servlets/resource_servlet.h"
+#include "chen/http/resource_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
