@@ -16,6 +16,8 @@ UserLoginServlet::UserLoginServlet()
 int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
     do {
+        INFO(logger) << *request;
+        INFO(logger) << *response;
         DEFINE_AND_CHECK_STRING(result, auth_id, "auth_id");
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
 

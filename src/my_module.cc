@@ -9,6 +9,8 @@
 #include "servlets/user_login_servlet.h"
 #include "servlets/user_active_servlet.h"
 #include "manager/user_manager.h"
+#include "servlets/resource_servlet.h"
+#include "chen/env.h"
 
 namespace blog {
 
@@ -73,6 +75,11 @@ bool MyModule::onServerReady() {
     for (auto& i : servers) {
         auto hs = std::dynamic_pointer_cast<sylar::http::HttpServer>(i);
         auto dp = hs->getServletDispatch();
+        
+        sylar::http::ResourceServlet::ptr slt(std::make_shared<sylar::http::ResourceServlet>(
+            sylar::EnvMgr::GetInstance()->getCwd()
+        ));
+        dp->addGlobServlet("/html/*", slt);
 
 #define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/create", XX(UserCreateServlet));
