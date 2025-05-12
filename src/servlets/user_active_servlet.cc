@@ -16,7 +16,7 @@ int32_t UserActiveServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, auth_id, "auth_id");
-        DEFINE_AND_CHECK_STRING(result, auth_code, "auto_code");
+        DEFINE_AND_CHECK_STRING(result, auth_code, "auth_code");
 
         data::UserInfo::ptr info;
         if (is_email(auth_id)) {

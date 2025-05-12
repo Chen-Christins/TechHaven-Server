@@ -44,6 +44,10 @@ int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::h
             break;
         }
 
+        if (info->getState() != 2) {
+            result->setResult(410, "account invalid state");
+        }
+
         auto db = getDB();
         if(!db) {
             result->setResult(500, "get db error");
