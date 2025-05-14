@@ -8,6 +8,10 @@
 #include "servlets/user_create_servlet.h"
 #include "servlets/user_login_servlet.h"
 #include "servlets/user_active_servlet.h"
+#include "servlets/user_logout_servlet.h"
+#include "servlets/user_info_servlet.h"
+#include "servlets/user_update_servlet.h"
+#include "servlets/user_exists_servlet.h"
 #include "manager/user_manager.h"
 #include "chen/http/resource_servlet.h"
 #include "chen/env.h"
@@ -85,8 +89,10 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/create", XX(UserCreateServlet));
         dp->addServlet("/user/login", XX(UserLoginServlet));
         dp->addServlet("/user/active", XX(UserActiveServlet));
-        dp->addServlet("/user/update", handle_request);
-        dp->addServlet("/user/exists", handle_request);
+        dp->addServlet("/user/logout", XX(UserLogoutServlet));
+        dp->addServlet("/user/info", XX(UserInfoServlet));
+        dp->addServlet("/user/update", XX(UserUpdateServlet));
+        dp->addServlet("/user/exists", XX(UserExistsServlet));
     }
 
     return true;
