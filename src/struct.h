@@ -57,6 +57,7 @@ struct CookieKey {
     static const std::string TOKEN;
     static const std::string TOKEN_TIME;
     static const std::string IS_AUTH;
+    static const std::string EMAIL_LAST_TIME;
 };
 
 class BlogServlet: public sylar::http::Servlet {
