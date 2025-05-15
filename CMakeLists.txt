@@ -20,10 +20,12 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 include_directories(.)
 
 set(LIB_SRC
+    src/manager/article_manager.cc
     src/manager/user_manager.cc
     src/servlets/user_active_servlet.cc
     src/servlets/user_create_servlet.cc
     src/servlets/user_exists_servlet.cc
+    src/servlets/user_forget_password_servlet.cc
     src/servlets/user_info_servlet.cc
     src/servlets/user_login_servlet.cc
     src/servlets/user_logout_servlet.cc

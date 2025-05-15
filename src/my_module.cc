@@ -12,6 +12,7 @@
 #include "servlets/user_info_servlet.h"
 #include "servlets/user_update_servlet.h"
 #include "servlets/user_exists_servlet.h"
+#include "servlets/user_forget_password_servlet.h"
 #include "manager/user_manager.h"
 #include "chen/http/resource_servlet.h"
 #include "chen/env.h"
@@ -93,10 +94,13 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/info", XX(UserInfoServlet));
         dp->addServlet("/user/update", XX(UserUpdateServlet));
         dp->addServlet("/user/exists", XX(UserExistsServlet));
+        dp->addServlet("/user/user_forget_passwd", XX(UserForgetPasswordServlet));
     }
 
     return true;
 }
+
+#undef XX
 
 bool MyModule::onServerUp() {
     INFO(logger) << "onServerUp";

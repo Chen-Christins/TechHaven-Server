@@ -3,6 +3,8 @@
 #include "chen/config/config.h"
 #include "../util.h"
 #include "../manager/user_manager.h"
+#include "chen/email/email.h"
+#include "chen/email/smtp.h"
 
 namespace blog {
 namespace servlet {
@@ -24,24 +26,38 @@ int32_t UserForgetPasswordServlet::handle(sylar::http::HttpRequest::ptr request,
         if (is_email(email)) {
             info = UserMgr::GetInstance()->getByEmail(email);
         } else {
-            result->setResult(402, "email not register");
+            result->setResult(402, "invalid email");
             break;
         }
 
-        auto data = getSessionData(request, response);
-        if (!data) {
-            result->setResult(502, "not login");
+        if (!info) {
+            result->setResult(403, "email not register");
+            break;
+        }
+        auto v = sylar::random_string(6);
+        info->setCode(v);
+        auto db = getDB();
+        if (data::UserInfoDao::Update(info, db)) {
+            result->setResult(500, "db update error");
+            break;
+        }
+        auto mail = sylar::EMail::Create("17354303956@163.com", "ASVbGLfbcJSz7JAy"
+                , "Blog 重制密码 - 验证码"
+                , "验证码[" + v +"]"
+                , {email}, {}, {"17354303956@163.com"});
+        auto client = sylar::SmtpClient::Create("smtp.163.com", 25);
+        if (!client) {
+            ERROR(logger) << "connect email server fail";
+            result->setResult(501, "connect email server fail");
             break;
         }
 
-        int64_t now = time(0);
-        int64_t email_time = data->getData<int64_t>(CookieKey::EMAIL_LAST_TIME);
-        if ((now - email_time) < email_interval_time->getValue()) {
-            result->setResult(502, "article too often");
+        auto r = client->send(mail, 5000);
+        if (r->result != 0) {
+            result->setResult(501, std::to_string(r->result) + " " + r->msg);
             break;
         }
-
-        // TODO: 验证发送
+        result->setResult(200, "ok");
     } while (false);
     response->setBody(result->toJsonString());
     return 0;
