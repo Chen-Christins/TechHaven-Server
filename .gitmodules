@@ -3,5 +3,5 @@
     url = https://gitee.com/Chen-Christins/chen.git
 
 [submodule "templates"]
-    path = templates
+    path = bin/html
     url = https://gitee.com/Chen-Christins/templates.git
