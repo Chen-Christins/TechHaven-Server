@@ -1,6 +1,8 @@
 #include "article_manager.h"
 #include "../util.h"
 #include "chen/log/log.h"
+#include "chen/iomanager/iomanager.h"
+#include "../struct.h"
 
 namespace blog {
 
@@ -117,70 +119,237 @@ void ArticleManager::addVerify(data::ArticleInfo::ptr info) {
 }
 
 int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int32_t size) {
-    return 0;
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    if (offset >= (int32_t)m_verifys.size()) {
+        return m_verifys.size();
+    }
+    auto it = m_verifys.begin();
+    std::advance(it, offset);
+    std::vector<int64_t> invalids;
+    for (; (int32_t)infos.size() < size && it != m_verifys.end(); ++it) {
+        if (it->second->getIsDeleted()) {
+            invalids.push_back(it->first);
+            continue;
+        }
+        if (it->second->getIsDeleted() != 1) {
+            invalids.push_back(it->first);
+            continue;
+        }
+        infos.push_back(it->second);
+    }
+    int64_t total = m_verifys.size();
+    lock.unlock();
+    for (auto& i : invalids) {
+        delVerify(i);
+    }
+    return total;
 }
 
 std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby(int64_t id) {
-    return {};
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto it = m_datas.find(id);
+    if (it == m_datas.end()) {
+        return std::pair(nullptr, nullptr);
+    }
+    data::ArticleInfo::ptr next;
+    auto iit = it;
+    ++iit;
+    for (; iit != m_datas.end(); ++iit) {
+        if (iit->second->getIsDeleted()) {
+            continue;
+        }
+        if (iit->second->getState() == (int)State::PUBLISH) {
+            next = iit->second;
+            break;
+        }
+    }
+    data::ArticleInfo::ptr prev;
+    ASSERT(id == it->first);
+    while (it != m_datas.begin()) {
+        --it;
+        if (it->second->getIsDeleted()) {
+            continue;
+        }
+        if (it->second->getState() == (int)State::PUBLISH) {
+            prev = it->second;
+            break;
+        }
+    }
+    return std::pair(prev, next);
 }
 
 std::string ArticleManager::statusString() {
-    return "";
+    std::stringstream ss;
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    ss << "ArticleManager total=" << m_datas.size()
+       << " verify=" << m_verifys.size()
+       << std::endl;
+    for (auto& i : m_users) {
+        ss << "    user(" << i.first << ") size=" << i.second.size() << std::endl;
+    }
+    lock.unlock();
+    return ss.str();
 }
 
 void ArticleManager::start() {
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    if (m_timer) {
+        return;
+    }
+    m_timer = sylar::IOManager::GetThis()->addTimer(60 * 1000
+            ,std::bind(&ArticleManager::onTimer, this), true);
+    m_updateTimer = sylar::IOManager::GetThis()->addTimer(60 * 1000
+            ,std::bind(&ArticleManager::onUpdateTimer, this), true);
 }
 
 void ArticleManager::stop() {
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    if (!m_timer) {
+        return;
+    }
+    m_timer->cancel();
+    m_timer = nullptr;
+
+    m_updateTimer->cancel();
+    m_updateTimer = nullptr;
 }
 
 bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+    auto info = get(id);
+    if (!info) {
+        return false;
+    }
+    bool v = addViews(id, cookie_id);
+    if (v) {
+        info->setViews(info->getViews() + 1);
+        addUpdate(id);
+    }
     return true;
 }
 
 bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+    // TODO: 增加点赞数
     return true;
 }
 
 bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+    // TODO: 增加收藏数量
     return true;
 }
 
 bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+    // TODO: 减少点赞数
     return true;
 }
 
 bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
+    // TODO: 取消收藏数
     return true;
 }
 
 bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles) {
+    // TODO: 列出用户的关注列表
     return true;
 }
 
 bool ArticleManager::listUserPra(int64_t id, std::map<int64_t, int64_t>& articles) {
+    // TODO: 列出用户的点赞用户列表
     return true;
 }
 
 bool ArticleManager::listArticleFav(int64_t id, std::map<int64_t, int64_t>& users) {
+    // TODO: 列出文章的收藏列表
     return true;
 }
 
 bool ArticleManager::listArticlePra(int64_t id, std::map<int64_t, int64_t>& users) {
+    // TODO: 列出文章的点赞列表
     return true;
 }
 
 void ArticleManager::onTimer() {
+    time_t now = time(0);
+    std::vector<data::ArticleInfo::ptr> infos;
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    for (auto& i : m_datas) {
+        if (i.second->getState() != (int)State::PUBLISH) {
+            continue;
+        }
+        if (i.second->getPublishTime() < now) {
+            i.second->setState((int)State::PUBLISH);
+            i.second->setUpdateTime(now);
+            infos.push_back(i.second);
+        }
+    }
+    lock.unlock();
+
+    if (infos.empty()) {
+        return;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "getDB error";
+        return;
+    }
+    for (auto& i : infos) {
+        if (data::ArticleInfoDao::Update(i, db)) {
+            ERROR(logger) << "Update error errno=" << errno
+                << db->getErrno() << " errstr=" << db->getErrStr()
+                << " data=" << i->toJsonString();
+        }
+    }
 }
 
 void ArticleManager::onUpdateTimer() {
+    std::set<int64_t> updates;
+    {
+        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        updates.swap(m_updates);
+    }
+
+    if (updates.empty()) {
+        return;
+    }
+    auto conn = GetDB();
+    if (!conn) {
+        ERROR(logger) << "get db connect fail";
+
+        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        for (auto& i : updates) {
+            m_updates.insert(i);
+        }
+        return;
+    }
+    for (auto& i : updates) {
+        auto info = get(i);
+        if (info) {
+            if (data::ArticleInfoDao::Update(info, conn)) {
+                addUpdate(i);
+            }
+        }
+    }
 }
 
 bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
+    time_t now = time(0);
+    std::shared_lock<std::shared_mutex> lock(m_viewsMutex);
+    auto it = m_viewsCache.find(id);
+    if (it != m_viewsCache.end()) {
+        auto iit = it->second.find(cookie_id);
+        if (iit != it->second.end() && (now - iit->second) < 10 * 60) {
+            return false;
+        }
+    }
+    lock.unlock();
+
+    std::unique_lock<std::shared_mutex> lock2(m_viewsMutex);
+    m_viewsCache[id][cookie_id] = now;
     return true;
 }
 
 void ArticleManager::addUpdate(int64_t id) {
+    std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+    m_updates.insert(id);
 }
 
 #undef XX

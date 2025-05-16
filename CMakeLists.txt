@@ -29,6 +29,7 @@ set(LIB_SRC
     src/servlets/user_info_servlet.cc
     src/servlets/user_login_servlet.cc
     src/servlets/user_logout_servlet.cc
+    src/servlets/user_reset_passwd_servlet.cc
     src/servlets/user_update_servlet.cc
     src/my_module.cc
     src/struct.cc
