@@ -8,7 +8,7 @@ namespace servlet {
 
 class UserCreateServlet : public BlogServlet {
 public:
-    std::shared_ptr<UserCreateServlet> ptr; 
+    typedef std::shared_ptr<UserCreateServlet> ptr;
     UserCreateServlet();
     virtual int32_t handle(sylar::http::HttpRequest::ptr request
                     ,sylar::http::HttpResponse::ptr response

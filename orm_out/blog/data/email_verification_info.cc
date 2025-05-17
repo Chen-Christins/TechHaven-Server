@@ -7,11 +7,11 @@ namespace data {
 static sylar::Logger::ptr logger = LOG_NAME("orm");
 
 EmailVerificationInfo::EmailVerificationInfo()
-    :m_state()
+    :m_type()
+    ,m_state()
     ,m_id()
     ,m_email()
     ,m_code()
-    ,m_type()
     ,m_clientIp()
     ,m_userAgent()
     ,m_createTime(time(0))
@@ -44,7 +44,7 @@ void EmailVerificationInfo::setCode(const std::string& v) {
     m_code = v;
 }
 
-void EmailVerificationInfo::setType(const std::string& v) {
+void EmailVerificationInfo::setType(const int32_t& v) {
     m_type = v;
 }
 
@@ -79,7 +79,7 @@ int EmailVerificationInfoDao::Update(EmailVerificationInfo::ptr info, sylar::IDB
     }
     stmt->bindString(1, info->m_email);
     stmt->bindString(2, info->m_code);
-    stmt->bindString(3, info->m_type);
+    stmt->bindInt32(3, info->m_type);
     stmt->bindInt32(4, info->m_state);
     stmt->bindTime(5, info->m_createTime);
     stmt->bindTime(6, info->m_expiresTime);
@@ -99,7 +99,7 @@ int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, sylar::IDB
     }
     stmt->bindString(1, info->m_email);
     stmt->bindString(2, info->m_code);
-    stmt->bindString(3, info->m_type);
+    stmt->bindInt32(3, info->m_type);
     stmt->bindInt32(4, info->m_state);
     stmt->bindTime(5, info->m_createTime);
     stmt->bindTime(6, info->m_expiresTime);
@@ -126,7 +126,7 @@ int EmailVerificationInfoDao::InsertOrUpdate(EmailVerificationInfo::ptr info, sy
     stmt->bindInt64(1, info->m_id);
     stmt->bindString(2, info->m_email);
     stmt->bindString(3, info->m_code);
-    stmt->bindString(4, info->m_type);
+    stmt->bindInt32(4, info->m_type);
     stmt->bindInt32(5, info->m_state);
     stmt->bindTime(6, info->m_createTime);
     stmt->bindTime(7, info->m_expiresTime);
@@ -172,7 +172,7 @@ int EmailVerificationInfoDao::DeleteByEmailCode( const std::string& email,  cons
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  const std::string& type, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  const int32_t& type, sylar::IDB::ptr conn) {
     std::string sql = "delete from email_verification where email = ? and type = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -181,7 +181,7 @@ int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  cons
         return conn->getErrno();
     }
     stmt->bindString(1, email);
-    stmt->bindString(1, type);
+    stmt->bindInt32(1, type);
     return stmt->execute();
 }
 
@@ -226,7 +226,7 @@ int EmailVerificationInfoDao::QueryAll(std::vector<EmailVerificationInfo::ptr>& 
         v->m_id = rt->getInt64(0);
         v->m_email = rt->getString(1);
         v->m_code = rt->getString(2);
-        v->m_type = rt->getString(3);
+        v->m_type = rt->getInt32(3);
         v->m_state = rt->getInt32(4);
         v->m_createTime = rt->getTime(5);
         v->m_expiresTime = rt->getTime(6);
@@ -257,7 +257,7 @@ EmailVerificationInfo::ptr EmailVerificationInfoDao::Query( const int64_t& id, s
     v->m_id = rt->getInt64(0);
     v->m_email = rt->getString(1);
     v->m_code = rt->getString(2);
-    v->m_type = rt->getString(3);
+    v->m_type = rt->getInt32(3);
     v->m_state = rt->getInt32(4);
     v->m_createTime = rt->getTime(5);
     v->m_expiresTime = rt->getTime(6);
@@ -285,7 +285,7 @@ int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo
         v->m_id = rt->getInt64(0);
         v->m_email = rt->getString(1);
         v->m_code = rt->getString(2);
-        v->m_type = rt->getString(3);
+        v->m_type = rt->getInt32(3);
         v->m_state = rt->getInt32(4);
         v->m_createTime = rt->getTime(5);
         v->m_expiresTime = rt->getTime(6);
@@ -296,7 +296,7 @@ int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo
     return 0;
 }
 
-int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& type, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, sylar::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where email = ? and type = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -305,7 +305,7 @@ int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo
         return conn->getErrno();
     }
     stmt->bindString(1, email);
-    stmt->bindString(2, type);
+    stmt->bindInt32(2, type);
     auto rt = stmt->query();
     if(!rt) {
         return 0;
@@ -315,7 +315,7 @@ int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo
         v->m_id = rt->getInt64(0);
         v->m_email = rt->getString(1);
         v->m_code = rt->getString(2);
-        v->m_type = rt->getString(3);
+        v->m_type = rt->getInt32(3);
         v->m_state = rt->getInt32(4);
         v->m_createTime = rt->getTime(5);
         v->m_expiresTime = rt->getTime(6);
@@ -344,7 +344,7 @@ int EmailVerificationInfoDao::QueryByExpiresTime(std::vector<EmailVerificationIn
         v->m_id = rt->getInt64(0);
         v->m_email = rt->getString(1);
         v->m_code = rt->getString(2);
-        v->m_type = rt->getString(3);
+        v->m_type = rt->getInt32(3);
         v->m_state = rt->getInt32(4);
         v->m_createTime = rt->getTime(5);
         v->m_expiresTime = rt->getTime(6);
@@ -373,7 +373,7 @@ int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInf
         v->m_id = rt->getInt64(0);
         v->m_email = rt->getString(1);
         v->m_code = rt->getString(2);
-        v->m_type = rt->getString(3);
+        v->m_type = rt->getInt32(3);
         v->m_state = rt->getInt32(4);
         v->m_createTime = rt->getTime(5);
         v->m_expiresTime = rt->getTime(6);
@@ -389,7 +389,7 @@ int EmailVerificationInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "email TEXT NOT NULL DEFAULT '',"
             "code TEXT NOT NULL DEFAULT '',"
-            "type TEXT NOT NULL DEFAULT '',"
+            "type INTEGER NOT NULL DEFAULT 0,"
             "state INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "expires_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
@@ -407,7 +407,7 @@ int EmailVerificationInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`email` varchar(128) NOT NULL DEFAULT '' COMMENT '用户邮箱地址',"
             "`code` varchar(128) NOT NULL DEFAULT '' COMMENT '验证码',"
-            "`type` varchar(128) NOT NULL DEFAULT '' COMMENT '验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱',"
+            "`type` int NOT NULL DEFAULT 0 COMMENT '验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱',"
             "`state` int NOT NULL DEFAULT 0 COMMENT '是否已使用',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
             "`expires_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '过期时间',"

@@ -27,8 +27,8 @@ public:
     const std::string& getCode() { return m_code; }
     void setCode(const std::string& v);
 
-    const std::string& getType() { return m_type; }
-    void setType(const std::string& v);
+    const int32_t& getType() { return m_type; }
+    void setType(const int32_t& v);
 
     const int32_t& getState() { return m_state; }
     void setState(const int32_t& v);
@@ -48,11 +48,11 @@ public:
     std::string toJsonString() const;
 
 private:
+    int32_t m_type;
     int32_t m_state;
     int64_t m_id;
     std::string m_email;
     std::string m_code;
-    std::string m_type;
     std::string m_clientIp;
     std::string m_userAgent;
     int64_t m_createTime;
@@ -70,13 +70,13 @@ public:
     static int Delete(const int64_t& id, sylar::IDB::ptr conn);
     static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
     static int DeleteByEmailCode( const std::string& email,  const std::string& code, sylar::IDB::ptr conn);
-    static int DeleteByEmailType( const std::string& email,  const std::string& type, sylar::IDB::ptr conn);
+    static int DeleteByEmailType( const std::string& email,  const int32_t& type, sylar::IDB::ptr conn);
     static int DeleteByExpiresTime( const int64_t& expires_time, sylar::IDB::ptr conn);
     static int DeleteByCreateTime( const int64_t& create_time, sylar::IDB::ptr conn);
     static int QueryAll(std::vector<EmailVerificationInfo::ptr>& results, sylar::IDB::ptr conn);
     static EmailVerificationInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
     static int QueryByEmailCode(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& code, sylar::IDB::ptr conn);
-    static int QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& type, sylar::IDB::ptr conn);
+    static int QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, sylar::IDB::ptr conn);
     static int QueryByExpiresTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& expires_time, sylar::IDB::ptr conn);
     static int QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, sylar::IDB::ptr conn);
     static int CreateTableSQLite3(sylar::IDB::ptr info);

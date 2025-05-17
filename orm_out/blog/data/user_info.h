@@ -33,9 +33,6 @@ public:
     const std::string& getName() { return m_name; }
     void setName(const std::string& v);
 
-    const std::string& getCode() { return m_code; }
-    void setCode(const std::string& v);
-
     const std::string& getRole() { return m_role; }
     void setRole(const std::string& v);
 
@@ -64,7 +61,6 @@ private:
     std::string m_email;
     std::string m_passwd;
     std::string m_name;
-    std::string m_code;
     std::string m_role;
     int64_t m_loginTime;
     int64_t m_createTime;

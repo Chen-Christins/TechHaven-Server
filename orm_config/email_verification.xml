@@ -3,7 +3,7 @@
         <column name="id" type="int64" auto_increment="true" desc="主键id"/>
         <column name="email" type="string" desc="用户邮箱地址"/>
         <column name="code" type="string" desc="验证码"/>
-        <column name="type" type="string" desc="验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱"/>
+        <column name="type" type="int32" desc="验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱"/>
         <column name="state" type="int32" desc="是否已使用"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
         <column name="expires_time" type="datetime" desc="过期时间"/>
