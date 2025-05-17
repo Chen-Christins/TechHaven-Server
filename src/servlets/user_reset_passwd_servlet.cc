@@ -1,22 +1,20 @@
-#include "user_create_servlet.h"
+#include "user_reset_passwd_servlet.h"
 #include "chen/log/log.h"
-#include "../util.h"
 #include "../manager/user_manager.h"
-#include "chen/db/sqlite3.h"
+#include "../util.h"
 
 namespace blog {
 namespace servlet {
 
 static sylar::Logger::ptr logger = LOG_ROOT();
 
-UserCreateServlet::UserCreateServlet()
-    :BlogServlet("UserCreateServlet") {
+UserResetPasswdServlet::UserResetPasswdServlet()
+    :BlogServlet("UserResetPasswdServlet") {
 }
 
-int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
+int32_t UserResetPasswdServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        DEFINE_AND_CHECK_STRING(result, account, "account");
         DEFINE_AND_CHECK_STRING(result, email, "email");
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
         DEFINE_AND_CHECK_STRING(result, auth_code, "auth_code");
@@ -26,20 +24,12 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
             break;
         }
 
-        if (blog::UserMgr::GetInstance()->getByAccount(account)) {
-            result->setResult(401, "account exists");
-            break;
-        }
-        if (blog::UserMgr::GetInstance()->getByEmail(email)) {
-            result->setResult(401, "email exists");
-            break;
-        }
         if (!is_email(email)) {
             result->setResult(402, "invalid email format");
             break;
         }
-        if (!is_vaild_account(account)) {
-            result->setResult(402, "invalid account");
+        if (!blog::UserMgr::GetInstance()->getByEmail(email)) {
+            result->setResult(401, "email not register");
             break;
         }
 
@@ -54,32 +44,25 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
             break;
         }
 
-        // 开启事务
         sylar::ITransaction::ptr trans = db->openTransaction();
-        data::UserInfo::ptr info(new data::UserInfo);
-        info->setAccount(account);
-        info->setEmail(email);
+        data::UserInfo::ptr info = UserMgr::GetInstance()->getByEmail(email);
         info->setPasswd(sylar::md5(passwd));
-        info->setState(1);
-        info->setName(account);
 
-        if (data::UserInfoDao::Insert(info, db)) {
+        if (data::UserInfoDao::Update(info, db)) {
             result->setResult(500, "insert user fail");
             break;
         }
         trans->commit();
-        UserMgr::GetInstance()->add(info);
-        INFO(logger) << info->toJsonString();
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
 };
 
-bool UserCreateServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::string& email
+bool UserResetPasswdServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::string& email
         ,const std::string& code) {
     // 开启事务
     sylar::ITransaction::ptr trans = conn->openTransaction();
-    std::string sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
+    std::string sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 3 AND state = 0 AND expires_time > datetime('now')";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql

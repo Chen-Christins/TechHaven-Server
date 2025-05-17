@@ -7,8 +7,14 @@
 #include "chen/application.h"
 #include "manager/user_manager.h"
 #include "chen/http/resource_servlet.h"
-#include "servlets/user_send_code_servlet.h"
 #include "servlets/user_create_servlet.h"
+#include "servlets/user_exists_servlet.h"
+#include "servlets/user_info_servlet.h"
+#include "servlets/user_login_servlet.h"
+#include "servlets/user_logout_servlet.h"
+#include "servlets/user_reset_passwd_servlet.h"
+#include "servlets/user_send_code_servlet.h"
+#include "servlets/user_update_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -87,6 +93,12 @@ bool MyModule::onServerReady() {
 #define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/send_code", XX(UserSendCodeServlet));
         dp->addServlet("/user/create", XX(UserCreateServlet));
+        dp->addServlet("/user/login", XX(UserLoginServlet));
+        dp->addServlet("/user/info", XX(UserInfoServlet));
+        dp->addServlet("/user/logout", XX(UserLogoutServlet));
+        dp->addServlet("/user/forget_passwd", XX(UserResetPasswdServlet));
+        dp->addServlet("/user/exists", XX(UserExistsServlet));
+        dp->addServlet("/user/update", XX(UserUpdateServlet));
     }
 
     return true;

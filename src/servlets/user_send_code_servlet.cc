@@ -19,6 +19,7 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, email, "email");
+        DEFINE_AND_CHECK_STRING(result, type, "type");
         DEFINE_AND_CHECK_STRING(result, agent, "agent");
 
         if (email.empty() && agent.empty()) {
@@ -31,7 +32,7 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
             break;
         }
 
-        if (blog::UserMgr::GetInstance()->getByEmail(email)) {
+        if (type == "1" && blog::UserMgr::GetInstance()->getByEmail(email)) {
             result->setResult(401, "email exists");
             break;
         }
@@ -53,7 +54,7 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         data::EmailVerificationInfo::ptr info(new data::EmailVerificationInfo);
         info->setEmail(email);
         info->setCode(code);
-        info->setType(1);
+        info->setType(std::stoi(type));
         info->setState(0);
         info->setExpiresTime(time(0) + 10 * 60);
         info->setClientIp(ipaddr);

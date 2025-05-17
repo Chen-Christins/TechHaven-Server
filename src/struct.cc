@@ -124,7 +124,7 @@ bool BlogServlet::initLogin(sylar::http::HttpRequest::ptr request
         if (!uinfo) {
             break;
         }
-        if (uinfo->getState() != 2) {
+        if (uinfo->getState() != 1) {
             break;
         }
         auto md5 = UserManager::GetToken(uinfo, token_time);
