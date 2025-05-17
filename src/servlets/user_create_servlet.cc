@@ -2,7 +2,7 @@
 #include "chen/log/log.h"
 #include "../util.h"
 #include "../manager/user_manager.h"
-#include "blog/data/email_verification_info.h"
+#include "chen/db/sqlite3.h"
 
 namespace blog {
 namespace servlet {
@@ -43,13 +43,17 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
             break;
         }
 
-        // TODO: 校验验证码
-
         auto db = getDB();
         if (!db) {
             result->setResult(500, "get db connection fail");
             break;
         }
+
+        if (!verificationEmailCode(db, email, auth_code)) {
+            result->setResult(403, "invalid auth_code");
+            break;
+        }
+
         // 开启事务
         sylar::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info(new data::UserInfo);
@@ -70,6 +74,29 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
     response->setBody(result->toJsonString());
     return 0;
 };
+
+bool UserCreateServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::string& email
+        ,const std::string& code) {
+    // 开启事务
+    sylar::ITransaction::ptr trans = conn->openTransaction();
+    std::string sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND state = 0 AND expires_time > datetime('now')";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return false;
+    }
+    stmt->bindString(1, email);
+    stmt->bindString(2, code);
+    
+    stmt->execute();
+
+    trans->commit();
+    // 获取影响的行数
+    int rows = sqlite3_changes(std::dynamic_pointer_cast<sylar::SQLite3>(conn)->getDB());
+    INFO(logger) << "rows = " << rows;
+    return rows > 0;
+}
 
 }
 }

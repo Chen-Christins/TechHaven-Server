@@ -3,6 +3,7 @@
 #include "blog/data/email_verification_info.h"
 #include "chen/email/email.h"
 #include "chen/email/smtp.h"
+#include "../manager/user_manager.h"
 #include "../util.h"
 
 namespace blog {
@@ -30,6 +31,11 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
             break;
         }
 
+        if (blog::UserMgr::GetInstance()->getByEmail(email)) {
+            result->setResult(401, "email exists");
+            break;
+        }
+
         auto db = getDB();
         if (!db) {
             result->setResult(500, "get db connection error");
@@ -41,6 +47,8 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         // 生成验证码和连接端(对端)ip
         std::string code = sylar::random_string(8);
         std::string ipaddr = session->getSocket()->getRemoteAddress()->toString();
+        auto it = ipaddr.find(":");
+        ipaddr = ipaddr.substr(0, it);
         // 设置插入信息
         data::EmailVerificationInfo::ptr info(new data::EmailVerificationInfo);
         info->setEmail(email);
