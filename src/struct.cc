@@ -149,4 +149,35 @@ sylar::IDB::ptr BlogServlet::getDB() {
     return GetDB();
 }
 
+BlogLoginedServlet::BlogLoginedServlet(const std::string& name)
+    :BlogServlet(name) {
+}
+
+bool BlogLoginedServlet::handlePre(sylar::http::HttpRequest::ptr request
+                ,sylar::http::HttpResponse::ptr response
+                ,sylar::http::HttpSession::ptr session
+                ,Result::ptr result) {
+    if (!initLogin(request, response)) {
+        result->setResult(410, "not login");
+        return false;
+    }
+    if (request->getMethod() != sylar::http::HttpMethod::GET 
+            && request->getMethod() != sylar::http::HttpMethod::POST) {
+        result->setResult(300, "invalid method");
+        return false;
+    }
+    return true;
+}
+
+int64_t BlogLoginedServlet::getUserId(sylar::http::HttpRequest::ptr request) {
+    std::string sid = request->getCookie(CookieKey::SESSION_KEY);
+    if (!sid.empty()) {
+        auto data = sylar::http::SessionDataMgr::GetInstance()->get(sid);
+        if (data) {
+            return data->getData<int64_t>(CookieKey::USER_ID);
+        }
+    }
+    return 0;
+}
+
 }

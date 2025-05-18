@@ -88,6 +88,18 @@ protected:
     sylar::IDB::ptr getDB();
 };
 
+class BlogLoginedServlet : public BlogServlet {
+public:
+    BlogLoginedServlet(const std::string& name);
+
+    bool handlePre(sylar::http::HttpRequest::ptr request
+                   ,sylar::http::HttpResponse::ptr response
+                   ,sylar::http::HttpSession::ptr session
+                   ,Result::ptr result) override;
+
+    int64_t getUserId(sylar::http::HttpRequest::ptr request);
+};
+
 }
 
 #endif // __BLOG_STRUCT_H__

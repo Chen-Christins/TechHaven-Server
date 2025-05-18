@@ -4,6 +4,7 @@
 #include "chen/db/sqlite3.h"
 #include "chen/config/config.h"
 #include "blog/data/email_verification_info.h"
+#include "blog/data/article_info.h"
 #include "chen/application.h"
 #include "manager/user_manager.h"
 #include "chen/http/resource_servlet.h"
@@ -15,6 +16,7 @@
 #include "servlets/user_reset_passwd_servlet.h"
 #include "servlets/user_send_code_servlet.h"
 #include "servlets/user_update_servlet.h"
+#include "servlets/article_create_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -68,6 +70,10 @@ bool MyModule::onServerReady() {
             ERROR(logger) << "create table user failed";
             return false;
         }
+        if (blog::data::ArticleInfoDao::CreateTableSQLite3(db)) {
+            ERROR(logger) << "create table article failed";
+            return false;
+        }
         INFO(logger) << "init database end";
     }
 
@@ -99,6 +105,8 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/forget_passwd", XX(UserResetPasswdServlet));
         dp->addServlet("/user/exists", XX(UserExistsServlet));
         dp->addServlet("/user/update", XX(UserUpdateServlet));
+        
+        dp->addServlet("/article/create", XX(ArticleCreateServlet));
     }
 
     return true;
