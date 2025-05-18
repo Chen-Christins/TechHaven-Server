@@ -2,6 +2,7 @@
 #include "../util.h"
 #include "chen/log/log.h"
 #include "chen/iomanager/iomanager.h"
+#include "chen/db/redis.h"
 #include "../struct.h"
 
 namespace blog {
@@ -228,44 +229,151 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
 }
 
 bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
-    // TODO: 增加点赞数
+    auto info = get(id);
+    if (!info) {
+        return false;
+    }
+    auto rpy = sylar::RedisUtil::Cmd("blog", "hexist pra_a2u:%lld %lld", id, user_id);
+    if (!rpy) {
+        ERROR(logger) << "hexists fail";
+        return false;
+    }
+    if (rpy->integer == 1) {
+        return true;
+    }
+    rpy = sylar::RedisUtil::Cmd("blog", "hset pra_a2u:%lld %lld %lld", id, user_id, time(0));
+    if (!rpy) {
+        ERROR(logger) << "hset fail";
+        return false;
+    }
+    rpy = sylar::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
+    if (!rpy) {
+        ERROR(logger) << "hset fail";
+        return false;
+    }
+    info->setPraise(info->getPraise() + 1);
+    addUpdate(id);
+
     return true;
 }
 
 bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
-    // TODO: 增加收藏数量
+    auto info = get(id);
+    if (!info) {
+        return false;
+    }
+    auto rpy = sylar::RedisUtil::Cmd("blog", "hexist fav_a2u:%lld %lld", id, user_id);
+    if (!rpy) {
+        ERROR(logger) << "hexists fail";
+        return false;
+    }
+    if (rpy->integer == 1) {
+        return true;
+    }
+    rpy = sylar::RedisUtil::Cmd("blog", "hset fav_a2u:%lld %lld %lld", id, user_id, time(0));
+    if (!rpy) {
+        ERROR(logger) << "hset fail";
+        return false;
+    }
+    rpy = sylar::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
+    if (!rpy) {
+        ERROR(logger) << "hset fail";
+        return false;
+    }
+    info->setFavorites(info->getFavorites() + 1);
+    addUpdate(id);
+    
     return true;
 }
 
 bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
-    // TODO: 减少点赞数
+    auto info = get(id);
+    if (!info) {
+        return false;
+    }
+    bool v = false;
+    auto rpy = sylar::RedisUtil::Cmd("blog", "hdel pra_a2u:%lld %lld", id, user_id);
+    if (!rpy) {
+        ERROR(logger) << "hdel fail";
+        return false;
+    }
+    if (rpy->integer == 1) {
+        v = true;
+    }
+    rpy = sylar::RedisUtil::Cmd("blog", "hdel pra_u2a:%lld %lld", user_id, id);
+    if (!rpy) {
+        ERROR(logger) << "hdel fail";
+        return false;
+    }
+    if (rpy->integer == 1) {
+        v = true;
+    }
+    if (v) {
+        info->setPraise(info->getPraise() - 1);
+        addUpdate(id);
+    }
+
     return true;
 }
 
 bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
-    // TODO: 取消收藏数
+    auto info = get(id);
+    if (!info) {
+        return false;
+    }
+    bool v = false;
+    auto rpy = sylar::RedisUtil::Cmd("blog", "hdel fav_a2u:%lld %lld", id, user_id);
+    if (!rpy) {
+        ERROR(logger) << "hdel fail";
+        return false;
+    }
+    if (rpy->integer == 1) {
+        v = true;
+    }
+    rpy = sylar::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld", user_id, id);
+    if (!rpy) {
+        ERROR(logger) << "hset fail";
+        return false;
+    }
+    if (rpy->integer == 1) {
+        v = true;
+    }
+    if (v) {
+        info->setFavorites(info->getFavorites() - 1);
+        addUpdate(id);
+    }
+
     return true;
 }
 
 bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles) {
-    // TODO: 列出用户的关注列表
+#define PROC(id, mask, articles)                               \
+    auto rpy = sylar::RedisUtil::Cmd("blog", mask, id);        \
+    if (!rpy) {                                                \
+        ERROR(logger) << "hgetall fail";                       \
+        return false;                                          \
+    }                                                          \
+    for (size_t i = 0; i < rpy->elements; i += 2) {            \
+        articles[sylar::TypeUtil::Atoi(rpy->element[i]->str)]  \
+            = sylar::TypeUtil::Atoi(rpy->element[i + 1]->str); \
+    }                                                          \
     return true;
+    
+    PROC(id, "hgetall fav_u2a:%lld", articles);
 }
 
 bool ArticleManager::listUserPra(int64_t id, std::map<int64_t, int64_t>& articles) {
-    // TODO: 列出用户的点赞用户列表
-    return true;
+    PROC(id, "hgetall pra_u2a:%lld", articles);
 }
 
 bool ArticleManager::listArticleFav(int64_t id, std::map<int64_t, int64_t>& users) {
-    // TODO: 列出文章的收藏列表
-    return true;
+    PROC(id, "hgetall fav_a2u:%lld", users);
 }
 
 bool ArticleManager::listArticlePra(int64_t id, std::map<int64_t, int64_t>& users) {
-    // TODO: 列出文章的点赞列表
-    return true;
+    PROC(id, "hgetall pra_a2u:%lld", users);
 }
+#undef PROC
 
 void ArticleManager::onTimer() {
     time_t now = time(0);

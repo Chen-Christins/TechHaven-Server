@@ -64,10 +64,10 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
             result->setResult(500, "insert email fail");
             break;
         }
-
         // 发送邮件
+        std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");
         auto mail = sylar::EMail::Create("17354303956@163.com", "ASVbGLfbcJSz7JAy"
-                , "Blog Create Account Auth - 验证码"
+                , title
                 , "验证码[" + code +"]"
                 , {email}, {}, {"17354303956@163.com"});
 
