@@ -11,7 +11,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 
-include_directories(${PROJECT_SOURCE_DIR}/thirdpart)
 include_directories(${PROJECT_SOURCE_DIR}/chen)
 include_directories(${PROJECT_SOURCE_DIR}/orm_out)
 
