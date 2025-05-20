@@ -1,44 +1,57 @@
 #!/bin/sh
 
-cd ~
-mkdir -p apps
+command_error_exit() {
+    $*
+    if [ $? -ne 0 ]
+    then
+        exit 1
+    fi
+}
+
+command_error_exit mkdir -p ~/apps
+command_error_exit cd ~/apps
 # 安装yaml-cpp
-git clone https://github.com/jbeder/yaml-cpp.git
-cd yaml-cpp
-mkdir build && cd build
-cmake -D BUILD_SHARED_LIBS=ON ..
-make -j4
-sudo make install
-cd ~/apps
+command_error_exit git clone https://github.com/jbeder/yaml-cpp.git
+command_error_exit cd yaml-cpp
+command_error_exit mkdir build && cd build
+command_error_exit cmake -D BUILD_SHARED_LIBS=ON ..
+command_error_exit make -j4
+command_error_exit sudo make install
+
+command_error_exit cd ~/apps
 
 # 安装ragel-6.10
-curl -O http://www.colm.net/files/ragel/ragel-6.10.tar.gz
-extract ragel-6.10.tar.gz
-cd ragel-6.10
-sudo yum install libtool gcc g++ autoconf automake
-./configure
-make -j4
-sudo make install
-which ragel
-cd ~/apps
+command_error_exit curl -O http://www.colm.net/files/ragel/ragel-6.10.tar.gz
+command_error_exit extract ragel-6.10.tar.gz
+command_error_exit cd ragel-6.10
+command_error_exit sudo yum install libtool gcc g++ autoconf automake
+command_error_exit ./configure
+command_error_exit make -j4
+command_error_exit sudo make install
+
+command_error_exit cd ~/apps
 
 # 安装tinyxml2
-git clone https://github.com/leethomason/tinyxml2.git
-cd tinyxml2
-mkdir build
-cd build
-cmake -D BUILD_SHARED_LIBS=ON ..
-make -j4
-sudo make install
-cd ~/apps
+command_error_exit git clone https://github.com/leethomason/tinyxml2.git
+command_error_exit cd tinyxml2
+command_error_exit mkdir build
+command_error_exit cd build
+command_error_exit cmake -D BUILD_SHARED_LIBS=ON ..
+command_error_exit make -j4
+command_error_exit sudo make install
+
+command_error_exit cd ~/apps
 
 # 安装hiredis_vip
-git clone https://github.com/vipshop/hiredis-vip.git
-cd hiredis-vip
-make -j4
-sudo make install
-sudo cp /usr/local/lib/*hiredis* /usr/local/lib64/
-cd ~/apps
+command_error_exit git clone https://github.com/vipshop/hiredis-vip.git
+command_error_exit cd hiredis-vip
+command_error_exit make -j4
+command_error_exit sudo make install
+command_error_exit sudo cp /usr/local/lib/*hiredis* /usr/local/lib64/
+
+command_error_exit cd ~/apps
 
 # 安装其他相关的依赖库
-sudo yum install boost-devel sqlite-devel openssl-devel
+command_error_exit sudo yum install boost-devel sqlite-devel openssl-devel libevent-devel
+
+echo "the dependencies has successfully installed at ~/apps." 

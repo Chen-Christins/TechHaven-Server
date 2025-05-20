@@ -27,7 +27,9 @@ int32_t ArticleDetailServlet::handle(sylar::http::HttpRequest::ptr request, syla
         result->set("content", info->getContent());
         result->set("user_id", info->getUserId());
         result->set("type", info->getType());
-        result->set("publish_time", info)
+        result->set("publish_time", info->getPublishTime());
+        
+        
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
