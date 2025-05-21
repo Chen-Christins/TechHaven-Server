@@ -2,6 +2,10 @@
 #include "chen/log/log.h"
 #include "../util.h"
 #include "../manager/article_manager.h"
+#include "../manager/category_manager.h"
+#include "../manager/label_manager.h"
+#include "../manager/article_category_rel_manager.h"
+#include "../manager/article_label_rel_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -29,7 +33,24 @@ int32_t ArticleDetailServlet::handle(sylar::http::HttpRequest::ptr request, syla
         result->set("type", info->getType());
         result->set("publish_time", info->getPublishTime());
         
-        
+        std::vector<data::ArticleCategoryRelInfo::ptr> cinfos;
+        ArticleCategoryRelMgr::GetInstance()->listByArticleId(cinfos, id, true);
+
+        for (auto& i : cinfos) {
+            auto c = CategoryMgr::GetInstance()->get(i->getCategoryId());
+            if (c && c->getIsDeleted() == 0) {
+                result->append("categorys", c->getId());
+            }
+        }
+
+        std::vector<data::ArticleLabelRelInfo::ptr> linfos;
+        ArticleLabelRelMgr::GetInstance()->listByArticleId(linfos, id, true);
+        for (auto& i : linfos) {
+            auto l = LabelMgr::GetInstance()->get(i->getLabelId());
+            if (l && l->getIsDeleted() == 0) {
+                result->append("labels", l->getId());
+            }
+        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

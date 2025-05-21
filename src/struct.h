@@ -46,6 +46,11 @@ struct Result {
         datas[key] = v;
     }
 
+    template<class T>
+    void append(const std::string& key, const T& v) {
+        jsondata[key].append(v);
+    }
+
     void setResult(int32_t c, const std::string& m);
 
     std::string toJsonString() const;

@@ -140,6 +140,7 @@ bool BlogServlet::initLogin(sylar::http::HttpRequest::ptr request
         
         uinfo->setLoginTime(time(0));
         data::UserInfoDao::Update(uinfo, getDB());
+        is_login = true;
     } while (false);
     data->setData(CookieKey::IS_AUTH, (int32_t)1);
     return is_login;
@@ -154,9 +155,9 @@ BlogLoginedServlet::BlogLoginedServlet(const std::string& name)
 }
 
 bool BlogLoginedServlet::handlePre(sylar::http::HttpRequest::ptr request
-                ,sylar::http::HttpResponse::ptr response
-                ,sylar::http::HttpSession::ptr session
-                ,Result::ptr result) {
+        ,sylar::http::HttpResponse::ptr response
+        ,sylar::http::HttpSession::ptr session
+        ,Result::ptr result) {
     if (!initLogin(request, response)) {
         result->setResult(410, "not login");
         return false;

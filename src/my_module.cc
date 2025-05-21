@@ -6,8 +6,15 @@
 #include "blog/data/email_verification_info.h"
 #include "blog/data/article_info.h"
 #include "blog/data/category_info.h"
+#include "blog/data/article_category_rel_info.h"
+#include "blog/data/article_label_rel_info.h"
 #include "chen/application.h"
 #include "manager/user_manager.h"
+#include "manager/article_manager.h"
+#include "manager/category_manager.h"
+#include "manager/label_manager.h"
+#include "manager/article_category_rel_manager.h"
+#include "manager/article_label_rel_manager.h"
 #include "chen/http/resource_servlet.h"
 #include "servlets/user_create_servlet.h"
 #include "servlets/user_exists_servlet.h"
@@ -18,6 +25,7 @@
 #include "servlets/user_send_code_servlet.h"
 #include "servlets/user_update_servlet.h"
 #include "servlets/article_create_servlet.h"
+#include "servlets/article_detail_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -63,22 +71,20 @@ bool MyModule::onServerReady() {
                 << " failed";
             return false;
         }
-        if (blog::data::EmailVerificationInfoDao::CreateTableSQLite3(db)) {
-            ERROR(logger) << "create table email verification failed";
-            return false;
-        }
-        if (blog::data::UserInfoDao::CreateTableSQLite3(db)) {
-            ERROR(logger) << "create table user failed";
-            return false;
-        }
-        if (blog::data::ArticleInfoDao::CreateTableSQLite3(db)) {
-            ERROR(logger) << "create table article failed";
-            return false;
-        }
-        if (blog::data::CategoryInfoDao::CreateTableSQLite3(db)) {
-            ERROR(logger) << "create table category failed";
-            return false;
-        }
+
+#define XX(clazz, t)                                   \
+    if (blog::data::clazz::CreateTableSQLite3(db)) {   \
+        ERROR(logger) << "create table " t " failed"; \
+        return false;                                  \
+    }
+    XX(EmailVerificationInfoDao, "email_verification")
+    XX(UserInfoDao, "user")
+    XX(ArticleInfoDao, "article")
+    XX(CategoryInfoDao, "category")
+    XX(LabelInfoDao, "label")
+    XX(ArticleCategoryRelInfoDao, "article_category_rel")
+    XX(ArticleLabelRelInfoDao, "article_label_rel")
+#undef XX
         INFO(logger) << "init database end";
     }
 
@@ -88,9 +94,17 @@ bool MyModule::onServerReady() {
         return false;
     }
 
-    if (!UserMgr::GetInstance()->loadAll()) {
-        ERROR(logger) << "user load all fail";
+#define XX(clazz)                                 \
+    if (!clazz::GetInstance()->loadAll()) {       \
+        ERROR(logger) << #clazz " load all fail"; \
     }
+    XX(UserMgr)
+    XX(ArticleMgr)
+    XX(CategoryMgr)
+    XX(LabelMgr)
+    XX(ArticleCategoryRelMgr)
+    XX(ArticleLabelRelMgr)
+#undef XX
 
     for (auto& i : servers) {
         auto hs = std::dynamic_pointer_cast<sylar::http::HttpServer>(i);
@@ -112,6 +126,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/update", XX(UserUpdateServlet));
         
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
+        dp->addServlet("/article/detail", XX(ArticleDetailServlet));
     }
 
     return true;

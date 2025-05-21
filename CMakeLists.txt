@@ -21,11 +21,13 @@ include_directories(.)
 
 set(LIB_SRC
     src/manager/article_category_rel_manager.cc
+    src/manager/article_label_rel_manager.cc
     src/manager/article_manager.cc
     src/manager/category_manager.cc
     src/manager/label_manager.cc
     src/manager/user_manager.cc
     src/servlets/article_create_servlet.cc
+    src/servlets/article_detail_servlet.cc
     src/servlets/user_create_servlet.cc
     src/servlets/user_exists_servlet.cc
     src/servlets/user_info_servlet.cc
