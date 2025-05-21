@@ -20,8 +20,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 include_directories(.)
 
 set(LIB_SRC
+    src/manager/article_category_rel_manager.cc
     src/manager/article_manager.cc
     src/manager/category_manager.cc
+    src/manager/label_manager.cc
     src/manager/user_manager.cc
     src/servlets/article_create_servlet.cc
     src/servlets/user_create_servlet.cc

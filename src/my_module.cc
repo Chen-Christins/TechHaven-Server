@@ -5,6 +5,7 @@
 #include "chen/config/config.h"
 #include "blog/data/email_verification_info.h"
 #include "blog/data/article_info.h"
+#include "blog/data/category_info.h"
 #include "chen/application.h"
 #include "manager/user_manager.h"
 #include "chen/http/resource_servlet.h"
@@ -72,6 +73,10 @@ bool MyModule::onServerReady() {
         }
         if (blog::data::ArticleInfoDao::CreateTableSQLite3(db)) {
             ERROR(logger) << "create table article failed";
+            return false;
+        }
+        if (blog::data::CategoryInfoDao::CreateTableSQLite3(db)) {
+            ERROR(logger) << "create table category failed";
             return false;
         }
         INFO(logger) << "init database end";
