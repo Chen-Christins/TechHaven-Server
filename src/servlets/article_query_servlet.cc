@@ -21,7 +21,7 @@ int32_t ArticleQueryServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         INFO(logger) << "user_id=" << user_id;
 
         std::vector<data::ArticleInfo::ptr> infos;
-        auto total = ArticleMgr::GetInstance()->listByUserIdPages(infos, user_id, page_from, page_size, true, 2);
+        auto total = ArticleMgr::GetInstance()->listByUserIdPages(infos, user_id, page_from, page_size, true, 0);
         result->jsondata["total"] = total;
         result->jsondata["page_from"] = page_from;
         result->jsondata["page_size"] = page_size;

@@ -24,6 +24,7 @@
 #include "servlets/user_reset_passwd_servlet.h"
 #include "servlets/user_send_code_servlet.h"
 #include "servlets/user_update_servlet.h"
+#include "servlets/user_query_servlet.h"
 #include "servlets/article_create_servlet.h"
 #include "servlets/article_detail_servlet.h"
 #include "servlets/article_publish_servlet.h"
@@ -126,6 +127,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/forget_passwd", XX(UserResetPasswdServlet));
         dp->addServlet("/user/exists", XX(UserExistsServlet));
         dp->addServlet("/user/update", XX(UserUpdateServlet));
+        dp->addServlet("/user/query", XX(UserQueryServlet));
         
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));

@@ -38,6 +38,7 @@ set(LIB_SRC
     src/servlets/user_reset_passwd_servlet.cc
     src/servlets/user_send_code_servlet.cc
     src/servlets/user_update_servlet.cc
+    src/servlets/user_query_servlet.cc
     src/my_module.cc
     src/struct.cc
 )
