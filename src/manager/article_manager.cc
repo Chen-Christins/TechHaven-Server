@@ -98,7 +98,7 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         }
         auto it = uit->second.rbegin();
         std::advance(it, offset);
-        for (; (int32_t)infos.size() < size && it != m_datas.rend(); ++it) {
+        for (; (int32_t)infos.size() < size && it != uit->second.rend(); ++it) {
             if (!valid || !it->second->getIsDeleted()) {
                 if (!state || it->second->getState() == state) {
                     infos.push_back(it->second);

@@ -34,12 +34,12 @@ std::string Result::toJsonString() const {
     if (!jsondata.isNull()) {
         v["data"] = jsondata;
     } else {
-        if (!datas.empty()) {
-            auto& d = v["data"];
-            for (auto& [key, value] : datas) {
-                d[key] = value;
-            }
-        }
+        // if (!datas.empty()) {
+        //     auto& d = v["data"];
+        //     for (auto& [key, value] : datas) {
+        //         d[key] = value;
+        //     }
+        // }
     }
     return sylar::JsonUtil::ToString(v);
 }

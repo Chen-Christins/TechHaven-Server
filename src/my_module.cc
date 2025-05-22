@@ -26,6 +26,8 @@
 #include "servlets/user_update_servlet.h"
 #include "servlets/article_create_servlet.h"
 #include "servlets/article_detail_servlet.h"
+#include "servlets/article_publish_servlet.h"
+#include "servlets/article_query_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -127,6 +129,8 @@ bool MyModule::onServerReady() {
         
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));
+        dp->addServlet("/article/publish", XX(ArticlePublishServlet));
+        dp->addServlet("/article/query", XX(ArticleQueryServlet));
     }
 
     return true;
