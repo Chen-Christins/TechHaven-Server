@@ -27,6 +27,7 @@ set(LIB_SRC
     src/manager/label_manager.cc
     src/manager/user_manager.cc
     src/servlets/article_create_servlet.cc
+    src/servlets/article_delete_servlet.cc
     src/servlets/article_detail_servlet.cc
     src/servlets/article_publish_servlet.cc
     src/servlets/article_query_servlet.cc
