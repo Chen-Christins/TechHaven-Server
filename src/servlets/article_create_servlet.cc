@@ -25,6 +25,7 @@ int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, syla
         }
 
         int64_t uid = getUserId(request);
+        INFO(logger) << "uid=" << uid;
         if (!uid) {
             result->setResult(500, "not login");
             break;

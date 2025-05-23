@@ -47,9 +47,7 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         sylar::ITransaction::ptr trans = db->openTransaction();
         // 生成验证码和连接端(对端)ip
         std::string code = sylar::random_string(8);
-        std::string ipaddr = session->getSocket()->getRemoteAddress()->toString();
-        auto it = ipaddr.find(":");
-        ipaddr = ipaddr.substr(0, it);
+        std::string ipaddr = session->getRemoteAddressString();
         // 设置插入信息
         data::EmailVerificationInfo::ptr info(new data::EmailVerificationInfo);
         info->setEmail(email);

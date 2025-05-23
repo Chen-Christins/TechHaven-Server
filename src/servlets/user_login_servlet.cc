@@ -57,7 +57,7 @@ int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::h
         uint64_t ts1 = sylar::GetCurrentUs();
         data::UserInfoDao::Update(info, db);
         INFO(logger) << "update used: " << (sylar::GetCurrentUs() - ts1) / 1000.0 << " ms";
-        result->setResult(200, "ok");
+
         int64_t token_time = time(0) + 3600 * 24;
         response->setCookie(CookieKey::USER_ID, std::to_string(info->getId()), token_time, "/");
         auto token = UserManager::GetToken(info, token_time);

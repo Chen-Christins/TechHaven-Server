@@ -15,6 +15,17 @@ const std::string CookieKey::TOKEN_TIME = "S_TOKEN_TIME";
 const std::string CookieKey::IS_AUTH = "IS_AUTH";
 const std::string CookieKey::EMAIL_LAST_TIME = "EMAIL_LAST_TIME";
 
+std::string GetRemoteIP(sylar::http::HttpRequest::ptr request
+                        ,sylar::http::HttpSession::ptr session) {
+    auto rt = request->getHeader("X-Real-IP");
+    if (!rt.empty()) {
+        return rt;
+    }
+    rt = session->getRemoteAddressString();
+    auto pos = rt.find(':');
+    return rt.substr(0, pos);
+}
+
 Result::Result(int32_t c, const std::string& m)
     :code(c)
     ,used(sylar::GetCurrentUs())
@@ -50,18 +61,25 @@ BlogServlet::BlogServlet(const std::string& name)
 
 int32_t BlogServlet::handle(sylar::http::HttpRequest::ptr request
         ,sylar::http::HttpResponse::ptr response, sylar::http::HttpSession::ptr session) {
+    uint64_t ts = sylar::GetCurrentUs();
     Result::ptr result = std::make_shared<Result>();
+    response->setHeader("Access-Control-Allow-Origin", "*");
+    response->setHeader("Access-Control-Allow-Credentials", "true");
     if (handlePre(request, response, session, result)) {
         handle(request, response, session, result);
+    } else {
+        response->setBody(result->toJsonString());
     }
+    uint64_t used = sylar::GetCurrentUs() - ts;
     handlePost(request, response, session, result);
+    response->setHeader("used", std::to_string((used * 1.0 / 1000)) + "ms");
     return 0;
 }
 
 bool BlogServlet::handlePre(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
     if (request->getPath() != "/user/login" && request->getPath() != "/user/logout") {
-        initLogin(request, response);
+        initLogin(request, response, session);
     }
     if (request->getMethod() != sylar::http::HttpMethod::GET
             && request->getMethod() != sylar::http::HttpMethod::POST) {
@@ -73,9 +91,13 @@ bool BlogServlet::handlePre(sylar::http::HttpRequest::ptr request, sylar::http::
 
 bool BlogServlet::handlePost(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
-    INFO(logger) << result->code << "\t" << result->msg << "\t"
-        << request->getPath() << "\t"
-        << (!request->getQuery().empty() ? request->getQuery() : "-");
+    INFO(logger)
+        << GetRemoteIP(request, session) << "\t"
+        << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
+        << getUserId(request) << "\t"
+        << result->code << "\t"
+        << result->msg << "\t" << request->getPath()
+        << "\t" << (!request->getQuery().empty() ? request->getQuery() : "-");
     return true;
 }
 
@@ -88,15 +110,16 @@ sylar::http::SessionData::ptr BlogServlet::getSessionData(sylar::http::HttpReque
             return data;
         }
     }
+    // 没有就创建一个会话
     sylar::http::SessionData::ptr data(new sylar::http::SessionData(true));
     sylar::http::SessionDataMgr::GetInstance()->add(data);
-    response->setCookie(CookieKey::SESSION_KEY, data->getId());
+    response->setCookie(CookieKey::SESSION_KEY, data->getId(), 0, "/");
     request->setCookie(CookieKey::SESSION_KEY, data->getId());
     return data;
 }
 
 bool BlogServlet::initLogin(sylar::http::HttpRequest::ptr request
-        ,sylar::http::HttpResponse::ptr response) {
+        ,sylar::http::HttpResponse::ptr response, sylar::http::HttpSession::ptr session) {
     auto data = getSessionData(request, response);
     int64_t uid = data->getData<int64_t>(CookieKey::USER_ID);
     if (uid) {
@@ -129,17 +152,30 @@ bool BlogServlet::initLogin(sylar::http::HttpRequest::ptr request
         }
         auto md5 = UserManager::GetToken(uinfo, token_time);
         if (md5 != token) {
-            INFO(logger) << 310 << "\t" << "invalid_token" << "\tauto_login" << request->getPath()
+            INFO(logger)
+                << GetRemoteIP(request, session) << "\t"
+                << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
+                << uid << "\t"
+                << 310 << "\t"
+                << "invalid_token" << "\tauto_login" << request->getPath()
                 << "\t" << (!request->getQuery().empty() ? request->getQuery() : "-");
             break;
         }
         data->setData(CookieKey::USER_ID, uid);
         is_login = true;
-        INFO(logger) << 200 << "\t" << "ok" << "\tauto_login" << request->getPath()
+        INFO(logger)
+            << GetRemoteIP(request, session) << "\t"
+            << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
+            << uid << "\t"
+            << 200 << "\t"
+            << "ok" << "\tauto_login " << request->getPath()
             << "\t" << (!request->getQuery().empty() ? request->getQuery() : "-");
         
         uinfo->setLoginTime(time(0));
-        data::UserInfoDao::Update(uinfo, getDB());
+        auto db = getDB();
+        if (db) {
+            data::UserInfoDao::Update(uinfo, db);
+        }
         is_login = true;
     } while (false);
     data->setData(CookieKey::IS_AUTH, (int32_t)1);
@@ -158,7 +194,7 @@ bool BlogLoginedServlet::handlePre(sylar::http::HttpRequest::ptr request
         ,sylar::http::HttpResponse::ptr response
         ,sylar::http::HttpSession::ptr session
         ,Result::ptr result) {
-    if (!initLogin(request, response)) {
+    if (!initLogin(request, response, session)) {
         result->setResult(410, "not login");
         return false;
     }
@@ -170,7 +206,7 @@ bool BlogLoginedServlet::handlePre(sylar::http::HttpRequest::ptr request
     return true;
 }
 
-int64_t BlogLoginedServlet::getUserId(sylar::http::HttpRequest::ptr request) {
+int64_t BlogServlet::getUserId(sylar::http::HttpRequest::ptr request) {
     std::string sid = request->getCookie(CookieKey::SESSION_KEY);
     if (!sid.empty()) {
         auto data = sylar::http::SessionDataMgr::GetInstance()->get(sid);

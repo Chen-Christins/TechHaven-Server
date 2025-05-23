@@ -10,7 +10,6 @@
 
 #include <string>
 #include <memory>
-#include <map>
 #include <json/json.h>
 #include "chen/http/servlet.h"
 #include "chen/db/db.h"
@@ -71,6 +70,8 @@ public:
     int32_t handle(sylar::http::HttpRequest::ptr request
                 ,sylar::http::HttpResponse::ptr response
                 ,sylar::http::HttpSession::ptr session) override;
+
+    int64_t getUserId(sylar::http::HttpRequest::ptr request);
 protected:
     virtual bool handlePre(sylar::http::HttpRequest::ptr request
                            ,sylar::http::HttpResponse::ptr response
@@ -88,7 +89,8 @@ protected:
     sylar::http::SessionData::ptr getSessionData(sylar::http::HttpRequest::ptr request
                                                  ,sylar::http::HttpResponse::ptr response);
     bool initLogin(sylar::http::HttpRequest::ptr request
-                   ,sylar::http::HttpResponse::ptr response);
+                   ,sylar::http::HttpResponse::ptr response
+                   ,sylar::http::HttpSession::ptr session);
 protected:
     sylar::IDB::ptr getDB();
 };
@@ -101,8 +103,6 @@ public:
                    ,sylar::http::HttpResponse::ptr response
                    ,sylar::http::HttpSession::ptr session
                    ,Result::ptr result) override;
-
-    int64_t getUserId(sylar::http::HttpRequest::ptr request);
 };
 
 }

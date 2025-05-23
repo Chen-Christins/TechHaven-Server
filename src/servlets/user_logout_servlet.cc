@@ -25,7 +25,8 @@ int32_t UserLogoutServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
         response->setCookie(CookieKey::TOKEN, "", token_time, "/");
         response->setCookie(CookieKey::TOKEN_TIME, "", token_time, "/");
         sdata->setData(CookieKey::USER_ID, (int64_t)0);
-        sylar::http::SessionDataMgr::GetInstance()->del(sdata->getId());
+        std::string id = sdata->getId();
+        sylar::http::SessionDataMgr::GetInstance()->del(id);
     } while (false);
     response->setBody(result->toJsonString());
     return 0;
