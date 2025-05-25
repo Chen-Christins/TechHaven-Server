@@ -57,6 +57,8 @@ blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id) {
     XX(m_datas, id);
 }
 
+#undef XX
+
 bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, bool valid) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     auto it = m_users.find(id);
@@ -459,7 +461,5 @@ void ArticleManager::addUpdate(int64_t id) {
     std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
     m_updates.insert(id);
 }
-
-#undef XX
 
 }

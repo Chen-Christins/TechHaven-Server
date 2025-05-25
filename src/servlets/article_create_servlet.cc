@@ -35,6 +35,7 @@ int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, syla
         info->setContent(content);
         info->setType(type);
         info->setUserId(uid);
+        info->setState((int32_t)State::UNPUBLISH);
         info->setUpdateTime(time(0));
         info->setCreateTime(time(0));
         
@@ -49,7 +50,6 @@ int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, syla
             break;
         }
         ArticleMgr::GetInstance()->add(info);
-        result->setResult(200, "ok");
         result->set("id", info->getId());
     } while (0);
     response->setBody(result->toJsonString());

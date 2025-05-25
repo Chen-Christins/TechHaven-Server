@@ -2,6 +2,7 @@
 #include "chen/log/log.h"
 #include "../util.h"
 #include "../manager/article_manager.h"
+#include "../manager/user_manager.h"
 #include "../manager/category_manager.h"
 #include "../manager/label_manager.h"
 #include "../manager/article_category_rel_manager.h"
@@ -26,12 +27,16 @@ int32_t ArticleDetailServlet::handle(sylar::http::HttpRequest::ptr request, syla
             result->setResult(404, "invalid id");
             break;
         }
+        int64_t uid = info->getUserId();
+        std::string author = UserMgr::GetInstance()->get(uid)->getName();
         result->set("id", info->getId());
+        result->set("author", author);
         result->set("title", info->getTitle());
         result->set("content", info->getContent());
-        result->set("user_id", info->getUserId());
+        result->set("user_id", uid);
         result->set("type", info->getType());
         result->set("publish_time", info->getPublishTime());
+        result->set("update_time", info->getUpdateTime());
         result->set("state", info->getState());
         result->set("is_deleted", info->getIsDeleted());
         result->set("views", info->getViews());

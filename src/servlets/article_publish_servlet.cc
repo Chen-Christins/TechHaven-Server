@@ -33,13 +33,18 @@ int32_t ArticlePublishServlet::handle(sylar::http::HttpRequest::ptr request, syl
             result->setResult(401, "invalid article");
             break;
         }
-        if (info->getState() != 0) {
+        if (info->getState() != (int32_t)State::UNPUBLISH) {
             result->setResult(401, "invalid state");
             break;
         }
-        info->setState(1);
-        info->setPublishTime(publish_time);
-        info->setUpdateTime(time(0));
+        info->setState((int32_t)State::VERIFYING);
+        time_t now = time(0);
+        if (publish_time > now) {
+            info->setPublishTime(publish_time);
+        } else {
+            info->setPublishTime(now);
+        }
+        info->setUpdateTime(now);
         
         auto db = getDB();
         if (!db) {
