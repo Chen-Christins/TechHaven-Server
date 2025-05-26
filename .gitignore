@@ -1,11 +1,11 @@
-/.cache
-/.ccls-cache
-/.vscode
+.cache
+.ccls-cache
+.vscode
 /build
 lib*.so
 !/bin/conf
 /bin/orm
 /bin/blog
 /bin/gen
-/logs
+*.log
 /thirdpart
