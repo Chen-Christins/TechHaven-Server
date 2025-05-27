@@ -79,22 +79,37 @@ bool UserCreateServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::s
         ,const std::string& code) {
     // 开启事务
     sylar::ITransaction::ptr trans = conn->openTransaction();
-    std::string sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
-    auto stmt = conn->prepare(sql);
+	// 先查询是否存在这个记录
+	std::string select_sql = "SELECT 1 FROM email_verification WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
+    
+	auto stmt = std::dynamic_pointer_cast<sylar::SQLite3Stmt>(conn->prepare(select_sql));
     if(!stmt) {
-        ERROR(logger) << "stmt=" << sql
+        ERROR(logger) << "stmt=" << select_sql
                  << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return false;
     }
     stmt->bindString(1, email);
-    stmt->bindString(2, code);
-    
-    stmt->execute();
-    // 获取影响的行数
-    int rows = sqlite3_changes(std::dynamic_pointer_cast<sylar::SQLite3>(conn)->getDB());
+	stmt->bindString(2, code);
+
+	int rt = stmt->step();
+    bool canUpdate = (rt == SQLITE_ROW);
+	stmt->finish();
+
+	if (!canUpdate) {
+		return false;
+	}
+
+    std::string update_sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
+	stmt = std::dynamic_pointer_cast<sylar::SQLite3Stmt>(conn->prepare(update_sql));
+
+	stmt->bindString(1, email);
+	stmt->bindString(2, code);
+
+    // 获取影响的行数, 是否成功
+    bool success = stmt->step() == SQLITE_DONE && sqlite3_changes(std::dynamic_pointer_cast<sylar::SQLite3>(conn)->getDB()) > 0;
     trans->commit();
-    INFO(logger) << "rows = " << rows;
-    return rows > 0;
+	
+    return success;
 }
 
 }
