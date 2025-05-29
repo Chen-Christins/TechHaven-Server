@@ -22,7 +22,7 @@ command_error_exit cd ~/apps
 
 # 安装ragel-6.10
 command_error_exit curl -O http://www.colm.net/files/ragel/ragel-6.10.tar.gz
-command_error_exit extract ragel-6.10.tar.gz
+command_error_exit tar -zxvf ragel-6.10.tar.gz
 command_error_exit cd ragel-6.10
 command_error_exit sudo yum install libtool gcc g++ autoconf automake
 command_error_exit ./configure
