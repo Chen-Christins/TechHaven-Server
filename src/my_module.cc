@@ -31,6 +31,7 @@
 #include "servlets/article_query_servlet.h"
 #include "servlets/article_delete_servlet.h"
 #include "servlets/article_verify_servlet.h"
+#include "servlets/article_update_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -137,6 +138,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/article/query", XX(ArticleQueryServlet));
         dp->addServlet("/article/delete", XX(ArticleDeleteServlet));
         dp->addServlet("/article/verify", XX(ArticleVerifyServlet));
+        dp->addServlet("/article/update", XX(ArticleUpdateServlet));
     }
 
     return true;

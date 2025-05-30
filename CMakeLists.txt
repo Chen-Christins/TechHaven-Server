@@ -31,6 +31,7 @@ set(LIB_SRC
     src/servlets/article_detail_servlet.cc
     src/servlets/article_publish_servlet.cc
     src/servlets/article_query_servlet.cc
+    src/servlets/article_update_servlet.cc
     src/servlets/article_verify_servlet.cc
     src/servlets/user_create_servlet.cc
     src/servlets/user_exists_servlet.cc
