@@ -21,8 +21,8 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
         DEFINE_AND_CHECK_STRING(result, auth_code, "auth_code");
 
-        if (passwd.empty()) {
-            result->setResult(400, "param passwd empty");
+        if (account.empty() || passwd.empty()) {
+            result->setResult(400, "param account passwd empty");
             break;
         }
 
