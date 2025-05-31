@@ -26,24 +26,24 @@ set(LIB_SRC
     src/manager/category_manager.cc
     src/manager/label_manager.cc
     src/manager/user_manager.cc
-    src/servlets/article_create_servlet.cc
-    src/servlets/article_delete_servlet.cc
-    src/servlets/article_detail_servlet.cc
-    src/servlets/article_publish_servlet.cc
-    src/servlets/article_query_servlet.cc
-    src/servlets/article_update_servlet.cc
-    src/servlets/article_verify_servlet.cc
-	src/servlets/category_create_servlet.cc
-	src/servlets/category_query_servlet.cc
-    src/servlets/user_create_servlet.cc
-    src/servlets/user_exists_servlet.cc
-    src/servlets/user_info_servlet.cc
-    src/servlets/user_login_servlet.cc
-    src/servlets/user_logout_servlet.cc
-    src/servlets/user_reset_passwd_servlet.cc
-    src/servlets/user_send_code_servlet.cc
-    src/servlets/user_update_servlet.cc
-    src/servlets/user_query_servlet.cc
+    src/servlets/article/article_create_servlet.cc
+    src/servlets/article/article_delete_servlet.cc
+    src/servlets/article/article_detail_servlet.cc
+    src/servlets/article/article_publish_servlet.cc
+    src/servlets/article/article_query_servlet.cc
+    src/servlets/article/article_update_servlet.cc
+    src/servlets/article/article_verify_servlet.cc
+	src/servlets/category/category_create_servlet.cc
+	src/servlets/category/category_query_servlet.cc
+    src/servlets/user/user_create_servlet.cc
+    src/servlets/user/user_exists_servlet.cc
+    src/servlets/user/user_info_servlet.cc
+    src/servlets/user/user_login_servlet.cc
+    src/servlets/user/user_logout_servlet.cc
+    src/servlets/user/user_reset_passwd_servlet.cc
+    src/servlets/user/user_send_code_servlet.cc
+    src/servlets/user/user_update_servlet.cc
+    src/servlets/user/user_query_servlet.cc
     src/my_module.cc
     src/struct.cc
 )
