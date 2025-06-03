@@ -32,6 +32,9 @@
 #include "servlets/article/article_delete_servlet.h"
 #include "servlets/article/article_verify_servlet.h"
 #include "servlets/article/article_update_servlet.h"
+#include "servlets/category/category_create_servlet.h"
+#include "servlets/category/category_delete_servlet.h"
+#include "servlets/category/category_query_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -139,6 +142,10 @@ bool MyModule::onServerReady() {
         dp->addServlet("/article/delete", XX(ArticleDeleteServlet));
         dp->addServlet("/article/verify", XX(ArticleVerifyServlet));
         dp->addServlet("/article/update", XX(ArticleUpdateServlet));
+
+        dp->addServlet("/category/create", XX(CategoryCreateServlet));
+        dp->addServlet("/category/delete", XX(CategoryDeleteServlet));
+        dp->addServlet("/category/query", XX(CategoryQueryServlet));
     }
 
     return true;
