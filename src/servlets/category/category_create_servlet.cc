@@ -65,9 +65,7 @@ int32_t CategoryCreateServlet::handle(sylar::http::HttpRequest::ptr request, syl
 
 		result->set("id", info->getId());
 		result->set("name", info->getName());
-		if (parent_id) {
-			result->set("parent_id", parent_id);
-		}
+		result->set("parent_id", parent_id);
 	} while (0);
 	response->setBody(result->toJsonString());
     return 0;

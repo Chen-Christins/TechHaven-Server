@@ -41,9 +41,7 @@ int32_t CategoryQueryServlet::handle(sylar::http::HttpRequest::ptr request, syla
 			Json::Value v;
 			v["id"] = i->getId();
 			v["name"] = i->getName();
-			if (i->getParentId()) {
-				v["parent_id"] = i->getParentId();
-			}
+			v["parent_id"] = i->getParentId();
 			result->jsondata.append(v);
 		}
 	} while (0);
