@@ -121,6 +121,11 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
     }
 }
 
+void ArticleManager::delArticle(int64_t id) {
+	std::unique_lock<std::shared_mutex> lock(m_mutex);
+	m_datas.erase(id);
+}
+
 void ArticleManager::delVerify(int64_t id) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_verifys.erase(id);

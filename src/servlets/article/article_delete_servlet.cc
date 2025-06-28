@@ -65,6 +65,7 @@ int32_t ArticleDeleteServlet::handle(sylar::http::HttpRequest::ptr request, syla
             auto& jids = result->jsondata["ids"];
             for (auto& i : infos) {
                 jids.append(i->getId());
+				ArticleMgr::GetInstance()->delArticle(i->getId());
             }
         }
     } while (0);
