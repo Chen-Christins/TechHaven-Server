@@ -20,7 +20,6 @@ public:
     int64_t listByUserIdPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t id
                              ,int32_t offset, int32_t size, bool valid, int state);
     
-	void delArticle(int64_t id);
     void delVerify(int64_t id);
     void addVerify(data::ArticleInfo::ptr info);
 

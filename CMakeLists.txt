@@ -33,6 +33,7 @@ set(LIB_SRC
     src/servlets/article/article_query_servlet.cc
     src/servlets/article/article_update_servlet.cc
     src/servlets/article/article_verify_servlet.cc
+    src/servlets/article/article_update_category_servlet.cc
 	src/servlets/category/category_create_servlet.cc
 	src/servlets/category/category_delete_servlet.cc
 	src/servlets/category/category_query_servlet.cc
