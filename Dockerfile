@@ -2,8 +2,8 @@
 FROM ubuntu:22.04
 
 # 设置时区
-RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
-  && echo 'Asia/Shanghai' >/etc/timezone \
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # 安装必要的工具和依赖
 RUN apt-get update && apt-get install -y \
@@ -60,4 +60,5 @@ RUN make && make -j$(nproc)
 EXPOSE 8080
 
 # 设置容器启动时执行的命令
-CMD ["tail", "-f", "/dev/null"]
+# CMD ["tail", "-f", "/dev/null"]
+CMD ["bin/blog", "-d"]
