@@ -73,7 +73,7 @@ int32_t UserCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
-};
+}
 
 bool UserCreateServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::string& email
         ,const std::string& code) {

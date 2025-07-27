@@ -2,6 +2,6 @@
     path = chen
     url = https://gitee.com/Chen-Christins/chen.git
 
-[submodule "templates"]
+[submodule "html"]
     path = bin/html
     url = https://gitee.com/Chen-Christins/templates.git

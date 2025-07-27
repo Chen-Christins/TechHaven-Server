@@ -56,7 +56,7 @@ int32_t UserResetPasswdServlet::handle(sylar::http::HttpRequest::ptr request, sy
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
-};
+}
 
 bool UserResetPasswdServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::string& email
         ,const std::string& code) {

@@ -36,7 +36,7 @@ int32_t UserInfoServlet::handle(sylar::http::HttpRequest::ptr request, sylar::ht
     } while (false);
     response->setBody(result->toJsonString());
     return 0;
-};
+}
 
 }
 }

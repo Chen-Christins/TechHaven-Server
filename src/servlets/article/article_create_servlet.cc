@@ -54,7 +54,7 @@ int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, syla
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
-};
+}
 
 }
 }

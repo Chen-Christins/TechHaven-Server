@@ -30,7 +30,7 @@ int32_t UserExistsServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
     } while (false);
     response->setBody(result->toJsonString());
     return 0;
-};
+}
 
 }
 }

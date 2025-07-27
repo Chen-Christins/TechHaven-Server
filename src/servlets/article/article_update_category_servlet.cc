@@ -154,7 +154,7 @@ int32_t ArticleUpdateCategoryServlet::handle(sylar::http::HttpRequest::ptr reque
 	} while (0);
 	response->setBody(result->toJsonString());
     return 0;
-};
+}
 
 }
 }
