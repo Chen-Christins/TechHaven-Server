@@ -170,7 +170,7 @@ void Generator::gen_src(const std::string& path) {
     ofs << "int32_t " << class_name << "::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response" << std::endl;
     ofs << "        ,sylar::http::HttpSession::ptr session, Result::ptr result) {" << std::endl;
     ofs << "    return 0;" << std::endl;
-    ofs << "};" << std::endl;
+    ofs << "}" << std::endl;
     ofs << std::endl;
 
     for (size_t i = 0; i < ns.size(); ++i) {
