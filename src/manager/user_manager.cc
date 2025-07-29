@@ -38,6 +38,13 @@ bool UserManager::loadAll() {
     return true;
 }
 
+void UserManager::getAllIds(std::vector<int64_t>& ids) {
+	std::shared_lock<std::shared_mutex> lock(m_mutex);
+	for (auto [id, user] : m_datas) {
+		ids.emplace_back(id);
+	}
+}
+
 void UserManager::add(blog::data::UserInfo::ptr info) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas[info->getId()] = info;

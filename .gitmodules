@@ -1,7 +1,7 @@
 [submodule "chen"]
     path = chen
-    url = https://gitee.com/Chen-Christins/chen.git
+    url = git@gitee.com:Chen-Christins/chen.git
 
 [submodule "html"]
     path = bin/html
-    url = https://gitee.com/Chen-Christins/templates.git
+    url = git@gitee.com:Chen-Christins/templates.git

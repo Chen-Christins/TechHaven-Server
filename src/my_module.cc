@@ -19,6 +19,7 @@
 #include "servlets/user/user_create_servlet.h"
 #include "servlets/user/user_exists_servlet.h"
 #include "servlets/user/user_info_servlet.h"
+#include "servlets/user/user_list_servlet.h"
 #include "servlets/user/user_login_servlet.h"
 #include "servlets/user/user_logout_servlet.h"
 #include "servlets/user/user_reset_passwd_servlet.h"
@@ -130,6 +131,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/create", XX(UserCreateServlet));
         dp->addServlet("/user/login", XX(UserLoginServlet));
         dp->addServlet("/user/info", XX(UserInfoServlet));
+        dp->addServlet("/user/list", XX(UserListServlet));
         dp->addServlet("/user/logout", XX(UserLogoutServlet));
         dp->addServlet("/user/forget_passwd", XX(UserResetPasswdServlet));
         dp->addServlet("/user/exists", XX(UserExistsServlet));

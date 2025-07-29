@@ -21,6 +21,11 @@ int32_t UserInfoServlet::handle(sylar::http::HttpRequest::ptr request, sylar::ht
             break;
         }
 
+		int64_t id = request->getParamAs<int64_t>("user_id", -1);
+		if (id != -1) {
+			uid = id;
+		}
+
         data::UserInfo::ptr info = UserMgr::GetInstance()->get(uid);
         if (!info) {
             result->setResult(403, "invalid account");
@@ -33,6 +38,7 @@ int32_t UserInfoServlet::handle(sylar::http::HttpRequest::ptr request, sylar::ht
         result->set("name", info->getName());
         result->set("role", info->getRole());
         result->set("login_time", info->getLoginTime());
+        result->set("status", info->getIsDeleted());
     } while (false);
     response->setBody(result->toJsonString());
     return 0;

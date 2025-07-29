@@ -40,6 +40,7 @@ set(LIB_SRC
     src/servlets/user/user_create_servlet.cc
     src/servlets/user/user_exists_servlet.cc
     src/servlets/user/user_info_servlet.cc
+    src/servlets/user/user_list_servlet.cc
     src/servlets/user/user_login_servlet.cc
     src/servlets/user/user_logout_servlet.cc
     src/servlets/user/user_reset_passwd_servlet.cc
