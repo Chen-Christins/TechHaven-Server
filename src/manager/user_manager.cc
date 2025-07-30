@@ -38,9 +38,12 @@ bool UserManager::loadAll() {
     return true;
 }
 
-void UserManager::getAllIds(std::vector<int64_t>& ids) {
+void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
 	std::shared_lock<std::shared_mutex> lock(m_mutex);
 	for (auto [id, user] : m_datas) {
+		if (isValid && user->getIsDeleted()) {
+			continue;
+		}
 		ids.emplace_back(id);
 	}
 }

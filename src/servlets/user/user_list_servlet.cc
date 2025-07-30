@@ -18,12 +18,12 @@ int32_t UserListServlet::handle(sylar::http::HttpRequest::ptr request, sylar::ht
 		auto role = UserMgr::GetInstance()->get(uid)->getRole();
 
 		if (role != "admin") {
-			result->setResult(403, "forbidden");
+			result->setResult(403, "Access Denied");
 			break;
 		}
 		
 		std::vector<int64_t> ids;
-		UserMgr::GetInstance()->getAllIds(ids);
+		UserMgr::GetInstance()->getAllIds(ids, true);
 
 		std::sort(ids.begin(), ids.end(), std::less<>());
 

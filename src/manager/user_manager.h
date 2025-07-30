@@ -12,7 +12,7 @@ class UserManager {
 public:
     bool loadAll();
     void add(blog::data::UserInfo::ptr info);
-    void getAllIds(std::vector<int64_t>& ids);
+    void getAllIds(std::vector<int64_t>& ids, bool isValid);
 	
 	blog::data::UserInfo::ptr get(int64_t id);
     blog::data::UserInfo::ptr getByAccount(const std::string& v);

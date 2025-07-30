@@ -37,6 +37,8 @@ set(LIB_SRC
 	src/servlets/category/category_create_servlet.cc
 	src/servlets/category/category_delete_servlet.cc
 	src/servlets/category/category_query_servlet.cc
+    src/servlets/user/user_admin_create_servlet.cc
+    src/servlets/user/user_admin_delete_servlet.cc
     src/servlets/user/user_create_servlet.cc
     src/servlets/user/user_exists_servlet.cc
     src/servlets/user/user_info_servlet.cc
