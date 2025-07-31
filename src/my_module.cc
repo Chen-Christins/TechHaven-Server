@@ -18,6 +18,7 @@
 #include "chen/http/resource_servlet.h"
 #include "servlets/user/user_admin_create_servlet.h"
 #include "servlets/user/user_admin_delete_servlet.h"
+#include "servlets/user/user_admin_reset_passwd_servlet.h"
 #include "servlets/user/user_create_servlet.h"
 #include "servlets/user/user_exists_servlet.h"
 #include "servlets/user/user_info_servlet.h"
@@ -141,6 +142,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/query", XX(UserQueryServlet));
         dp->addServlet("/user/admin/create", XX(UserAdminCreateServlet));
         dp->addServlet("/user/admin/delete", XX(UserAdminDeleteServlet));
+        dp->addServlet("/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
         
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));
