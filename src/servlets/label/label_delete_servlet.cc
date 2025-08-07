@@ -18,10 +18,10 @@ int32_t LabelDeleteServlet::handle(sylar::http::HttpRequest::ptr request, sylar:
         ,sylar::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		DEFINE_AND_CHECK_STRING(result, ids, "ids");
-		std::set<int64_t> cat_ids;
+		std::set<int64_t> label_ids;
 		auto tmp = sylar::split(ids, ",");
 		for (auto& i : tmp) {
-			cat_ids.insert(sylar::TypeUtil::Atoi(i));
+			label_ids.insert(sylar::TypeUtil::Atoi(i));
 		}
 
 		int64_t uid = getUserId(request);
@@ -35,8 +35,8 @@ int32_t LabelDeleteServlet::handle(sylar::http::HttpRequest::ptr request, sylar:
 		}
 
 		std::vector<data::LabelInfo::ptr> del_labels;
-		for (auto& i : del_labels) {
-			if (cat_ids.count(i->getId())) {
+		for (auto& i : infos) {
+			if (label_ids.count(i->getId())) {
 				del_labels.push_back(i);
 			}
 		}

@@ -22,7 +22,7 @@ bool LabelManager::loadAll() {
     std::unordered_map<int64_t, std::map<std::string, data::LabelInfo::ptr>> users;
     for (auto& i : results) {
         datas[i->getId()] = i;
-        users[i->getId()][i->getName()] = i;
+        users[i->getUserId()][i->getName()] = i;
     }
     
     std::unique_lock<std::shared_mutex> lock(m_mutex);
