@@ -18,6 +18,8 @@ int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, syla
         DEFINE_AND_CHECK_STRING(result, title, "title");
         DEFINE_AND_CHECK_STRING(result, content, "content");
         DEFINE_AND_CHECK_TYPE(result, int32_t, type, "type");
+        DEFINE_AND_CHECK_STRING(result, category, "category");
+        DEFINE_AND_CHECK_STRING(result, label, "label");
 
         if (type != 1 && type != 2) {
             result->setResult(401, "invalid type");

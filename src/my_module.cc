@@ -40,6 +40,9 @@
 #include "servlets/category/category_create_servlet.h"
 #include "servlets/category/category_delete_servlet.h"
 #include "servlets/category/category_query_servlet.h"
+#include "servlets/label/label_create_servlet.h"
+#include "servlets/label/label_delete_servlet.h"
+#include "servlets/label/label_query_servlet.h"
 #include "chen/env.h"
 
 namespace blog {
@@ -156,6 +159,10 @@ bool MyModule::onServerReady() {
         dp->addServlet("/category/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/category/query", XX(CategoryQueryServlet));
+        
+		dp->addServlet("/label/create", XX(LabelCreateServlet));
+        dp->addServlet("/label/delete", XX(LabelDeleteServlet));
+        dp->addServlet("/label/query", XX(LabelQueryServlet));
     }
 
     return true;
