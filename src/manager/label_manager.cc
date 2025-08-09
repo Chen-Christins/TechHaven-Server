@@ -35,7 +35,7 @@ bool LabelManager::loadAll() {
 void LabelManager::add(data::LabelInfo::ptr info) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas[info->getId()] = info;
-    m_users[info->getId()][info->getName()] = info;
+    m_users[info->getUserId()][info->getName()] = info;
 }
 
 data::LabelInfo::ptr LabelManager::get(int64_t id) {
