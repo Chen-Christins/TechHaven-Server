@@ -38,8 +38,8 @@ int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, syla
         info->setType(type);
         info->setUserId(uid);
         info->setState((int32_t)State::UNPUBLISH);
-        info->setUpdateTime(time(0));
         info->setCreateTime(time(0));
+        info->setUpdateTime(time(0));
         
         auto db = getDB();
         if (!db) {
