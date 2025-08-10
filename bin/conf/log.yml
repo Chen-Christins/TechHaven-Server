@@ -3,17 +3,14 @@ logs:
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/Blog/logs/root.log
-      - type: StdoutLogAppender
+        file: /home/chen/apps/blog/logs/root.log
   - name: system
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/Blog/logs/system.log
-      - type: StdoutLogAppender
+        file: /home/chen/apps/blog/logs/system.log
   - name: access
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/Blog/logs/access.log
-      - type: StdoutLogAppender
+        file: /home/chen/apps/blog/logs/access.log
