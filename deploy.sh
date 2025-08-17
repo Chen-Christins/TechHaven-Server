@@ -23,9 +23,9 @@ fi
 # ------------------------------
 mkdir "$TEMP_DIR" || exit 1
 
-# 复制 bin 内容到临时目录，排除 .git、orm、gen
-echo "正在复制文件到临时目录 $TEMP_DIR (排除 .git, orm, gen)..."
-rsync -av --exclude='.git' --exclude='orm' --exclude='gen' "$SOURCE_DIR"/ "$TEMP_DIR"/
+# 复制 bin 内容到临时目录，排除 .git、orm、gen、.vscode
+echo "正在复制文件到临时目录 $TEMP_DIR (排除 .git, orm, gen, .vscode)..."
+rsync -av --exclude='.git' --exclude='orm' --exclude='gen' --exclude='.vscode' "$SOURCE_DIR"/ "$TEMP_DIR"/
 
 # 检查复制是否成功
 if [ $? -ne 0 ]; then

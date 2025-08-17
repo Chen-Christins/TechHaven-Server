@@ -39,12 +39,12 @@ int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::h
             break;
         }
         if (info->getPasswd() != sylar::md5(passwd)) {
-            result->setResult(410, "invalid passwd");
+            result->setResult(405, "invalid passwd");
             break;
         }
 
         if (info->getState() != 1) {
-            result->setResult(410, "account invalid state");
+            result->setResult(406, "account invalid state");
         }
 
         auto db = getDB();
