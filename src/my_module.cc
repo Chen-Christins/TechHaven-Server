@@ -130,7 +130,7 @@ bool MyModule::onServerReady() {
         sylar::http::ResourceServlet::ptr slt(std::make_shared<sylar::http::ResourceServlet>(
             sylar::EnvMgr::GetInstance()->getCwd()
         ));
-        dp->addGlobServlet("/html/*", slt);
+        dp->addGlobServlet("/blog/*", slt);
 
 #define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/send_code", XX(UserSendCodeServlet));

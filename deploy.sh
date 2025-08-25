@@ -104,7 +104,7 @@ EOF
 		send "tar -xzf $PACKAGE_NAME\r" 
 		send "cd $TEMP_DIR\r" 
 		send "export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH\r" 
-		send "nohup ./blog -s > blog.log 2>&1 &\r" 
+		send "nohup ./mblog -s > blog.log 2>&1 &\r" 
 		expect eof
         catch wait result
         exit [lindex \$result 3]
