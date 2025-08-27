@@ -82,7 +82,7 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
                 , "验证码[" + code +"]"
                 , {email}, {}, {email_addr->getValue()});
 
-        auto client = sylar::SmtpClient::Create(email_host->getValue(), email_port->getValue());
+        auto client = sylar::SmtpClient::Create(email_host->getValue(), email_port->getValue(), true);
         if (!client) {
             ERROR(logger) << "connect email server fail";
             result->setResult(501, "connect email server fail");
