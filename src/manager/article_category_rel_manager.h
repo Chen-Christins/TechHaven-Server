@@ -4,7 +4,7 @@
 #include <shared_mutex>
 #include <unordered_map>
 #include "blog/data/article_category_rel_info.h"
-#include "chen/singleton.h"
+#include <chen/singleton.h>
 
 namespace blog {
 

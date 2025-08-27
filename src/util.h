@@ -1,7 +1,7 @@
 #ifndef __BLOG_UTIL_H__
 #define __BLOG_UTIL_H__
 
-#include "chen/db/sqlite3.h"
+#include <chen/db/sqlite3.h>
 #include <regex>
 
 namespace blog {

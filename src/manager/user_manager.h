@@ -2,7 +2,7 @@
 #define __BLOG_MANAGER_USER_MANAGER_H__
 
 #include "blog/data/user_info.h"
-#include "chen/singleton.h"
+#include <chen/singleton.h>
 #include <unordered_map>
 #include <shared_mutex>
 
