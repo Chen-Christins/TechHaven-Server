@@ -7,4 +7,3 @@ lib*.so
 /bin
 *.log
 /thirdpart
-/bin/html

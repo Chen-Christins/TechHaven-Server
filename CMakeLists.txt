@@ -52,6 +52,7 @@ set(LIB_SRC
     src/servlets/user/user_send_code_servlet.cc
     src/servlets/user/user_update_servlet.cc
     src/servlets/user/user_query_servlet.cc
+	src/index.cc
     src/my_module.cc
     src/struct.cc
 )
