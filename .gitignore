@@ -4,9 +4,7 @@
 /build
 lib*.so
 !/bin/conf
-/bin/orm
-/bin/blog
-/bin/gen
+/bin
 *.log
 /thirdpart
 /bin/html

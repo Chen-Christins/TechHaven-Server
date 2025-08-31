@@ -1,6 +1,6 @@
 #include "category_query_servlet.h"
 #include "../../manager/category_manager.h"
-#include "chen/log/log.h"
+#include <chen/log/log.h>
 
 
 namespace blog {

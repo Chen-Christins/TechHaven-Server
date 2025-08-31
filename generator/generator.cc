@@ -137,7 +137,7 @@ void Generator::gen_src(const std::string& path) {
     std::string name = path + "/" + m_filename + ".cc";
     std::ofstream ofs(name);
     
-    std::vector<std::string> incs{m_filename + ".h", "chen/log/log.h"};
+    std::vector<std::string> incs{m_filename + ".h", "<chen/log/log.h>"};
     for (size_t i = 0; i < incs.size(); ++i) {
         ofs << "#include " << "\"" << incs[i] << "\"" << std::endl;
     }

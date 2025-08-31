@@ -1,21 +1,21 @@
 #include "my_module.h"
-#include "chen/http/http_server.h"
-#include "chen/log/log.h"
-#include "chen/db/sqlite3.h"
-#include "chen/config/config.h"
+#include <chen/http/http_server.h>
+#include <chen/log/log.h>
+#include <chen/db/sqlite3.h>
+#include <chen/config/config.h>
 #include "blog/data/email_verification_info.h"
 #include "blog/data/article_info.h"
 #include "blog/data/category_info.h"
 #include "blog/data/article_category_rel_info.h"
 #include "blog/data/article_label_rel_info.h"
-#include "chen/application.h"
+#include <chen/application.h>
 #include "manager/user_manager.h"
 #include "manager/article_manager.h"
 #include "manager/category_manager.h"
 #include "manager/label_manager.h"
 #include "manager/article_category_rel_manager.h"
 #include "manager/article_label_rel_manager.h"
-#include "chen/http/resource_servlet.h"
+#include <chen/http/resource_servlet.h>
 #include "servlets/user/user_admin_create_servlet.h"
 #include "servlets/user/user_admin_delete_servlet.h"
 #include "servlets/user/user_admin_reset_passwd_servlet.h"
@@ -43,7 +43,7 @@
 #include "servlets/label/label_create_servlet.h"
 #include "servlets/label/label_delete_servlet.h"
 #include "servlets/label/label_query_servlet.h"
-#include "chen/env.h"
+#include <chen/env.h>
 
 namespace blog {
 
@@ -91,7 +91,7 @@ bool MyModule::onServerReady() {
 
 #define XX(clazz, t)                                   \
     if (blog::data::clazz::CreateTableSQLite3(db)) {   \
-        ERROR(logger) << "create table " t " failed"; \
+        ERROR(logger) << "create table " t " failed";  \
         return false;                                  \
     }
     XX(EmailVerificationInfoDao, "email_verification")
@@ -130,7 +130,7 @@ bool MyModule::onServerReady() {
         sylar::http::ResourceServlet::ptr slt(std::make_shared<sylar::http::ResourceServlet>(
             sylar::EnvMgr::GetInstance()->getCwd()
         ));
-        dp->addGlobServlet("/html/*", slt);
+        dp->addGlobServlet("/blog/*", slt);
 
 #define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/send_code", XX(UserSendCodeServlet));

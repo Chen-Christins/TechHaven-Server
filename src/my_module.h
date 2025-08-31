@@ -8,7 +8,7 @@
 #ifndef __BLOG_MY_MODULE_H__
 #define __BLOG_MY_MODULE_H__
 
-#include "chen/module.h"
+#include <chen/module.h>
 
 namespace blog {
 

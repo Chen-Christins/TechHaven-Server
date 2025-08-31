@@ -1,8 +1,9 @@
 #include "user_send_code_servlet.h"
-#include "chen/log/log.h"
+#include <chen/log/log.h>
+#include <chen/config/config.h>
 #include "blog/data/email_verification_info.h"
-#include "chen/email/email.h"
-#include "chen/email/smtp.h"
+#include <chen/email/email.h>
+#include <chen/email/smtp.h>
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 
@@ -10,6 +11,18 @@ namespace blog {
 namespace servlet {
 
 static sylar::Logger::ptr logger = LOG_ROOT();
+static sylar::ConfigVar<std::string>::ptr email_host = 
+    sylar::Config::Lookup("server.email_service.host", std::string(), "the token of email service");
+
+static sylar::ConfigVar<uint32_t>::ptr email_port = 
+    sylar::Config::Lookup("server.email_service.port", uint32_t(25), "the port of email service");
+
+static sylar::ConfigVar<std::string>::ptr email_addr = 
+    sylar::Config::Lookup("server.email_service.address", std::string(), "the address of email service");
+
+static sylar::ConfigVar<std::string>::ptr email_token = 
+    sylar::Config::Lookup("server.email_service.token", std::string(), "the token of email service");
+
 
 UserSendCodeServlet::UserSendCodeServlet()
     :BlogServlet("UserSendCodeServlet") {
@@ -64,12 +77,12 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         }
         // 发送邮件
         std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");
-        auto mail = sylar::EMail::Create("17354303956@163.com", "ASVbGLfbcJSz7JAy"
+        auto mail = sylar::EMail::Create(email_addr->getValue(), email_token->getValue()
                 , title
                 , "验证码[" + code +"]"
-                , {email}, {}, {"17354303956@163.com"});
+                , {email}, {}, {email_addr->getValue()});
 
-        auto client = sylar::SmtpClient::Create("smtp.163.com", 25);
+        auto client = sylar::SmtpClient::Create(email_host->getValue(), email_port->getValue());
         if (!client) {
             ERROR(logger) << "connect email server fail";
             result->setResult(501, "connect email server fail");

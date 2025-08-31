@@ -1,5 +1,5 @@
 #include "article_category_rel_manager.h"
-#include "chen/log/log.h"
+#include <chen/log/log.h>
 #include "../util.h"
 
 namespace blog {

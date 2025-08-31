@@ -1,5 +1,5 @@
 #include "article_query_servlet.h"
-#include "chen/log/log.h"
+#include <chen/log/log.h>
 #include "../../manager/article_manager.h"
 
 namespace blog {
