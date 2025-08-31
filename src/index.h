@@ -24,7 +24,7 @@ enum class IndexType {
 	CAT_NAME = 4,
 	LABEL_NAME = 5,
 	STATE = 6,
-	YEAR_NAME = 7,
+	YEAR_MON = 7,
 	CHANNEL = 8,
 	WORD = 100
 };
