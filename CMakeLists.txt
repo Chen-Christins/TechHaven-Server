@@ -64,5 +64,7 @@ add_library(blog SHARED ${LIB_SRC})
 target_link_libraries(blog PRIVATE orm_data)
 force_redefine_file_macro_for_sources(blog)
 
+set_target_properties(main PROPERTIES OUTPUT_NAME "mblog")
+
 SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/module)
