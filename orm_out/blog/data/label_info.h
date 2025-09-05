@@ -51,20 +51,20 @@ private:
 class LabelInfoDao {
 public:
     typedef std::shared_ptr<LabelInfoDao> ptr;
-    static int Update(LabelInfo::ptr info, sylar::IDB::ptr conn);
-    static int Insert(LabelInfo::ptr info, sylar::IDB::ptr conn);
-    static int InsertOrUpdate(LabelInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(LabelInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn);
-    static int DeleteByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn);
-    static int QueryAll(std::vector<LabelInfo::ptr>& results, sylar::IDB::ptr conn);
-    static LabelInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
-    static int QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int64_t& user_id, sylar::IDB::ptr conn);
-    static LabelInfo::ptr QueryByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn);
-    static int CreateTableSQLite3(sylar::IDB::ptr info);
-    static int CreateTableMySQL(sylar::IDB::ptr info);
+    static int Update(LabelInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(LabelInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(LabelInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(LabelInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn);
+    static int DeleteByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<LabelInfo::ptr>& results, chen::IDB::ptr conn);
+    static LabelInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static int QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static LabelInfo::ptr QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

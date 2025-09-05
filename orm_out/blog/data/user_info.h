@@ -71,22 +71,22 @@ private:
 class UserInfoDao {
 public:
     typedef std::shared_ptr<UserInfoDao> ptr;
-    static int Update(UserInfo::ptr info, sylar::IDB::ptr conn);
-    static int Insert(UserInfo::ptr info, sylar::IDB::ptr conn);
-    static int InsertOrUpdate(UserInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(UserInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteByAccount( const std::string& account, sylar::IDB::ptr conn);
-    static int DeleteByEmail( const std::string& email, sylar::IDB::ptr conn);
-    static int DeleteByName( const std::string& name, sylar::IDB::ptr conn);
-    static int QueryAll(std::vector<UserInfo::ptr>& results, sylar::IDB::ptr conn);
-    static UserInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
-    static UserInfo::ptr QueryByAccount( const std::string& account, sylar::IDB::ptr conn);
-    static UserInfo::ptr QueryByEmail( const std::string& email, sylar::IDB::ptr conn);
-    static UserInfo::ptr QueryByName( const std::string& name, sylar::IDB::ptr conn);
-    static int CreateTableSQLite3(sylar::IDB::ptr info);
-    static int CreateTableMySQL(sylar::IDB::ptr info);
+    static int Update(UserInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(UserInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(UserInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByAccount( const std::string& account, chen::IDB::ptr conn);
+    static int DeleteByEmail( const std::string& email, chen::IDB::ptr conn);
+    static int DeleteByName( const std::string& name, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<UserInfo::ptr>& results, chen::IDB::ptr conn);
+    static UserInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static UserInfo::ptr QueryByAccount( const std::string& account, chen::IDB::ptr conn);
+    static UserInfo::ptr QueryByEmail( const std::string& email, chen::IDB::ptr conn);
+    static UserInfo::ptr QueryByName( const std::string& name, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

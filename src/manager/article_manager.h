@@ -60,11 +60,11 @@ private:
     std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
     /// 
     std::set<int64_t> m_updates;
-    sylar::Timer::ptr m_timer;
-    sylar::Timer::ptr m_updateTimer;
+    chen::Timer::ptr m_timer;
+    chen::Timer::ptr m_updateTimer;
 };
 
-typedef sylar::Singleton<ArticleManager> ArticleMgr;
+typedef chen::Singleton<ArticleManager> ArticleMgr;
 
 }
 

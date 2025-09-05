@@ -10,7 +10,7 @@
 
 namespace blog {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 struct ParamArgsInfo {
 	std::string name;
@@ -26,14 +26,14 @@ Index::Index()
 bool Index::set(uint64_t type, uint64_t key, uint32_t idx, bool v) {
 	auto b = m_indexs[type][key];
 	if (!b) {
-		b.reset(new sylar::ds::Bitmap(m_docs.size()));
+		b.reset(new chen::ds::Bitmap(m_docs.size()));
 		m_indexs[type][key] = b;
 	}
 	b->set(idx, v);
 	return true;
 }
 
-sylar::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
+chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
 	auto it = m_indexs.find(type);
 	if (it == m_indexs.end()) {
 		return nullptr;
@@ -68,7 +68,7 @@ void Index::build() {
 void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
 	set((uint64_t)IndexType::USER_ID, info->getUserId(), idx, true);
 	set((uint64_t)IndexType::STATE, info->getState(), idx, true);
-	set((uint64_t)IndexType::YEAR_MON, hash(sylar::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
+	set((uint64_t)IndexType::YEAR_MON, hash(chen::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
 	set((uint64_t)IndexType::CHANNEL, info->getChannel(), idx, true);
 
 	// TODO: 根据文章内容和文章标题建立索引
@@ -119,7 +119,7 @@ int32_t Index::property(std::map<uint64_t, std::map<uint64_t, uint64_t>>& props
 }
 
 uint64_t Index::StrHash(const std::string& str) {
-	return sylar::murmur3_hash64(sylar::ToLower(str).c_str());
+	return chen::murmur3_hash64(chen::ToLower(str).c_str());
 }
 
 std::string Index::toString() {
@@ -132,7 +132,7 @@ std::string Index::getStr(uint64_t id) {
 	return it == m_strings.end() ? "" : it->second;
 }
 
-sylar::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>& params) {
+chen::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>& params) {
 	// TODO: Index::query
 	return nullptr;
 }

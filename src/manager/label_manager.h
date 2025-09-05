@@ -21,7 +21,7 @@ private:
     std::unordered_map<int64_t, std::map<std::string, data::LabelInfo::ptr>> m_users;
 };
 
-typedef sylar::Singleton<LabelManager> LabelMgr;
+typedef chen::Singleton<LabelManager> LabelMgr;
 
 }
 

@@ -5,14 +5,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserInfoServlet::UserInfoServlet()
     :BlogServlet("UserInfoServlet") {
 }
 
-int32_t UserInfoServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         auto sdata = getSessionData(request, response);
         int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);

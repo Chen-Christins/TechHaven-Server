@@ -63,24 +63,24 @@ private:
 class EmailVerificationInfoDao {
 public:
     typedef std::shared_ptr<EmailVerificationInfoDao> ptr;
-    static int Update(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn);
-    static int Insert(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn);
-    static int InsertOrUpdate(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteByEmailCode( const std::string& email,  const std::string& code, sylar::IDB::ptr conn);
-    static int DeleteByEmailType( const std::string& email,  const int32_t& type, sylar::IDB::ptr conn);
-    static int DeleteByExpiresTime( const int64_t& expires_time, sylar::IDB::ptr conn);
-    static int DeleteByCreateTime( const int64_t& create_time, sylar::IDB::ptr conn);
-    static int QueryAll(std::vector<EmailVerificationInfo::ptr>& results, sylar::IDB::ptr conn);
-    static EmailVerificationInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
-    static int QueryByEmailCode(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& code, sylar::IDB::ptr conn);
-    static int QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, sylar::IDB::ptr conn);
-    static int QueryByExpiresTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& expires_time, sylar::IDB::ptr conn);
-    static int QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, sylar::IDB::ptr conn);
-    static int CreateTableSQLite3(sylar::IDB::ptr info);
-    static int CreateTableMySQL(sylar::IDB::ptr info);
+    static int Update(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByEmailCode( const std::string& email,  const std::string& code, chen::IDB::ptr conn);
+    static int DeleteByEmailType( const std::string& email,  const int32_t& type, chen::IDB::ptr conn);
+    static int DeleteByExpiresTime( const int64_t& expires_time, chen::IDB::ptr conn);
+    static int DeleteByCreateTime( const int64_t& create_time, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<EmailVerificationInfo::ptr>& results, chen::IDB::ptr conn);
+    static EmailVerificationInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static int QueryByEmailCode(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& code, chen::IDB::ptr conn);
+    static int QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, chen::IDB::ptr conn);
+    static int QueryByExpiresTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& expires_time, chen::IDB::ptr conn);
+    static int QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

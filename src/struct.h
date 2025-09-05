@@ -64,44 +64,44 @@ struct CookieKey {
     static const std::string EMAIL_LAST_TIME;
 };
 
-class BlogServlet: public sylar::http::Servlet {
+class BlogServlet: public chen::http::Servlet {
 public:
     BlogServlet(const std::string& name);
-    int32_t handle(sylar::http::HttpRequest::ptr request
-                ,sylar::http::HttpResponse::ptr response
-                ,sylar::http::HttpSession::ptr session) override;
+    int32_t handle(chen::http::HttpRequest::ptr request
+                ,chen::http::HttpResponse::ptr response
+                ,chen::http::HttpSession::ptr session) override;
 
-    int64_t getUserId(sylar::http::HttpRequest::ptr request);
+    int64_t getUserId(chen::http::HttpRequest::ptr request);
 protected:
-    virtual bool handlePre(sylar::http::HttpRequest::ptr request
-                           ,sylar::http::HttpResponse::ptr response
-                           ,sylar::http::HttpSession::ptr session
+    virtual bool handlePre(chen::http::HttpRequest::ptr request
+                           ,chen::http::HttpResponse::ptr response
+                           ,chen::http::HttpSession::ptr session
                            ,Result::ptr result);
-    virtual int32_t handle(sylar::http::HttpRequest::ptr request
-                           ,sylar::http::HttpResponse::ptr response
-                           ,sylar::http::HttpSession::ptr session
+    virtual int32_t handle(chen::http::HttpRequest::ptr request
+                           ,chen::http::HttpResponse::ptr response
+                           ,chen::http::HttpSession::ptr session
                            ,Result::ptr result) = 0;
-    virtual bool handlePost(sylar::http::HttpRequest::ptr request
-                           ,sylar::http::HttpResponse::ptr response
-                           ,sylar::http::HttpSession::ptr session
+    virtual bool handlePost(chen::http::HttpRequest::ptr request
+                           ,chen::http::HttpResponse::ptr response
+                           ,chen::http::HttpSession::ptr session
                            ,Result::ptr result);
 protected:
-    sylar::http::SessionData::ptr getSessionData(sylar::http::HttpRequest::ptr request
-                                                 ,sylar::http::HttpResponse::ptr response);
-    bool initLogin(sylar::http::HttpRequest::ptr request
-                   ,sylar::http::HttpResponse::ptr response
-                   ,sylar::http::HttpSession::ptr session);
+    chen::http::SessionData::ptr getSessionData(chen::http::HttpRequest::ptr request
+                                                 ,chen::http::HttpResponse::ptr response);
+    bool initLogin(chen::http::HttpRequest::ptr request
+                   ,chen::http::HttpResponse::ptr response
+                   ,chen::http::HttpSession::ptr session);
 protected:
-    sylar::IDB::ptr getDB();
+    chen::IDB::ptr getDB();
 };
 
 class BlogLoginedServlet : public BlogServlet {
 public:
     BlogLoginedServlet(const std::string& name);
 
-    bool handlePre(sylar::http::HttpRequest::ptr request
-                   ,sylar::http::HttpResponse::ptr response
-                   ,sylar::http::HttpSession::ptr session
+    bool handlePre(chen::http::HttpRequest::ptr request
+                   ,chen::http::HttpResponse::ptr response
+                   ,chen::http::HttpSession::ptr session
                    ,Result::ptr result) override;
 };
 

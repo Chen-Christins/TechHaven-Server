@@ -4,7 +4,7 @@
 namespace blog {
 namespace data {
 
-static sylar::Logger::ptr logger = LOG_NAME("orm");
+static chen::Logger::ptr logger = LOG_NAME("orm");
 
 EmailVerificationInfo::EmailVerificationInfo()
     :m_type()
@@ -25,11 +25,11 @@ std::string EmailVerificationInfo::toJsonString() const {
     v["code"] = m_code;
     v["type"] = m_type;
     v["state"] = m_state;
-    v["create_time"] = sylar::Time2Str(m_createTime);
-    v["expires_time"] = sylar::Time2Str(m_expiresTime);
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["expires_time"] = chen::Time2Str(m_expiresTime);
     v["client_ip"] = m_clientIp;
     v["user_agent"] = m_userAgent;
-    return sylar::JsonUtil::ToString(v);
+    return chen::JsonUtil::ToString(v);
 }
 
 void EmailVerificationInfo::setId(const int64_t& v) {
@@ -69,7 +69,7 @@ void EmailVerificationInfo::setUserAgent(const std::string& v) {
 }
 
 
-int EmailVerificationInfoDao::Update(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::Update(EmailVerificationInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "update email_verification set email = ?, code = ?, type = ?, state = ?, create_time = ?, expires_time = ?, client_ip = ?, user_agent = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -89,7 +89,7 @@ int EmailVerificationInfoDao::Update(EmailVerificationInfo::ptr info, sylar::IDB
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "insert into email_verification (email, code, type, state, create_time, expires_time, client_ip, user_agent) values (?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -112,7 +112,7 @@ int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, sylar::IDB
     return rt;
 }
 
-int EmailVerificationInfoDao::InsertOrUpdate(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::InsertOrUpdate(EmailVerificationInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
@@ -135,7 +135,7 @@ int EmailVerificationInfoDao::InsertOrUpdate(EmailVerificationInfo::ptr info, sy
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::Delete(EmailVerificationInfo::ptr info, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::Delete(EmailVerificationInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "delete from email_verification where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -147,7 +147,7 @@ int EmailVerificationInfoDao::Delete(EmailVerificationInfo::ptr info, sylar::IDB
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "delete from email_verification where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -159,7 +159,7 @@ int EmailVerificationInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr con
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::DeleteByEmailCode( const std::string& email,  const std::string& code, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::DeleteByEmailCode( const std::string& email,  const std::string& code, chen::IDB::ptr conn) {
     std::string sql = "delete from email_verification where email = ? and code = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -172,7 +172,7 @@ int EmailVerificationInfoDao::DeleteByEmailCode( const std::string& email,  cons
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  const int32_t& type, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  const int32_t& type, chen::IDB::ptr conn) {
     std::string sql = "delete from email_verification where email = ? and type = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -185,7 +185,7 @@ int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  cons
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::DeleteByExpiresTime( const int64_t& expires_time, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::DeleteByExpiresTime( const int64_t& expires_time, chen::IDB::ptr conn) {
     std::string sql = "delete from email_verification where expires_time = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -197,7 +197,7 @@ int EmailVerificationInfoDao::DeleteByExpiresTime( const int64_t& expires_time, 
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::DeleteByCreateTime( const int64_t& create_time, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::DeleteByCreateTime( const int64_t& create_time, chen::IDB::ptr conn) {
     std::string sql = "delete from email_verification where create_time = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -209,7 +209,7 @@ int EmailVerificationInfoDao::DeleteByCreateTime( const int64_t& create_time, sy
     return stmt->execute();
 }
 
-int EmailVerificationInfoDao::QueryAll(std::vector<EmailVerificationInfo::ptr>& results, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::QueryAll(std::vector<EmailVerificationInfo::ptr>& results, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -237,7 +237,7 @@ int EmailVerificationInfoDao::QueryAll(std::vector<EmailVerificationInfo::ptr>& 
     return 0;
 }
 
-EmailVerificationInfo::ptr EmailVerificationInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
+EmailVerificationInfo::ptr EmailVerificationInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -266,7 +266,7 @@ EmailVerificationInfo::ptr EmailVerificationInfoDao::Query( const int64_t& id, s
     return v;
 }
 
-int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& code, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& code, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where email = ? and code = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -296,7 +296,7 @@ int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo
     return 0;
 }
 
-int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where email = ? and type = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -326,7 +326,7 @@ int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo
     return 0;
 }
 
-int EmailVerificationInfoDao::QueryByExpiresTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& expires_time, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::QueryByExpiresTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& expires_time, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where expires_time = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -355,7 +355,7 @@ int EmailVerificationInfoDao::QueryByExpiresTime(std::vector<EmailVerificationIn
     return 0;
 }
 
-int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where create_time = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -384,7 +384,7 @@ int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInf
     return 0;
 }
 
-int EmailVerificationInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE email_verification("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "email TEXT NOT NULL DEFAULT '',"
@@ -402,7 +402,7 @@ int EmailVerificationInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             );
 }
 
-int EmailVerificationInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
+int EmailVerificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE email_verification("
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`email` varchar(128) NOT NULL DEFAULT '' COMMENT '用户邮箱地址',"

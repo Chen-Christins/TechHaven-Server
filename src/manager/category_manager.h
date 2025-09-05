@@ -22,7 +22,7 @@ private:
     std::unordered_map<int64_t, std::map<std::string, blog::data::CategoryInfo::ptr>> m_users;
 };
 
-typedef sylar::Singleton<CategoryManager> CategoryMgr;
+typedef chen::Singleton<CategoryManager> CategoryMgr;
 
 }
 

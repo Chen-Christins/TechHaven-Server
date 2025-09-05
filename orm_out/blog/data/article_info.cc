@@ -4,7 +4,7 @@
 namespace blog {
 namespace data {
 
-static sylar::Logger::ptr logger = LOG_NAME("orm");
+static chen::Logger::ptr logger = LOG_NAME("orm");
 
 ArticleInfo::ArticleInfo()
     :m_type()
@@ -34,14 +34,14 @@ std::string ArticleInfo::toJsonString() const {
     v["state"] = m_state;
     v["channel"] = std::to_string(m_channel);
     v["is_deleted"] = m_isDeleted;
-    v["publish_time"] = sylar::Time2Str(m_publishTime);
+    v["publish_time"] = chen::Time2Str(m_publishTime);
     v["weight"] = std::to_string(m_weight);
     v["views"] = std::to_string(m_views);
     v["praise"] = std::to_string(m_praise);
     v["favorites"] = std::to_string(m_favorites);
-    v["create_time"] = sylar::Time2Str(m_createTime);
-    v["update_time"] = sylar::Time2Str(m_updateTime);
-    return sylar::JsonUtil::ToString(v);
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
 }
 
 void ArticleInfo::setId(const int64_t& v) {
@@ -105,7 +105,7 @@ void ArticleInfo::setUpdateTime(const int64_t& v) {
 }
 
 
-int ArticleInfoDao::Update(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleInfoDao::Update(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "update article set user_id = ?, title = ?, content = ?, type = ?, state = ?, channel = ?, is_deleted = ?, publish_time = ?, weight = ?, views = ?, praise = ?, favorites = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -131,7 +131,7 @@ int ArticleInfoDao::Update(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int ArticleInfoDao::Insert(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleInfoDao::Insert(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "insert into article (user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -160,7 +160,7 @@ int ArticleInfoDao::Insert(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
     return rt;
 }
 
-int ArticleInfoDao::InsertOrUpdate(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleInfoDao::InsertOrUpdate(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
@@ -189,7 +189,7 @@ int ArticleInfoDao::InsertOrUpdate(ArticleInfo::ptr info, sylar::IDB::ptr conn) 
     return stmt->execute();
 }
 
-int ArticleInfoDao::Delete(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleInfoDao::Delete(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "delete from article where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -201,7 +201,7 @@ int ArticleInfoDao::Delete(ArticleInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int ArticleInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
+int ArticleInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "delete from article where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -213,7 +213,7 @@ int ArticleInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int ArticleInfoDao::DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn) {
+int ArticleInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "delete from article where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -225,7 +225,7 @@ int ArticleInfoDao::DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn
     return stmt->execute();
 }
 
-int ArticleInfoDao::QueryAll(std::vector<ArticleInfo::ptr>& results, sylar::IDB::ptr conn) {
+int ArticleInfoDao::QueryAll(std::vector<ArticleInfo::ptr>& results, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time from article";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -259,7 +259,7 @@ int ArticleInfoDao::QueryAll(std::vector<ArticleInfo::ptr>& results, sylar::IDB:
     return 0;
 }
 
-ArticleInfo::ptr ArticleInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
+ArticleInfo::ptr ArticleInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time from article where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -294,7 +294,7 @@ ArticleInfo::ptr ArticleInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn)
     return v;
 }
 
-int ArticleInfoDao::QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const int64_t& user_id, sylar::IDB::ptr conn) {
+int ArticleInfoDao::QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time from article where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -329,7 +329,7 @@ int ArticleInfoDao::QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const
     return 0;
 }
 
-int ArticleInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
+int ArticleInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE article("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
@@ -350,7 +350,7 @@ int ArticleInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             );
 }
 
-int ArticleInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
+int ArticleInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE article("
             "`id` bigint AUTO_INCREMENT COMMENT '文章id',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户id',"

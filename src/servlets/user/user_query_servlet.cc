@@ -7,22 +7,22 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserQueryServlet::UserQueryServlet()
     :BlogServlet("UserQueryServlet") {
 }
 
-int32_t UserQueryServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, user_ids, "user_ids");
 
-        auto ids = sylar::split(user_ids, ',');
+        auto ids = chen::split(user_ids, ',');
         std::vector<data::UserInfo::ptr> infos;
 
         for (auto& i : ids) {
-            data::UserInfo::ptr info = UserMgr::GetInstance()->get(sylar::TypeUtil::Atoi(i));
+            data::UserInfo::ptr info = UserMgr::GetInstance()->get(chen::TypeUtil::Atoi(i));
             if (info) {
                 infos.push_back(info);
             }
@@ -35,7 +35,7 @@ int32_t UserQueryServlet::handle(sylar::http::HttpRequest::ptr request, sylar::h
             result->jsondata.append(v);
         }
         INFO(logger) << "infos.size=" << infos.size()
-            << " - " << sylar::JsonUtil::ToString(result->jsondata);
+            << " - " << chen::JsonUtil::ToString(result->jsondata);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

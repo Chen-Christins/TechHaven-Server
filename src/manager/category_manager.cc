@@ -4,7 +4,7 @@
 
 namespace blog {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 bool CategoryManager::loadAll() {
     auto db = GetDB();

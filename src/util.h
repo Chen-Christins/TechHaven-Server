@@ -16,8 +16,8 @@ inline bool is_vaild_account(const std::string& str) {
     return std::regex_match(str, s_account_regex);
 }
 
-inline sylar::IDB::ptr GetDB() {
-    return sylar::SQLite3Mgr::GetInstance()->get("blog");
+inline chen::IDB::ptr GetDB() {
+    return chen::SQLite3Mgr::GetInstance()->get("blog");
 }
 
 inline void SendWX(const std::string& group, const std::string& msg) {

@@ -119,9 +119,9 @@ void Generator::gen_inc(const std::string& path) {
     ofs << "public:" << std::endl;
     ofs << "    typedef std::shared_ptr<" << class_name << "> ptr;" << std::endl;
     ofs << "    " << class_name << "();" << std::endl;
-    ofs << "    virtual int32_t handle(sylar::http::HttpRequest::ptr request" << std::endl;
-    ofs << "                    ,sylar::http::HttpResponse::ptr response" << std::endl;
-    ofs << "                    ,sylar::http::HttpSession::ptr session" << std::endl;
+    ofs << "    virtual int32_t handle(chen::http::HttpRequest::ptr request" << std::endl;
+    ofs << "                    ,chen::http::HttpResponse::ptr response" << std::endl;
+    ofs << "                    ,chen::http::HttpSession::ptr session" << std::endl;
     ofs << "                    ,Result::ptr result) override;" << std::endl;
     ofs << "};"  << std::endl;
     ofs << std::endl;
@@ -159,7 +159,7 @@ void Generator::gen_src(const std::string& path) {
         ofs << "namespace " << ns[i] << " {" << std::endl;
     }
     ofs << std::endl;
-    ofs << "static sylar::Logger::ptr logger = LOG_ROOT();" << std::endl;
+    ofs << "static chen::Logger::ptr logger = LOG_ROOT();" << std::endl;
     ofs << std::endl;
 
     std::string class_name = GetClassName(m_filename);
@@ -167,8 +167,8 @@ void Generator::gen_src(const std::string& path) {
     ofs << "    :BlogServlet(\"" << class_name << "\") {" << std::endl << "}" << std::endl;
     ofs << std::endl;
 
-    ofs << "int32_t " << class_name << "::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response" << std::endl;
-    ofs << "        ,sylar::http::HttpSession::ptr session, Result::ptr result) {" << std::endl;
+    ofs << "int32_t " << class_name << "::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response" << std::endl;
+    ofs << "        ,chen::http::HttpSession::ptr session, Result::ptr result) {" << std::endl;
     ofs << "    return 0;" << std::endl;
     ofs << "}" << std::endl;
     ofs << std::endl;

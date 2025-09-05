@@ -6,14 +6,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 LabelQueryServlet::LabelQueryServlet()
     :BlogLoginedServlet("LabelQueryServlet") {
 }
 
-int32_t LabelQueryServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		int64_t user_id = request->getParamAs<int64_t>("user_id");
 		std::string ids = request->getParam("ids");
@@ -26,9 +26,9 @@ int32_t LabelQueryServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
 		if (user_id) {
 			LabelMgr::GetInstance()->listByUserId(infos, user_id, true);
 		} else {
-			auto tmp = sylar::split(ids, ",");
+			auto tmp = chen::split(ids, ",");
 			for (auto& i : tmp) {
-				auto id = sylar::TypeUtil::Atoi(i);
+				auto id = chen::TypeUtil::Atoi(i);
 				if (id) {
 					auto info = LabelMgr::GetInstance()->get(id);
 					if (info) {

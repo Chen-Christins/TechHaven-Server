@@ -4,7 +4,7 @@
 namespace blog {
 namespace data {
 
-static sylar::Logger::ptr logger = LOG_NAME("orm");
+static chen::Logger::ptr logger = LOG_NAME("orm");
 
 CategoryInfo::CategoryInfo()
     :m_isDeleted()
@@ -23,9 +23,9 @@ std::string CategoryInfo::toJsonString() const {
     v["name"] = m_name;
     v["parent_id"] = std::to_string(m_parentId);
     v["is_deleted"] = m_isDeleted;
-    v["create_time"] = sylar::Time2Str(m_createTime);
-    v["update_time"] = sylar::Time2Str(m_updateTime);
-    return sylar::JsonUtil::ToString(v);
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
 }
 
 void CategoryInfo::setId(const int64_t& v) {
@@ -57,7 +57,7 @@ void CategoryInfo::setUpdateTime(const int64_t& v) {
 }
 
 
-int CategoryInfoDao::Update(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
+int CategoryInfoDao::Update(CategoryInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "update category set user_id = ?, name = ?, parent_id = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -75,7 +75,7 @@ int CategoryInfoDao::Update(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int CategoryInfoDao::Insert(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
+int CategoryInfoDao::Insert(CategoryInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "insert into category (user_id, name, parent_id, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -96,7 +96,7 @@ int CategoryInfoDao::Insert(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
     return rt;
 }
 
-int CategoryInfoDao::InsertOrUpdate(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
+int CategoryInfoDao::InsertOrUpdate(CategoryInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
@@ -117,7 +117,7 @@ int CategoryInfoDao::InsertOrUpdate(CategoryInfo::ptr info, sylar::IDB::ptr conn
     return stmt->execute();
 }
 
-int CategoryInfoDao::Delete(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
+int CategoryInfoDao::Delete(CategoryInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "delete from category where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -129,7 +129,7 @@ int CategoryInfoDao::Delete(CategoryInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int CategoryInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
+int CategoryInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "delete from category where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -141,7 +141,7 @@ int CategoryInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int CategoryInfoDao::DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn) {
+int CategoryInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "delete from category where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -153,7 +153,7 @@ int CategoryInfoDao::DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr con
     return stmt->execute();
 }
 
-int CategoryInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn) {
+int CategoryInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "delete from category where user_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -166,7 +166,7 @@ int CategoryInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::str
     return stmt->execute();
 }
 
-int CategoryInfoDao::QueryAll(std::vector<CategoryInfo::ptr>& results, sylar::IDB::ptr conn) {
+int CategoryInfoDao::QueryAll(std::vector<CategoryInfo::ptr>& results, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -192,7 +192,7 @@ int CategoryInfoDao::QueryAll(std::vector<CategoryInfo::ptr>& results, sylar::ID
     return 0;
 }
 
-CategoryInfo::ptr CategoryInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
+CategoryInfo::ptr CategoryInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -219,7 +219,7 @@ CategoryInfo::ptr CategoryInfoDao::Query( const int64_t& id, sylar::IDB::ptr con
     return v;
 }
 
-int CategoryInfoDao::QueryByUserId(std::vector<CategoryInfo::ptr>& results,  const int64_t& user_id, sylar::IDB::ptr conn) {
+int CategoryInfoDao::QueryByUserId(std::vector<CategoryInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -246,7 +246,7 @@ int CategoryInfoDao::QueryByUserId(std::vector<CategoryInfo::ptr>& results,  con
     return 0;
 }
 
-CategoryInfo::ptr CategoryInfoDao::QueryByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn) {
+CategoryInfo::ptr CategoryInfoDao::QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category where user_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -274,7 +274,7 @@ CategoryInfo::ptr CategoryInfoDao::QueryByUserIdName( const int64_t& user_id,  c
     return v;
 }
 
-int CategoryInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
+int CategoryInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE category("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
@@ -288,7 +288,7 @@ int CategoryInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             );
 }
 
-int CategoryInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
+int CategoryInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE category("
             "`id` bigint AUTO_INCREMENT,"
             "`user_id` bigint NOT NULL DEFAULT 0,"

@@ -6,7 +6,7 @@
 
 namespace blog {
 
-static sylar::Logger::ptr logger = LOG_NAME("access");
+static chen::Logger::ptr logger = LOG_NAME("access");
 
 const std::string CookieKey::SESSION_KEY = "SESSIONID";
 const std::string CookieKey::USER_ID = "S_UID";
@@ -15,8 +15,8 @@ const std::string CookieKey::TOKEN_TIME = "S_TOKEN_TIME";
 const std::string CookieKey::IS_AUTH = "IS_AUTH";
 const std::string CookieKey::EMAIL_LAST_TIME = "EMAIL_LAST_TIME";
 
-std::string GetRemoteIP(sylar::http::HttpRequest::ptr request
-                        ,sylar::http::HttpSession::ptr session) {
+std::string GetRemoteIP(chen::http::HttpRequest::ptr request
+                        ,chen::http::HttpSession::ptr session) {
     auto rt = request->getHeader("X-Real-IP");
     if (!rt.empty()) {
         return rt;
@@ -28,7 +28,7 @@ std::string GetRemoteIP(sylar::http::HttpRequest::ptr request
 
 Result::Result(int32_t c, const std::string& m)
     :code(c)
-    ,used(sylar::GetCurrentUs())
+    ,used(chen::GetCurrentUs())
     ,msg(m) {
 }
 
@@ -41,7 +41,7 @@ std::string Result::toJsonString() const {
     Json::Value v;
     v["code"] = std::to_string(code);
     v["msg"] = msg;
-    v["used"] = ((sylar::GetCurrentUs() - used) / 1000.0);
+    v["used"] = ((chen::GetCurrentUs() - used) / 1000.0);
     if (!jsondata.isNull()) {
         v["data"] = jsondata;
     } else {
@@ -52,16 +52,16 @@ std::string Result::toJsonString() const {
         //     }
         // }
     }
-    return sylar::JsonUtil::ToString(v);
+    return chen::JsonUtil::ToString(v);
 }
 
 BlogServlet::BlogServlet(const std::string& name)
-    :sylar::http::Servlet(name) {
+    :chen::http::Servlet(name) {
 }
 
-int32_t BlogServlet::handle(sylar::http::HttpRequest::ptr request
-        ,sylar::http::HttpResponse::ptr response, sylar::http::HttpSession::ptr session) {
-    uint64_t ts = sylar::GetCurrentUs();
+int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request
+        ,chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
+    uint64_t ts = chen::GetCurrentUs();
     Result::ptr result = std::make_shared<Result>();
     response->setHeader("Access-Control-Allow-Origin", "*");
     response->setHeader("Access-Control-Allow-Credentials", "true");
@@ -70,27 +70,27 @@ int32_t BlogServlet::handle(sylar::http::HttpRequest::ptr request
     } else {
         response->setBody(result->toJsonString());
     }
-    uint64_t used = sylar::GetCurrentUs() - ts;
+    uint64_t used = chen::GetCurrentUs() - ts;
     handlePost(request, response, session, result);
     response->setHeader("used", std::to_string((used * 1.0 / 1000)) + "ms");
     return 0;
 }
 
-bool BlogServlet::handlePre(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+bool BlogServlet::handlePre(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     if (request->getPath() != "/user/login" && request->getPath() != "/user/logout") {
         initLogin(request, response, session);
     }
-    if (request->getMethod() != sylar::http::HttpMethod::GET
-            && request->getMethod() != sylar::http::HttpMethod::POST) {
+    if (request->getMethod() != chen::http::HttpMethod::GET
+            && request->getMethod() != chen::http::HttpMethod::POST) {
         result->setResult(300, "invalid method");
         return false;
     }
     return true;
 }
 
-bool BlogServlet::handlePost(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+bool BlogServlet::handlePost(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     INFO(logger)
         << GetRemoteIP(request, session) << "\t"
         << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
@@ -101,25 +101,25 @@ bool BlogServlet::handlePost(sylar::http::HttpRequest::ptr request, sylar::http:
     return true;
 }
 
-sylar::http::SessionData::ptr BlogServlet::getSessionData(sylar::http::HttpRequest::ptr request
-        ,sylar::http::HttpResponse::ptr response) {
+chen::http::SessionData::ptr BlogServlet::getSessionData(chen::http::HttpRequest::ptr request
+        ,chen::http::HttpResponse::ptr response) {
     std::string sid = request->getCookie(CookieKey::SESSION_KEY);
     if (!sid.empty()) {
-        auto data = sylar::http::SessionDataMgr::GetInstance()->get(sid);
+        auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
         if (data) {
             return data;
         }
     }
     // 没有就创建一个会话
-    sylar::http::SessionData::ptr data(new sylar::http::SessionData(true));
-    sylar::http::SessionDataMgr::GetInstance()->add(data);
+    chen::http::SessionData::ptr data(new chen::http::SessionData(true));
+    chen::http::SessionDataMgr::GetInstance()->add(data);
     response->setCookie(CookieKey::SESSION_KEY, data->getId(), 0, "/");
     request->setCookie(CookieKey::SESSION_KEY, data->getId());
     return data;
 }
 
-bool BlogServlet::initLogin(sylar::http::HttpRequest::ptr request
-        ,sylar::http::HttpResponse::ptr response, sylar::http::HttpSession::ptr session) {
+bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
+        ,chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
     auto data = getSessionData(request, response);
     int64_t uid = data->getData<int64_t>(CookieKey::USER_ID);
     if (uid) {
@@ -182,7 +182,7 @@ bool BlogServlet::initLogin(sylar::http::HttpRequest::ptr request
     return is_login;
 }
 
-sylar::IDB::ptr BlogServlet::getDB() {
+chen::IDB::ptr BlogServlet::getDB() {
     return GetDB();
 }
 
@@ -190,26 +190,26 @@ BlogLoginedServlet::BlogLoginedServlet(const std::string& name)
     :BlogServlet(name) {
 }
 
-bool BlogLoginedServlet::handlePre(sylar::http::HttpRequest::ptr request
-        ,sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session
+bool BlogLoginedServlet::handlePre(chen::http::HttpRequest::ptr request
+        ,chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session
         ,Result::ptr result) {
     if (!initLogin(request, response, session)) {
         result->setResult(410, "not login");
         return false;
     }
-    if (request->getMethod() != sylar::http::HttpMethod::GET 
-            && request->getMethod() != sylar::http::HttpMethod::POST) {
+    if (request->getMethod() != chen::http::HttpMethod::GET 
+            && request->getMethod() != chen::http::HttpMethod::POST) {
         result->setResult(300, "invalid method");
         return false;
     }
     return true;
 }
 
-int64_t BlogServlet::getUserId(sylar::http::HttpRequest::ptr request) {
+int64_t BlogServlet::getUserId(chen::http::HttpRequest::ptr request) {
     std::string sid = request->getCookie(CookieKey::SESSION_KEY);
     if (!sid.empty()) {
-        auto data = sylar::http::SessionDataMgr::GetInstance()->get(sid);
+        auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
         if (data) {
             return data->getData<int64_t>(CookieKey::USER_ID);
         }

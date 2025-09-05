@@ -55,20 +55,20 @@ private:
 class ArticleCategoryRelInfoDao {
 public:
     typedef std::shared_ptr<ArticleCategoryRelInfoDao> ptr;
-    static int Update(ArticleCategoryRelInfo::ptr info, sylar::IDB::ptr conn);
-    static int Insert(ArticleCategoryRelInfo::ptr info, sylar::IDB::ptr conn);
-    static int InsertOrUpdate(ArticleCategoryRelInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(ArticleCategoryRelInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteByArticleId( const int64_t& article_id, sylar::IDB::ptr conn);
-    static int DeleteByArticleIdCategoryId( const int64_t& article_id,  const int64_t& category_id, sylar::IDB::ptr conn);
-    static int QueryAll(std::vector<ArticleCategoryRelInfo::ptr>& results, sylar::IDB::ptr conn);
-    static ArticleCategoryRelInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
-    static int QueryByArticleId(std::vector<ArticleCategoryRelInfo::ptr>& results,  const int64_t& article_id, sylar::IDB::ptr conn);
-    static ArticleCategoryRelInfo::ptr QueryByArticleIdCategoryId( const int64_t& article_id,  const int64_t& category_id, sylar::IDB::ptr conn);
-    static int CreateTableSQLite3(sylar::IDB::ptr info);
-    static int CreateTableMySQL(sylar::IDB::ptr info);
+    static int Update(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByArticleId( const int64_t& article_id, chen::IDB::ptr conn);
+    static int DeleteByArticleIdCategoryId( const int64_t& article_id,  const int64_t& category_id, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<ArticleCategoryRelInfo::ptr>& results, chen::IDB::ptr conn);
+    static ArticleCategoryRelInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static int QueryByArticleId(std::vector<ArticleCategoryRelInfo::ptr>& results,  const int64_t& article_id, chen::IDB::ptr conn);
+    static ArticleCategoryRelInfo::ptr QueryByArticleIdCategoryId( const int64_t& article_id,  const int64_t& category_id, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

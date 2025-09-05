@@ -55,20 +55,20 @@ private:
 class CategoryInfoDao {
 public:
     typedef std::shared_ptr<CategoryInfoDao> ptr;
-    static int Update(CategoryInfo::ptr info, sylar::IDB::ptr conn);
-    static int Insert(CategoryInfo::ptr info, sylar::IDB::ptr conn);
-    static int InsertOrUpdate(CategoryInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(CategoryInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn);
-    static int DeleteByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn);
-    static int QueryAll(std::vector<CategoryInfo::ptr>& results, sylar::IDB::ptr conn);
-    static CategoryInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
-    static int QueryByUserId(std::vector<CategoryInfo::ptr>& results,  const int64_t& user_id, sylar::IDB::ptr conn);
-    static CategoryInfo::ptr QueryByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn);
-    static int CreateTableSQLite3(sylar::IDB::ptr info);
-    static int CreateTableMySQL(sylar::IDB::ptr info);
+    static int Update(CategoryInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(CategoryInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(CategoryInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(CategoryInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn);
+    static int DeleteByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<CategoryInfo::ptr>& results, chen::IDB::ptr conn);
+    static CategoryInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static int QueryByUserId(std::vector<CategoryInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static CategoryInfo::ptr QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

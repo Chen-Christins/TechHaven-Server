@@ -87,18 +87,18 @@ private:
 class ArticleInfoDao {
 public:
     typedef std::shared_ptr<ArticleInfoDao> ptr;
-    static int Update(ArticleInfo::ptr info, sylar::IDB::ptr conn);
-    static int Insert(ArticleInfo::ptr info, sylar::IDB::ptr conn);
-    static int InsertOrUpdate(ArticleInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(ArticleInfo::ptr info, sylar::IDB::ptr conn);
-    static int Delete(const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteById( const int64_t& id, sylar::IDB::ptr conn);
-    static int DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn);
-    static int QueryAll(std::vector<ArticleInfo::ptr>& results, sylar::IDB::ptr conn);
-    static ArticleInfo::ptr Query( const int64_t& id, sylar::IDB::ptr conn);
-    static int QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const int64_t& user_id, sylar::IDB::ptr conn);
-    static int CreateTableSQLite3(sylar::IDB::ptr info);
-    static int CreateTableMySQL(sylar::IDB::ptr info);
+    static int Update(ArticleInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(ArticleInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(ArticleInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(ArticleInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<ArticleInfo::ptr>& results, chen::IDB::ptr conn);
+    static ArticleInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static int QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data
