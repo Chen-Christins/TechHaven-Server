@@ -10,6 +10,7 @@
 # ------------------------------
 # 定义源目录（bin）和目标打包目录
 SOURCE_DIR="bin"
+APP_NAME='mblog'
 TEMP_DIR="deploy_package_$(date +%Y%m%d%H%M%S)"  # 临时目录名含时间戳防冲突
 
 # 检查源目录是否存在
@@ -55,7 +56,7 @@ rm -rf "$TEMP_DIR"
 echo "临时目录 $TEMP_DIR 已清理"
 
 # ------------------------------
-# 5. SCP 自动化部署（可选）
+# 5. SCP 自动化部署
 # ------------------------------
 if [ $# -eq 4 ]; then
     REMOTE_IP="$1"
@@ -101,10 +102,29 @@ EOF
         }
         expect "#*" 
 		send "cd $REMOTE_PATH\r" 
+
+		# 查找并停止之前运行的程序
+        send "echo '查找并停止原有 $APP_NAME 进程...'\r"
+        send "PID=\$(pgrep $APP_NAME)\r"
+        send "if [ -n \"\$PID\" ]; then\r"
+        send "  echo '发现运行中的进程，PID: \$PID，正在停止...'\r"
+        send "  kill \$PID\r"
+        send "  # 等待进程终止"
+        send "  sleep 2\r"
+        send "  # 检查是否还有残留进程，如果有则强制终止"
+        send "  PID=\$(pgrep $APP_NAME)\r"
+        send "  if [ -n \"\$PID\" ]; then\r"
+        send "    echo '进程未正常终止，尝试强制终止...'\r"
+        send "    kill -9 \$PID\r"
+        send "  fi\r"
+        send "else\r"
+        send "  echo '未发现运行中的 $APP_NAME 进程'\r"
+        send "fi\r"
+
 		send "tar -xzf $PACKAGE_NAME\r" 
 		send "cd $TEMP_DIR\r" 
 		send "export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH\r" 
-		send "nohup ./mblog -s > blog.log 2>&1 &\r" 
+		send "nohup ./$APP_NAME -s > blog.log 2>&1 &\r" 
 		expect eof
         catch wait result
         exit [lindex \$result 3]
