@@ -10,26 +10,26 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
-static sylar::ConfigVar<std::string>::ptr email_host = 
-    sylar::Config::Lookup("server.email_service.host", std::string(), "the token of email service");
+static chen::Logger::ptr logger = LOG_ROOT();
+static chen::ConfigVar<std::string>::ptr email_host = 
+    chen::Config::Lookup("server.email_service.host", std::string(), "the token of email service");
 
-static sylar::ConfigVar<uint32_t>::ptr email_port = 
-    sylar::Config::Lookup("server.email_service.port", uint32_t(25), "the port of email service");
+static chen::ConfigVar<uint32_t>::ptr email_port = 
+    chen::Config::Lookup("server.email_service.port", uint32_t(25), "the port of email service");
 
-static sylar::ConfigVar<std::string>::ptr email_addr = 
-    sylar::Config::Lookup("server.email_service.address", std::string(), "the address of email service");
+static chen::ConfigVar<std::string>::ptr email_addr = 
+    chen::Config::Lookup("server.email_service.address", std::string(), "the address of email service");
 
-static sylar::ConfigVar<std::string>::ptr email_token = 
-    sylar::Config::Lookup("server.email_service.token", std::string(), "the token of email service");
+static chen::ConfigVar<std::string>::ptr email_token = 
+    chen::Config::Lookup("server.email_service.token", std::string(), "the token of email service");
 
 
 UserSendCodeServlet::UserSendCodeServlet()
     :BlogServlet("UserSendCodeServlet") {
 }
 
-int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, email, "email");
         DEFINE_AND_CHECK_STRING(result, type, "type");
@@ -57,9 +57,9 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         }
 
         // 开启事务
-        sylar::ITransaction::ptr trans = db->openTransaction();
+        chen::ITransaction::ptr trans = db->openTransaction();
         // 生成验证码和连接端(对端)ip
-        std::string code = sylar::random_string(8);
+        std::string code = chen::random_string(8);
         std::string ipaddr = session->getRemoteAddressString();
         // 设置插入信息
         data::EmailVerificationInfo::ptr info(new data::EmailVerificationInfo);
@@ -77,12 +77,12 @@ int32_t UserSendCodeServlet::handle(sylar::http::HttpRequest::ptr request, sylar
         }
         // 发送邮件
         std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");
-        auto mail = sylar::EMail::Create(email_addr->getValue(), email_token->getValue()
+        auto mail = chen::EMail::Create(email_addr->getValue(), email_token->getValue()
                 , title
                 , "验证码[" + code +"]"
                 , {email}, {}, {email_addr->getValue()});
 
-        auto client = sylar::SmtpClient::Create(email_host->getValue(), email_port->getValue(), true);
+        auto client = chen::SmtpClient::Create(email_host->getValue(), email_port->getValue(), true);
         if (!client) {
             ERROR(logger) << "connect email server fail";
             result->setResult(501, "connect email server fail");

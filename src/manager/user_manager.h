@@ -28,7 +28,7 @@ private:
     std::shared_mutex m_mutex;
 };
 
-typedef sylar::Singleton<UserManager> UserMgr;
+typedef chen::Singleton<UserManager> UserMgr;
 
 }
 

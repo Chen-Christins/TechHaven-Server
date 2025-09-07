@@ -8,14 +8,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleUpdateCategoryServlet::ArticleUpdateCategoryServlet()
     :BlogLoginedServlet("ArticleUpdateCategoryServlet") {
 }
 
-int32_t ArticleUpdateCategoryServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
 		std::string adds = request->getParam("add_category_ids");
@@ -39,7 +39,7 @@ int32_t ArticleUpdateCategoryServlet::handle(sylar::http::HttpRequest::ptr reque
 
 		std::vector<std::string> tmps;
 		if (!adds.empty()) {
-			tmps = sylar::split(adds, ',');
+			tmps = chen::split(adds, ',');
 		}
 		
 		auto db = getDB();
@@ -60,7 +60,7 @@ int32_t ArticleUpdateCategoryServlet::handle(sylar::http::HttpRequest::ptr reque
 		std::vector<data::ArticleCategoryRelInfo::ptr> update_del_infos;
 
 		for (auto& i : tmps) {
-			int64_t cid = sylar::TypeUtil::Atoi(i);
+			int64_t cid = chen::TypeUtil::Atoi(i);
 			auto cinfo = CategoryMgr::GetInstance()->get(cid);
 			if (!cinfo) {
 				continue;
@@ -93,10 +93,10 @@ int32_t ArticleUpdateCategoryServlet::handle(sylar::http::HttpRequest::ptr reque
 		}
 		tmps.clear();
 		if (!dels.empty()) {
-			tmps = sylar::split(dels, ',');
+			tmps = chen::split(dels, ',');
 		}
 		for (auto& i : tmps) {
-			int64_t cid = sylar::TypeUtil::Atoi(i);
+			int64_t cid = chen::TypeUtil::Atoi(i);
 			auto cinfo = CategoryMgr::GetInstance()->get(cid);
 			if (!cinfo) {
 				continue;

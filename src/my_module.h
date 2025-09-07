@@ -12,7 +12,7 @@
 
 namespace blog {
 
-class MyModule : public sylar::Module {
+class MyModule : public chen::Module {
 public:
     typedef std::shared_ptr<MyModule> ptr;
     MyModule();

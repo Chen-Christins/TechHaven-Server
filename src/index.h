@@ -34,7 +34,7 @@ public:
 	typedef std::shared_ptr<Index> ptr;
 	Index();
 	bool set(uint64_t type, uint64_t key, uint32_t idx, bool v);
-	sylar::ds::Bitmap::ptr get(uint64_t type, uint64_t key);
+	chen::ds::Bitmap::ptr get(uint64_t type, uint64_t key);
 	void build();
 
 	void buildIdx(data::ArticleInfo::ptr info, uint32_t idx);
@@ -51,7 +51,7 @@ public:
 	std::string toString();
 	std::string getStr(uint64_t id);
 private:
-	sylar::ds::Bitmap::ptr query(const std::map<uint64_t, std::set<uint64_t>>& params);
+	chen::ds::Bitmap::ptr query(const std::map<uint64_t, std::set<uint64_t>>& params);
 	uint64_t hash(const std::string& str, bool save);
 
 	void buildWordIdx(const std::string& str, uint32_t idx);
@@ -59,7 +59,7 @@ private:
 	uint64_t m_createTime;
 	uint64_t m_endTime;
 	std::vector<uint64_t> m_docs;
-	std::map<uint64_t, std::map<uint64_t, sylar::ds::Bitmap::ptr>> m_indexs;
+	std::map<uint64_t, std::map<uint64_t, chen::ds::Bitmap::ptr>> m_indexs;
 	std::unordered_map<uint64_t, std::string> m_strings;
 };
 

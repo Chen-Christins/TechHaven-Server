@@ -4,7 +4,7 @@
 
 namespace blog {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 bool UserManager::loadAll() {
     auto db = GetDB();
@@ -63,7 +63,7 @@ std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us) {
        << "|" << info->getEmail()
        << "|" << info->getPasswd()
        << "|" << us;
-    return sylar::md5(ss.str()); 
+    return chen::md5(ss.str()); 
 }
 
 #define XX(map, key)                                   \

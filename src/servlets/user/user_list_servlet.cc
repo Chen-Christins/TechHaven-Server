@@ -5,14 +5,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserListServlet::UserListServlet()
     :BlogLoginedServlet("UserListServlet") {
 }
 
-int32_t UserListServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		int64_t uid = getUserId(request);
 		auto role = UserMgr::GetInstance()->get(uid)->getRole();

@@ -7,20 +7,20 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleDeleteServlet::ArticleDeleteServlet()
     :BlogLoginedServlet("ArticleDeleteServlet") {
 }
 
-int32_t ArticleDeleteServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> art_ids;
-        auto tmp = sylar::split(ids, ',');
+        auto tmp = chen::split(ids, ',');
         for (auto& i : tmp) {
-            art_ids.insert(sylar::TypeUtil::Atoi(i));
+            art_ids.insert(chen::TypeUtil::Atoi(i));
         }
         int64_t uid = getUserId(request);
         if (!uid) {

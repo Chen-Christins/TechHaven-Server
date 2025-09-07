@@ -4,7 +4,7 @@
 namespace blog {
 namespace data {
 
-static sylar::Logger::ptr logger = LOG_NAME("orm");
+static chen::Logger::ptr logger = LOG_NAME("orm");
 
 ArticleLabelRelInfo::ArticleLabelRelInfo()
     :m_isDeleted()
@@ -21,9 +21,9 @@ std::string ArticleLabelRelInfo::toJsonString() const {
     v["article_id"] = std::to_string(m_articleId);
     v["label_id"] = std::to_string(m_labelId);
     v["is_deleted"] = m_isDeleted;
-    v["create_time"] = sylar::Time2Str(m_createTime);
-    v["update_time"] = sylar::Time2Str(m_updateTime);
-    return sylar::JsonUtil::ToString(v);
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
 }
 
 void ArticleLabelRelInfo::setId(const int64_t& v) {
@@ -51,7 +51,7 @@ void ArticleLabelRelInfo::setUpdateTime(const int64_t& v) {
 }
 
 
-int ArticleLabelRelInfoDao::Update(ArticleLabelRelInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::Update(ArticleLabelRelInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "update article_label_rel set article_id = ?, label_id = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -68,7 +68,7 @@ int ArticleLabelRelInfoDao::Update(ArticleLabelRelInfo::ptr info, sylar::IDB::pt
     return stmt->execute();
 }
 
-int ArticleLabelRelInfoDao::Insert(ArticleLabelRelInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::Insert(ArticleLabelRelInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "insert into article_label_rel (article_id, label_id, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -88,7 +88,7 @@ int ArticleLabelRelInfoDao::Insert(ArticleLabelRelInfo::ptr info, sylar::IDB::pt
     return rt;
 }
 
-int ArticleLabelRelInfoDao::InsertOrUpdate(ArticleLabelRelInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::InsertOrUpdate(ArticleLabelRelInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
@@ -108,7 +108,7 @@ int ArticleLabelRelInfoDao::InsertOrUpdate(ArticleLabelRelInfo::ptr info, sylar:
     return stmt->execute();
 }
 
-int ArticleLabelRelInfoDao::Delete(ArticleLabelRelInfo::ptr info, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::Delete(ArticleLabelRelInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "delete from article_label_rel where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -120,7 +120,7 @@ int ArticleLabelRelInfoDao::Delete(ArticleLabelRelInfo::ptr info, sylar::IDB::pt
     return stmt->execute();
 }
 
-int ArticleLabelRelInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "delete from article_label_rel where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -132,7 +132,7 @@ int ArticleLabelRelInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn)
     return stmt->execute();
 }
 
-int ArticleLabelRelInfoDao::DeleteByArticleId( const int64_t& article_id, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::DeleteByArticleId( const int64_t& article_id, chen::IDB::ptr conn) {
     std::string sql = "delete from article_label_rel where article_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -144,7 +144,7 @@ int ArticleLabelRelInfoDao::DeleteByArticleId( const int64_t& article_id, sylar:
     return stmt->execute();
 }
 
-int ArticleLabelRelInfoDao::DeleteByArticleIdLabelId( const int64_t& article_id,  const int64_t& label_id, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::DeleteByArticleIdLabelId( const int64_t& article_id,  const int64_t& label_id, chen::IDB::ptr conn) {
     std::string sql = "delete from article_label_rel where article_id = ? and label_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -157,7 +157,7 @@ int ArticleLabelRelInfoDao::DeleteByArticleIdLabelId( const int64_t& article_id,
     return stmt->execute();
 }
 
-int ArticleLabelRelInfoDao::QueryAll(std::vector<ArticleLabelRelInfo::ptr>& results, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::QueryAll(std::vector<ArticleLabelRelInfo::ptr>& results, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, label_id, is_deleted, create_time, update_time from article_label_rel";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -182,7 +182,7 @@ int ArticleLabelRelInfoDao::QueryAll(std::vector<ArticleLabelRelInfo::ptr>& resu
     return 0;
 }
 
-ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
+ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, label_id, is_deleted, create_time, update_time from article_label_rel where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -208,7 +208,7 @@ ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::Query( const int64_t& id, sylar
     return v;
 }
 
-int ArticleLabelRelInfoDao::QueryByArticleId(std::vector<ArticleLabelRelInfo::ptr>& results,  const int64_t& article_id, sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::QueryByArticleId(std::vector<ArticleLabelRelInfo::ptr>& results,  const int64_t& article_id, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, label_id, is_deleted, create_time, update_time from article_label_rel where article_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -234,7 +234,7 @@ int ArticleLabelRelInfoDao::QueryByArticleId(std::vector<ArticleLabelRelInfo::pt
     return 0;
 }
 
-ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::QueryByArticleIdLabelId( const int64_t& article_id,  const int64_t& label_id, sylar::IDB::ptr conn) {
+ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::QueryByArticleIdLabelId( const int64_t& article_id,  const int64_t& label_id, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, label_id, is_deleted, create_time, update_time from article_label_rel where article_id = ? and label_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -261,7 +261,7 @@ ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::QueryByArticleIdLabelId( const 
     return v;
 }
 
-int ArticleLabelRelInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE article_label_rel("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "article_id INTEGER NOT NULL DEFAULT 0,"
@@ -274,7 +274,7 @@ int ArticleLabelRelInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             );
 }
 
-int ArticleLabelRelInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
+int ArticleLabelRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE article_label_rel("
             "`id` bigint AUTO_INCREMENT,"
             "`article_id` bigint NOT NULL DEFAULT 0,"

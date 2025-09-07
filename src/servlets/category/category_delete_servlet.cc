@@ -8,7 +8,7 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryDeleteServlet::CategoryDeleteServlet()
     :BlogLoginedServlet("CategoryDeleteServlet") {
@@ -32,14 +32,14 @@ void get_delete_values(std::map<int64_t, std::map<int64_t, data::CategoryInfo::p
     }
 }
 
-int32_t CategoryDeleteServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		DEFINE_AND_CHECK_STRING(result, ids, "ids");
 		std::set<int64_t> cat_ids;
-		auto tmp = sylar::split(ids, ",");
+		auto tmp = chen::split(ids, ",");
 		for (auto& i : tmp) {
-			cat_ids.insert(sylar::TypeUtil::Atoi(i));
+			cat_ids.insert(chen::TypeUtil::Atoi(i));
 		}
 
 		int64_t uid = getUserId(request);

@@ -21,7 +21,7 @@ private:
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleCategoryRelInfo::ptr>> m_articles;
 };
 
-typedef sylar::Singleton<ArticleCategoryRelManager> ArticleCategoryRelMgr;
+typedef chen::Singleton<ArticleCategoryRelManager> ArticleCategoryRelMgr;
 
 }
 

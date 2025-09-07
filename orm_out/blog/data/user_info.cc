@@ -4,7 +4,7 @@
 namespace blog {
 namespace data {
 
-static sylar::Logger::ptr logger = LOG_NAME("orm");
+static chen::Logger::ptr logger = LOG_NAME("orm");
 
 UserInfo::UserInfo()
     :m_state()
@@ -29,11 +29,11 @@ std::string UserInfo::toJsonString() const {
     v["name"] = m_name;
     v["role"] = m_role;
     v["state"] = m_state;
-    v["login_time"] = sylar::Time2Str(m_loginTime);
+    v["login_time"] = chen::Time2Str(m_loginTime);
     v["is_deleted"] = m_isDeleted;
-    v["create_time"] = sylar::Time2Str(m_createTime);
-    v["update_time"] = sylar::Time2Str(m_updateTime);
-    return sylar::JsonUtil::ToString(v);
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
 }
 
 void UserInfo::setId(const int64_t& v) {
@@ -81,7 +81,7 @@ void UserInfo::setUpdateTime(const int64_t& v) {
 }
 
 
-int UserInfoDao::Update(UserInfo::ptr info, sylar::IDB::ptr conn) {
+int UserInfoDao::Update(UserInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "update user set account = ?, email = ?, passwd = ?, name = ?, role = ?, state = ?, login_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -103,7 +103,7 @@ int UserInfoDao::Update(UserInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int UserInfoDao::Insert(UserInfo::ptr info, sylar::IDB::ptr conn) {
+int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "insert into user (account, email, passwd, name, role, state, login_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -128,7 +128,7 @@ int UserInfoDao::Insert(UserInfo::ptr info, sylar::IDB::ptr conn) {
     return rt;
 }
 
-int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, sylar::IDB::ptr conn) {
+int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
@@ -153,7 +153,7 @@ int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int UserInfoDao::Delete(UserInfo::ptr info, sylar::IDB::ptr conn) {
+int UserInfoDao::Delete(UserInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "delete from user where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -165,7 +165,7 @@ int UserInfoDao::Delete(UserInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int UserInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
+int UserInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "delete from user where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -177,7 +177,7 @@ int UserInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int UserInfoDao::DeleteByAccount( const std::string& account, sylar::IDB::ptr conn) {
+int UserInfoDao::DeleteByAccount( const std::string& account, chen::IDB::ptr conn) {
     std::string sql = "delete from user where account = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -189,7 +189,7 @@ int UserInfoDao::DeleteByAccount( const std::string& account, sylar::IDB::ptr co
     return stmt->execute();
 }
 
-int UserInfoDao::DeleteByEmail( const std::string& email, sylar::IDB::ptr conn) {
+int UserInfoDao::DeleteByEmail( const std::string& email, chen::IDB::ptr conn) {
     std::string sql = "delete from user where email = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -201,7 +201,7 @@ int UserInfoDao::DeleteByEmail( const std::string& email, sylar::IDB::ptr conn) 
     return stmt->execute();
 }
 
-int UserInfoDao::DeleteByName( const std::string& name, sylar::IDB::ptr conn) {
+int UserInfoDao::DeleteByName( const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "delete from user where name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -213,7 +213,7 @@ int UserInfoDao::DeleteByName( const std::string& name, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, sylar::IDB::ptr conn) {
+int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, chen::IDB::ptr conn) {
     std::string sql = "select id, account, email, passwd, name, role, state, login_time, is_deleted, create_time, update_time from user";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -243,7 +243,7 @@ int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, sylar::IDB::ptr c
     return 0;
 }
 
-UserInfo::ptr UserInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
+UserInfo::ptr UserInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "select id, account, email, passwd, name, role, state, login_time, is_deleted, create_time, update_time from user where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -274,7 +274,7 @@ UserInfo::ptr UserInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
     return v;
 }
 
-UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, sylar::IDB::ptr conn) {
+UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, chen::IDB::ptr conn) {
     std::string sql = "select id, account, email, passwd, name, role, state, login_time, is_deleted, create_time, update_time from user where account = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -305,7 +305,7 @@ UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, sylar::ID
     return v;
 }
 
-UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, sylar::IDB::ptr conn) {
+UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, chen::IDB::ptr conn) {
     std::string sql = "select id, account, email, passwd, name, role, state, login_time, is_deleted, create_time, update_time from user where email = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -336,7 +336,7 @@ UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, sylar::IDB::p
     return v;
 }
 
-UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, sylar::IDB::ptr conn) {
+UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "select id, account, email, passwd, name, role, state, login_time, is_deleted, create_time, update_time from user where name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -367,7 +367,7 @@ UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, sylar::IDB::ptr
     return v;
 }
 
-int UserInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
+int UserInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE user("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "account TEXT NOT NULL DEFAULT '',"
@@ -386,7 +386,7 @@ int UserInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             );
 }
 
-int UserInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
+int UserInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE user("
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`account` varchar(128) NOT NULL DEFAULT '' COMMENT '账户名称',"

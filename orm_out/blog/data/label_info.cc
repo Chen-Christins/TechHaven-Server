@@ -4,7 +4,7 @@
 namespace blog {
 namespace data {
 
-static sylar::Logger::ptr logger = LOG_NAME("orm");
+static chen::Logger::ptr logger = LOG_NAME("orm");
 
 LabelInfo::LabelInfo()
     :m_isDeleted()
@@ -21,9 +21,9 @@ std::string LabelInfo::toJsonString() const {
     v["user_id"] = std::to_string(m_userId);
     v["name"] = m_name;
     v["is_deleted"] = m_isDeleted;
-    v["create_time"] = sylar::Time2Str(m_createTime);
-    v["update_time"] = sylar::Time2Str(m_updateTime);
-    return sylar::JsonUtil::ToString(v);
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
 }
 
 void LabelInfo::setId(const int64_t& v) {
@@ -51,7 +51,7 @@ void LabelInfo::setUpdateTime(const int64_t& v) {
 }
 
 
-int LabelInfoDao::Update(LabelInfo::ptr info, sylar::IDB::ptr conn) {
+int LabelInfoDao::Update(LabelInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "update label set user_id = ?, name = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -68,7 +68,7 @@ int LabelInfoDao::Update(LabelInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int LabelInfoDao::Insert(LabelInfo::ptr info, sylar::IDB::ptr conn) {
+int LabelInfoDao::Insert(LabelInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "insert into label (user_id, name, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -88,7 +88,7 @@ int LabelInfoDao::Insert(LabelInfo::ptr info, sylar::IDB::ptr conn) {
     return rt;
 }
 
-int LabelInfoDao::InsertOrUpdate(LabelInfo::ptr info, sylar::IDB::ptr conn) {
+int LabelInfoDao::InsertOrUpdate(LabelInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
@@ -108,7 +108,7 @@ int LabelInfoDao::InsertOrUpdate(LabelInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int LabelInfoDao::Delete(LabelInfo::ptr info, sylar::IDB::ptr conn) {
+int LabelInfoDao::Delete(LabelInfo::ptr info, chen::IDB::ptr conn) {
     std::string sql = "delete from label where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -120,7 +120,7 @@ int LabelInfoDao::Delete(LabelInfo::ptr info, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int LabelInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
+int LabelInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "delete from label where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -132,7 +132,7 @@ int LabelInfoDao::DeleteById( const int64_t& id, sylar::IDB::ptr conn) {
     return stmt->execute();
 }
 
-int LabelInfoDao::DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn) {
+int LabelInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "delete from label where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -144,7 +144,7 @@ int LabelInfoDao::DeleteByUserId( const int64_t& user_id, sylar::IDB::ptr conn) 
     return stmt->execute();
 }
 
-int LabelInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn) {
+int LabelInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "delete from label where user_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -157,7 +157,7 @@ int LabelInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::string
     return stmt->execute();
 }
 
-int LabelInfoDao::QueryAll(std::vector<LabelInfo::ptr>& results, sylar::IDB::ptr conn) {
+int LabelInfoDao::QueryAll(std::vector<LabelInfo::ptr>& results, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -182,7 +182,7 @@ int LabelInfoDao::QueryAll(std::vector<LabelInfo::ptr>& results, sylar::IDB::ptr
     return 0;
 }
 
-LabelInfo::ptr LabelInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
+LabelInfo::ptr LabelInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -208,7 +208,7 @@ LabelInfo::ptr LabelInfoDao::Query( const int64_t& id, sylar::IDB::ptr conn) {
     return v;
 }
 
-int LabelInfoDao::QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int64_t& user_id, sylar::IDB::ptr conn) {
+int LabelInfoDao::QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -234,7 +234,7 @@ int LabelInfoDao::QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int
     return 0;
 }
 
-LabelInfo::ptr LabelInfoDao::QueryByUserIdName( const int64_t& user_id,  const std::string& name, sylar::IDB::ptr conn) {
+LabelInfo::ptr LabelInfoDao::QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label where user_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
@@ -261,7 +261,7 @@ LabelInfo::ptr LabelInfoDao::QueryByUserIdName( const int64_t& user_id,  const s
     return v;
 }
 
-int LabelInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
+int LabelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE label("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
@@ -274,7 +274,7 @@ int LabelInfoDao::CreateTableSQLite3(sylar::IDB::ptr conn) {
             );
 }
 
-int LabelInfoDao::CreateTableMySQL(sylar::IDB::ptr conn) {
+int LabelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE label("
             "`id` bigint AUTO_INCREMENT,"
             "`user_id` bigint NOT NULL DEFAULT 0,"

@@ -10,12 +10,12 @@ class UserCreateServlet : public BlogServlet {
 public:
     typedef std::shared_ptr<UserCreateServlet> ptr;
     UserCreateServlet();
-    virtual int32_t handle(sylar::http::HttpRequest::ptr request
-                    ,sylar::http::HttpResponse::ptr response
-                    ,sylar::http::HttpSession::ptr session
+    virtual int32_t handle(chen::http::HttpRequest::ptr request
+                    ,chen::http::HttpResponse::ptr response
+                    ,chen::http::HttpSession::ptr session
                     ,Result::ptr result) override;
 
-    bool verificationEmailCode(sylar::IDB::ptr db, const std::string& email
+    bool verificationEmailCode(chen::IDB::ptr db, const std::string& email
                     ,const std::string& code);
 };
 

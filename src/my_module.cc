@@ -47,12 +47,12 @@
 
 namespace blog {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
-static sylar::ConfigVar<std::string>::ptr sqlite3_db_name = 
-    sylar::Config::Lookup("sqlite3.db_name", std::string("blog.db"), "sqlite3 db file name");
+static chen::Logger::ptr logger = LOG_ROOT();
+static chen::ConfigVar<std::string>::ptr sqlite3_db_name = 
+    chen::Config::Lookup("sqlite3.db_name", std::string("blog.db"), "sqlite3 db file name");
 
 MyModule::MyModule()
-    :sylar::Module("Blog", "1.0", "") {
+    :chen::Module("Blog", "1.0", "") {
 }
 
 bool MyModule::onLoad() {
@@ -65,8 +65,8 @@ bool MyModule::onUnload() {
     return true;
 }
 
-int32_t handle_request(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session) {
+int32_t handle_request(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session) {
     INFO(logger) << *request;
     response->setBody("ok");
     return 0;
@@ -75,14 +75,14 @@ int32_t handle_request(sylar::http::HttpRequest::ptr request, sylar::http::HttpR
 bool MyModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
-    auto work_path = sylar::Config::Lookup<std::string>("server.work_path");
+    auto work_path = chen::Config::Lookup<std::string>("server.work_path");
     auto db_path = work_path->getValue() + "/" + sqlite3_db_name->getValue();
 
-    sylar::SQLite3::ptr db;
-    db = sylar::SQLite3::Create(db_path, sylar::SQLite3::READWRITE);
+    chen::SQLite3::ptr db;
+    db = chen::SQLite3::Create(db_path, chen::SQLite3::READWRITE);
     if (!db) {
         INFO(logger) << "init database begin";
-        db = sylar::SQLite3::Create(db_path);
+        db = chen::SQLite3::Create(db_path);
         if (!db) {
             INFO(logger) << "open database db=" << db_path
                 << " failed";
@@ -105,8 +105,8 @@ bool MyModule::onServerReady() {
         INFO(logger) << "init database end";
     }
 
-    std::vector<sylar::TcpServer::ptr> servers;
-    if (!sylar::Application::GetInstance()->getServer("http", servers)) {
+    std::vector<chen::TcpServer::ptr> servers;
+    if (!chen::Application::GetInstance()->getServer("http", servers)) {
         ERROR(logger) << "http_server not open";
         return false;
     }
@@ -124,15 +124,15 @@ bool MyModule::onServerReady() {
 #undef XX
 
     for (auto& i : servers) {
-        auto hs = std::dynamic_pointer_cast<sylar::http::HttpServer>(i);
+        auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         auto dp = hs->getServletDispatch();
         
-        sylar::http::ResourceServlet::ptr slt(std::make_shared<sylar::http::ResourceServlet>(
-            sylar::EnvMgr::GetInstance()->getCwd()
+        chen::http::ResourceServlet::ptr slt(std::make_shared<chen::http::ResourceServlet>(
+            chen::EnvMgr::GetInstance()->getCwd()
         ));
         dp->addGlobServlet("/blog/*", slt);
 
-#define XX(clazz) sylar::http::Servlet::ptr(new servlet::clazz)
+#define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/send_code", XX(UserSendCodeServlet));
         dp->addServlet("/user/create", XX(UserCreateServlet));
         dp->addServlet("/user/login", XX(UserLoginServlet));
@@ -179,13 +179,13 @@ bool MyModule::onServerUp() {
 
 extern "C" {
 
-sylar::Module* CreateModule() {
-    sylar::Module* module = new blog::MyModule;
+chen::Module* CreateModule() {
+    chen::Module* module = new blog::MyModule;
     INFO(blog::logger) << "CreateModule " << module;
     return module;
 }
 
-void DestoryModule(sylar::Module* module) {
+void DestoryModule(chen::Module* module) {
     INFO(blog::logger) << "DestoryModule " << module;
     delete module;
 }

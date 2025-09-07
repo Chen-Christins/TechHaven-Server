@@ -6,14 +6,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserLoginServlet::UserLoginServlet()
     :BlogServlet("UserLoginServlet") {
 }
 
-int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, auth_id, "auth_id");
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
@@ -38,7 +38,7 @@ int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::h
             result->setResult(403, "invalid auth_id");
             break;
         }
-        if (info->getPasswd() != sylar::md5(passwd)) {
+        if (info->getPasswd() != chen::md5(passwd)) {
             result->setResult(405, "invalid passwd");
             break;
         }
@@ -54,9 +54,9 @@ int32_t UserLoginServlet::handle(sylar::http::HttpRequest::ptr request, sylar::h
         }
         
         info->setLoginTime(time(0));
-        uint64_t ts1 = sylar::GetCurrentUs();
+        uint64_t ts1 = chen::GetCurrentUs();
         data::UserInfoDao::Update(info, db);
-        INFO(logger) << "update used: " << (sylar::GetCurrentUs() - ts1) / 1000.0 << " ms";
+        INFO(logger) << "update used: " << (chen::GetCurrentUs() - ts1) / 1000.0 << " ms";
 
         int64_t token_time = time(0) + 3600 * 24;
         response->setCookie(CookieKey::USER_ID, std::to_string(info->getId()), token_time, "/");

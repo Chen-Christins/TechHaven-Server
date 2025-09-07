@@ -6,14 +6,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserResetPasswdServlet::UserResetPasswdServlet()
     :BlogServlet("UserResetPasswdServlet") {
 }
 
-int32_t UserResetPasswdServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, email, "email");
         DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
@@ -44,9 +44,9 @@ int32_t UserResetPasswdServlet::handle(sylar::http::HttpRequest::ptr request, sy
             break;
         }
 
-        sylar::ITransaction::ptr trans = db->openTransaction();
+        chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info = UserMgr::GetInstance()->getByEmail(email);
-        info->setPasswd(sylar::md5(passwd));
+        info->setPasswd(chen::md5(passwd));
 
         if (data::UserInfoDao::Update(info, db)) {
             result->setResult(500, "insert user fail");
@@ -58,14 +58,14 @@ int32_t UserResetPasswdServlet::handle(sylar::http::HttpRequest::ptr request, sy
     return 0;
 }
 
-bool UserResetPasswdServlet::verificationEmailCode(sylar::IDB::ptr conn, const std::string& email
+bool UserResetPasswdServlet::verificationEmailCode(chen::IDB::ptr conn, const std::string& email
         ,const std::string& code) {
     // 开启事务
-    sylar::ITransaction::ptr trans = conn->openTransaction();
+    chen::ITransaction::ptr trans = conn->openTransaction();
 	// 先查询是否存在这个记录
 	std::string select_sql = "SELECT 1 FROM email_verification WHERE email = ? AND code = ? AND type = 3 AND state = 0 AND expires_time > datetime('now')";
     
-	auto stmt = std::dynamic_pointer_cast<sylar::SQLite3Stmt>(conn->prepare(select_sql));
+	auto stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(select_sql));
     if(!stmt) {
         ERROR(logger) << "stmt=" << select_sql
                  << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
@@ -83,13 +83,13 @@ bool UserResetPasswdServlet::verificationEmailCode(sylar::IDB::ptr conn, const s
 	}
 
     std::string update_sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 3 AND state = 0 AND expires_time > datetime('now')";
-	stmt = std::dynamic_pointer_cast<sylar::SQLite3Stmt>(conn->prepare(update_sql));
+	stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(update_sql));
 
 	stmt->bindString(1, email);
 	stmt->bindString(2, code);
 
     // 获取影响的行数, 是否成功
-    bool success = stmt->step() == SQLITE_DONE && sqlite3_changes(std::dynamic_pointer_cast<sylar::SQLite3>(conn)->getDB()) > 0;
+    bool success = stmt->step() == SQLITE_DONE && sqlite3_changes(std::dynamic_pointer_cast<chen::SQLite3>(conn)->getDB()) > 0;
     trans->commit();
 
     return success;

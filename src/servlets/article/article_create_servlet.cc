@@ -6,14 +6,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleCreateServlet::ArticleCreateServlet()
     :BlogLoginedServlet("ArticleCreateServlet") {
 }
 
-int32_t ArticleCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_STRING(result, title, "title");
         DEFINE_AND_CHECK_STRING(result, content, "content");

@@ -4,14 +4,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserLogoutServlet::UserLogoutServlet()
     :BlogServlet("UserLogoutServlet") {
 }
 
-int32_t UserLogoutServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         auto sdata = getSessionData(request, response);
         if (!sdata->getData<int64_t>(CookieKey::USER_ID)) {
@@ -26,7 +26,7 @@ int32_t UserLogoutServlet::handle(sylar::http::HttpRequest::ptr request, sylar::
         response->setCookie(CookieKey::TOKEN_TIME, "", token_time, "/");
         sdata->setData(CookieKey::USER_ID, (int64_t)0);
         std::string id = sdata->getId();
-        sylar::http::SessionDataMgr::GetInstance()->del(id);
+        chen::http::SessionDataMgr::GetInstance()->del(id);
     } while (false);
     response->setBody(result->toJsonString());
     return 0;

@@ -21,7 +21,7 @@ private:
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> m_articles;
 };
 
-typedef sylar::Singleton<ArticleLabelRelManager> ArticleLabelRelMgr;
+typedef chen::Singleton<ArticleLabelRelManager> ArticleLabelRelMgr;
 
 }
 

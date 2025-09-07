@@ -6,14 +6,14 @@
 namespace blog {
 namespace servlet {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminCreateServlet::UserAdminCreateServlet()
     :BlogLoginedServlet("UserAdminCreateServlet") {
 }
 
-int32_t UserAdminCreateServlet::handle(sylar::http::HttpRequest::ptr request, sylar::http::HttpResponse::ptr response
-        ,sylar::http::HttpSession::ptr session, Result::ptr result) {
+int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		DEFINE_AND_CHECK_STRING(result, account, "account");
         DEFINE_AND_CHECK_STRING(result, email, "email");
@@ -59,11 +59,11 @@ int32_t UserAdminCreateServlet::handle(sylar::http::HttpRequest::ptr request, sy
             break;
         }
 		// 开启事务
-        sylar::ITransaction::ptr trans = db->openTransaction();
+        chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info(new data::UserInfo);
         info->setAccount(account);
         info->setEmail(email);
-        info->setPasswd(sylar::md5(passwd_s));
+        info->setPasswd(chen::md5(passwd_s));
         info->setState(1);
         info->setName(account);
 

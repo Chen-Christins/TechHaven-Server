@@ -7,7 +7,7 @@
 
 namespace blog {
 
-static sylar::Logger::ptr logger = LOG_ROOT();
+static chen::Logger::ptr logger = LOG_ROOT();
 
 bool ArticleManager::loadAll() {
     auto db = GetDB();
@@ -226,9 +226,9 @@ void ArticleManager::start() {
     if (m_timer) {
         return;
     }
-    m_timer = sylar::IOManager::GetThis()->addTimer(60 * 1000
+    m_timer = chen::IOManager::GetThis()->addTimer(60 * 1000
             ,std::bind(&ArticleManager::onTimer, this), true);
-    m_updateTimer = sylar::IOManager::GetThis()->addTimer(60 * 1000
+    m_updateTimer = chen::IOManager::GetThis()->addTimer(60 * 1000
             ,std::bind(&ArticleManager::onUpdateTimer, this), true);
 }
 
@@ -262,7 +262,7 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
     if (!info) {
         return false;
     }
-    auto rpy = sylar::RedisUtil::Cmd("blog", "hexist pra_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd("blog", "hexist pra_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hexists fail";
         return false;
@@ -270,12 +270,12 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
     if (rpy->integer == 1) {
         return true;
     }
-    rpy = sylar::RedisUtil::Cmd("blog", "hset pra_a2u:%lld %lld %lld", id, user_id, time(0));
+    rpy = chen::RedisUtil::Cmd("blog", "hset pra_a2u:%lld %lld %lld", id, user_id, time(0));
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
     }
-    rpy = sylar::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
+    rpy = chen::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
@@ -291,7 +291,7 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
     if (!info) {
         return false;
     }
-    auto rpy = sylar::RedisUtil::Cmd("blog", "hexist fav_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd("blog", "hexist fav_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hexists fail";
         return false;
@@ -299,12 +299,12 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
     if (rpy->integer == 1) {
         return true;
     }
-    rpy = sylar::RedisUtil::Cmd("blog", "hset fav_a2u:%lld %lld %lld", id, user_id, time(0));
+    rpy = chen::RedisUtil::Cmd("blog", "hset fav_a2u:%lld %lld %lld", id, user_id, time(0));
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
     }
-    rpy = sylar::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
+    rpy = chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
@@ -321,7 +321,7 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
         return false;
     }
     bool v = false;
-    auto rpy = sylar::RedisUtil::Cmd("blog", "hdel pra_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd("blog", "hdel pra_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hdel fail";
         return false;
@@ -329,7 +329,7 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
     if (rpy->integer == 1) {
         v = true;
     }
-    rpy = sylar::RedisUtil::Cmd("blog", "hdel pra_u2a:%lld %lld", user_id, id);
+    rpy = chen::RedisUtil::Cmd("blog", "hdel pra_u2a:%lld %lld", user_id, id);
     if (!rpy) {
         ERROR(logger) << "hdel fail";
         return false;
@@ -351,7 +351,7 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
         return false;
     }
     bool v = false;
-    auto rpy = sylar::RedisUtil::Cmd("blog", "hdel fav_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd("blog", "hdel fav_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hdel fail";
         return false;
@@ -359,7 +359,7 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
     if (rpy->integer == 1) {
         v = true;
     }
-    rpy = sylar::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld", user_id, id);
+    rpy = chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld", user_id, id);
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
@@ -377,14 +377,14 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
 
 bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles) {
 #define PROC(id, mask, articles)                               \
-    auto rpy = sylar::RedisUtil::Cmd("blog", mask, id);        \
+    auto rpy = chen::RedisUtil::Cmd("blog", mask, id);        \
     if (!rpy) {                                                \
         ERROR(logger) << "hgetall fail";                       \
         return false;                                          \
     }                                                          \
     for (size_t i = 0; i < rpy->elements; i += 2) {            \
-        articles[sylar::TypeUtil::Atoi(rpy->element[i]->str)]  \
-            = sylar::TypeUtil::Atoi(rpy->element[i + 1]->str); \
+        articles[chen::TypeUtil::Atoi(rpy->element[i]->str)]  \
+            = chen::TypeUtil::Atoi(rpy->element[i + 1]->str); \
     }                                                          \
     return true;
     
