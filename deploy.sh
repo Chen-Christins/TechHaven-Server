@@ -105,25 +105,12 @@ EOF
 
 		# 首先尝试查找旧进程并终止
 		send "cd $REMOTE_PATH\r"
-		send "pid=\\\$(ps aux | grep '$APP_NAME' | grep -v grep | awk '{print \\\$2}')\r"
-		send "if test -n \"\\\$pid\"; then\r"  ; # 这里使用了 test 命令
-		send "    echo \"找到旧进程 PID: \\\$pid，正在终止...\"\r"
-		send "    kill -15 \\\$pid\r"
-		send "    sleep 2\r"
-		send "    # 检查进程是否仍在运行，如果是则强制终止\r"
-		send "    if kill -0 \\\$pid 2>/dev/null; then\r"
-		send "        echo \"进程仍在运行，强制终止...\"\r"
-		send "    kill -9 \\\$pid\r"
-		send "    fi\r"
-		send "    echo \"旧进程已终止\"\r"
-		send "else\r"
-		send "    echo \"未找到运行的 $APP_NAME 进程\"\r"
-		send "fi\r"
+		send "pkill -9 $APP_NAME\r"
 
 		send "tar -xzf $PACKAGE_NAME\r" 
 		send "cd $TEMP_DIR\r" 
 		send "export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH\r" 
-		send "nohup ./$APP_NAME -s > blog.log 2>&1 &\r" 
+		send "nohup ./$APP_NAME -d > blog.log 2>&1 &\r" 
 		expect eof
         catch wait result
         exit [lindex \$result 3]
