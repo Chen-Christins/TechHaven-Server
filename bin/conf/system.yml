@@ -6,3 +6,11 @@ server:
     port: 465
     address: 17354303956@163.com
     token: ASVbGLfbcJSz7JAy
+  resources:
+    path: [
+      "/blog/index",
+      "/blog/login",
+      "/blog/profile",
+      "/blog/article/create",
+      "/blog/article/modify",
+    ]
