@@ -11,7 +11,7 @@ public:
         ,m_namespace(np) {
     }
 
-    void gen(const std::string& path);
+    void gen(std::string& path);
     void gen_inc(const std::string& path);
     void gen_src(const std::string& path);
 private:
@@ -22,8 +22,11 @@ private:
     std::string m_namespace;
 };
 
-void Generator::gen(const std::string& path) {
+void Generator::gen(std::string& path) {
     std::cout << "generate begin" << std::endl;
+	if (path.back() == '.') {
+		path.pop_back();
+	}
     gen_inc(path);
     gen_src(path);
     std::cout << "generate end" << std::endl;
@@ -79,7 +82,7 @@ std::string Generator::GetClassName(const std::string& str) {
 }
 
 void Generator::gen_inc(const std::string& path) {
-    std::string name = path + "/" + m_filename + ".h";
+    std::string name = path + (path.back() == '/' ? "" : "/") + m_filename + ".h";
     std::ofstream ofs(name);
     
     std::string marco = GenMarco(name);
@@ -179,13 +182,15 @@ void Generator::gen_src(const std::string& path) {
 }
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        std::cout << "use as[" << argv[0] << " filename namespace]" << std::endl;
+    if (argc != 4) {
+        std::cout << "use as[" << argv[0] << " filename folder namespace]" << std::endl;
         return 0;
     }
-    std::string out_path = "./src/servlets";
+    std::string fdr = argv[2];
+    std::string out_path = "./src/" + fdr;
+
     std::string fln = argv[1];
-    std::string nsp = argv[2];
+    std::string nsp = argv[3];
     Generator::ptr G(std::make_shared<Generator>(fln, nsp));
     G->gen(out_path);
 

@@ -41,6 +41,7 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 			Json::Value v;
 			v["id"] = i->getId();
 			v["name"] = i->getName();
+			v["color"] = i->getColor();
 			result->jsondata.append(v);
 		}
 	} while (0);

@@ -116,14 +116,19 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         if (offset >= (int32_t)uit->second.size()) {
             return uit->second.size();
         }
+
+		int64_t sum = 0;
+		for (auto i : uit->second) {
+			if (!i.second->getIsDeleted()) {
+				++sum;
+			}
+		}
+
         auto it = uit->second.rbegin();
-        // std::advance(it, offset);
 		int oft = 0;
 		while (it != uit->second.rend() && oft < offset) {
 			if (!it->second->getIsDeleted()) {
-				// if (it->second->getState() == state) {
-					++oft;
-				// }
+				++oft;
 			}
 			++it;
 		}
@@ -134,7 +139,7 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
                 }
             }
         }
-        return uit->second.size();
+        return sum;
     }
 }
 
