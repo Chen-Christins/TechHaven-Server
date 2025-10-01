@@ -30,9 +30,9 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 			info.reset(new data::LabelInfo);
 			info->setUserId(uid);
 			info->setName(name);
-			info->setColor(color);
 			new_label = true;
 		}
+		info->setColor(color);
 		info->setIsDeleted(0);
 		info->setCreateTime(time(0));
 		info->setUpdateTime(time(0));
