@@ -11,6 +11,7 @@ LabelInfo::LabelInfo()
     ,m_id()
     ,m_userId()
     ,m_name()
+    ,m_color()
     ,m_createTime(time(0))
     ,m_updateTime() {
 }
@@ -20,6 +21,7 @@ std::string LabelInfo::toJsonString() const {
     v["id"] = std::to_string(m_id);
     v["user_id"] = std::to_string(m_userId);
     v["name"] = m_name;
+    v["color"] = m_color;
     v["is_deleted"] = m_isDeleted;
     v["create_time"] = chen::Time2Str(m_createTime);
     v["update_time"] = chen::Time2Str(m_updateTime);
@@ -38,6 +40,10 @@ void LabelInfo::setName(const std::string& v) {
     m_name = v;
 }
 
+void LabelInfo::setColor(const std::string& v) {
+    m_color = v;
+}
+
 void LabelInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
 }
@@ -52,7 +58,7 @@ void LabelInfo::setUpdateTime(const int64_t& v) {
 
 
 int LabelInfoDao::Update(LabelInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update label set user_id = ?, name = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update label set user_id = ?, name = ?, color = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -61,15 +67,16 @@ int LabelInfoDao::Update(LabelInfo::ptr info, chen::IDB::ptr conn) {
     }
     stmt->bindInt64(1, info->m_userId);
     stmt->bindString(2, info->m_name);
-    stmt->bindInt32(3, info->m_isDeleted);
-    stmt->bindTime(4, info->m_createTime);
-    stmt->bindTime(5, info->m_updateTime);
-    stmt->bindInt64(6, info->m_id);
+    stmt->bindString(3, info->m_color);
+    stmt->bindInt32(4, info->m_isDeleted);
+    stmt->bindTime(5, info->m_createTime);
+    stmt->bindTime(6, info->m_updateTime);
+    stmt->bindInt64(7, info->m_id);
     return stmt->execute();
 }
 
 int LabelInfoDao::Insert(LabelInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into label (user_id, name, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?)";
+    std::string sql = "insert into label (user_id, name, color, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -78,9 +85,10 @@ int LabelInfoDao::Insert(LabelInfo::ptr info, chen::IDB::ptr conn) {
     }
     stmt->bindInt64(1, info->m_userId);
     stmt->bindString(2, info->m_name);
-    stmt->bindInt32(3, info->m_isDeleted);
-    stmt->bindTime(4, info->m_createTime);
-    stmt->bindTime(5, info->m_updateTime);
+    stmt->bindString(3, info->m_color);
+    stmt->bindInt32(4, info->m_isDeleted);
+    stmt->bindTime(5, info->m_createTime);
+    stmt->bindTime(6, info->m_updateTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -92,7 +100,7 @@ int LabelInfoDao::InsertOrUpdate(LabelInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into label (id, user_id, name, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into label (id, user_id, name, color, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -102,9 +110,10 @@ int LabelInfoDao::InsertOrUpdate(LabelInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindInt64(1, info->m_id);
     stmt->bindInt64(2, info->m_userId);
     stmt->bindString(3, info->m_name);
-    stmt->bindInt32(4, info->m_isDeleted);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_updateTime);
+    stmt->bindString(4, info->m_color);
+    stmt->bindInt32(5, info->m_isDeleted);
+    stmt->bindTime(6, info->m_createTime);
+    stmt->bindTime(7, info->m_updateTime);
     return stmt->execute();
 }
 
@@ -158,7 +167,7 @@ int LabelInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::string
 }
 
 int LabelInfoDao::QueryAll(std::vector<LabelInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label";
+    std::string sql = "select id, user_id, name, color, is_deleted, create_time, update_time from label";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -174,16 +183,17 @@ int LabelInfoDao::QueryAll(std::vector<LabelInfo::ptr>& results, chen::IDB::ptr 
         v->m_id = rt->getInt64(0);
         v->m_userId = rt->getInt64(1);
         v->m_name = rt->getString(2);
-        v->m_isDeleted = rt->getInt32(3);
-        v->m_createTime = rt->getTime(4);
-        v->m_updateTime = rt->getTime(5);
+        v->m_color = rt->getString(3);
+        v->m_isDeleted = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_updateTime = rt->getTime(6);
         results.push_back(v);
     }
     return 0;
 }
 
 LabelInfo::ptr LabelInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label where id = ?";
+    std::string sql = "select id, user_id, name, color, is_deleted, create_time, update_time from label where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -202,14 +212,15 @@ LabelInfo::ptr LabelInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     v->m_id = rt->getInt64(0);
     v->m_userId = rt->getInt64(1);
     v->m_name = rt->getString(2);
-    v->m_isDeleted = rt->getInt32(3);
-    v->m_createTime = rt->getTime(4);
-    v->m_updateTime = rt->getTime(5);
+    v->m_color = rt->getString(3);
+    v->m_isDeleted = rt->getInt32(4);
+    v->m_createTime = rt->getTime(5);
+    v->m_updateTime = rt->getTime(6);
     return v;
 }
 
 int LabelInfoDao::QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label where user_id = ?";
+    std::string sql = "select id, user_id, name, color, is_deleted, create_time, update_time from label where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -226,16 +237,17 @@ int LabelInfoDao::QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int
         v->m_id = rt->getInt64(0);
         v->m_userId = rt->getInt64(1);
         v->m_name = rt->getString(2);
-        v->m_isDeleted = rt->getInt32(3);
-        v->m_createTime = rt->getTime(4);
-        v->m_updateTime = rt->getTime(5);
+        v->m_color = rt->getString(3);
+        v->m_isDeleted = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_updateTime = rt->getTime(6);
         results.push_back(v);
     };
     return 0;
 }
 
 LabelInfo::ptr LabelInfoDao::QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, is_deleted, create_time, update_time from label where user_id = ? and name = ?";
+    std::string sql = "select id, user_id, name, color, is_deleted, create_time, update_time from label where user_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -255,9 +267,10 @@ LabelInfo::ptr LabelInfoDao::QueryByUserIdName( const int64_t& user_id,  const s
     v->m_id = rt->getInt64(0);
     v->m_userId = rt->getInt64(1);
     v->m_name = rt->getString(2);
-    v->m_isDeleted = rt->getInt32(3);
-    v->m_createTime = rt->getTime(4);
-    v->m_updateTime = rt->getTime(5);
+    v->m_color = rt->getString(3);
+    v->m_isDeleted = rt->getInt32(4);
+    v->m_createTime = rt->getTime(5);
+    v->m_updateTime = rt->getTime(6);
     return v;
 }
 
@@ -266,6 +279,7 @@ int LabelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
             "name TEXT NOT NULL DEFAULT '',"
+            "color TEXT NOT NULL DEFAULT '',"
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
@@ -279,6 +293,7 @@ int LabelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT,"
             "`user_id` bigint NOT NULL DEFAULT 0,"
             "`name` varchar(20) NOT NULL DEFAULT '',"
+            "`color` varchar(10) NOT NULL DEFAULT '',"
             "`is_deleted` int NOT NULL DEFAULT 0,"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp,"
             "`update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' ON UPDATE current_timestamp ,"
