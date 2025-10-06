@@ -26,8 +26,11 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 		}
 
 		data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
+		if (uid != info->getUserId()) {
+			result->setResult(403, "Access Denied");
+			break;
+		}
 		int32_t state = info->getState();
-
 		if (state == 1) {
 			result->setResult(500, "invalid state");
 			break;

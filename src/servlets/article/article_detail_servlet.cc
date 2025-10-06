@@ -21,13 +21,23 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
-        
-        data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
+        auto type = request->getParamAs<uint32_t>("type");
+
+		int64_t cur_uid = getUserId(request);
+        if (!cur_uid) {
+            result->setResult(500, "not login");
+            break;
+        }
+		data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
         if (!info) {
             result->setResult(404, "invalid id");
             break;
         }
         int64_t uid = info->getUserId();
+		if (type == 1 && cur_uid != uid) {
+			result->setResult(403, "Access Denied");
+			break;
+		}
         std::string author = UserMgr::GetInstance()->get(uid)->getName();
         result->set("id", info->getId());
         result->set("author", author);
