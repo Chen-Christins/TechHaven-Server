@@ -54,6 +54,7 @@ set(LIB_SRC
     src/servlets/user/user_query_servlet.cc
 	src/index.cc
     src/my_module.cc
+    src/resource_servlet.cc
     src/struct.cc
 )
 

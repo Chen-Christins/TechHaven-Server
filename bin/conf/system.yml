@@ -14,3 +14,4 @@ server:
       "/blog/article/create",
       "/blog/article/modify",
     ]
+    lost_path: /blog/lost.html

@@ -15,7 +15,8 @@
 #include "manager/label_manager.h"
 #include "manager/article_category_rel_manager.h"
 #include "manager/article_label_rel_manager.h"
-#include <chen/http/resource_servlet.h>
+#include "resource_servlet.h"
+#include <chen/http/ws_server.h>
 #include "servlets/user/user_admin_create_servlet.h"
 #include "servlets/user/user_admin_delete_servlet.h"
 #include "servlets/user/user_admin_reset_passwd_servlet.h"
