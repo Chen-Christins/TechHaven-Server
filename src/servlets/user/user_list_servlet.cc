@@ -23,7 +23,7 @@ int32_t UserListServlet::handle(chen::http::HttpRequest::ptr request, chen::http
 		}
 		
 		std::vector<int64_t> ids;
-		UserMgr::GetInstance()->getAllIds(ids, true);
+		UserMgr::GetInstance()->getAllIds(ids, false);
 
 		std::sort(ids.begin(), ids.end(), std::less<>());
 
