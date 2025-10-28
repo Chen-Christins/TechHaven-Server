@@ -41,6 +41,7 @@ set(LIB_SRC
 	src/servlets/label/label_query_servlet.cc
     src/servlets/user/user_admin_create_servlet.cc
     src/servlets/user/user_admin_delete_servlet.cc
+    src/servlets/user/user_admin_recover_servlet.cc
     src/servlets/user/user_admin_reset_passwd_servlet.cc
     src/servlets/user/user_create_servlet.cc
     src/servlets/user/user_exists_servlet.cc
