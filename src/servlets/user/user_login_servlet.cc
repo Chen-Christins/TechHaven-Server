@@ -43,8 +43,9 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             break;
         }
 
-        if (info->getState() != 1) {
+        if (info->getState() != 1 || info->getIsDeleted()) {
             result->setResult(406, "account invalid state");
+			break;
         }
 
         auto db = getDB();
