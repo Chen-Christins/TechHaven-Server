@@ -42,6 +42,7 @@
 #include "servlets/category/category_create_servlet.h"
 #include "servlets/category/category_delete_servlet.h"
 #include "servlets/category/category_query_servlet.h"
+#include "servlets/file/file_upload_servlet.h"
 #include "servlets/label/label_create_servlet.h"
 #include "servlets/label/label_delete_servlet.h"
 #include "servlets/label/label_query_servlet.h"
@@ -163,6 +164,8 @@ bool MyModule::onServerReady() {
         dp->addServlet("/category/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/category/query", XX(CategoryQueryServlet));
         
+		dp->addServlet("/file/upload", XX(FileUploadServlet));
+
 		dp->addServlet("/label/create", XX(LabelCreateServlet));
         dp->addServlet("/label/delete", XX(LabelDeleteServlet));
         dp->addServlet("/label/query", XX(LabelQueryServlet));
