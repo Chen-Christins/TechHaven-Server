@@ -16,6 +16,7 @@ public:
 	bool loadAll();
 	void add(data::AssignmentInfo::ptr info);
 	bool listAll(std::vector<data::AssignmentInfo::ptr>& infos, bool valid);
+	bool listBySubjectId(std::vector<data::AssignmentInfo::ptr>& infos, int64_t id, bool valid);
 	data::AssignmentInfo::ptr getBySubjectIdName(int64_t id, const std::string& name);
 	data::AssignmentInfo::ptr get(int64_t id);
 

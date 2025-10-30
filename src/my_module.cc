@@ -54,6 +54,7 @@
 #include "servlets/assignment/subject_delete_servlet.h"
 #include "servlets/assignment/assignment_create_servlet.h"
 #include "servlets/assignment/assignment_delete_servlet.h"
+#include "servlets/assignment/subject_details_servlet.h"
 #include <chen/env.h>
 
 namespace blog {
@@ -183,6 +184,7 @@ bool MyModule::onServerReady() {
 		dp->addServlet("/file/upload", XX(FileUploadServlet));
 		dp->addServlet("/subject/create", XX(SubjectCreateServlet));
 		dp->addServlet("/subject/delete", XX(SubjectDeleteServlet));
+		dp->addServlet("/subject/details", XX(SubjectDetailsServlet));
 
 		dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
 		dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));

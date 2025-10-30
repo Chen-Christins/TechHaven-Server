@@ -51,6 +51,26 @@ bool AssignmentManager::listAll(std::vector<data::AssignmentInfo::ptr>& infos, b
 	return true;
 }
 
+bool AssignmentManager::listBySubjectId(std::vector<data::AssignmentInfo::ptr>& infos, int64_t id, bool valid) {
+	std::shared_lock<std::shared_mutex> lock(m_mutex);
+	auto it = m_subject_names.find(id);
+    if (it == m_subject_names.end()) {
+        return false;
+    }
+    if (valid) {
+        for (auto& i : it->second) {
+            if (i.second->getIsDeleted() == 0) {
+                infos.push_back(i.second);
+            }
+        }
+    } else {
+        for (auto& i : it->second) {
+            infos.push_back(i.second);
+        }
+    }
+    return true;
+}
+
 void AssignmentManager::add(data::AssignmentInfo::ptr info) {
 	std::unique_lock<std::shared_mutex> lock(m_mutex);
 	m_datas[info->getId()] = info;
