@@ -44,7 +44,7 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 		}
 
 		if (data::LabelInfoDao::InsertOrUpdate(info, db)) {
-			result->setResult(500, "insert or update category fail");
+			result->setResult(500, "insert or update label fail");
 			ERROR(logger) << "db error, errno=" << db->getErrno()
 				<< " errstr=" << db->getErrStr();
 			break;

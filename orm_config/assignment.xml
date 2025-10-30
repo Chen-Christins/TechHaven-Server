@@ -1,0 +1,18 @@
+<table name="assignment" namespace="blog.data" desc="作业">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="作业id"/>
+        <column name="subject_id" type="int64" desc="科目id"/>
+        <column name="name" type="string" length="256" desc="作业名称"/>
+		<column name="color" type="string" length="10" desc="作业颜色"/>
+        <column name="content" type="text" desc="作业内容"/>
+        <column name="deadline" type="datetime" desc="截止时间"/>
+        <column name="is_deleted" type="int32" desc="是否删除"/>
+        <column name="create_time" type="datetime" desc="创建时间"/>
+        <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="subject_id" cols="subject_id" type="index"/>
+		<index name="subject_id_name" cols="subject_id,name" type="uniq"/>
+    </indexs>
+</table>

@@ -22,8 +22,10 @@ set(LIB_SRC
     src/manager/article_category_rel_manager.cc
     src/manager/article_label_rel_manager.cc
     src/manager/article_manager.cc
+	src/manager/assignment_manager.cc
     src/manager/category_manager.cc
     src/manager/label_manager.cc
+	src/manager/subject_manager.cc
     src/manager/user_manager.cc
     src/servlets/article/article_create_servlet.cc
     src/servlets/article/article_delete_servlet.cc
@@ -33,6 +35,11 @@ set(LIB_SRC
     src/servlets/article/article_update_servlet.cc
     src/servlets/article/article_verify_servlet.cc
     src/servlets/article/article_update_category_servlet.cc
+	src/servlets/assignment/assignment_create_servlet.cc
+	src/servlets/assignment/assignment_delete_servlet.cc
+	src/servlets/assignment/subject_create_servlet.cc
+	src/servlets/assignment/subject_delete_servlet.cc
+	src/servlets/assignment/subject_details_servlet.cc
 	src/servlets/category/category_create_servlet.cc
 	src/servlets/category/category_delete_servlet.cc
 	src/servlets/category/category_query_servlet.cc

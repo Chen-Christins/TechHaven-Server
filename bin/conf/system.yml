@@ -9,6 +9,7 @@ server:
   resources:
     path: [
       "/blog/index",
+      "/blog/submit",
       "/blog/login",
       "/blog/profile",
       "/blog/article/create",
