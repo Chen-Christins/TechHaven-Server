@@ -17,22 +17,17 @@ SubjectDetailsServlet::SubjectDetailsServlet()
 int32_t SubjectDetailsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
-		std::vector<data::AssignmentInfo::ptr> data;
-		AssignmentMgr::GetInstance()->listAll(data, true);
+		std::vector<data::SubjectInfo::ptr> data;
+		SubjectMgr::GetInstance()->listAll(data, true);
 
-		std::unordered_set<int64_t> subjects;
 		for (const auto& i : data) {
-			subjects.emplace(i->getSubjectId());
-		}
-
-		for (int64_t id : subjects) {
-			std::string name = SubjectMgr::GetInstance()->get(id)->getName();
-			std::string color = SubjectMgr::GetInstance()->get(id)->getColor();
-
+			int64_t id = i->getId();
+			auto subject = SubjectMgr::GetInstance()->get(id);
+			
 			Json::Value v;
 			v["id"] = id;
-			v["name"] = name;
-			v["color"] = color;
+			v["name"] = subject->getName();
+			v["color"] = subject->getColor();
 
 			std::vector<data::AssignmentInfo::ptr> infos;
 			AssignmentMgr::GetInstance()->listBySubjectId(infos, id, true);
