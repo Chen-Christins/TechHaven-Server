@@ -1,18 +1,18 @@
 logs:
   - name: root
-    level: debug
+    level: info
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/Blog/bin/logs/root.log
       - type: StdoutLogAppender
   - name: system
-    level: debug
+    level: info
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/Blog/bin/logs/system.log
       - type: StdoutLogAppender
   - name: access
-    level: debug
+    level: info
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/Blog/bin/logs/access.log

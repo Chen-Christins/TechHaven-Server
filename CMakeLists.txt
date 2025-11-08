@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
-project(chat_room)
+project(Blog)
 
-include(chen/cmake/utils.cmake)
+include(cmake/utils.cmake)
 
 set(ROOT_PATH ${PROJECT_SOURCE_DIR})
 
@@ -10,10 +10,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -std=c++17 -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -std=c17 -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 
-include_directories(${PROJECT_SOURCE_DIR}/chen)
+include_directories(${PROJECT_SOURCE_DIR}/chen-sdk-1.0.0/include)
 include_directories(${PROJECT_SOURCE_DIR}/orm_out)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/chen)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/chen-sdk-1.0.0)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 
 include_directories(.)
@@ -74,7 +74,5 @@ add_library(blog SHARED ${LIB_SRC})
 target_link_libraries(blog PRIVATE orm_data)
 force_redefine_file_macro_for_sources(blog)
 
-set_target_properties(main PROPERTIES OUTPUT_NAME "mblog")
-
-SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/module)
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/module)
