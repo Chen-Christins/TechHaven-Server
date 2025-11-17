@@ -10,8 +10,9 @@
 # ------------------------------
 # 定义源目录（bin）和目标打包目录
 SOURCE_DIR="bin"
-APP_NAME='mblog'
+APP_NAME='main'  # 可执行文件名
 TEMP_DIR="deploy_package_$(date +%Y%m%d%H%M%S)"  # 临时目录名含时间戳防冲突
+SDK_DIR="chen-sdk-1.0.0"
 
 # 检查源目录是否存在
 if [ ! -d "$SOURCE_DIR" ]; then
@@ -24,9 +25,10 @@ fi
 # ------------------------------
 mkdir "$TEMP_DIR" || exit 1
 
-# 复制 bin 内容到临时目录，排除 .git、orm、gen、.vscode
+# 复制 bin 内容以及 sdk 到临时目录，排除 .git、orm、gen、.vscode
 echo "正在复制文件到临时目录 $TEMP_DIR (排除 .git, orm, gen, .vscode)..."
 rsync -av --exclude='.git' --exclude='orm' --exclude='gen' --exclude='.vscode' "$SOURCE_DIR"/ "$TEMP_DIR"/
+cp -r "$SDK_DIR"/lib "$TEMP_DIR/"
 
 # 检查复制是否成功
 if [ $? -ne 0 ]; then
