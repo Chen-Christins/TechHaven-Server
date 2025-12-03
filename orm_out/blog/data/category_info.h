@@ -27,6 +27,9 @@ public:
     const std::string& getName() { return m_name; }
     void setName(const std::string& v);
 
+    const std::string& getColor() { return m_color; }
+    void setColor(const std::string& v);
+
     const int64_t& getParentId() { return m_parentId; }
     void setParentId(const int64_t& v);
 
@@ -47,6 +50,7 @@ private:
     int64_t m_userId;
     int64_t m_parentId;
     std::string m_name;
+    std::string m_color;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

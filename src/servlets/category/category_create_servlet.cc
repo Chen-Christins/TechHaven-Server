@@ -16,6 +16,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		DEFINE_AND_CHECK_STRING(result, name, "name");
+		DEFINE_AND_CHECK_STRING(result, color, "color");
 		int64_t parent_id = request->getParamAs<int64_t>("parent_id");
 
 		int64_t uid = getUserId(request);
@@ -41,6 +42,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 			info->setName(name);
 			new_cat = true;
 		}
+		info->setColor(color);
 		info->setParentId(parent_id);
 		info->setIsDeleted(0);
 		info->setCreateTime(time(0));
@@ -65,6 +67,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 
 		result->set("id", info->getId());
 		result->set("name", info->getName());
+		result->set("color", info->getColor());
 		result->set("parent_id", parent_id);
 	} while (0);
 	response->setBody(result->toJsonString());

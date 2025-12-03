@@ -12,6 +12,7 @@ CategoryInfo::CategoryInfo()
     ,m_userId()
     ,m_parentId()
     ,m_name()
+    ,m_color()
     ,m_createTime(time(0))
     ,m_updateTime() {
 }
@@ -21,6 +22,7 @@ std::string CategoryInfo::toJsonString() const {
     v["id"] = std::to_string(m_id);
     v["user_id"] = std::to_string(m_userId);
     v["name"] = m_name;
+    v["color"] = m_color;
     v["parent_id"] = std::to_string(m_parentId);
     v["is_deleted"] = m_isDeleted;
     v["create_time"] = chen::Time2Str(m_createTime);
@@ -38,6 +40,10 @@ void CategoryInfo::setUserId(const int64_t& v) {
 
 void CategoryInfo::setName(const std::string& v) {
     m_name = v;
+}
+
+void CategoryInfo::setColor(const std::string& v) {
+    m_color = v;
 }
 
 void CategoryInfo::setParentId(const int64_t& v) {
@@ -58,7 +64,7 @@ void CategoryInfo::setUpdateTime(const int64_t& v) {
 
 
 int CategoryInfoDao::Update(CategoryInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update category set user_id = ?, name = ?, parent_id = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update category set user_id = ?, name = ?, color = ?, parent_id = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -67,16 +73,17 @@ int CategoryInfoDao::Update(CategoryInfo::ptr info, chen::IDB::ptr conn) {
     }
     stmt->bindInt64(1, info->m_userId);
     stmt->bindString(2, info->m_name);
-    stmt->bindInt64(3, info->m_parentId);
-    stmt->bindInt32(4, info->m_isDeleted);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_updateTime);
-    stmt->bindInt64(7, info->m_id);
+    stmt->bindString(3, info->m_color);
+    stmt->bindInt64(4, info->m_parentId);
+    stmt->bindInt32(5, info->m_isDeleted);
+    stmt->bindTime(6, info->m_createTime);
+    stmt->bindTime(7, info->m_updateTime);
+    stmt->bindInt64(8, info->m_id);
     return stmt->execute();
 }
 
 int CategoryInfoDao::Insert(CategoryInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into category (user_id, name, parent_id, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into category (user_id, name, color, parent_id, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -85,10 +92,11 @@ int CategoryInfoDao::Insert(CategoryInfo::ptr info, chen::IDB::ptr conn) {
     }
     stmt->bindInt64(1, info->m_userId);
     stmt->bindString(2, info->m_name);
-    stmt->bindInt64(3, info->m_parentId);
-    stmt->bindInt32(4, info->m_isDeleted);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_updateTime);
+    stmt->bindString(3, info->m_color);
+    stmt->bindInt64(4, info->m_parentId);
+    stmt->bindInt32(5, info->m_isDeleted);
+    stmt->bindTime(6, info->m_createTime);
+    stmt->bindTime(7, info->m_updateTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -100,7 +108,7 @@ int CategoryInfoDao::InsertOrUpdate(CategoryInfo::ptr info, chen::IDB::ptr conn)
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into category (id, user_id, name, parent_id, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into category (id, user_id, name, color, parent_id, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -110,10 +118,11 @@ int CategoryInfoDao::InsertOrUpdate(CategoryInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindInt64(1, info->m_id);
     stmt->bindInt64(2, info->m_userId);
     stmt->bindString(3, info->m_name);
-    stmt->bindInt64(4, info->m_parentId);
-    stmt->bindInt32(5, info->m_isDeleted);
-    stmt->bindTime(6, info->m_createTime);
-    stmt->bindTime(7, info->m_updateTime);
+    stmt->bindString(4, info->m_color);
+    stmt->bindInt64(5, info->m_parentId);
+    stmt->bindInt32(6, info->m_isDeleted);
+    stmt->bindTime(7, info->m_createTime);
+    stmt->bindTime(8, info->m_updateTime);
     return stmt->execute();
 }
 
@@ -167,7 +176,7 @@ int CategoryInfoDao::DeleteByUserIdName( const int64_t& user_id,  const std::str
 }
 
 int CategoryInfoDao::QueryAll(std::vector<CategoryInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category";
+    std::string sql = "select id, user_id, name, color, parent_id, is_deleted, create_time, update_time from category";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -183,17 +192,18 @@ int CategoryInfoDao::QueryAll(std::vector<CategoryInfo::ptr>& results, chen::IDB
         v->m_id = rt->getInt64(0);
         v->m_userId = rt->getInt64(1);
         v->m_name = rt->getString(2);
-        v->m_parentId = rt->getInt64(3);
-        v->m_isDeleted = rt->getInt32(4);
-        v->m_createTime = rt->getTime(5);
-        v->m_updateTime = rt->getTime(6);
+        v->m_color = rt->getString(3);
+        v->m_parentId = rt->getInt64(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
         results.push_back(v);
     }
     return 0;
 }
 
 CategoryInfo::ptr CategoryInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category where id = ?";
+    std::string sql = "select id, user_id, name, color, parent_id, is_deleted, create_time, update_time from category where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -212,15 +222,16 @@ CategoryInfo::ptr CategoryInfoDao::Query( const int64_t& id, chen::IDB::ptr conn
     v->m_id = rt->getInt64(0);
     v->m_userId = rt->getInt64(1);
     v->m_name = rt->getString(2);
-    v->m_parentId = rt->getInt64(3);
-    v->m_isDeleted = rt->getInt32(4);
-    v->m_createTime = rt->getTime(5);
-    v->m_updateTime = rt->getTime(6);
+    v->m_color = rt->getString(3);
+    v->m_parentId = rt->getInt64(4);
+    v->m_isDeleted = rt->getInt32(5);
+    v->m_createTime = rt->getTime(6);
+    v->m_updateTime = rt->getTime(7);
     return v;
 }
 
 int CategoryInfoDao::QueryByUserId(std::vector<CategoryInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category where user_id = ?";
+    std::string sql = "select id, user_id, name, color, parent_id, is_deleted, create_time, update_time from category where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -237,17 +248,18 @@ int CategoryInfoDao::QueryByUserId(std::vector<CategoryInfo::ptr>& results,  con
         v->m_id = rt->getInt64(0);
         v->m_userId = rt->getInt64(1);
         v->m_name = rt->getString(2);
-        v->m_parentId = rt->getInt64(3);
-        v->m_isDeleted = rt->getInt32(4);
-        v->m_createTime = rt->getTime(5);
-        v->m_updateTime = rt->getTime(6);
+        v->m_color = rt->getString(3);
+        v->m_parentId = rt->getInt64(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
         results.push_back(v);
     };
     return 0;
 }
 
 CategoryInfo::ptr CategoryInfoDao::QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, name, parent_id, is_deleted, create_time, update_time from category where user_id = ? and name = ?";
+    std::string sql = "select id, user_id, name, color, parent_id, is_deleted, create_time, update_time from category where user_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -267,10 +279,11 @@ CategoryInfo::ptr CategoryInfoDao::QueryByUserIdName( const int64_t& user_id,  c
     v->m_id = rt->getInt64(0);
     v->m_userId = rt->getInt64(1);
     v->m_name = rt->getString(2);
-    v->m_parentId = rt->getInt64(3);
-    v->m_isDeleted = rt->getInt32(4);
-    v->m_createTime = rt->getTime(5);
-    v->m_updateTime = rt->getTime(6);
+    v->m_color = rt->getString(3);
+    v->m_parentId = rt->getInt64(4);
+    v->m_isDeleted = rt->getInt32(5);
+    v->m_createTime = rt->getTime(6);
+    v->m_updateTime = rt->getTime(7);
     return v;
 }
 
@@ -279,6 +292,7 @@ int CategoryInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
             "name TEXT NOT NULL DEFAULT '',"
+            "color TEXT NOT NULL DEFAULT '',"
             "parent_id INTEGER NOT NULL DEFAULT 0,"
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
@@ -293,6 +307,7 @@ int CategoryInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT,"
             "`user_id` bigint NOT NULL DEFAULT 0,"
             "`name` varchar(20) NOT NULL DEFAULT '',"
+            "`color` varchar(10) NOT NULL DEFAULT '',"
             "`parent_id` bigint NOT NULL DEFAULT 0,"
             "`is_deleted` int NOT NULL DEFAULT 0,"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp,"

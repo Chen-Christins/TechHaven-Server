@@ -41,6 +41,7 @@ int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen:
 			Json::Value v;
 			v["id"] = i->getId();
 			v["name"] = i->getName();
+			v["color"] = i->getColor();
 			v["parent_id"] = i->getParentId();
 			result->jsondata.append(v);
 		}

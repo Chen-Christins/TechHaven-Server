@@ -8,10 +8,19 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -std=c++17 -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -std=c17 -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
 
-include_directories(${PROJECT_SOURCE_DIR}/chen-sdk-1.0.0/include)
+# Auto-detect chen-sdk directory by pattern "chen-sdk-*"
+file(GLOB CHEN_SDK_DIRS "${PROJECT_SOURCE_DIR}/chen-sdk-*")
+if (CHEN_SDK_DIRS)
+    list(GET CHEN_SDK_DIRS 0 CHEN_SDK_DIR)
+    message(STATUS "Using CHEN_SDK_DIR=${CHEN_SDK_DIR}")
+else()
+    message(FATAL_ERROR "chen-sdk-* not found under ${PROJECT_SOURCE_DIR}. Please fetch chen-sdk.")
+endif()
+
+include_directories(${CHEN_SDK_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/orm_out)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/chen-sdk-1.0.0)
+add_subdirectory(${CHEN_SDK_DIR})
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 
 include_directories(.)
