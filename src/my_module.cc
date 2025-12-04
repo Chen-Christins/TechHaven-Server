@@ -19,10 +19,10 @@
 #include "manager/article_label_rel_manager.h"
 #include "manager/subject_manager.h"
 #include "manager/assignment_manager.h"
-#include "resource_servlet.h"
 #include <chen/http/ws_server.h>
 #include "servlets/user/user_admin_create_servlet.h"
 #include "servlets/user/user_admin_delete_servlet.h"
+#include "servlets/user/user_admin_lists_servlet.h"
 #include "servlets/user/user_admin_recover_servlet.h"
 #include "servlets/user/user_admin_reset_passwd_servlet.h"
 #include "servlets/user/user_create_servlet.h"
@@ -35,6 +35,7 @@
 #include "servlets/user/user_send_code_servlet.h"
 #include "servlets/user/user_update_servlet.h"
 #include "servlets/user/user_query_servlet.h"
+#include "servlets/article/article_admin_lists_servlet.h"
 #include "servlets/article/article_create_servlet.h"
 #include "servlets/article/article_detail_servlet.h"
 #include "servlets/article/article_publish_servlet.h"
@@ -142,11 +143,6 @@ bool MyModule::onServerReady() {
     for (auto& i : servers) {
         auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         auto dp = hs->getServletDispatch();
-        
-        chen::http::ResourceServlet::ptr slt(std::make_shared<chen::http::ResourceServlet>(
-            chen::EnvMgr::GetInstance()->getCwd()
-        ));
-        dp->addGlobServlet("/blog/*", slt);
 
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
         dp->addServlet("/user/send_code", XX(UserSendCodeServlet));
@@ -163,7 +159,9 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/admin/delete", XX(UserAdminDeleteServlet));
         dp->addServlet("/user/admin/recover", XX(UserAdminRecoverServlet));
         dp->addServlet("/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
+        dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         
+        dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));
         dp->addServlet("/article/publish", XX(ArticlePublishServlet));

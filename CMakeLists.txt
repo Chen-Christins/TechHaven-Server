@@ -34,6 +34,7 @@ set(LIB_SRC
     src/manager/label_manager.cc
 	src/manager/subject_manager.cc
     src/manager/user_manager.cc
+    src/servlets/article/article_admin_lists_servlet.cc
     src/servlets/article/article_create_servlet.cc
     src/servlets/article/article_delete_servlet.cc
     src/servlets/article/article_detail_servlet.cc
@@ -56,6 +57,7 @@ set(LIB_SRC
 	src/servlets/label/label_query_servlet.cc
     src/servlets/user/user_admin_create_servlet.cc
     src/servlets/user/user_admin_delete_servlet.cc
+    src/servlets/user/user_admin_lists_servlet.cc
     src/servlets/user/user_admin_recover_servlet.cc
     src/servlets/user/user_admin_reset_passwd_servlet.cc
     src/servlets/user/user_create_servlet.cc
@@ -70,7 +72,6 @@ set(LIB_SRC
     src/servlets/user/user_query_servlet.cc
 	src/index.cc
     src/my_module.cc
-    src/resource_servlet.cc
     src/struct.cc
 )
 

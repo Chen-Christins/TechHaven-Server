@@ -33,12 +33,16 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         }
         result->setResult(200, "ok");
         result->set("id", info->getId());
-        result->set("account", info->getAccount());
-        result->set("email", info->getEmail());
         result->set("name", info->getName());
+        result->set("account", info->getAccount());
+        result->set("avatar", info->getAvatar());
+        result->set("email", info->getEmail());
         result->set("role", info->getRole());
-        result->set("login_time", info->getLoginTime());
+        result->set("bio", info->getBio());
+        result->set("location", info->getLocation());
         result->set("status", info->getIsDeleted());
+        result->set("login_time", info->getLoginTime());
+        result->set("create_time", info->getCreateTime());
     } while (false);
     response->setBody(result->toJsonString());
     return 0;

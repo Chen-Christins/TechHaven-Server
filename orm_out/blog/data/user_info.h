@@ -21,23 +21,32 @@ public:
     const int64_t& getId() { return m_id; }
     void setId(const int64_t& v);
 
+    const std::string& getName() { return m_name; }
+    void setName(const std::string& v);
+
     const std::string& getAccount() { return m_account; }
     void setAccount(const std::string& v);
+
+    const std::string& getAvatar() { return m_avatar; }
+    void setAvatar(const std::string& v);
 
     const std::string& getEmail() { return m_email; }
     void setEmail(const std::string& v);
 
-    const std::string& getPasswd() { return m_passwd; }
-    void setPasswd(const std::string& v);
-
-    const std::string& getName() { return m_name; }
-    void setName(const std::string& v);
-
     const std::string& getRole() { return m_role; }
     void setRole(const std::string& v);
 
+    const std::string& getPasswd() { return m_passwd; }
+    void setPasswd(const std::string& v);
+
     const int32_t& getState() { return m_state; }
     void setState(const int32_t& v);
+
+    const std::string& getBio() { return m_bio; }
+    void setBio(const std::string& v);
+
+    const std::string& getLocation() { return m_location; }
+    void setLocation(const std::string& v);
 
     const int64_t& getLoginTime() { return m_loginTime; }
     void setLoginTime(const int64_t& v);
@@ -57,11 +66,14 @@ private:
     int32_t m_state;
     int32_t m_isDeleted;
     int64_t m_id;
-    std::string m_account;
-    std::string m_email;
-    std::string m_passwd;
     std::string m_name;
+    std::string m_account;
+    std::string m_avatar;
+    std::string m_email;
     std::string m_role;
+    std::string m_passwd;
+    std::string m_bio;
+    std::string m_location;
     int64_t m_loginTime;
     int64_t m_createTime;
     int64_t m_updateTime;

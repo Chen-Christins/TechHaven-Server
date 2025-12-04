@@ -48,6 +48,26 @@ void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
 	}
 }
 
+uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos
+        , uint64_t offset, uint64_t size, bool isValid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    for (auto& [id, user] : m_datas) {
+        if (isValid && user->getIsDeleted()) {
+            continue;
+        }
+        if (offset > 0) {
+            --offset;
+            continue;
+        }
+        if (size == 0) {
+            break;
+        }
+        infos.emplace_back(user);
+        --size;
+    }
+    return m_datas.size();
+}
+
 void UserManager::add(blog::data::UserInfo::ptr info) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas[info->getId()] = info;

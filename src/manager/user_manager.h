@@ -14,6 +14,9 @@ public:
     void add(blog::data::UserInfo::ptr info);
     void getAllIds(std::vector<int64_t>& ids, bool isValid);
 	
+    uint64_t listByPages(std::vector<blog::data::UserInfo::ptr>& infos
+        , uint64_t offset, uint64_t size, bool isValid);
+
 	blog::data::UserInfo::ptr get(int64_t id);
     blog::data::UserInfo::ptr getByAccount(const std::string& v);
     blog::data::UserInfo::ptr getByEmail(const std::string& v);
