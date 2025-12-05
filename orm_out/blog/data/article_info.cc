@@ -357,7 +357,7 @@ int ArticleInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`title` varchar(256) NOT NULL DEFAULT '' COMMENT '文章标题',"
             "`content` text NOT NULL DEFAULT '' COMMENT '文章内容',"
             "`type` int NOT NULL DEFAULT 0 COMMENT '类型 1:原创,2:转发',"
-            "`state` int NOT NULL DEFAULT 0 COMMENT '状态1审核中2已发布3未通过4待发布',"
+            "`state` int NOT NULL DEFAULT 0 COMMENT '状态: 0全部 1审核中 2已发布 3未通过 4私密',"
             "`channel` bigint NOT NULL DEFAULT 0 COMMENT '频道id',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"
             "`publish_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '发布时间',"

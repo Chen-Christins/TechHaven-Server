@@ -25,6 +25,10 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
         }
 
 		int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
 		auto role = UserMgr::GetInstance()->get(uid)->getRole();
 
 		if (role != "admin") {

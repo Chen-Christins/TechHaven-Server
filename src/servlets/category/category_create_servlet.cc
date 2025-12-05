@@ -16,8 +16,12 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		DEFINE_AND_CHECK_STRING(result, name, "name");
+		DEFINE_AND_CHECK_STRING(result, url, "url");
+		DEFINE_AND_CHECK_STRING(result, icon, "icon");
 		DEFINE_AND_CHECK_STRING(result, color, "color");
+        std::string desc = request->getParamAs<std::string>("desc");
 		int64_t parent_id = request->getParamAs<int64_t>("parent_id");
+        int32_t status = request->getParamAs<int32_t>("status", 1);
 
 		int64_t uid = getUserId(request);
 		if (!uid) {
@@ -34,17 +38,20 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 			}
 		}
 
-		auto info = CategoryMgr::GetInstance()->getByUserIdName(uid, name);
+		auto info = CategoryMgr::GetInstance()->getByName(name);
 		bool new_cat = false;
 		if (!info) {
 			info.reset(new data::CategoryInfo);
-			info->setUserId(uid);
 			info->setName(name);
 			new_cat = true;
 		}
 		info->setColor(color);
 		info->setParentId(parent_id);
 		info->setIsDeleted(0);
+        info->setStatus(status);
+        info->setUrl(url);
+        info->setIcon(icon);
+        info->setDescription(desc);
 		info->setCreateTime(time(0));
 		info->setUpdateTime(time(0));
 
@@ -69,6 +76,10 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 		result->set("name", info->getName());
 		result->set("color", info->getColor());
 		result->set("parent_id", parent_id);
+        result->set("url", info->getUrl());
+        result->set("icon", info->getIcon());
+        result->set("desc", info->getDescription());
+        result->set("status", info->getStatus());
 	} while (0);
 	response->setBody(result->toJsonString());
     return 0;

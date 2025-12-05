@@ -21,17 +21,26 @@ public:
     const int64_t& getId() { return m_id; }
     void setId(const int64_t& v);
 
-    const int64_t& getUserId() { return m_userId; }
-    void setUserId(const int64_t& v);
-
     const std::string& getName() { return m_name; }
     void setName(const std::string& v);
 
     const std::string& getColor() { return m_color; }
     void setColor(const std::string& v);
 
+    const std::string& getDescription() { return m_description; }
+    void setDescription(const std::string& v);
+
+    const std::string& getUrl() { return m_url; }
+    void setUrl(const std::string& v);
+
+    const std::string& getIcon() { return m_icon; }
+    void setIcon(const std::string& v);
+
     const int64_t& getParentId() { return m_parentId; }
     void setParentId(const int64_t& v);
+
+    const int32_t& getStatus() { return m_status; }
+    void setStatus(const int32_t& v);
 
     const int32_t& getIsDeleted() { return m_isDeleted; }
     void setIsDeleted(const int32_t& v);
@@ -45,12 +54,15 @@ public:
     std::string toJsonString() const;
 
 private:
+    int32_t m_status;
     int32_t m_isDeleted;
     int64_t m_id;
-    int64_t m_userId;
     int64_t m_parentId;
     std::string m_name;
     std::string m_color;
+    std::string m_description;
+    std::string m_url;
+    std::string m_icon;
     int64_t m_createTime;
     int64_t m_updateTime;
 };
@@ -65,12 +77,10 @@ public:
     static int Delete(CategoryInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
-    static int DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn);
-    static int DeleteByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
+    static int DeleteByName( const std::string& name, chen::IDB::ptr conn);
     static int QueryAll(std::vector<CategoryInfo::ptr>& results, chen::IDB::ptr conn);
     static CategoryInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
-    static int QueryByUserId(std::vector<CategoryInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
-    static CategoryInfo::ptr QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
+    static CategoryInfo::ptr QueryByName( const std::string& name, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
 };

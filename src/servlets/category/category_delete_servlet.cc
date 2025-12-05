@@ -48,9 +48,11 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
 			break;
 		}
 		std::vector<data::CategoryInfo::ptr> infos;
-		if (!CategoryMgr::GetInstance()->listByUserId(infos, uid, true)) {
-			break;
-		}
+		CategoryMgr::GetInstance()->listAll(infos);
+        if (infos.empty()) {
+            result->setResult(400, "no categories");
+            break;
+        }
 		std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr>> parent_map;
 		for (auto& i : infos) {
 			if (i->getParentId()) {
@@ -86,9 +88,19 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
 			break;
 		}
 		if (!del_cats.empty()) {
-			auto& jids = result->jsondata["ids"];
+            result->set("total", del_cats.size());
+			auto& jids = result->jsondata["list"];
 			for (auto& i : del_cats) {
-				jids.append(i->getId());
+				Json::Value item;
+                item["id"] = i->getId();
+                item["name"] = i->getName();
+                item["color"] = i->getColor();
+                item["parent_id"] = i->getParentId();
+                item["url"] = i->getUrl();
+                item["icon"] = i->getIcon();
+                item["desc"] = i->getDescription();
+                item["status"] = i->getStatus();
+                jids.append(item);
 			}
 		}
 	} while (0);

@@ -18,6 +18,10 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
         DEFINE_AND_CHECK_TYPE(result, int, state, "state");
 
         int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
         auto role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != "admin") {
             result->setResult(403, "Access Denied");

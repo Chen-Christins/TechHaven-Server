@@ -11,15 +11,13 @@ namespace blog {
 class CategoryManager {
 public:
     bool loadAll();
+    void listAll(std::vector<blog::data::CategoryInfo::ptr>& infos, bool isValid = false);
     void add(blog::data::CategoryInfo::ptr info);
     blog::data::CategoryInfo::ptr get(int64_t id);
-    bool listByUserId(std::vector<blog::data::CategoryInfo::ptr>& infos, int64_t id, bool valid);
-    blog::data::CategoryInfo::ptr getByUserIdName(int64_t id, const std::string& name);
-    bool exists(int64_t id, const std::string& name);
+    blog::data::CategoryInfo::ptr getByName(const std::string& name);
 private:
     std::shared_mutex m_mutex;
     std::unordered_map<int64_t, blog::data::CategoryInfo::ptr> m_datas;
-    std::unordered_map<int64_t, std::map<std::string, blog::data::CategoryInfo::ptr>> m_users;
 };
 
 typedef chen::Singleton<CategoryManager> CategoryMgr;

@@ -17,6 +17,7 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 	do {
 		DEFINE_AND_CHECK_STRING(result, name, "name");
 		DEFINE_AND_CHECK_STRING(result, color, "color");
+        std::string desc = request->getParamAs<std::string>("desc");
 
 		int64_t uid = getUserId(request);
 		if (!uid) {
@@ -32,6 +33,7 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 			info->setName(name);
 			new_label = true;
 		}
+        info->setDescription(desc);
 		info->setColor(color);
 		info->setIsDeleted(0);
 		info->setCreateTime(time(0));
@@ -57,6 +59,8 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 		result->set("id", info->getId());
 		result->set("name", info->getName());
 		result->set("color", info->getColor());
+        result->set("desc", info->getDescription());
+        result->set("create_time", info->getCreateTime());
 	} while (0);
 	response->setBody(result->toJsonString());
     return 0;

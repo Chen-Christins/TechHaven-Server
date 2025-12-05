@@ -171,9 +171,9 @@ bool MyModule::onServerReady() {
         dp->addServlet("/article/update", XX(ArticleUpdateServlet));
         dp->addServlet("/article/update_category", XX(ArticleUpdateCategoryServlet));
 
-        dp->addServlet("/category/create", XX(CategoryCreateServlet));
-        dp->addServlet("/category/delete", XX(CategoryDeleteServlet));
-        dp->addServlet("/category/query", XX(CategoryQueryServlet));
+        dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
+        dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
+        dp->addServlet("/category/admin/query", XX(CategoryQueryServlet));
 
 		dp->addServlet("/label/create", XX(LabelCreateServlet));
         dp->addServlet("/label/delete", XX(LabelDeleteServlet));

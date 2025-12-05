@@ -17,6 +17,10 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
 
         int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
         auto role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (role != "admin") {
