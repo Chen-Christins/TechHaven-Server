@@ -31,10 +31,6 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 			break;
 		}
 		int32_t state = info->getState();
-		if (state == 1) {
-			result->setResult(500, "invalid state");
-			break;
-		}
 		info->setTitle(title);
 		info->setContent(content);
 		

@@ -40,6 +40,7 @@
 #include "servlets/article/article_detail_servlet.h"
 #include "servlets/article/article_publish_servlet.h"
 #include "servlets/article/article_query_servlet.h"
+#include "servlets/article/article_switch_state_servlet.h"
 #include "servlets/article/article_delete_servlet.h"
 #include "servlets/article/article_verify_servlet.h"
 #include "servlets/article/article_update_servlet.h"
@@ -170,6 +171,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/article/verify", XX(ArticleVerifyServlet));
         dp->addServlet("/article/update", XX(ArticleUpdateServlet));
         dp->addServlet("/article/update_category", XX(ArticleUpdateCategoryServlet));
+        dp->addServlet("/article/switch_state", XX(ArticleSwitchStateServlet));
 
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));

@@ -1,6 +1,7 @@
 #include "article_query_servlet.h"
 #include <chen/log/log.h>
 #include "../../manager/article_manager.h"
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -22,11 +23,19 @@ int32_t ArticleQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::
 		int offset = (page_from - 1) * page_size;
         std::vector<data::ArticleInfo::ptr> infos;
         auto total = ArticleMgr::GetInstance()->listByUserIdPages(infos, user_id, offset, page_size, true, state);
-        result->jsondata["total"] = total;
-        result->jsondata["page_from"] = page_from;
-        result->jsondata["page_size"] = page_size;
+        result->set("total", total);
+        auto& list = result->jsondata["list"];
         for (auto& i : infos) {
-            result->jsondata["ids"].append(i->getId());
+            Json::Value item;
+            auto uinfo = UserMgr::GetInstance()->get(i->getUserId());
+            item["id"] = i->getId();
+            item["author"] = uinfo->getName();
+            item["title"] = i->getTitle();
+            item["summary"] = i->getContent().substr(0, 100);
+            item["type"] = i->getType();
+            item["state"] = i->getState();
+            item["publish_time"] = i->getPublishTime();
+            list.append(item);
         }
     } while (0);
     response->setBody(result->toJsonString());

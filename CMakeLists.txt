@@ -40,6 +40,7 @@ set(LIB_SRC
     src/servlets/article/article_detail_servlet.cc
     src/servlets/article/article_publish_servlet.cc
     src/servlets/article/article_query_servlet.cc
+    src/servlets/article/article_switch_state_servlet.cc
     src/servlets/article/article_update_servlet.cc
     src/servlets/article/article_verify_servlet.cc
     src/servlets/article/article_update_category_servlet.cc

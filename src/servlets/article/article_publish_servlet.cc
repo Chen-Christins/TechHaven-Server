@@ -33,7 +33,7 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
             result->setResult(401, "invalid article");
             break;
         }
-        if (info->getState() != (int32_t)State::UNPUBLISH) {
+        if (info->getState() == (int32_t)State::PUBLISH || info->getState() == (int32_t)State::VERIFYING) {
             result->setResult(401, "invalid state");
             break;
         }

@@ -15,6 +15,9 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
     do {
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
+        std::string rrole = request->getParamAs<std::string>("role");
+        int32_t state = request->getParamAs<int32_t>("state", -1);
+        int32_t days = request->getParamAs<int32_t>("days", 0);
 
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -30,21 +33,19 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         uint64_t offset = (page_num - 1) * page_size;
         std::vector<data::UserInfo::ptr> users;
-        uint64_t total = UserMgr::GetInstance()->listByPages(users, offset, page_size, false);
+        uint64_t total = UserMgr::GetInstance()->listByPages(users, offset, page_size, rrole, state, days, false);
         
         result->set("total", total);
         auto& list = result->jsondata["list"];
         for (const auto& user : users) {
             Json::Value item;
             item["id"] = user->getId();
-            item["account"] = user->getAccount();
             item["name"] = user->getName();
             item["email"] = user->getEmail();
             item["role"] = user->getRole();
+            item["state"] = user->getState();
             item["create_time"] = user->getCreateTime();
             item["login_time"] = user->getLoginTime();
-            item["update_time"] = user->getUpdateTime();
-            item["is_deleted"] = user->getIsDeleted();
             list.append(item);
         }
     } while (0);

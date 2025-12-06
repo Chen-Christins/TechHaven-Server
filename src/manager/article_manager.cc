@@ -84,9 +84,11 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 		int64_t sum = 0;
 		for (auto i : m_datas) {
 			if (!i.second->getIsDeleted()) {
-				if (i.second->getState() == state) {
-					++sum;
-				}
+				if (!state) {
+                    ++sum;
+                } else if (i.second->getState() == state) {
+                    ++sum;
+                }
 			}
 		}
 
@@ -94,9 +96,11 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 		int oft = 0;
 		while (it != m_datas.rend() && oft < offset) {
 			if (!it->second->getIsDeleted()) {
-				if (it->second->getState() == state) {
-					++oft;
-				}
+				if (!state) {
+                    ++oft;
+                } else if (it->second->getState() == state) {
+                    ++oft;
+                }
 			}
 			++it;
 		}
@@ -119,16 +123,24 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 
 		int64_t sum = 0;
 		for (auto i : uit->second) {
-			if (!i.second->getIsDeleted()) {
-				++sum;
-			}
+            if (!i.second->getIsDeleted()) {
+                if (!state) {
+                    ++sum;
+                } else if (i.second->getState() == state) {
+                    ++sum;
+                }
+            }
 		}
 
         auto it = uit->second.rbegin();
 		int oft = 0;
 		while (it != uit->second.rend() && oft < offset) {
 			if (!it->second->getIsDeleted()) {
-				++oft;
+				if (!state) {
+                    ++oft;
+                } else if (it->second->getState() == state) {
+                    ++oft;
+                }
 			}
 			++it;
 		}
