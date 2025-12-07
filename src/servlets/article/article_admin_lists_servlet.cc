@@ -15,14 +15,17 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
     do {
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
-        DEFINE_AND_CHECK_TYPE(result, int, state, "state");
+        int32_t state = request->getParamAs<int32_t>("state", 0);
+        int32_t category = request->getParamAs<int32_t>("category_id", 0);
+        std::string rrole = request->getParamAs<std::string>("role", "");
+        int32_t days = request->getParamAs<int32_t>("days", 0);
 
         int64_t uid = getUserId(request);
         if (!uid) {
             result->setResult(500, "not login");
             break;
         }
-        auto role = UserMgr::GetInstance()->get(uid)->getRole();
+        std::string role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != "admin") {
             result->setResult(403, "Access Denied");
             break;
@@ -30,7 +33,8 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
 
         uint64_t offset = (page_num - 1) * page_size;
         std::vector<data::ArticleInfo::ptr> articles;
-        uint64_t total = ArticleMgr::GetInstance()->listByUserIdPages(articles, 0, offset, page_size, true, state);
+        uint64_t total = ArticleMgr::GetInstance()
+            ->listByPages(articles, offset, state, category, rrole, days, page_size, true);
 
         result->set("total", total);
         auto& list = result->jsondata["list"];

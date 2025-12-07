@@ -4,6 +4,7 @@
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>
 #include "../struct.h"
+#include "user_manager.h"
 
 namespace blog {
 
@@ -153,6 +154,53 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         }
         return sum;
     }
+}
+
+int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
+        , int category, const std::string& role, int32_t days, int32_t size, bool valid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    auto check = [&](data::ArticleInfo::ptr info) {
+        if (valid && info->getIsDeleted()) {
+            return false;
+        }
+        if (state && info->getState() != state) {
+            return false;
+        }
+        // if (category && info->getCategoryId() != category) {
+        //     return false;
+        // }
+        if (!role.empty()) {
+            auto user = UserMgr::GetInstance()->get(info->getUserId());
+            if (!user || user->getRole() != role) {
+                return false;
+            }
+        }
+        if (days) {
+            time_t now = time(0);
+            if (info->getCreateTime() < now - days * 24 * 3600) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    std::vector<data::ArticleInfo::ptr> temp;
+    for (auto& i : m_datas) {
+        if (check(i.second)) {
+            temp.emplace_back(i.second);
+        }
+    }
+
+    if (offset < (int32_t)temp.size()) {
+        for (size_t i = offset; i < temp.size(); ++i) {
+            if (infos.size() >= (size_t)size) {
+                break;
+            }
+            infos.emplace_back(temp[i]);
+        }
+    }
+    return temp.size();
 }
 
 void ArticleManager::delVerify(int64_t id) {

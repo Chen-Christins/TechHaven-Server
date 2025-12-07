@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <filesystem>
 
 class Generator {
 public:
@@ -83,6 +84,10 @@ std::string Generator::GetClassName(const std::string& str) {
 
 void Generator::gen_inc(const std::string& path) {
     std::string name = path + (path.back() == '/' ? "" : "/") + m_filename + ".h";
+    if (std::filesystem::exists(name)) {
+        std::cout << name << " is exist, skip generate" << std::endl;
+        return;
+    }
     std::ofstream ofs(name);
     
     std::string marco = GenMarco(name);
@@ -90,7 +95,7 @@ void Generator::gen_inc(const std::string& path) {
     ofs << "#define " << marco << std::endl;
     ofs << std::endl;
 
-    std::vector<std::string> incs{"../struct.h"};
+    std::vector<std::string> incs{"../../struct.h"};
     for (size_t i = 0; i < incs.size(); ++i) {
         if (incs[i][0] != '<') {
             ofs << "#include " << "\"" << incs[i] << "\"" << std::endl;
@@ -118,7 +123,7 @@ void Generator::gen_inc(const std::string& path) {
     ofs << std::endl;
     
     std::string class_name = GetClassName(m_filename);
-    ofs << "class " << class_name << " : public BlogServlet {" << std::endl;
+    ofs << "class " << class_name << " : public BlogLoginedServlet {" << std::endl;
     ofs << "public:" << std::endl;
     ofs << "    typedef std::shared_ptr<" << class_name << "> ptr;" << std::endl;
     ofs << "    " << class_name << "();" << std::endl;
@@ -138,11 +143,24 @@ void Generator::gen_inc(const std::string& path) {
 
 void Generator::gen_src(const std::string& path) {
     std::string name = path + "/" + m_filename + ".cc";
+    if (std::filesystem::exists(name)) {
+        std::cout << name << " is exist, skip generate" << std::endl;
+        return;
+    }
     std::ofstream ofs(name);
     
-    std::vector<std::string> incs{m_filename + ".h", "<chen/log/log.h>"};
+    std::vector<std::string> incs{
+        m_filename + ".h",
+        "<chen/log/log.h>",
+        "../../util.h",
+        "../../manager/user_manager.h"
+    };
     for (size_t i = 0; i < incs.size(); ++i) {
-        ofs << "#include " << "\"" << incs[i] << "\"" << std::endl;
+        if (incs[i][0] != '<') {
+            ofs << "#include " << "\"" << incs[i] << "\"" << std::endl;
+        } else {
+            ofs << "#include " << incs[i] << std::endl;
+        }
     }
     ofs << std::endl;
 
@@ -167,7 +185,7 @@ void Generator::gen_src(const std::string& path) {
 
     std::string class_name = GetClassName(m_filename);
     ofs << class_name << "::" << class_name << "()" << std::endl;
-    ofs << "    :BlogServlet(\"" << class_name << "\") {" << std::endl << "}" << std::endl;
+    ofs << "    :BlogLoginedServlet(\"" << class_name << "\") {" << std::endl << "}" << std::endl;
     ofs << std::endl;
 
     ofs << "int32_t " << class_name << "::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response" << std::endl;
