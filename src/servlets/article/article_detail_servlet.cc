@@ -29,15 +29,15 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
 		data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
+        if (!info) {
+            result->setResult(404, "invalid id");
+            break;
+        }
         int32_t state = info->getState();
         bool is_deleted = info->getIsDeleted();
         auto role = UserMgr::GetInstance()->get(cur_uid)->getRole();
         if ((state != 2 && role != "admin") || is_deleted) {
             result->setResult(403, "Access Denied");
-            break;
-        }
-        if (!info) {
-            result->setResult(404, "invalid id");
             break;
         }
         int64_t uid = info->getUserId();

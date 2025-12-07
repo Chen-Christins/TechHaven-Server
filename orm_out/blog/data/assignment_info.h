@@ -21,17 +21,23 @@ public:
     const int64_t& getId() { return m_id; }
     void setId(const int64_t& v);
 
-    const int64_t& getSubjectId() { return m_subjectId; }
-    void setSubjectId(const int64_t& v);
-
     const std::string& getName() { return m_name; }
     void setName(const std::string& v);
 
-    const std::string& getColor() { return m_color; }
-    void setColor(const std::string& v);
+    const std::string& getSubjectName() { return m_subjectName; }
+    void setSubjectName(const std::string& v);
 
-    const std::string& getContent() { return m_content; }
-    void setContent(const std::string& v);
+    const int32_t& getStatus() { return m_status; }
+    void setStatus(const int32_t& v);
+
+    const std::string& getDescription() { return m_description; }
+    void setDescription(const std::string& v);
+
+    const int32_t& getMaxSize() { return m_maxSize; }
+    void setMaxSize(const int32_t& v);
+
+    const std::string& getFileType() { return m_fileType; }
+    void setFileType(const std::string& v);
 
     const int64_t& getDeadline() { return m_deadline; }
     void setDeadline(const int64_t& v);
@@ -48,12 +54,14 @@ public:
     std::string toJsonString() const;
 
 private:
+    int32_t m_status;
+    int32_t m_maxSize;
     int32_t m_isDeleted;
     int64_t m_id;
-    int64_t m_subjectId;
     std::string m_name;
-    std::string m_color;
-    std::string m_content;
+    std::string m_subjectName;
+    std::string m_description;
+    std::string m_fileType;
     int64_t m_deadline;
     int64_t m_createTime;
     int64_t m_updateTime;
@@ -69,12 +77,12 @@ public:
     static int Delete(AssignmentInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
-    static int DeleteBySubjectId( const int64_t& subject_id, chen::IDB::ptr conn);
-    static int DeleteBySubjectIdName( const int64_t& subject_id,  const std::string& name, chen::IDB::ptr conn);
+    static int DeleteBySubjectName( const std::string& subject_name, chen::IDB::ptr conn);
+    static int DeleteBySubjectNameName( const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn);
     static int QueryAll(std::vector<AssignmentInfo::ptr>& results, chen::IDB::ptr conn);
     static AssignmentInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
-    static int QueryBySubjectId(std::vector<AssignmentInfo::ptr>& results,  const int64_t& subject_id, chen::IDB::ptr conn);
-    static AssignmentInfo::ptr QueryBySubjectIdName( const int64_t& subject_id,  const std::string& name, chen::IDB::ptr conn);
+    static int QueryBySubjectName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name, chen::IDB::ptr conn);
+    static AssignmentInfo::ptr QueryBySubjectNameName( const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
 };

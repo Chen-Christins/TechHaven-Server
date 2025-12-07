@@ -9,7 +9,6 @@ set(LIB_SRC
     blog/data/category_info.cc
     blog/data/email_verification_info.cc
     blog/data/label_info.cc
-    blog/data/subject_info.cc
     blog/data/user_info.cc
 )
 add_library(orm_data ${LIB_SRC})

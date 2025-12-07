@@ -8,15 +8,9 @@ namespace http {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static chen::ConfigVar<std::unordered_set<std::string>>::ptr paths = 
-    chen::Config::Lookup("server.resources.path", std::unordered_set<std::string>{}, "resources paths");
-
-static chen::ConfigVar<std::string>::ptr lost_path = 
-    chen::Config::Lookup("server.resources.lost_path", std::string{}, "resources lost path");
-
 ResourceServlet::ResourceServlet(const std::string& path)
-    :Servlet("ResourceServlet")
-    ,m_path(path) {
+        : Servlet("ResourceServlet")
+        , m_path(path) {
 	m_content = "<html><head><title>404 Not Found"
         "</title></head><body><center><h1>404 Not Found</h1></center>"
         "<hr><center>" + chen::EnvMgr::GetInstance()->getEnv("server") + "</center></body></html>";
@@ -25,9 +19,6 @@ ResourceServlet::ResourceServlet(const std::string& path)
 int32_t ResourceServlet::handle(HttpRequest::ptr request, HttpResponse::ptr response
                     ,HttpSession::ptr session) {
     std::string rpath = request->getPath();
-	if (paths->getValue().count(rpath)) {
-		rpath = rpath + ".html";
-	}
 	
 	auto path = m_path + rpath;
     INFO(logger) << path;
@@ -37,22 +28,6 @@ int32_t ResourceServlet::handle(HttpRequest::ptr request, HttpResponse::ptr resp
         return 0;
     }
 	std::ifstream ifs(path);
-    if (!ifs) {
-		if (lost_path->getValue().empty()) {
-			response->setBody(m_content);
-		} else {
-			path = m_path + lost_path->getValue();
-			std::ifstream ifs(path);
-			std::string line;
-			std::stringstream ss;
-			while (std::getline(ifs, line)) {
-				ss << line << std::endl;
-			}
-			response->setBody(ss.str());
-		}
-        response->setStatus(HttpStatus::NOT_FOUND);
-        return 0;
-    }
 
     std::string line;
     std::stringstream ss;

@@ -20,51 +20,51 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 		DEFINE_AND_CHECK_STRING(result, name, "name");
 		DEFINE_AND_CHECK_STRING(result, color, "color");
 
-		int64_t uid = getUserId(request);
-		if (!uid) {
-			result->setResult(500, "not login");
-			break;
-		}
-		if (UserMgr::GetInstance()->get(uid)->getRole() != "admin") {
-			result->setResult(403, "Access Denied");
-			break;
-		}
+		// int64_t uid = getUserId(request);
+		// if (!uid) {
+		// 	result->setResult(500, "not login");
+		// 	break;
+		// }
+		// if (UserMgr::GetInstance()->get(uid)->getRole() != "admin") {
+		// 	result->setResult(403, "Access Denied");
+		// 	break;
+		// }
 
-		bool new_assignment = false;
-		auto info = AssignmentMgr::GetInstance()->getBySubjectIdName(sid, name);
-		if (!info) {
-			info.reset(new data::AssignmentInfo);
-			info->setName(name);
-			info->setSubjectId(sid);
-			info->setCreateTime(time(0));
-			new_assignment = true;
-		} else if (info->getIsDeleted()) {
-			info->setCreateTime(time(0));
-		}
-		info->setColor(color);
-		info->setIsDeleted(0);
-		info->setUpdateTime(time(0));
+		// bool new_assignment = false;
+		// auto info = AssignmentMgr::GetInstance()->getBySubjectIdName(sid, name);
+		// if (!info) {
+		// 	info.reset(new data::AssignmentInfo);
+		// 	info->setName(name);
+		// 	info->setSubjectId(sid);
+		// 	info->setCreateTime(time(0));
+		// 	new_assignment = true;
+		// } else if (info->getIsDeleted()) {
+		// 	info->setCreateTime(time(0));
+		// }
+		// info->setColor(color);
+		// info->setIsDeleted(0);
+		// info->setUpdateTime(time(0));
 
-		auto db = getDB();
-		if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+		// auto db = getDB();
+		// if (!db) {
+		// 	result->setResult(500, "get db error");
+		// 	break;
+		// }
 
-		if (data::AssignmentInfoDao::InsertOrUpdate(info, db)) {
-			result->setResult(500, "insert or update assignment fail");
-			ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
-			break;
-		}
+		// if (data::AssignmentInfoDao::InsertOrUpdate(info, db)) {
+		// 	result->setResult(500, "insert or update assignment fail");
+		// 	ERROR(logger) << "db error, errno=" << db->getErrno()
+		// 		<< " errstr=" << db->getErrStr();
+		// 	break;
+		// }
 
-		if (new_assignment) {
-			AssignmentMgr::GetInstance()->add(info);
-		}
+		// if (new_assignment) {
+		// 	AssignmentMgr::GetInstance()->add(info);
+		// }
 
-		result->set("id", info->getId());
-		result->set("name", info->getName());
-		result->set("color", info->getColor());
+		// result->set("id", info->getId());
+		// result->set("name", info->getName());
+		// result->set("color", info->getColor());
 	} while (0);
 	response->setBody(result->toJsonString());
     return 0;

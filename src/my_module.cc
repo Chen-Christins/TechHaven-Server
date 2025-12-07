@@ -8,7 +8,6 @@
 #include "blog/data/category_info.h"
 #include "blog/data/article_category_rel_info.h"
 #include "blog/data/article_label_rel_info.h"
-#include "blog/data/subject_info.h"
 #include "blog/data/assignment_info.h"
 #include <chen/application.h>
 #include "manager/user_manager.h"
@@ -17,7 +16,6 @@
 #include "manager/label_manager.h"
 #include "manager/article_category_rel_manager.h"
 #include "manager/article_label_rel_manager.h"
-#include "manager/subject_manager.h"
 #include "manager/assignment_manager.h"
 #include <chen/http/ws_server.h>
 #include "servlets/user/user_admin_create_servlet.h"
@@ -52,11 +50,8 @@
 #include "servlets/label/label_create_servlet.h"
 #include "servlets/label/label_delete_servlet.h"
 #include "servlets/label/label_query_servlet.h"
-#include "servlets/assignment/subject_create_servlet.h"
-#include "servlets/assignment/subject_delete_servlet.h"
 #include "servlets/assignment/assignment_create_servlet.h"
 #include "servlets/assignment/assignment_delete_servlet.h"
-#include "servlets/assignment/subject_details_servlet.h"
 #include <chen/env.h>
 
 namespace blog {
@@ -115,7 +110,6 @@ bool MyModule::onServerReady() {
     XX(LabelInfoDao, "label")
     XX(ArticleCategoryRelInfoDao, "article_category_rel")
     XX(ArticleLabelRelInfoDao, "article_label_rel")
-	XX(SubjectInfoDao, "subject")
 	XX(AssignmentInfoDao, "assignment")
 #undef XX
         INFO(logger) << "init database end";
@@ -137,7 +131,6 @@ bool MyModule::onServerReady() {
     XX(LabelMgr)
     XX(ArticleCategoryRelMgr)
     XX(ArticleLabelRelMgr)
-	XX(SubjectMgr)
 	XX(AssignmentMgr)
 #undef XX
 
@@ -182,9 +175,6 @@ bool MyModule::onServerReady() {
         dp->addServlet("/label/query", XX(LabelQueryServlet));
         
 		dp->addServlet("/file/upload", XX(FileUploadServlet));
-		dp->addServlet("/subject/create", XX(SubjectCreateServlet));
-		dp->addServlet("/subject/delete", XX(SubjectDeleteServlet));
-		dp->addServlet("/subject/details", XX(SubjectDetailsServlet));
 
 		dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
 		dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
