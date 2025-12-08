@@ -185,11 +185,11 @@ void Generator::gen_src(const std::string& path) {
 
     std::string class_name = GetClassName(m_filename);
     ofs << class_name << "::" << class_name << "()" << std::endl;
-    ofs << "    :BlogLoginedServlet(\"" << class_name << "\") {" << std::endl << "}" << std::endl;
+    ofs << "    : BlogLoginedServlet(\"" << class_name << "\") {" << std::endl << "}" << std::endl;
     ofs << std::endl;
 
     ofs << "int32_t " << class_name << "::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response" << std::endl;
-    ofs << "        ,chen::http::HttpSession::ptr session, Result::ptr result) {" << std::endl;
+    ofs << "        , chen::http::HttpSession::ptr session, Result::ptr result) {" << std::endl;
     ofs << "    return 0;" << std::endl;
     ofs << "}" << std::endl;
     ofs << std::endl;

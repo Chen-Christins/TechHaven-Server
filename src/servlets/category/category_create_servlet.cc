@@ -22,6 +22,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         std::string desc = request->getParamAs<std::string>("desc");
 		int64_t parent_id = request->getParamAs<int64_t>("parent_id");
         int32_t status = request->getParamAs<int32_t>("status", 1);
+        int32_t cid = request->getParamAs<int32_t>("id", 0);
 
 		int64_t uid = getUserId(request);
 		if (!uid) {
@@ -38,13 +39,26 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 			}
 		}
 
-		auto info = CategoryMgr::GetInstance()->getByName(name);
 		bool new_cat = false;
-		if (!info) {
-			info.reset(new data::CategoryInfo);
-			info->setName(name);
-			new_cat = true;
-		}
+        data::CategoryInfo::ptr info;
+        if (cid) {
+            info = CategoryMgr::GetInstance()->get(cid);
+            if (!info) {
+                result->setResult(401, "invalid cid");
+                break;
+            }
+            info->setName(name);
+        } else {
+            info = CategoryMgr::GetInstance()->getByName(name);
+            if (!info) {
+                info.reset(new data::CategoryInfo);
+                info->setName(name);
+                info->setCreateTime(time(0));
+                new_cat = true;
+            } else if (info->getIsDeleted()) {
+                info->setIsDeleted(0);
+            }
+        }
 		info->setColor(color);
 		info->setParentId(parent_id);
 		info->setIsDeleted(0);
@@ -52,7 +66,6 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         info->setUrl(url);
         info->setIcon(icon);
         info->setDescription(desc);
-		info->setCreateTime(time(0));
 		info->setUpdateTime(time(0));
 
 		auto db = getDB();

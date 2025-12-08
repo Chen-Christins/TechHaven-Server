@@ -3,56 +3,11 @@
 #include <chen/log/log.h>
 #include <chen/db/sqlite3.h>
 #include <chen/config/config.h>
-#include "blog/data/email_verification_info.h"
-#include "blog/data/article_info.h"
-#include "blog/data/category_info.h"
-#include "blog/data/article_category_rel_info.h"
-#include "blog/data/article_label_rel_info.h"
-#include "blog/data/assignment_info.h"
 #include <chen/application.h>
-#include "manager/user_manager.h"
-#include "manager/article_manager.h"
-#include "manager/category_manager.h"
-#include "manager/label_manager.h"
-#include "manager/article_category_rel_manager.h"
-#include "manager/article_label_rel_manager.h"
-#include "manager/assignment_manager.h"
 #include <chen/http/ws_server.h>
-#include "servlets/user/user_admin_create_servlet.h"
-#include "servlets/user/user_admin_delete_servlet.h"
-#include "servlets/user/user_admin_lists_servlet.h"
-#include "servlets/user/user_admin_recover_servlet.h"
-#include "servlets/user/user_admin_reset_passwd_servlet.h"
-#include "servlets/user/user_create_servlet.h"
-#include "servlets/user/user_exists_servlet.h"
-#include "servlets/user/user_info_servlet.h"
-#include "servlets/user/user_list_servlet.h"
-#include "servlets/user/user_login_servlet.h"
-#include "servlets/user/user_logout_servlet.h"
-#include "servlets/user/user_reset_passwd_servlet.h"
-#include "servlets/user/user_send_code_servlet.h"
-#include "servlets/user/user_update_servlet.h"
-#include "servlets/user/user_query_servlet.h"
-#include "servlets/article/article_admin_lists_servlet.h"
-#include "servlets/article/article_create_servlet.h"
-#include "servlets/article/article_detail_servlet.h"
-#include "servlets/article/article_publish_servlet.h"
-#include "servlets/article/article_query_servlet.h"
-#include "servlets/article/article_switch_state_servlet.h"
-#include "servlets/article/article_delete_servlet.h"
-#include "servlets/article/article_verify_servlet.h"
-#include "servlets/article/article_update_servlet.h"
-#include "servlets/article/article_update_category_servlet.h"
-#include "servlets/category/category_create_servlet.h"
-#include "servlets/category/category_delete_servlet.h"
-#include "servlets/category/category_query_servlet.h"
-#include "servlets/file/file_upload_servlet.h"
-#include "servlets/label/label_create_servlet.h"
-#include "servlets/label/label_delete_servlet.h"
-#include "servlets/label/label_query_servlet.h"
-#include "servlets/assignment/assignment_create_servlet.h"
-#include "servlets/assignment/assignment_delete_servlet.h"
-#include "servlets/assignment/assignment_admin_lists_servlet.h"
+#include "./include/tables.h"
+#include "./include/managers.h"
+#include "./include/servlets.h"
 #include <chen/env.h>
 
 namespace blog {
@@ -112,6 +67,8 @@ bool MyModule::onServerReady() {
     XX(ArticleCategoryRelInfoDao, "article_category_rel")
     XX(ArticleLabelRelInfoDao, "article_label_rel")
 	XX(AssignmentInfoDao, "assignment")
+    XX(OrganizationInfoDao, "organization")
+    XX(OrganizationUserRelInfoDao, "organization_user_rel")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -133,6 +90,8 @@ bool MyModule::onServerReady() {
     XX(ArticleCategoryRelMgr)
     XX(ArticleLabelRelMgr)
 	XX(AssignmentMgr)
+    XX(OrganizationMgr)
+    XX(OrganizationUserRelMgr)
 #undef XX
 
     for (auto& i : servers) {
@@ -180,6 +139,10 @@ bool MyModule::onServerReady() {
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
 		dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
 		dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
+
+        dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
+        dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
+        dp->addServlet("/organization/delete", XX(OrganizationDeleteServlet));
     }
 
     return true;

@@ -23,6 +23,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         DEFINE_AND_CHECK_TYPE(result, int32_t, status, "status");
         DEFINE_AND_CHECK_STRING(result, description, "description");
         DEFINE_AND_CHECK_STRING(result, file_type, "file_type");
+        int32_t aid = request->getParamAs<int32_t>("id", 0);
 
 		int64_t uid = getUserId(request);
 		if (!uid) {
@@ -35,16 +36,27 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 		}
 
 		bool new_assignment = false;
-		auto info = AssignmentMgr::GetInstance()->getByName(subject_name, name);
-		if (!info) {
-			info.reset(new data::AssignmentInfo);
-			info->setName(name);
-			info->setSubjectName(subject_name);
-			info->setCreateTime(time(0));
-			new_assignment = true;
-		} else if (info->getIsDeleted()) {
-			info->setCreateTime(time(0));
-		}
+        data::AssignmentInfo::ptr info;
+		if (aid) {
+            info = AssignmentMgr::GetInstance()->get(aid);
+            if (!info) {
+                result->setResult(404, "assignment not exist");
+                break;
+            }
+            info->setName(name);
+            info->setSubjectName(subject_name);
+        } else {
+            info = AssignmentMgr::GetInstance()->getByName(subject_name, name);
+            if (!info) {
+                info.reset(new data::AssignmentInfo);
+                info->setName(name);
+                info->setSubjectName(subject_name);
+                info->setCreateTime(time(0));
+                new_assignment = true;
+            } else if (info->getIsDeleted()) {
+                info->setCreateTime(time(0));
+            }
+        }
         info->setDescription(description);
         info->setFileType(file_type);
         info->setDeadline(end_time);
