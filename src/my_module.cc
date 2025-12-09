@@ -144,6 +144,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
         dp->addServlet("/organization/delete", XX(OrganizationDeleteServlet));
         dp->addServlet("/organization/list", XX(OrganizationListServlet));
+        dp->addServlet("/organization/detail", XX(OrganizationDetailServlet));
     }
 
     return true;
