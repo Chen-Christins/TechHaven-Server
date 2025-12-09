@@ -13,6 +13,7 @@ logs:
       - type: StdoutLogAppender
   - name: access
     level: info
+    # formatter: "%d{%H:%M:%S}%T%N%T[%p]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/Blog/logs/access.log

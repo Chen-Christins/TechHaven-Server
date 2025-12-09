@@ -4,6 +4,7 @@
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>
 #include "../struct.h"
+#include "user_manager.h"
 
 namespace blog {
 
@@ -84,9 +85,11 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 		int64_t sum = 0;
 		for (auto i : m_datas) {
 			if (!i.second->getIsDeleted()) {
-				if (i.second->getState() == state) {
-					++sum;
-				}
+				if (!state) {
+                    ++sum;
+                } else if (i.second->getState() == state) {
+                    ++sum;
+                }
 			}
 		}
 
@@ -94,9 +97,11 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 		int oft = 0;
 		while (it != m_datas.rend() && oft < offset) {
 			if (!it->second->getIsDeleted()) {
-				if (it->second->getState() == state) {
-					++oft;
-				}
+				if (!state) {
+                    ++oft;
+                } else if (it->second->getState() == state) {
+                    ++oft;
+                }
 			}
 			++it;
 		}
@@ -119,16 +124,24 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 
 		int64_t sum = 0;
 		for (auto i : uit->second) {
-			if (!i.second->getIsDeleted()) {
-				++sum;
-			}
+            if (!i.second->getIsDeleted()) {
+                if (!state) {
+                    ++sum;
+                } else if (i.second->getState() == state) {
+                    ++sum;
+                }
+            }
 		}
 
         auto it = uit->second.rbegin();
 		int oft = 0;
 		while (it != uit->second.rend() && oft < offset) {
 			if (!it->second->getIsDeleted()) {
-				++oft;
+				if (!state) {
+                    ++oft;
+                } else if (it->second->getState() == state) {
+                    ++oft;
+                }
 			}
 			++it;
 		}
@@ -141,6 +154,53 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         }
         return sum;
     }
+}
+
+int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
+        , int category, const std::string& role, int32_t days, int32_t size, bool valid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    auto check = [&](data::ArticleInfo::ptr info) {
+        if (valid && info->getIsDeleted()) {
+            return false;
+        }
+        if (state && info->getState() != state) {
+            return false;
+        }
+        // if (category && info->getCategoryId() != category) {
+        //     return false;
+        // }
+        if (!role.empty()) {
+            auto user = UserMgr::GetInstance()->get(info->getUserId());
+            if (!user || user->getRole() != role) {
+                return false;
+            }
+        }
+        if (days) {
+            time_t now = time(0);
+            if (info->getCreateTime() < now - days * 24 * 3600) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    std::vector<data::ArticleInfo::ptr> temp;
+    for (auto& i : m_datas) {
+        if (check(i.second)) {
+            temp.emplace_back(i.second);
+        }
+    }
+
+    if (offset < (int32_t)temp.size()) {
+        for (size_t i = offset; i < temp.size(); ++i) {
+            if (infos.size() >= (size_t)size) {
+                break;
+            }
+            infos.emplace_back(temp[i]);
+        }
+    }
+    return temp.size();
 }
 
 void ArticleManager::delVerify(int64_t id) {

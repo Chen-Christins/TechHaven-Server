@@ -7,3 +7,5 @@ lib*.so
 /bin
 *.log
 /thirdpart
+/uploads
+*sdk*

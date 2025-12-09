@@ -1,0 +1,20 @@
+<table name="assignment" namespace="blog.data" desc="作业">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="作业id"/>
+        <column name="name" type="string" length="256" desc="作业名称"/>
+        <column name="subject_name" type="string" length="256" desc="科目名称"/>
+        <column name="status" type="int32" desc="作业状态"/>
+        <column name="description" type="string" length="512" desc="作业描述"/>
+        <column name="max_size" type="int32" desc="最大提交大小"/>
+        <column name="file_type" type="string" length="128" desc="允许提交的文件类型"/>
+        <column name="deadline" type="datetime" desc="截止时间"/>
+        <column name="is_deleted" type="int32" desc="是否删除"/>
+        <column name="create_time" type="datetime" desc="创建时间"/>
+        <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="subject_name" cols="subject_name" type="index"/>
+		<index name="subject_name_name" cols="subject_name,name" type="uniq"/>
+    </indexs>
+</table>

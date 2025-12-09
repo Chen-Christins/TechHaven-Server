@@ -15,6 +15,10 @@ int32_t UserListServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
 		int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
 		auto role = UserMgr::GetInstance()->get(uid)->getRole();
 
 		if (role != "admin") {

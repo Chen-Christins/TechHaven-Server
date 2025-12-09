@@ -1,0 +1,39 @@
+#include "organization_list_servlet.h"
+#include <chen/log/log.h>
+#include "../../manager/organization_manager.h"
+
+namespace blog {
+namespace servlet {
+
+static chen::Logger::ptr logger = LOG_ROOT();
+
+OrganizationListServlet::OrganizationListServlet()
+    : BlogLoginedServlet("OrganizationListServlet") {
+}
+
+int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int32_t status = request->getParamAs<int32_t>("status", -1);
+
+        std::vector<data::OrganizationInfo::ptr> orgs;
+        int64_t total = OrganizationMgr::GetInstance()->listByPages(orgs, 0, UINT64_MAX, status, true);
+
+        result->set("total", total);
+        auto& list = result->jsondata["list"];
+        for (auto& i : orgs) {
+            Json::Value item;
+            item["id"] = i->getId();
+            item["name"] = i->getName();
+            item["status"] = i->getStatus();
+            item["type"] = i->getType();
+            item["description"] = i->getDescription();
+            list.append(item);
+        }
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}

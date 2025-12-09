@@ -5,7 +5,7 @@
         <column name="title" type="string" length="256" desc="文章标题"/>
         <column name="content" type="text" desc="文章内容"/>
         <column name="type" type="int32" desc="类型 1:原创,2:转发"/>
-        <column name="state" type="int32" desc="状态1审核中2已发布3未通过4待发布"/>
+        <column name="state" type="int32" desc="状态: 0全部 1审核中 2已发布 3未通过 4私密"/>
         <column name="channel" type="int64" desc="频道id"/>
         <column name="is_deleted" type="int32" desc="是否删除"/>
         <column name="publish_time" type="datetime" desc="发布时间"/>

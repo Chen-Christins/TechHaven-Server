@@ -42,6 +42,8 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 			v["id"] = i->getId();
 			v["name"] = i->getName();
 			v["color"] = i->getColor();
+            v["desc"] = i->getDescription();
+            v["create_time"] = i->getCreateTime();
 			result->jsondata.append(v);
 		}
 	} while (0);

@@ -30,6 +30,9 @@ public:
     const std::string& getColor() { return m_color; }
     void setColor(const std::string& v);
 
+    const std::string& getDescription() { return m_description; }
+    void setDescription(const std::string& v);
+
     const int32_t& getIsDeleted() { return m_isDeleted; }
     void setIsDeleted(const int32_t& v);
 
@@ -47,6 +50,7 @@ private:
     int64_t m_userId;
     std::string m_name;
     std::string m_color;
+    std::string m_description;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

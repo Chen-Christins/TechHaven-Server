@@ -32,6 +32,10 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
 			break;
 		}
 		int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
 		if (ainfo->getUserId() != uid) {
 			result->setResult(401, "invalid article");
 			break;
@@ -65,9 +69,6 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
 			if (!cinfo) {
 				continue;
 			}
-			if (cinfo->getUserId() != uid) {
-				continue;
-			}
 			auto acinfo = ArticleCategoryRelMgr::GetInstance()->getByArticleIdCategoryId(id, cid);
 			if (acinfo) {
 				if (acinfo->getIsDeleted()) {
@@ -99,9 +100,6 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
 			int64_t cid = chen::TypeUtil::Atoi(i);
 			auto cinfo = CategoryMgr::GetInstance()->get(cid);
 			if (!cinfo) {
-				continue;
-			}
-			if (cinfo->getUserId() != uid) {
 				continue;
 			}
 			auto acinfo = ArticleCategoryRelMgr::GetInstance()->getByArticleIdCategoryId(id, cid);
