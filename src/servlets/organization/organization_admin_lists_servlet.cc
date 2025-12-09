@@ -3,6 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -25,8 +26,8 @@ int32_t OrganizationAdminListsServlet::handle(chen::http::HttpRequest::ptr reque
             result->setResult(500, "not login");
             break;
         }
-        auto role = UserMgr::GetInstance()->get(uid)->getRole();
-        if (role != "admin") {
+        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        if (role != (int32_t)types::Role::System::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

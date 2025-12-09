@@ -4,6 +4,7 @@
 #include "blog/data/assignment_info.h"
 #include <chen/log/log.h>
 #include "../../util.h"
+#include "../../types.h"
 #include <set>
 
 namespace blog {
@@ -30,7 +31,7 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
 			result->setResult(500, "not login");
 			break;
 		}
-		if (UserMgr::GetInstance()->get(uid)->getRole() != "admin") {
+		if (UserMgr::GetInstance()->get(uid)->getRole() != (int32_t)types::Role::System::ADMIN) {
 			result->setResult(403, "Access Denied");
 			break;
 		}

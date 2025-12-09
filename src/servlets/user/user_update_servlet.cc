@@ -63,7 +63,7 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             response->setCookie(CookieKey::TOKEN, token, token_time, "/");
             response->setCookie(CookieKey::TOKEN_TIME, std::to_string(token_time), token_time, "/");
         }
-    } while (false);
+    } while (0);
     response->setBody(result->toJsonString());
     return 0;
 }

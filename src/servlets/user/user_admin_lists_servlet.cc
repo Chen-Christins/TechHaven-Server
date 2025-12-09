@@ -2,6 +2,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include <chen/util/json_util.h>
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -15,7 +16,7 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
     do {
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
-        std::string rrole = request->getParamAs<std::string>("role");
+        int32_t rrole = request->getParamAs<int32_t>("role", -1);
         int32_t state = request->getParamAs<int32_t>("state", -1);
         int32_t days = request->getParamAs<int32_t>("days", 0);
 
@@ -24,9 +25,9 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
             result->setResult(500, "not login");
             break;
         }
-        auto role = UserMgr::GetInstance()->get(uid)->getRole();
+        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
-        if (role != "admin") {
+        if (role != (int32_t)types::Role::System::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

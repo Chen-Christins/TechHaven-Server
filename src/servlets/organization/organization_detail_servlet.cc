@@ -15,7 +15,7 @@ OrganizationDetailServlet::OrganizationDetailServlet()
 int32_t OrganizationDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        DEFINE_AND_CHECK_TYPE(result, int32_t, id, "id");
+        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
 
         auto org = OrganizationMgr::GetInstance()->get(id);
         if (!org) {

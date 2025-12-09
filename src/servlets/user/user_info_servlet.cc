@@ -43,7 +43,7 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         result->set("status", info->getIsDeleted());
         result->set("login_time", info->getLoginTime());
         result->set("create_time", info->getCreateTime());
-    } while (false);
+    } while (0);
     response->setBody(result->toJsonString());
     return 0;
 }

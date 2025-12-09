@@ -22,7 +22,7 @@ bool UserManager::loadAll() {
     std::unordered_map<std::string, blog::data::UserInfo::ptr> accounts;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> emails;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> names;
-    std::unordered_map<std::string, std::unordered_map<int64_t, blog::data::UserInfo::ptr>> role_id_users;
+    std::unordered_map<int32_t, std::unordered_map<int64_t, blog::data::UserInfo::ptr>> role_id_users;
 
     for (auto& i : results) {
         datas[i->getId()] = i;
@@ -52,7 +52,7 @@ void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
 }
 
 uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
-        , const std::string& role, int32_t state, int32_t days, bool isValid) {
+        , int32_t role, int32_t state, int32_t days, bool isValid) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     
     std::vector<blog::data::UserInfo::ptr> temp;
@@ -75,7 +75,7 @@ uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos,
         return true;
     };
 
-    if (!role.empty()) {
+    if (role != -1) {
         auto it = m_role_id_users.find(role);
         if (it != m_role_id_users.end()) {
             for (auto& i : it->second) {

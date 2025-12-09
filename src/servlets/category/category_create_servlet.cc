@@ -22,7 +22,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         std::string desc = request->getParamAs<std::string>("desc");
 		int64_t parent_id = request->getParamAs<int64_t>("parent_id");
         int32_t status = request->getParamAs<int32_t>("status", 1);
-        int32_t cid = request->getParamAs<int32_t>("id", 0);
+        int64_t cid = request->getParamAs<int64_t>("id", 0);
 
 		int64_t uid = getUserId(request);
 		if (!uid) {

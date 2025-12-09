@@ -15,7 +15,7 @@ ArticleUpdateServlet::ArticleUpdateServlet()
 int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
 	do {
-		DEFINE_AND_CHECK_TYPE(result, int32_t, id, "id");
+		DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
 		DEFINE_AND_CHECK_STRING(result, title, "title");
 		DEFINE_AND_CHECK_STRING(result, content, "content");
 

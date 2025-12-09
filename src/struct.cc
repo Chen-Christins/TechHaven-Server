@@ -177,7 +177,7 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
             data::UserInfoDao::Update(uinfo, db);
         }
         is_login = true;
-    } while (false);
+    } while (0);
     data->setData(CookieKey::IS_AUTH, (int32_t)1);
     return is_login;
 }

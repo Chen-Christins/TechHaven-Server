@@ -18,7 +18,7 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 		DEFINE_AND_CHECK_STRING(result, name, "name");
 		DEFINE_AND_CHECK_STRING(result, color, "color");
         std::string desc = request->getParamAs<std::string>("desc");
-        int32_t lid = request->getParamAs<int32_t>("id", 0);
+        int64_t lid = request->getParamAs<int64_t>("id", 0);
 
 		int64_t uid = getUserId(request);
 		if (!uid) {

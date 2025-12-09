@@ -33,8 +33,8 @@ public:
     const std::string& getEmail() { return m_email; }
     void setEmail(const std::string& v);
 
-    const std::string& getRole() { return m_role; }
-    void setRole(const std::string& v);
+    const int32_t& getRole() { return m_role; }
+    void setRole(const int32_t& v);
 
     const std::string& getPasswd() { return m_passwd; }
     void setPasswd(const std::string& v);
@@ -63,6 +63,7 @@ public:
     std::string toJsonString() const;
 
 private:
+    int32_t m_role;
     int32_t m_state;
     int32_t m_isDeleted;
     int64_t m_id;
@@ -70,7 +71,6 @@ private:
     std::string m_account;
     std::string m_avatar;
     std::string m_email;
-    std::string m_role;
     std::string m_passwd;
     std::string m_bio;
     std::string m_location;

@@ -3,6 +3,7 @@
 #include "../../manager/assignment_manager.h"
 #include "../../util.h"
 #include <chen/log/log.h>
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -25,7 +26,7 @@ int32_t AssignmentAdminListsServlet::handle(chen::http::HttpRequest::ptr request
             result->setResult(500, "not login");
             break;
         }
-        if (UserMgr::GetInstance()->get(uid)->getRole() != "admin") {
+        if (UserMgr::GetInstance()->get(uid)->getRole() != (int32_t)types::Role::System::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

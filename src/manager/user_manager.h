@@ -15,7 +15,7 @@ public:
     void getAllIds(std::vector<int64_t>& ids, bool isValid);
 	
     uint64_t listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
-        , const std::string& role, int32_t state, int32_t days, bool isValid);
+        , int32_t role, int32_t state, int32_t days, bool isValid);
 
 	blog::data::UserInfo::ptr get(int64_t id);
     blog::data::UserInfo::ptr getByAccount(const std::string& v);
@@ -28,7 +28,7 @@ private:
     std::unordered_map<std::string, blog::data::UserInfo::ptr> m_accounts;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> m_emails;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> m_names;
-    std::unordered_map<std::string, std::unordered_map<int64_t, blog::data::UserInfo::ptr>> m_role_id_users;
+    std::unordered_map<int32_t, std::unordered_map<int64_t, blog::data::UserInfo::ptr>> m_role_id_users;
     std::shared_mutex m_mutex;
 };
 

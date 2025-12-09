@@ -3,6 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -20,7 +21,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
         DEFINE_AND_CHECK_STRING(result, type, "type");
         DEFINE_AND_CHECK_TYPE(result, int32_t, status, "status");
         std::string desc = request->getParamAs<std::string>("desc");
-        int32_t oid = request->getParamAs<int32_t>("id", 0);
+        int64_t oid = request->getParamAs<int64_t>("id", 0);
 
         int64_t user_id = getUserId(request);
         if (!user_id) {
@@ -34,7 +35,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
 
-        if (uinfo->getRole() != "admin") {
+        if (uinfo->getRole() != (int32_t)types::Role::System::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

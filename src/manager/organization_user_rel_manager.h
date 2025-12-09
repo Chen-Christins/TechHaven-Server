@@ -13,6 +13,7 @@ public:
     bool loadAll();
     void add(data::OrganizationUserRelInfo::ptr info);
     data::OrganizationUserRelInfo::ptr get(int64_t id);
+    data::OrganizationUserRelInfo::ptr getByOrgAndUser(int64_t o_id, int64_t u_id);
 private:
     // 读写锁
     std::shared_mutex m_mutex;

@@ -25,7 +25,7 @@ public:
 
     int64_t listVerifyPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int32_t size);
     int64_t listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
-        , int category, const std::string& role, int32_t days, int32_t size, bool valid);
+        , int category, int32_t role, int32_t days, int32_t size, bool valid);
 
     std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> nearby(int64_t id);
     std::string statusString();

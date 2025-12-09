@@ -2,6 +2,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../util.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -16,8 +17,8 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
         int32_t state = request->getParamAs<int32_t>("state", 0);
-        int32_t category = request->getParamAs<int32_t>("category_id", 0);
-        std::string rrole = request->getParamAs<std::string>("role", "");
+        int64_t category = request->getParamAs<int64_t>("category_id", 0);
+        int32_t rrole = request->getParamAs<int32_t>("role", -1);
         int32_t days = request->getParamAs<int32_t>("days", 0);
 
         int64_t uid = getUserId(request);
@@ -25,8 +26,8 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
             result->setResult(500, "not login");
             break;
         }
-        std::string role = UserMgr::GetInstance()->get(uid)->getRole();
-        if (role != "admin") {
+        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        if (role != (int32_t)types::Role::System::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

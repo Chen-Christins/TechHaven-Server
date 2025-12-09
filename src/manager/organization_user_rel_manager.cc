@@ -51,4 +51,16 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id) {
     return nullptr;
 }
 
+data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(int64_t o_id, int64_t u_id) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto it = m_org_user_datas.find(o_id);
+    if (it != m_org_user_datas.end()) {
+        auto uit = it->second.find(u_id);
+        if (uit != it->second.end()) {
+            return uit->second;
+        }
+    }
+    return nullptr;
+}
+
 }

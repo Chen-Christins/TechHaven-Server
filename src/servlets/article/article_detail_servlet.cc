@@ -7,6 +7,7 @@
 #include "../../manager/label_manager.h"
 #include "../../manager/article_category_rel_manager.h"
 #include "../../manager/article_label_rel_manager.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -35,8 +36,8 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
         int32_t state = info->getState();
         bool is_deleted = info->getIsDeleted();
-        auto role = UserMgr::GetInstance()->get(cur_uid)->getRole();
-        if ((state != 2 && role != "admin") || is_deleted) {
+        int32_t role = UserMgr::GetInstance()->get(cur_uid)->getRole();
+        if ((state != 2 && role != (int32_t)types::Role::System::ADMIN) || is_deleted) {
             result->setResult(403, "Access Denied");
             break;
         }

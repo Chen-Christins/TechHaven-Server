@@ -7,14 +7,14 @@ namespace data {
 static chen::Logger::ptr logger = LOG_NAME("orm");
 
 UserInfo::UserInfo()
-    :m_state()
+    :m_role(1)
+    ,m_state()
     ,m_isDeleted()
     ,m_id()
     ,m_name()
     ,m_account()
     ,m_avatar()
     ,m_email()
-    ,m_role("user")
     ,m_passwd()
     ,m_bio()
     ,m_location()
@@ -62,7 +62,7 @@ void UserInfo::setEmail(const std::string& v) {
     m_email = v;
 }
 
-void UserInfo::setRole(const std::string& v) {
+void UserInfo::setRole(const int32_t& v) {
     m_role = v;
 }
 
@@ -111,7 +111,7 @@ int UserInfoDao::Update(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindString(2, info->m_account);
     stmt->bindString(3, info->m_avatar);
     stmt->bindString(4, info->m_email);
-    stmt->bindString(5, info->m_role);
+    stmt->bindInt32(5, info->m_role);
     stmt->bindString(6, info->m_passwd);
     stmt->bindInt32(7, info->m_state);
     stmt->bindString(8, info->m_bio);
@@ -136,7 +136,7 @@ int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindString(2, info->m_account);
     stmt->bindString(3, info->m_avatar);
     stmt->bindString(4, info->m_email);
-    stmt->bindString(5, info->m_role);
+    stmt->bindInt32(5, info->m_role);
     stmt->bindString(6, info->m_passwd);
     stmt->bindInt32(7, info->m_state);
     stmt->bindString(8, info->m_bio);
@@ -168,7 +168,7 @@ int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindString(3, info->m_account);
     stmt->bindString(4, info->m_avatar);
     stmt->bindString(5, info->m_email);
-    stmt->bindString(6, info->m_role);
+    stmt->bindInt32(6, info->m_role);
     stmt->bindString(7, info->m_passwd);
     stmt->bindInt32(8, info->m_state);
     stmt->bindString(9, info->m_bio);
@@ -259,7 +259,7 @@ int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, chen::IDB::ptr co
         v->m_account = rt->getString(2);
         v->m_avatar = rt->getString(3);
         v->m_email = rt->getString(4);
-        v->m_role = rt->getString(5);
+        v->m_role = rt->getInt32(5);
         v->m_passwd = rt->getString(6);
         v->m_state = rt->getInt32(7);
         v->m_bio = rt->getString(8);
@@ -295,7 +295,7 @@ UserInfo::ptr UserInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     v->m_account = rt->getString(2);
     v->m_avatar = rt->getString(3);
     v->m_email = rt->getString(4);
-    v->m_role = rt->getString(5);
+    v->m_role = rt->getInt32(5);
     v->m_passwd = rt->getString(6);
     v->m_state = rt->getInt32(7);
     v->m_bio = rt->getString(8);
@@ -329,7 +329,7 @@ UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, chen::IDB
     v->m_account = rt->getString(2);
     v->m_avatar = rt->getString(3);
     v->m_email = rt->getString(4);
-    v->m_role = rt->getString(5);
+    v->m_role = rt->getInt32(5);
     v->m_passwd = rt->getString(6);
     v->m_state = rt->getInt32(7);
     v->m_bio = rt->getString(8);
@@ -363,7 +363,7 @@ UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, chen::IDB::pt
     v->m_account = rt->getString(2);
     v->m_avatar = rt->getString(3);
     v->m_email = rt->getString(4);
-    v->m_role = rt->getString(5);
+    v->m_role = rt->getInt32(5);
     v->m_passwd = rt->getString(6);
     v->m_state = rt->getInt32(7);
     v->m_bio = rt->getString(8);
@@ -397,7 +397,7 @@ UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr 
     v->m_account = rt->getString(2);
     v->m_avatar = rt->getString(3);
     v->m_email = rt->getString(4);
-    v->m_role = rt->getString(5);
+    v->m_role = rt->getInt32(5);
     v->m_passwd = rt->getString(6);
     v->m_state = rt->getInt32(7);
     v->m_bio = rt->getString(8);
@@ -416,7 +416,7 @@ int UserInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "account TEXT NOT NULL DEFAULT '',"
             "avatar TEXT NOT NULL DEFAULT '',"
             "email TEXT NOT NULL DEFAULT '',"
-            "role TEXT NOT NULL DEFAULT 'user',"
+            "role INTEGER NOT NULL DEFAULT 1,"
             "passwd TEXT NOT NULL DEFAULT '',"
             "state INTEGER NOT NULL DEFAULT 0,"
             "bio TEXT NOT NULL DEFAULT '',"
@@ -438,7 +438,7 @@ int UserInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`account` varchar(128) NOT NULL DEFAULT '' COMMENT '账户名称',"
             "`avatar` varchar(128) NOT NULL DEFAULT '' COMMENT '头像地址',"
             "`email` varchar(128) NOT NULL DEFAULT '' COMMENT '邮箱地址',"
-            "`role` varchar(128) NOT NULL DEFAULT 'user' COMMENT '角色: user, admin, editor, checker',"
+            "`role` int NOT NULL DEFAULT 1 COMMENT '角色: 1用户, 2管理员, 3编辑, 4审核员',"
             "`passwd` varchar(128) NOT NULL DEFAULT '' COMMENT '用户密码',"
             "`state` int NOT NULL DEFAULT 0 COMMENT '账号状态',"
             "`bio` varchar(128) NOT NULL DEFAULT '' COMMENT '用户简介',"

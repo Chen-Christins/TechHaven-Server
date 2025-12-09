@@ -157,7 +157,7 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
 }
 
 int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
-        , int category, const std::string& role, int32_t days, int32_t size, bool valid) {
+        , int category, int32_t role, int32_t days, int32_t size, bool valid) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
 
     auto check = [&](data::ArticleInfo::ptr info) {
@@ -170,7 +170,7 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         // if (category && info->getCategoryId() != category) {
         //     return false;
         // }
-        if (!role.empty()) {
+        if (role != -1) {
             auto user = UserMgr::GetInstance()->get(info->getUserId());
             if (!user || user->getRole() != role) {
                 return false;

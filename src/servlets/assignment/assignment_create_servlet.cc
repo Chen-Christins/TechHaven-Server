@@ -3,6 +3,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/assignment_manager.h"
 #include "../../util.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -23,14 +24,14 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         DEFINE_AND_CHECK_TYPE(result, int32_t, status, "status");
         DEFINE_AND_CHECK_STRING(result, description, "description");
         DEFINE_AND_CHECK_STRING(result, file_type, "file_type");
-        int32_t aid = request->getParamAs<int32_t>("id", 0);
+        int64_t aid = request->getParamAs<int64_t>("id", 0);
 
 		int64_t uid = getUserId(request);
 		if (!uid) {
 			result->setResult(500, "not login");
 			break;
 		}
-		if (UserMgr::GetInstance()->get(uid)->getRole() != "admin") {
+		if (UserMgr::GetInstance()->get(uid)->getRole() != (int32_t)types::Role::System::ADMIN) {
 			result->setResult(403, "Access Denied");
 			break;
 		}

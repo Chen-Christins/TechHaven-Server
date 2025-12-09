@@ -27,7 +27,7 @@ int32_t UserExistsServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         }
         result->setResult(200, "ok");
         result->set("is_exists", info ? "1" : "0");
-    } while (false);
+    } while (0);
     response->setBody(result->toJsonString());
     return 0;
 }

@@ -5,7 +5,7 @@
         <column name="account" type="string" desc="账户名称"/>
         <column name="avatar" type="string" desc="头像地址"/>
         <column name="email" type="string" desc="邮箱地址"/>
-        <column name="role" type="string" default="user" desc="角色: user, admin, editor, checker"/>
+        <column name="role" type="int32" default="1" desc="角色: 1用户, 2管理员, 3编辑, 4审核员"/>
         <column name="passwd" type="string" desc="用户密码"/>
         <column name="state" type="int32" desc="账号状态"/>
         <column name="bio" type="string" desc="用户简介"/>

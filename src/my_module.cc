@@ -143,8 +143,10 @@ bool MyModule::onServerReady() {
         dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
         dp->addServlet("/organization/delete", XX(OrganizationDeleteServlet));
-        dp->addServlet("/organization/list", XX(OrganizationListServlet));
         dp->addServlet("/organization/detail", XX(OrganizationDetailServlet));
+        dp->addServlet("/organization/join", XX(OrganizationJoinServlet));
+        dp->addServlet("/organization/join_check", XX(OrganizationJoinCheckServlet));
+        dp->addServlet("/organization/list", XX(OrganizationListServlet));
     }
 
     return true;
