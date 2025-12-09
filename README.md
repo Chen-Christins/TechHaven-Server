@@ -1,0 +1,68 @@
+# 高性能博客后台系统
+
+## 项目简介
+本项目是一个基于 C++17 的高性能博客后台系统，采用模块化设计，支持多用户、多组织、文章管理、标签分类、作业分发等功能。系统架构参考主流 Web 后台设计，注重性能、可扩展性和易维护性。
+
+## 技术栈
+- C++17
+- CMake 构建系统
+- SQLite3 数据库（可扩展至 MySQL/PostgreSQL）
+- 自研 ORM（XML 配置，自动生成 C++ 数据访问层）
+- chen-sdk 基础库
+- 多线程/协程支持
+- Docker 部署支持
+
+## 主要功能
+- 用户注册、登录、权限管理
+- 组织（社群/团队）管理及成员关系
+- 文章发布、编辑、分类、标签
+- 作业（Assignment）分发与提交
+- API 文档自动生成（见 API_DOCS.md）
+- 日志、配置、定时任务、邮件通知等基础服务
+
+## 目录结构
+```
+├── bin/                # 前端静态资源与可执行文件
+├── build/              # 构建输出
+├── chen/               # 基础库与通用模块
+├── conf/               # 系统配置文件
+├── generator/          # ORM 代码生成器
+├── logs/               # 日志文件
+├── module/             # 业务模块动态库
+├── orm_config/         # ORM XML 配置（表结构）
+├── orm_out/            # ORM 生成代码
+├── src/                # 业务代码（Manager/Servlets等）
+├── tests/db/           # 测试用 SQL 数据
+├── CMakeLists.txt      # 构建脚本
+├── Dockerfile          # Docker 部署
+└── README.md           # 项目说明
+```
+
+## 快速开始
+1. 安装依赖（C++17 编译器、CMake、SQLite3）
+2. 编译项目：
+   ```sh
+   mkdir build && cd build
+   cmake ..
+   make -j
+   ```
+3. 运行服务：
+   ```sh
+   ./bin/main -s/-d
+   ```
+4. 可选：使用 Docker 部署
+   ```sh
+   docker build -t blog-backend .
+   docker run -p 8080:8080 blog-backend
+   ```
+
+## 相关文档
+- [API_DOCS.md](API_DOCS.md) 详细接口说明
+- `orm_config/` 下 XML 文件定义所有表结构
+- `tests/db/` 下 SQL 文件可用于测试数据导入
+
+## 贡献与交流
+欢迎提交 Issue 或 PR，或通过邮件与作者联系。
+
+---
+高性能 · 模块化 · 易扩展
