@@ -18,6 +18,10 @@ private:
     std::shared_mutex m_mutex;
     // id -> info
     std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr> m_datas;
+    // o_id -> [u_id, info]
+    std::unordered_map<int64_t, std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr>> m_org_user_datas;
+    // u_id -> [o_id, info]
+    std::unordered_map<int64_t, std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr>> m_user_org_datas;
 };
 
 typedef chen::Singleton<OrganizationUserRelManager> OrganizationUserRelMgr;

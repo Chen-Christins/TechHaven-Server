@@ -20,19 +20,26 @@ bool OrganizationUserRelManager::loadAll() {
     }
 
     std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr> datas;
+    std::unordered_map<int64_t, std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr>> org_user_datas;
+    std::unordered_map<int64_t, std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr>> user_org_datas;
     for (auto& i : results) {
         datas[i->getId()] = i;
+        org_user_datas[i->getOrgId()][i->getUserId()] = i;
+        user_org_datas[i->getUserId()][i->getOrgId()] = i;
     }
 
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
-
+    m_org_user_datas.swap(org_user_datas);
+    m_user_org_datas.swap(user_org_datas);
     return true;
 }
 
 void OrganizationUserRelManager::add(data::OrganizationUserRelInfo::ptr info) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas[info->getId()] = info;
+    m_org_user_datas[info->getOrgId()][info->getUserId()] = info;
+    m_user_org_datas[info->getUserId()][info->getOrgId()] = info;
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id) {

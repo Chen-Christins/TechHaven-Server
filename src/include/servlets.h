@@ -21,6 +21,7 @@
 #include "../servlets/organization/organization_admin_lists_servlet.h" // IWYU pragma: keep
 #include "../servlets/organization/organization_create_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_delete_servlet.h"      // IWYU pragma: keep
+#include "../servlets/organization/organization_list_servlet.h"        // IWYU pragma: keep
 #include "../servlets/user/user_admin_create_servlet.h"                // IWYU pragma: keep
 #include "../servlets/user/user_admin_delete_servlet.h"                // IWYU pragma: keep
 #include "../servlets/user/user_admin_lists_servlet.h"                 // IWYU pragma: keep

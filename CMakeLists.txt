@@ -58,6 +58,7 @@ set(LIB_SRC
     src/servlets/organization/organization_admin_lists_servlet.cc
     src/servlets/organization/organization_create_servlet.cc
     src/servlets/organization/organization_delete_servlet.cc
+    src/servlets/organization/organization_list_servlet.cc
     src/servlets/user/user_admin_create_servlet.cc
     src/servlets/user/user_admin_delete_servlet.cc
     src/servlets/user/user_admin_lists_servlet.cc
