@@ -33,6 +33,9 @@ public:
     const int32_t& getStatus() { return m_status; }
     void setStatus(const int32_t& v);
 
+    const int32_t& getIsDeleted() { return m_isDeleted; }
+    void setIsDeleted(const int32_t& v);
+
     const int64_t& getCreateTime() { return m_createTime; }
     void setCreateTime(const int64_t& v);
 
@@ -44,6 +47,7 @@ public:
 private:
     int32_t m_role;
     int32_t m_status;
+    int32_t m_isDeleted;
     int64_t m_id;
     int64_t m_orgId;
     int64_t m_userId;

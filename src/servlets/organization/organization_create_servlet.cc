@@ -3,6 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 #include "../../types.h"
 
 namespace blog {
@@ -83,6 +84,23 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         if (new_org) {
             OrganizationMgr::GetInstance()->add(info);
+
+            auto rel = std::make_shared<data::OrganizationUserRelInfo>();
+            rel->setOrgId(info->getId());
+            rel->setUserId(user_id);
+            rel->setRole(static_cast<int32_t>(types::Role::Organization::OWNER));
+            rel->setStatus(static_cast<int32_t>(types::Status::UserOrganization::APPROVED));
+            rel->setCreateTime(time(0));
+            rel->setUpdateTime(time(0));
+        
+            if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
+                result->setResult(500, "insert or update organization user rel fail");
+                ERROR(logger) << "db error, errno=" << db->getErrno()
+                    << " errstr=" << db->getErrStr();
+                break;
+            }
+
+            OrganizationUserRelMgr::GetInstance()->add(rel);
         }
 
         result->set("id", info->getId());

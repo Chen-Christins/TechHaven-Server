@@ -63,4 +63,38 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(i
     return nullptr;
 }
 
+int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
+        , int64_t id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    auto check = [&](data::OrganizationUserRelInfo::ptr info) {
+        if (status != -1 && info->getStatus() != status) {
+            return false;
+        }
+        if (isValid && info->getIsDeleted()) {
+            return false;
+        }
+        return true;
+    };
+
+    std::vector<data::OrganizationUserRelInfo::ptr> tmp;
+
+    for (auto& i : m_org_user_datas[id]) {
+        if (check(i.second)) {
+            tmp.push_back(i.second);
+        }
+    }
+
+    if (offset < tmp.size()) {
+        for (size_t i = offset; i < tmp.size(); ++i) {
+            if (results.size() >= size) {
+                break;
+            }
+            results.push_back(tmp[i]);
+        }
+    }
+    
+    return tmp.size();
+}
+
 }

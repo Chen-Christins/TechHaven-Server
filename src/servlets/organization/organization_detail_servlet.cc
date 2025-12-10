@@ -2,6 +2,7 @@
 #include <chen/log/log.h>
 #include "../../util.h"
 #include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -23,12 +24,19 @@ int32_t OrganizationDetailServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
 
+        int64_t uid = getUserId(request);
+        auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(id, uid);
+        if (rel) {
+            result->set("user_in_org", rel->getStatus());
+            result->set("user_role", rel->getRole());
+        }
+
         result->set("id", org->getId());
         result->set("name", org->getName());
         result->set("description", org->getDescription());
         result->set("type", org->getType());
         result->set("status", org->getStatus());
-    } while(false);
+    } while (0);
     response->setBody(result->toJsonString());
     return 0;
 }

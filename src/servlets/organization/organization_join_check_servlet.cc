@@ -22,13 +22,20 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
         DEFINE_AND_CHECK_TYPE(result, int32_t, state, "state");
 
-        auto user = blog::UserMgr::GetInstance()->get(org_id);
+        if (state != static_cast<int32_t>(types::Status::UserOrganization::REJECTED)
+                && state != static_cast<int32_t>(types::Status::UserOrganization::APPROVED)) {
+            result->setResult(400, "invalid state");
+            break;
+        }
+
+        auto user = blog::UserMgr::GetInstance()->get(user_id);
         auto org = blog::OrganizationMgr::GetInstance()->get(org_id);
         if (!user || !org) {
             result->setResult(404, "invalid id");
             break;
         }
 
+        // check operater permission
         int64_t uid = getUserId(request);
         int32_t system_role = blog::UserMgr::GetInstance()->get(uid)->getRole();
         
@@ -42,12 +49,16 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
             break;
         }
 
-        if (state != static_cast<int32_t>(types::Status::UserOrganization::REJECTED)
-                && state != static_cast<int32_t>(types::Status::UserOrganization::APPROVED)) {
-            result->setResult(400, "invalid state");
+        // update user organization relation
+        rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, user_id);
+        if (!rel) {
+            result->setResult(404, "invalid id");
             break;
         }
-
+        if (rel->getStatus() != static_cast<int32_t>(types::Status::UserOrganization::PENDING)) {
+            result->setResult(403, "invalid state");
+            break;
+        }
         rel->setStatus(state);
         rel->setRole(static_cast<int32_t>(types::Role::Organization::MEMBER));
 
@@ -63,6 +74,8 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
                           << ", errstr=" << db->getErrStr();
             break;
         }
+
+        result->set("success", true);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

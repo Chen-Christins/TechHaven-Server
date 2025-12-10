@@ -57,7 +57,7 @@ struct Status {
     };
 
     enum class UserOrganization {
-        PEDDING = 0,
+        PENDING = 0,
         APPROVED = 1,
         REJECTED = 2,
         EXITED = 3

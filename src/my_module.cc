@@ -147,6 +147,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/organization/join", XX(OrganizationJoinServlet));
         dp->addServlet("/organization/join_check", XX(OrganizationJoinCheckServlet));
         dp->addServlet("/organization/list", XX(OrganizationListServlet));
+        dp->addServlet("/organization/user_list", XX(OrganizationUserListServlet));
     }
 
     return true;

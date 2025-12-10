@@ -41,12 +41,12 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
         } else if (info->getStatus() == static_cast<int32_t>(types::Status::UserOrganization::APPROVED)) {
             result->setResult(403, "you have joined this organization");
             break;
-        } else if (info->getStatus() == static_cast<int32_t>(types::Status::UserOrganization::PEDDING)) {
+        } else if (info->getStatus() == static_cast<int32_t>(types::Status::UserOrganization::PENDING)) {
             result->setResult(403, "you have applied to join this organization");
             break;
         }
         info->setRole(static_cast<int32_t>(types::Role::Organization::MEMBER)); // 普通成员
-        info->setStatus(static_cast<int32_t>(types::Status::UserOrganization::PEDDING)); // 申请中
+        info->setStatus(static_cast<int32_t>(types::Status::UserOrganization::PENDING)); // 申请中
         info->setUpdateTime(time(0));
 
         auto db = getDB();
@@ -64,7 +64,12 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         OrganizationUserRelMgr::GetInstance()->add(info);
 
-        result->set("status", info->getStatus());
+        result->set("id", org->getId());
+        result->set("name", org->getName());
+        result->set("description", org->getDescription());
+        result->set("type", org->getType());
+        result->set("status", org->getStatus());
+        result->set("user_in_org", info->getStatus());
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
