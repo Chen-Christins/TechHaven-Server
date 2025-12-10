@@ -37,7 +37,8 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         int32_t state = info->getState();
         bool is_deleted = info->getIsDeleted();
         int32_t role = UserMgr::GetInstance()->get(cur_uid)->getRole();
-        if ((state != 2 && role != (int32_t)types::Role::System::ADMIN) || is_deleted) {
+        if ((state != static_cast<int32_t>(types::Status::Article::PUBLISHED) 
+                && role != static_cast<int32_t>(types::Role::System::ADMIN)) || is_deleted) {
             result->setResult(403, "Access Denied");
             break;
         }

@@ -19,7 +19,7 @@ int32_t OrganizationDetailServlet::handle(chen::http::HttpRequest::ptr request, 
 
         auto org = OrganizationMgr::GetInstance()->get(id);
         if (!org) {
-            result->setResult(1, "organization not exists");
+            result->setResult(404, "organization not exists");
             break;
         }
 

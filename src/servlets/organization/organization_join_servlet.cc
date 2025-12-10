@@ -27,7 +27,7 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
             break;
         }
 
-        if (org->getStatus() == 0) {
+        if (org->getStatus() == static_cast<int32_t>(types::Status::Organization::INACTIVE)) {
             result->setResult(403, "organization is disabled");
             break;
         }
@@ -38,18 +38,18 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
             info->setOrgId(id);
             info->setUserId(uid);
             info->setCreateTime(time(0));
-        } else if (info->getStatus() == 1) {
+        } else if (info->getStatus() == static_cast<int32_t>(types::Status::UserOrganization::APPROVED)) {
             result->setResult(403, "you have joined this organization");
             break;
-        } else if (info->getStatus() == 0) {
+        } else if (info->getStatus() == static_cast<int32_t>(types::Status::UserOrganization::PEDDING)) {
             result->setResult(403, "you have applied to join this organization");
             break;
         }
-        info->setRole((int32_t)types::Role::Organization::MEMBER); // 普通成员
-        info->setStatus((int32_t)types::Status::UserOrganization::PEDDING); // 申请中
+        info->setRole(static_cast<int32_t>(types::Role::Organization::MEMBER)); // 普通成员
+        info->setStatus(static_cast<int32_t>(types::Status::UserOrganization::PEDDING)); // 申请中
         info->setUpdateTime(time(0));
 
-        auto db = GetDB();
+        auto db = getDB();
         if (!db) {
             result->setResult(500, "get db error");
             break;

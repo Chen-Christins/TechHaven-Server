@@ -6,6 +6,7 @@
 #include <chen/email/smtp.h>
 #include "../../manager/user_manager.h"
 #include "../../util.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -66,7 +67,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
         info->setEmail(email);
         info->setCode(code);
         info->setType(std::stoi(type));
-        info->setState(0);
+        info->setState(static_cast<int32_t>(types::Status::EmailVerification::UNUSED));
         info->setExpiresTime(time(0) + 10 * 60);
         info->setClientIp(ipaddr);
         info->setUserAgent(agent);

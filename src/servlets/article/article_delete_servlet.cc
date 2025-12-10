@@ -22,12 +22,8 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
         for (auto& i : tmp) {
             art_ids.insert(chen::TypeUtil::Atoi(i));
         }
-        int64_t uid = getUserId(request);
-        if (!uid) {
-            result->setResult(500, "not login");
-            break;
-        }
         
+        int64_t uid = getUserId(request);
         std::vector<data::ArticleInfo::ptr> infos;
         for (auto& id : art_ids) {
             auto info = ArticleMgr::GetInstance()->get(id);

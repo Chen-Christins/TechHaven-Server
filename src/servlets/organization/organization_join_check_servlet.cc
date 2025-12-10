@@ -35,23 +35,23 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
         
-        if (system_role != (int32_t)types::Role::System::ADMIN
-                && org_role != (int32_t)types::Role::Organization::ADMIN
-                && org_role != (int32_t)types::Role::Organization::OWNER) {
+        if (system_role != static_cast<int32_t>(types::Role::System::ADMIN)
+                && org_role != static_cast<int32_t>(types::Role::Organization::ADMIN)
+                && org_role != static_cast<int32_t>(types::Role::Organization::OWNER)) {
             result->setResult(403, "Access Denied");
             break;
         }
 
-        if (state != (int32_t)types::Status::UserOrganization::REJECTED
-                && state != (int32_t)types::Status::UserOrganization::APPROVED) {
+        if (state != static_cast<int32_t>(types::Status::UserOrganization::REJECTED)
+                && state != static_cast<int32_t>(types::Status::UserOrganization::APPROVED)) {
             result->setResult(400, "invalid state");
             break;
         }
 
         rel->setStatus(state);
-        rel->setRole((int32_t)types::Role::Organization::MEMBER);
+        rel->setRole(static_cast<int32_t>(types::Role::Organization::MEMBER));
 
-        auto db = GetDB();
+        auto db = getDB();
         if (!db) {
             result->setResult(500, "get db error");
             break;

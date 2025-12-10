@@ -3,6 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include <chen/db/sqlite3.h>
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -60,7 +61,7 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         info->setAccount(account);
         info->setEmail(email);
         info->setPasswd(chen::md5(passwd));
-        info->setState(1);
+        info->setState(static_cast<int32_t>(types::Status::User::ACTIVE));
         info->setName(account);
 
         if (data::UserInfoDao::Insert(info, db)) {

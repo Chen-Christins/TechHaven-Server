@@ -27,7 +27,7 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
-        if (role != (int32_t)types::Role::System::ADMIN) {
+        if (role != static_cast<int32_t>(types::Role::System::ADMIN)) {
             result->setResult(403, "Access Denied");
             break;
         }

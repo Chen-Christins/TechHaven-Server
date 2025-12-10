@@ -35,7 +35,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
 
-        if (uinfo->getRole() != (int32_t)types::Role::System::ADMIN) {
+        if (uinfo->getRole() != static_cast<int32_t>(types::Role::System::ADMIN)) {
             result->setResult(403, "Access Denied");
             break;
         }

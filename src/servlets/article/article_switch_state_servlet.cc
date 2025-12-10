@@ -33,11 +33,11 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
         }
 
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
-        if (role != (int32_t)types::Role::System::ADMIN) {
+        if (role != static_cast<int32_t>(types::Role::System::ADMIN)) {
             if (article->getUserId() != uid) {
                 result->setResult(403, "Access Denied");
                 break;
-            } else if (new_state != (int32_t)State::UNPUBLISH) {
+            } else if (new_state != static_cast<int32_t>(types::Status::Article::PRIVATE)) {
                 result->setResult(400, "invalid new_state");
                 break;
             }

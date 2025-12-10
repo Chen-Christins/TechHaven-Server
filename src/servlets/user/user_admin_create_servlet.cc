@@ -69,7 +69,7 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
         info->setAccount(account);
         info->setEmail(email);
         info->setPasswd(chen::md5(passwd_s));
-        info->setState(1);
+        info->setState(static_cast<int32_t>(types::Status::User::ACTIVE));
         info->setName(account);
 
         if (data::UserInfoDao::Insert(info, db)) {

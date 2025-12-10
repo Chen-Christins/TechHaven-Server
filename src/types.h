@@ -62,6 +62,18 @@ struct Status {
         REJECTED = 2,
         EXITED = 3
     };
+
+    enum class EmailVerification {
+        UNUSED = 0,
+        USED = 1
+    };
+};
+
+struct Type {
+    enum class Article {
+        ORIGINAL = 1,
+        REPRINT = 2
+    };
 };
 
 } // namespace types

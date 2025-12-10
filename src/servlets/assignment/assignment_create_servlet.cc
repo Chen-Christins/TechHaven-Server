@@ -31,7 +31,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 			result->setResult(500, "not login");
 			break;
 		}
-		if (UserMgr::GetInstance()->get(uid)->getRole() != (int32_t)types::Role::System::ADMIN) {
+		if (UserMgr::GetInstance()->get(uid)->getRole() != static_cast<int32_t>(types::Role::System::ADMIN)) {
 			result->setResult(403, "Access Denied");
 			break;
 		}
