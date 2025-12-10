@@ -16,6 +16,11 @@ public:
     data::OrganizationUserRelInfo::ptr getByOrgAndUser(int64_t o_id, int64_t u_id);
     int64_t getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
         , int64_t id, uint64_t offset, uint64_t size, int32_t status, bool isValid);
+    
+    int64_t getOrgByUserId(std::vector<data::OrganizationUserRelInfo::ptr>& results
+        , int64_t u_id, int32_t status, bool isValid);
+
+    int64_t getMemberCount(int64_t o_id, int32_t status, bool isValid);
 private:
     // 读写锁
     std::shared_mutex m_mutex;

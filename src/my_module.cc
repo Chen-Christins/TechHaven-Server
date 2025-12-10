@@ -114,7 +114,8 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/admin/recover", XX(UserAdminRecoverServlet));
         dp->addServlet("/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
-        
+        dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
+
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));
@@ -130,15 +131,15 @@ bool MyModule::onServerReady() {
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/category/admin/query", XX(CategoryQueryServlet));
 
-		dp->addServlet("/label/create", XX(LabelCreateServlet));
+        dp->addServlet("/label/create", XX(LabelCreateServlet));
         dp->addServlet("/label/delete", XX(LabelDeleteServlet));
         dp->addServlet("/label/query", XX(LabelQueryServlet));
-        
-		dp->addServlet("/file/upload", XX(FileUploadServlet));
+
+        dp->addServlet("/file/upload", XX(FileUploadServlet));
 
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
-		dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
-		dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
+        dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
+        dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
 
         dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
@@ -148,12 +149,14 @@ bool MyModule::onServerReady() {
         dp->addServlet("/organization/join_check", XX(OrganizationJoinCheckServlet));
         dp->addServlet("/organization/list", XX(OrganizationListServlet));
         dp->addServlet("/organization/user_list", XX(OrganizationUserListServlet));
+        dp->addServlet("/organization/user_switch_role", XX(OrganizationUserSwitchRoleServlet));
+        dp->addServlet("/organization/user_kick", XX(OrganizationUserKickServlet));
+#undef XX
     }
 
     return true;
 }
 
-#undef XX
 
 bool MyModule::onServerUp() {
     INFO(logger) << "onServerUp";

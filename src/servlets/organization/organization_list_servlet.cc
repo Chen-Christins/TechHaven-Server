@@ -1,6 +1,8 @@
 #include "organization_list_servlet.h"
 #include <chen/log/log.h>
 #include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -15,7 +17,7 @@ int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, ch
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int32_t status = request->getParamAs<int32_t>("status", -1);
-
+        
         std::vector<data::OrganizationInfo::ptr> orgs;
         int64_t total = OrganizationMgr::GetInstance()->listByPages(orgs, 0, UINT64_MAX, status, true);
 
@@ -28,6 +30,8 @@ int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, ch
             item["status"] = i->getStatus();
             item["type"] = i->getType();
             item["description"] = i->getDescription();
+            int32_t status = static_cast<int32_t>(types::Status::UserOrganization::APPROVED);
+            item["count"] = OrganizationUserRelMgr::GetInstance()->getMemberCount(i->getId(), status, true);
             list.append(item);
         }
     } while (0);

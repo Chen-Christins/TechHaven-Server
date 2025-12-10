@@ -39,6 +39,10 @@ int32_t OrganizationUserListServlet::handle(chen::http::HttpRequest::ptr request
         int64_t total = blog::OrganizationUserRelMgr::GetInstance()->getByPages(rels
             , id, offset, page_size, status, true);
 
+        std::sort(rels.begin(), rels.end(), [](const auto& a, const auto& b) {
+            return a->getCreateTime() < b->getCreateTime();
+        });
+
         result->set("total", total);
         auto& list = result->jsondata["list"];
         for (auto& i : rels) {

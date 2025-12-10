@@ -97,4 +97,48 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
     return tmp.size();
 }
 
+int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::OrganizationUserRelInfo::ptr>& results
+        , int64_t u_id, int32_t status, bool isValid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    auto check = [&](data::OrganizationUserRelInfo::ptr info) {
+        if (status != -1 && info->getStatus() != status) {
+            return false;
+        }
+        if (isValid && info->getIsDeleted()) {
+            return false;
+        }
+        return true;
+    };
+
+    for (auto& i : m_user_org_datas[u_id]) {
+        if (check(i.second)) {
+            results.push_back(i.second);
+        }
+    }
+    return results.size();
+}
+
+int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status, bool isValid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    auto check = [&](data::OrganizationUserRelInfo::ptr info) {
+        if (status != -1 && info->getStatus() != status) {
+            return false;
+        }
+        if (isValid && info->getIsDeleted()) {
+            return false;
+        }
+        return true;
+    };
+
+    int64_t count = 0;
+    for (auto& i : m_org_user_datas[o_id]) {
+        if (check(i.second)) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 }

@@ -3,6 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
 #include "../../types.h"
 
 namespace blog {
@@ -46,6 +47,8 @@ int32_t OrganizationAdminListsServlet::handle(chen::http::HttpRequest::ptr reque
             item["status"] = i->getStatus();
             item["description"] = i->getDescription();
             item["create_time"] = i->getCreateTime();
+            int32_t status = static_cast<int32_t>(types::Status::UserOrganization::APPROVED);
+            item["count"] = OrganizationUserRelMgr::GetInstance()->getMemberCount(i->getId(), status, true);
             list.append(item);
         }
     } while (0);

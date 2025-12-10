@@ -29,7 +29,7 @@ set(LIB_SRC
     src/manager/article_category_rel_manager.cc
     src/manager/article_label_rel_manager.cc
     src/manager/article_manager.cc
-	src/manager/assignment_manager.cc
+    src/manager/assignment_manager.cc
     src/manager/category_manager.cc
     src/manager/label_manager.cc
     src/manager/user_manager.cc
@@ -45,16 +45,16 @@ set(LIB_SRC
     src/servlets/article/article_update_servlet.cc
     src/servlets/article/article_verify_servlet.cc
     src/servlets/article/article_update_category_servlet.cc
-	src/servlets/assignment/assignment_create_servlet.cc
+    src/servlets/assignment/assignment_create_servlet.cc
     src/servlets/assignment/assignment_admin_lists_servlet.cc
-	src/servlets/assignment/assignment_delete_servlet.cc
-	src/servlets/category/category_create_servlet.cc
-	src/servlets/category/category_delete_servlet.cc
-	src/servlets/category/category_query_servlet.cc
-	src/servlets/file/file_upload_servlet.cc
-	src/servlets/label/label_create_servlet.cc
-	src/servlets/label/label_delete_servlet.cc
-	src/servlets/label/label_query_servlet.cc
+    src/servlets/assignment/assignment_delete_servlet.cc
+    src/servlets/category/category_create_servlet.cc
+    src/servlets/category/category_delete_servlet.cc
+    src/servlets/category/category_query_servlet.cc
+    src/servlets/file/file_upload_servlet.cc
+    src/servlets/label/label_create_servlet.cc
+    src/servlets/label/label_delete_servlet.cc
+    src/servlets/label/label_query_servlet.cc
     src/servlets/organization/organization_admin_lists_servlet.cc
     src/servlets/organization/organization_create_servlet.cc
     src/servlets/organization/organization_delete_servlet.cc
@@ -63,6 +63,8 @@ set(LIB_SRC
     src/servlets/organization/organization_join_check_servlet.cc
     src/servlets/organization/organization_list_servlet.cc
     src/servlets/organization/organization_user_list_servlet.cc
+    src/servlets/organization/organization_user_switch_role_servlet.cc
+    src/servlets/organization/organization_user_kick_servlet.cc
     src/servlets/user/user_admin_create_servlet.cc
     src/servlets/user/user_admin_delete_servlet.cc
     src/servlets/user/user_admin_lists_servlet.cc
@@ -78,7 +80,8 @@ set(LIB_SRC
     src/servlets/user/user_send_code_servlet.cc
     src/servlets/user/user_update_servlet.cc
     src/servlets/user/user_query_servlet.cc
-	src/index.cc
+    src/servlets/user/user_organization_list_servlet.cc
+    src/index.cc
     src/my_module.cc
     src/struct.cc
 )
