@@ -3,6 +3,7 @@
         <column name="id" type="int64" auto_increment="true" desc="作业id"/>
         <column name="name" type="string" length="256" desc="作业名称"/>
         <column name="subject_name" type="string" length="256" desc="科目名称"/>
+        <column name="priority" type="int32" default="1" desc="作业优先级 1低 2中 3高 4紧急"/>
         <column name="status" type="int32" desc="作业状态"/>
         <column name="description" type="string" length="512" desc="作业描述"/>
         <column name="max_size" type="int32" desc="最大提交大小"/>

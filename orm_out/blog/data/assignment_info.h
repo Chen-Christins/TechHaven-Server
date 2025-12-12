@@ -27,6 +27,9 @@ public:
     const std::string& getSubjectName() { return m_subjectName; }
     void setSubjectName(const std::string& v);
 
+    const int32_t& getPriority() { return m_priority; }
+    void setPriority(const int32_t& v);
+
     const int32_t& getStatus() { return m_status; }
     void setStatus(const int32_t& v);
 
@@ -54,6 +57,7 @@ public:
     std::string toJsonString() const;
 
 private:
+    int32_t m_priority;
     int32_t m_status;
     int32_t m_maxSize;
     int32_t m_isDeleted;

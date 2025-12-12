@@ -1,6 +1,7 @@
 #include "organization_user_rel_manager.h"
 #include <chen/log/log.h>
 #include "../util.h"
+#include "../types.h"
 
 namespace blog {
 
@@ -103,6 +104,9 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
 
     auto check = [&](data::OrganizationUserRelInfo::ptr info) {
         if (status != -1 && info->getStatus() != status) {
+            return false;
+        }
+        if (info->getStatus() == static_cast<int32_t>(types::Status::UserOrganization::PENDING)) {
             return false;
         }
         if (isValid && info->getIsDeleted()) {

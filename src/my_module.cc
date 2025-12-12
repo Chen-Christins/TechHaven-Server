@@ -69,6 +69,8 @@ bool MyModule::onServerReady() {
 	XX(AssignmentInfoDao, "assignment")
     XX(OrganizationInfoDao, "organization")
     XX(OrganizationUserRelInfoDao, "organization_user_rel")
+    XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
+    XX(AssignmentUserRelInfoDao, "assignment_user_rel")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -92,6 +94,8 @@ bool MyModule::onServerReady() {
 	XX(AssignmentMgr)
     XX(OrganizationMgr)
     XX(OrganizationUserRelMgr)
+    XX(AssignmentOrganizationRelMgr)
+    XX(AssignmentUserRelMgr)
 #undef XX
 
     for (auto& i : servers) {

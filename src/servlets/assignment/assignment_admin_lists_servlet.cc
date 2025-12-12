@@ -45,6 +45,7 @@ int32_t AssignmentAdminListsServlet::handle(chen::http::HttpRequest::ptr request
             item["subject_name"] = i->getSubjectName();
             item["end_time"] = i->getDeadline();
             item["status"] = i->getStatus();
+            item["priority"] = i->getPriority();
             item["create_time"] = i->getCreateTime();
             item["description"] = i->getDescription();
             item["file_type"] = i->getFileType();

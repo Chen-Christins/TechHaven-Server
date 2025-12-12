@@ -21,6 +21,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 		DEFINE_AND_CHECK_STRING(result, subject_name, "subject_name");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, end_time, "end_time");
         DEFINE_AND_CHECK_TYPE(result, int32_t, file_size, "file_size");
+        DEFINE_AND_CHECK_TYPE(result, int32_t, priority, "priority");
         DEFINE_AND_CHECK_TYPE(result, int32_t, status, "status");
         DEFINE_AND_CHECK_STRING(result, description, "description");
         DEFINE_AND_CHECK_STRING(result, file_type, "file_type");
@@ -63,6 +64,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         info->setDeadline(end_time);
         info->setMaxSize(file_size);
         info->setStatus(status);
+        info->setPriority(priority);
 		info->setIsDeleted(0);
 		info->setUpdateTime(time(0));
 
@@ -87,6 +89,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 		result->set("name", info->getName());
 		result->set("subject_name", info->getSubjectName());
         result->set("status", info->getStatus());
+        result->set("priority", info->getPriority());
         result->set("end_time", info->getDeadline());
         result->set("create_time", info->getCreateTime());
         result->set("file_size", info->getMaxSize());
