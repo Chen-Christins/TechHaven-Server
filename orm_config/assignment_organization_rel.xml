@@ -3,6 +3,7 @@
         <column name="id" type="int64" auto_increment="true" desc="主键ID"/>
         <column name="assignment_id" type="int64" desc="作业ID"/>
         <column name="organization_id" type="int64" desc="组织ID"/>
+        <column name="assigned_by" type="string" desc="负责人"/> 
         <column name="status" type="int32" default="1" desc="状态: 1分配 2取消"/>
         <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>

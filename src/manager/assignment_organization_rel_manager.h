@@ -13,9 +13,15 @@ public:
     bool loadAll();
     void add(blog::data::AssignmentOrganizationRelInfo::ptr info);
     blog::data::AssignmentOrganizationRelInfo::ptr get(int64_t id);
+    blog::data::AssignmentOrganizationRelInfo::ptr getByOrgAndAssign(int64_t org_id, int64_t assign_id);
+    int64_t getByPages(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results
+        , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid);
 private:
     std::shared_mutex m_mutex;
+    // id -> info
     std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr> m_datas;
+    // o_id -> [a_id, info]
+    std::unordered_map<int64_t, std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr>> m_org_assign_datas;
 };
 
 typedef chen::Singleton<AssignmentOrganizationRelManager> AssignmentOrganizationRelMgr;

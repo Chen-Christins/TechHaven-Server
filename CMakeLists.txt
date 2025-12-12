@@ -50,6 +50,7 @@ set(LIB_SRC
     src/servlets/assignment/assignment_create_servlet.cc
     src/servlets/assignment/assignment_admin_lists_servlet.cc
     src/servlets/assignment/assignment_delete_servlet.cc
+    src/servlets/assignment/assignment_organization_create_servlet.cc
     src/servlets/category/category_create_servlet.cc
     src/servlets/category/category_delete_servlet.cc
     src/servlets/category/category_query_servlet.cc
@@ -67,6 +68,7 @@ set(LIB_SRC
     src/servlets/organization/organization_user_list_servlet.cc
     src/servlets/organization/organization_user_switch_role_servlet.cc
     src/servlets/organization/organization_user_kick_servlet.cc
+    src/servlets/organization/organization_assignment_list_servlet.cc
     src/servlets/user/user_admin_create_servlet.cc
     src/servlets/user/user_admin_delete_servlet.cc
     src/servlets/user/user_admin_lists_servlet.cc

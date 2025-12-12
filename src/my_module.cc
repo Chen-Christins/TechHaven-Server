@@ -155,6 +155,8 @@ bool MyModule::onServerReady() {
         dp->addServlet("/organization/user_list", XX(OrganizationUserListServlet));
         dp->addServlet("/organization/user_switch_role", XX(OrganizationUserSwitchRoleServlet));
         dp->addServlet("/organization/user_kick", XX(OrganizationUserKickServlet));
+        dp->addServlet("/organization/assignment_create", XX(AssignmentOrganizationCreateServlet));
+        dp->addServlet("/organization/assignment_list", XX(OrganizationAssignmentListServlet));
 #undef XX
     }
 

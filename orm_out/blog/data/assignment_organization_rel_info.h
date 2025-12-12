@@ -27,6 +27,9 @@ public:
     const int64_t& getOrganizationId() { return m_organizationId; }
     void setOrganizationId(const int64_t& v);
 
+    const std::string& getAssignedBy() { return m_assignedBy; }
+    void setAssignedBy(const std::string& v);
+
     const int32_t& getStatus() { return m_status; }
     void setStatus(const int32_t& v);
 
@@ -47,6 +50,7 @@ private:
     int64_t m_id;
     int64_t m_assignmentId;
     int64_t m_organizationId;
+    std::string m_assignedBy;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

@@ -47,8 +47,9 @@ struct Status {
     };
 
     enum class Assignment {
-        INACTIVE = 0,
+        DRAFT = 0,
         ACTIVE = 1,
+        INACTIVE = 2,
     };
 
     enum class Organization {

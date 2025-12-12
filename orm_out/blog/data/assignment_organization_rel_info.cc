@@ -12,6 +12,7 @@ AssignmentOrganizationRelInfo::AssignmentOrganizationRelInfo()
     ,m_id()
     ,m_assignmentId()
     ,m_organizationId()
+    ,m_assignedBy()
     ,m_createTime(time(0))
     ,m_updateTime() {
 }
@@ -21,6 +22,7 @@ std::string AssignmentOrganizationRelInfo::toJsonString() const {
     v["id"] = std::to_string(m_id);
     v["assignment_id"] = std::to_string(m_assignmentId);
     v["organization_id"] = std::to_string(m_organizationId);
+    v["assigned_by"] = m_assignedBy;
     v["status"] = m_status;
     v["is_deleted"] = m_isDeleted;
     v["create_time"] = chen::Time2Str(m_createTime);
@@ -38,6 +40,10 @@ void AssignmentOrganizationRelInfo::setAssignmentId(const int64_t& v) {
 
 void AssignmentOrganizationRelInfo::setOrganizationId(const int64_t& v) {
     m_organizationId = v;
+}
+
+void AssignmentOrganizationRelInfo::setAssignedBy(const std::string& v) {
+    m_assignedBy = v;
 }
 
 void AssignmentOrganizationRelInfo::setStatus(const int32_t& v) {
@@ -58,7 +64,7 @@ void AssignmentOrganizationRelInfo::setUpdateTime(const int64_t& v) {
 
 
 int AssignmentOrganizationRelInfoDao::Update(AssignmentOrganizationRelInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update assignment_organization_rel set assignment_id = ?, organization_id = ?, status = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update assignment_organization_rel set assignment_id = ?, organization_id = ?, assigned_by = ?, status = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -67,16 +73,17 @@ int AssignmentOrganizationRelInfoDao::Update(AssignmentOrganizationRelInfo::ptr 
     }
     stmt->bindInt64(1, info->m_assignmentId);
     stmt->bindInt64(2, info->m_organizationId);
-    stmt->bindInt32(3, info->m_status);
-    stmt->bindInt32(4, info->m_isDeleted);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_updateTime);
-    stmt->bindInt64(7, info->m_id);
+    stmt->bindString(3, info->m_assignedBy);
+    stmt->bindInt32(4, info->m_status);
+    stmt->bindInt32(5, info->m_isDeleted);
+    stmt->bindTime(6, info->m_createTime);
+    stmt->bindTime(7, info->m_updateTime);
+    stmt->bindInt64(8, info->m_id);
     return stmt->execute();
 }
 
 int AssignmentOrganizationRelInfoDao::Insert(AssignmentOrganizationRelInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into assignment_organization_rel (assignment_id, organization_id, status, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into assignment_organization_rel (assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -85,10 +92,11 @@ int AssignmentOrganizationRelInfoDao::Insert(AssignmentOrganizationRelInfo::ptr 
     }
     stmt->bindInt64(1, info->m_assignmentId);
     stmt->bindInt64(2, info->m_organizationId);
-    stmt->bindInt32(3, info->m_status);
-    stmt->bindInt32(4, info->m_isDeleted);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_updateTime);
+    stmt->bindString(3, info->m_assignedBy);
+    stmt->bindInt32(4, info->m_status);
+    stmt->bindInt32(5, info->m_isDeleted);
+    stmt->bindTime(6, info->m_createTime);
+    stmt->bindTime(7, info->m_updateTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -100,7 +108,7 @@ int AssignmentOrganizationRelInfoDao::InsertOrUpdate(AssignmentOrganizationRelIn
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into assignment_organization_rel (id, assignment_id, organization_id, status, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into assignment_organization_rel (id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -110,10 +118,11 @@ int AssignmentOrganizationRelInfoDao::InsertOrUpdate(AssignmentOrganizationRelIn
     stmt->bindInt64(1, info->m_id);
     stmt->bindInt64(2, info->m_assignmentId);
     stmt->bindInt64(3, info->m_organizationId);
-    stmt->bindInt32(4, info->m_status);
-    stmt->bindInt32(5, info->m_isDeleted);
-    stmt->bindTime(6, info->m_createTime);
-    stmt->bindTime(7, info->m_updateTime);
+    stmt->bindString(4, info->m_assignedBy);
+    stmt->bindInt32(5, info->m_status);
+    stmt->bindInt32(6, info->m_isDeleted);
+    stmt->bindTime(7, info->m_createTime);
+    stmt->bindTime(8, info->m_updateTime);
     return stmt->execute();
 }
 
@@ -179,7 +188,7 @@ int AssignmentOrganizationRelInfoDao::DeleteByOrganizationId( const int64_t& org
 }
 
 int AssignmentOrganizationRelInfoDao::QueryAll(std::vector<AssignmentOrganizationRelInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, assignment_id, organization_id, status, is_deleted, create_time, update_time from assignment_organization_rel";
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -195,17 +204,18 @@ int AssignmentOrganizationRelInfoDao::QueryAll(std::vector<AssignmentOrganizatio
         v->m_id = rt->getInt64(0);
         v->m_assignmentId = rt->getInt64(1);
         v->m_organizationId = rt->getInt64(2);
-        v->m_status = rt->getInt32(3);
-        v->m_isDeleted = rt->getInt32(4);
-        v->m_createTime = rt->getTime(5);
-        v->m_updateTime = rt->getTime(6);
+        v->m_assignedBy = rt->getString(3);
+        v->m_status = rt->getInt32(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
         results.push_back(v);
     }
     return 0;
 }
 
 AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, assignment_id, organization_id, status, is_deleted, create_time, update_time from assignment_organization_rel where id = ?";
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -224,15 +234,16 @@ AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelInfoDao::Query( cons
     v->m_id = rt->getInt64(0);
     v->m_assignmentId = rt->getInt64(1);
     v->m_organizationId = rt->getInt64(2);
-    v->m_status = rt->getInt32(3);
-    v->m_isDeleted = rt->getInt32(4);
-    v->m_createTime = rt->getTime(5);
-    v->m_updateTime = rt->getTime(6);
+    v->m_assignedBy = rt->getString(3);
+    v->m_status = rt->getInt32(4);
+    v->m_isDeleted = rt->getInt32(5);
+    v->m_createTime = rt->getTime(6);
+    v->m_updateTime = rt->getTime(7);
     return v;
 }
 
 AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelInfoDao::QueryByAssignmentIdOrganizationId( const int64_t& assignment_id,  const int64_t& organization_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, assignment_id, organization_id, status, is_deleted, create_time, update_time from assignment_organization_rel where assignment_id = ? and organization_id = ?";
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where assignment_id = ? and organization_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -252,15 +263,16 @@ AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelInfoDao::QueryByAssi
     v->m_id = rt->getInt64(0);
     v->m_assignmentId = rt->getInt64(1);
     v->m_organizationId = rt->getInt64(2);
-    v->m_status = rt->getInt32(3);
-    v->m_isDeleted = rt->getInt32(4);
-    v->m_createTime = rt->getTime(5);
-    v->m_updateTime = rt->getTime(6);
+    v->m_assignedBy = rt->getString(3);
+    v->m_status = rt->getInt32(4);
+    v->m_isDeleted = rt->getInt32(5);
+    v->m_createTime = rt->getTime(6);
+    v->m_updateTime = rt->getTime(7);
     return v;
 }
 
 int AssignmentOrganizationRelInfoDao::QueryByAssignmentId(std::vector<AssignmentOrganizationRelInfo::ptr>& results,  const int64_t& assignment_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, assignment_id, organization_id, status, is_deleted, create_time, update_time from assignment_organization_rel where assignment_id = ?";
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where assignment_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -277,17 +289,18 @@ int AssignmentOrganizationRelInfoDao::QueryByAssignmentId(std::vector<Assignment
         v->m_id = rt->getInt64(0);
         v->m_assignmentId = rt->getInt64(1);
         v->m_organizationId = rt->getInt64(2);
-        v->m_status = rt->getInt32(3);
-        v->m_isDeleted = rt->getInt32(4);
-        v->m_createTime = rt->getTime(5);
-        v->m_updateTime = rt->getTime(6);
+        v->m_assignedBy = rt->getString(3);
+        v->m_status = rt->getInt32(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
         results.push_back(v);
     };
     return 0;
 }
 
 int AssignmentOrganizationRelInfoDao::QueryByOrganizationId(std::vector<AssignmentOrganizationRelInfo::ptr>& results,  const int64_t& organization_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, assignment_id, organization_id, status, is_deleted, create_time, update_time from assignment_organization_rel where organization_id = ?";
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where organization_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -304,10 +317,11 @@ int AssignmentOrganizationRelInfoDao::QueryByOrganizationId(std::vector<Assignme
         v->m_id = rt->getInt64(0);
         v->m_assignmentId = rt->getInt64(1);
         v->m_organizationId = rt->getInt64(2);
-        v->m_status = rt->getInt32(3);
-        v->m_isDeleted = rt->getInt32(4);
-        v->m_createTime = rt->getTime(5);
-        v->m_updateTime = rt->getTime(6);
+        v->m_assignedBy = rt->getString(3);
+        v->m_status = rt->getInt32(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
         results.push_back(v);
     };
     return 0;
@@ -318,6 +332,7 @@ int AssignmentOrganizationRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "assignment_id INTEGER NOT NULL DEFAULT 0,"
             "organization_id INTEGER NOT NULL DEFAULT 0,"
+            "assigned_by TEXT NOT NULL DEFAULT '',"
             "status INTEGER NOT NULL DEFAULT 1,"
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
@@ -333,6 +348,7 @@ int AssignmentOrganizationRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`assignment_id` bigint NOT NULL DEFAULT 0 COMMENT '作业ID',"
             "`organization_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID',"
+            "`assigned_by` varchar(128) NOT NULL DEFAULT '' COMMENT '负责人',"
             "`status` int NOT NULL DEFAULT 1 COMMENT '状态: 1分配 2取消',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"

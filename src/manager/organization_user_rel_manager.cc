@@ -65,7 +65,7 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(i
 }
 
 int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
-        , int64_t id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
+        , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
 
     auto check = [&](data::OrganizationUserRelInfo::ptr info) {
@@ -80,7 +80,7 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
 
     std::vector<data::OrganizationUserRelInfo::ptr> tmp;
 
-    for (auto& i : m_org_user_datas[id]) {
+    for (auto& i : m_org_user_datas[o_id]) {
         if (check(i.second)) {
             tmp.push_back(i.second);
         }
