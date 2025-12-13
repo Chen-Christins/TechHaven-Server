@@ -11,6 +11,7 @@
 #include "../servlets/assignment/assignment_admin_lists_servlet.h"          // IWYU pragma: keep
 #include "../servlets/assignment/assignment_create_servlet.h"               // IWYU pragma: keep
 #include "../servlets/assignment/assignment_delete_servlet.h"               // IWYU pragma: keep
+#include "../servlets/assignment/assignment_detail_servlet.h"               // IWYU pragma: keep
 #include "../servlets/assignment/assignment_organization_create_servlet.h"  // IWYU pragma: keep
 #include "../servlets/category/category_create_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_delete_servlet.h"                   // IWYU pragma: keep
@@ -35,6 +36,7 @@
 #include "../servlets/user/user_admin_lists_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_admin_recover_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/user/user_admin_reset_passwd_servlet.h"               // IWYU pragma: keep
+#include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_exists_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_info_servlet.h"                             // IWYU pragma: keep

@@ -50,6 +50,7 @@ set(LIB_SRC
     src/servlets/assignment/assignment_create_servlet.cc
     src/servlets/assignment/assignment_admin_lists_servlet.cc
     src/servlets/assignment/assignment_delete_servlet.cc
+    src/servlets/assignment/assignment_detail_servlet.cc
     src/servlets/assignment/assignment_organization_create_servlet.cc
     src/servlets/category/category_create_servlet.cc
     src/servlets/category/category_delete_servlet.cc
@@ -74,6 +75,7 @@ set(LIB_SRC
     src/servlets/user/user_admin_lists_servlet.cc
     src/servlets/user/user_admin_recover_servlet.cc
     src/servlets/user/user_admin_reset_passwd_servlet.cc
+    src/servlets/user/user_assignment_list_servlet.cc
     src/servlets/user/user_create_servlet.cc
     src/servlets/user/user_exists_servlet.cc
     src/servlets/user/user_info_servlet.cc

@@ -119,6 +119,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
+        dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
 
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
@@ -144,6 +145,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
         dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
+        dp->addServlet("/assignment/detail", XX(AssignmentDetailServlet));
 
         dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
