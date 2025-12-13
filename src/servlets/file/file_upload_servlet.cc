@@ -3,6 +3,7 @@
 #include <chen/parser/multi_part_parser.h>
 #include <chen/config/config.h>
 #include <chen/util/util.h>
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -28,7 +29,9 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 			break;
 		}
 
-		std::string dir_name = data[0].content;
+        int64_t uid = getUserId(request);
+        std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
+		std::string dir_name = data[0].content + "/" + user_name;
 		std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
 
 		for (size_t i = 1; i < data.size(); ++i) {
