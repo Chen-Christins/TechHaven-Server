@@ -4,7 +4,6 @@
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>
 #include "user_manager.h"
-#include "../types.h"
 
 namespace blog {
 
@@ -253,7 +252,7 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
         if (iit->second->getIsDeleted()) {
             continue;
         }
-        if (iit->second->getState() == static_cast<int32_t>(types::Status::Article::PUBLISHED)) {
+        if (iit->second->getState() == ArticleManager::Status::PUBLISHED) {
             next = iit->second;
             break;
         }
@@ -265,7 +264,7 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
         if (it->second->getIsDeleted()) {
             continue;
         }
-        if (it->second->getState() == static_cast<int32_t>(types::Status::Article::PUBLISHED)) {
+        if (it->second->getState() == ArticleManager::Status::PUBLISHED) {
             prev = it->second;
             break;
         }
@@ -474,11 +473,11 @@ void ArticleManager::onTimer() {
     std::vector<data::ArticleInfo::ptr> infos;
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     for (auto& i : m_datas) {
-        if (i.second->getState() != static_cast<int32_t>(types::Status::Article::PUBLISHED)) {
+        if (i.second->getState() != ArticleManager::Status::PUBLISHED) {
             continue;
         }
         if (i.second->getPublishTime() < now) {
-            i.second->setState(static_cast<int32_t>(types::Status::Article::PUBLISHED));
+            i.second->setState(ArticleManager::Status::PUBLISHED);
             i.second->setUpdateTime(now);
             infos.push_back(i.second);
         }

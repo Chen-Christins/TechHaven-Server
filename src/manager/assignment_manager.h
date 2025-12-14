@@ -13,6 +13,12 @@ class AssignmentManager {
 public:
 	typedef std::shared_ptr<AssignmentManager> ptr;
 
+    enum Status {
+        DRAFT = 0,
+        ACTIVE = 1,
+        INACTIVE = 2,
+    };
+
 	bool loadAll();
 	void add(data::AssignmentInfo::ptr info);
 	uint64_t listByPages(std::vector<data::AssignmentInfo::ptr>& infos, uint64_t offset

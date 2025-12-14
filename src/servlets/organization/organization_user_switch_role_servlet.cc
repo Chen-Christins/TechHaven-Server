@@ -3,7 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../types.h"
+#include "../../manager/organization_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -41,9 +41,9 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
             break;
         }
 
-        if (role != static_cast<int32_t>(types::Role::Organization::MEMBER)
-                && role != static_cast<int32_t>(types::Role::Organization::ADMIN)
-                && role != static_cast<int32_t>(types::Role::Organization::OWNER)) {
+        if (role != OrganizationManager::Role::MEMBER
+                && role != OrganizationManager::Role::ADMIN
+                && role != OrganizationManager::Role::OWNER) {
             result->setResult(400, "invalid role");
             break;
         }
@@ -80,17 +80,17 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
 
 bool OrganizationUserSwitchRoleServlet::checkPermission(int32_t system_role, int32_t org_role, int32_t new_role) {
     // 系统管理员可以操作一切
-    if (system_role == static_cast<int32_t>(types::Role::System::ADMIN)) {
+    if (system_role == UserManager::Role::ADMIN) {
         return true;
     }
     // 组织拥有者可以操作一切
-    if (org_role == static_cast<int32_t>(types::Role::Organization::OWNER)) {
+    if (org_role == OrganizationManager::Role::OWNER) {
         return true;
     }
     // 组织管理员只能操作普通成员
-    if (org_role == static_cast<int32_t>(types::Role::Organization::ADMIN) 
-            && (new_role == static_cast<int32_t>(types::Role::Organization::MEMBER)
-            || new_role == static_cast<int32_t>(types::Role::Organization::ADMIN))) {
+    if (org_role == OrganizationManager::Role::ADMIN 
+            && (new_role == OrganizationManager::Role::MEMBER
+            || new_role == OrganizationManager::Role::ADMIN)) {
         return true;
     }
     return false;

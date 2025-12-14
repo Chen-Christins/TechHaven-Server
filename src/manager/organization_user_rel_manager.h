@@ -10,6 +10,12 @@ namespace blog {
 
 class OrganizationUserRelManager {
 public:
+    enum Status {
+        PENDING = 0,
+        APPROVED = 1,
+        REJECTED = 2,
+        EXITED = 3
+    };
     bool loadAll();
     void add(data::OrganizationUserRelInfo::ptr info);
     data::OrganizationUserRelInfo::ptr get(int64_t id);

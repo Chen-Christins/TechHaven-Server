@@ -2,7 +2,6 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include <chen/util/json_util.h>
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -27,7 +26,7 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
-        if (role != (int32_t)types::Role::System::ADMIN) {
+        if (role != UserManager::Role::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

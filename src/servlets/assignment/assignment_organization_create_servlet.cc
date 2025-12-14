@@ -1,11 +1,11 @@
 #include "assignment_organization_create_servlet.h"
 #include <chen/log/log.h>
-#include "../../util.h"
 #include "../../manager/user_manager.h"
-#include "../../types.h"
+#include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"
 #include "../../manager/assignment_manager.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -128,13 +128,13 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 }
 
 bool AssignmentOrganizationCreateServlet::checkPermission(int32_t system_role, int32_t org_role) {
-    if (system_role == static_cast<int32_t>(types::Role::System::ADMIN)) {
+    if (system_role == UserManager::Role::ADMIN) {
         return true;
     }
-    if (org_role == static_cast<int32_t>(types::Role::Organization::OWNER)) {
+    if (org_role == OrganizationManager::Role::OWNER) {
         return true;
     }
-    if (org_role == static_cast<int32_t>(types::Role::Organization::ADMIN)) {
+    if (org_role == OrganizationManager::Role::ADMIN) {
         return true;
     }
     return false;

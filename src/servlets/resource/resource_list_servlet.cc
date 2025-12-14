@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../util.h"
 #include "../../manager/user_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -34,7 +33,7 @@ int32_t ResourceListServlet::handle(chen::http::HttpRequest::ptr request, chen::
 }
 
 bool ResourceListServlet::checkPermession(int32_t system_role) {
-    if (system_role != static_cast<int32_t>(types::Role::System::ADMIN)) {
+    if (system_role != UserManager::Role::ADMIN) {
         return false;
     }
     return true;

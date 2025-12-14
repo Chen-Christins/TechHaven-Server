@@ -4,7 +4,6 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -22,8 +21,8 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
         DEFINE_AND_CHECK_TYPE(result, int32_t, state, "state");
 
-        if (state != static_cast<int32_t>(types::Status::UserOrganization::REJECTED)
-                && state != static_cast<int32_t>(types::Status::UserOrganization::APPROVED)) {
+        if (state != OrganizationUserRelManager::Status::REJECTED
+                && state != OrganizationUserRelManager::Status::APPROVED) {
             result->setResult(400, "invalid state");
             break;
         }
@@ -42,9 +41,9 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
         
-        if (system_role != static_cast<int32_t>(types::Role::System::ADMIN)
-                && org_role != static_cast<int32_t>(types::Role::Organization::ADMIN)
-                && org_role != static_cast<int32_t>(types::Role::Organization::OWNER)) {
+        if (system_role != UserManager::Role::ADMIN
+                && org_role != OrganizationManager::Role::ADMIN
+                && org_role != OrganizationManager::Role::OWNER) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -55,12 +54,12 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
             result->setResult(404, "invalid id");
             break;
         }
-        if (rel->getStatus() != static_cast<int32_t>(types::Status::UserOrganization::PENDING)) {
+        if (rel->getStatus() != OrganizationUserRelManager::Status::PENDING) {
             result->setResult(403, "invalid state");
             break;
         }
         rel->setStatus(state);
-        rel->setRole(static_cast<int32_t>(types::Role::Organization::MEMBER));
+        rel->setRole(OrganizationManager::Role::MEMBER);
 
         auto db = getDB();
         if (!db) {

@@ -10,6 +10,17 @@ namespace blog {
 
 class UserManager {
 public:
+    enum Role {
+        USER = 1,
+        ADMIN = 2,
+        EDITOR = 3,
+        CHECKER = 4
+    };
+    enum Status {
+        INACTIVE = 0,
+        ACTIVE = 1,
+        BANNED = 2
+    };
     bool loadAll();
     void add(blog::data::UserInfo::ptr info);
     void getAllIds(std::vector<int64_t>& ids, bool isValid);

@@ -4,7 +4,6 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -36,7 +35,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
 
-        if (uinfo->getRole() != static_cast<int32_t>(types::Role::System::ADMIN)) {
+        if (uinfo->getRole() != UserManager::Role::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -88,8 +87,8 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             auto rel = std::make_shared<data::OrganizationUserRelInfo>();
             rel->setOrgId(info->getId());
             rel->setUserId(user_id);
-            rel->setRole(static_cast<int32_t>(types::Role::Organization::OWNER));
-            rel->setStatus(static_cast<int32_t>(types::Status::UserOrganization::APPROVED));
+            rel->setRole(OrganizationManager::Role::OWNER);
+            rel->setStatus(OrganizationUserRelManager::Status::APPROVED);
             rel->setCreateTime(time(0));
             rel->setUpdateTime(time(0));
         

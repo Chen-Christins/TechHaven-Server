@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../manager/article_manager.h"
 #include "../../util.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -22,8 +21,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         DEFINE_AND_CHECK_STRING(result, category, "category");
         DEFINE_AND_CHECK_STRING(result, label, "label");
 
-        if (type != static_cast<int32_t>(types::Type::Article::ORIGINAL) 
-                && type != static_cast<int32_t>(types::Type::Article::REPRINT)) {
+        if (type != ArticleManager::Type::ORIGINAL
+                && type != ArticleManager::Type::REPRINT) {
             result->setResult(401, "invalid type");
             break;
         }
@@ -39,7 +38,7 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         info->setContent(content);
         info->setType(type);
         info->setUserId(uid);
-        info->setState(static_cast<int32_t>(types::Status::Article::PRIVATE));
+        info->setState(ArticleManager::Status::PRIVATE);
         info->setCreateTime(time(0));
         info->setUpdateTime(time(0));
         
