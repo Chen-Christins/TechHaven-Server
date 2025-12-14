@@ -1,0 +1,102 @@
+#ifndef BLOG_DATARESOURCE_INFO_H
+#define BLOG_DATARESOURCE_INFO_H
+
+#include <json/json.h>
+#include <vector>
+#include "chen/db/db.h"
+#include "chen/util/util.h"
+
+
+namespace blog {
+namespace data {
+
+class ResourceInfoDao;
+class ResourceInfo {
+friend class ResourceInfoDao;
+public:
+    typedef std::shared_ptr<ResourceInfo> ptr;
+
+    ResourceInfo();
+
+    const int64_t& getId() { return m_id; }
+    void setId(const int64_t& v);
+
+    const std::string& getName() { return m_name; }
+    void setName(const std::string& v);
+
+    const std::string& getPath() { return m_path; }
+    void setPath(const std::string& v);
+
+    const int32_t& getType() { return m_type; }
+    void setType(const int32_t& v);
+
+    const int64_t& getSize() { return m_size; }
+    void setSize(const int64_t& v);
+
+    const std::string& getHash() { return m_hash; }
+    void setHash(const std::string& v);
+
+    const int64_t& getOwnerId() { return m_ownerId; }
+    void setOwnerId(const int64_t& v);
+
+    const std::string& getBizType() { return m_bizType; }
+    void setBizType(const std::string& v);
+
+    const int64_t& getBizId() { return m_bizId; }
+    void setBizId(const int64_t& v);
+
+    const int32_t& getStatus() { return m_status; }
+    void setStatus(const int32_t& v);
+
+    const int32_t& getIsDeleted() { return m_isDeleted; }
+    void setIsDeleted(const int32_t& v);
+
+    const int64_t& getCreateTime() { return m_createTime; }
+    void setCreateTime(const int64_t& v);
+
+    const int64_t& getUpdateTime() { return m_updateTime; }
+    void setUpdateTime(const int64_t& v);
+
+    std::string toJsonString() const;
+
+private:
+    int32_t m_type;
+    int32_t m_status;
+    int32_t m_isDeleted;
+    int64_t m_id;
+    int64_t m_size;
+    int64_t m_ownerId;
+    int64_t m_bizId;
+    std::string m_name;
+    std::string m_path;
+    std::string m_hash;
+    std::string m_bizType;
+    int64_t m_createTime;
+    int64_t m_updateTime;
+};
+
+
+class ResourceInfoDao {
+public:
+    typedef std::shared_ptr<ResourceInfoDao> ptr;
+    static int Update(ResourceInfo::ptr info, chen::IDB::ptr conn);
+    static int Insert(ResourceInfo::ptr info, chen::IDB::ptr conn);
+    static int InsertOrUpdate(ResourceInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(ResourceInfo::ptr info, chen::IDB::ptr conn);
+    static int Delete(const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
+    static int DeleteByOwnerId( const int64_t& owner_id, chen::IDB::ptr conn);
+    static int DeleteByBizTypeBizId( const std::string& biz_type,  const int64_t& biz_id, chen::IDB::ptr conn);
+    static int DeleteByHash( const std::string& hash, chen::IDB::ptr conn);
+    static int QueryAll(std::vector<ResourceInfo::ptr>& results, chen::IDB::ptr conn);
+    static ResourceInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
+    static int QueryByOwnerId(std::vector<ResourceInfo::ptr>& results,  const int64_t& owner_id, chen::IDB::ptr conn);
+    static int QueryByBizTypeBizId(std::vector<ResourceInfo::ptr>& results,  const std::string& biz_type,  const int64_t& biz_id, chen::IDB::ptr conn);
+    static ResourceInfo::ptr QueryByHash( const std::string& hash, chen::IDB::ptr conn);
+    static int CreateTableSQLite3(chen::IDB::ptr info);
+    static int CreateTableMySQL(chen::IDB::ptr info);
+};
+
+} //namespace data
+} //namespace blog
+#endif //BLOG_DATARESOURCE_INFO_H

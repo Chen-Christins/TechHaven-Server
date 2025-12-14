@@ -13,6 +13,7 @@ set(LIB_SRC
     blog/data/label_info.cc
     blog/data/organization_info.cc
     blog/data/organization_user_rel_info.cc
+    blog/data/resource_info.cc
     blog/data/user_info.cc
 )
 add_library(orm_data ${LIB_SRC})

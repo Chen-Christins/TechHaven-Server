@@ -4,6 +4,7 @@
 #include <chen/config/config.h>
 #include <chen/util/util.h>
 #include "../../manager/user_manager.h"
+#include "../../manager/resource_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -45,6 +46,11 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 			INFO(logger) << "File saved: " << filename << " (Size: " << data[i].content.size()
 					<< " bytes -- " << (1.0 * data[i].content.size() / 1024)
 					<< " kb -- " << (1.0 * data[i].content.size() / (1024 * 1024)) << " mb)";
+            
+            // TODO: 保存文件信息到数据库
+
+            blog::data::ResourceInfo::ptr info = std::make_shared<blog::data::ResourceInfo>();
+            
 		}
 	} while (0);
 	response->setBody(result->toJsonString());
