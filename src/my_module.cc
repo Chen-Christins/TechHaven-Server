@@ -71,6 +71,7 @@ bool MyModule::onServerReady() {
     XX(OrganizationUserRelInfoDao, "organization_user_rel")
     XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
     XX(AssignmentUserRelInfoDao, "assignment_user_rel")
+    XX(ResourceInfoDao, "resource")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -96,6 +97,7 @@ bool MyModule::onServerReady() {
     XX(OrganizationUserRelMgr)
     XX(AssignmentOrganizationRelMgr)
     XX(AssignmentUserRelMgr)
+    XX(ResourceMgr)
 #undef XX
 
     for (auto& i : servers) {

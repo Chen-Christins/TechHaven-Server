@@ -26,7 +26,6 @@ int32_t ResourceListServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         // TODO: 查询资源列表
-
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

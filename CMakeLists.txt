@@ -37,6 +37,7 @@ set(LIB_SRC
     src/manager/organization_user_rel_manager.cc
     src/manager/assignment_organization_rel_manager.cc
     src/manager/assignment_user_rel_manager.cc
+    src/manager/resource_manager.cc
     src/servlets/article/article_admin_lists_servlet.cc
     src/servlets/article/article_create_servlet.cc
     src/servlets/article/article_delete_servlet.cc

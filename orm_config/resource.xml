@@ -1,0 +1,23 @@
+<table name="resource" namespace="blog.data" desc="文件资源元数据表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键ID"/>
+        <column name="name" type="string" length="256" desc="原始文件名"/>
+        <column name="path" type="string" length="512" desc="存储路径（相对或绝对）"/>
+        <column name="type" type="int32" desc="文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other"/>
+        <column name="size" type="int64" desc="文件大小（字节）"/>
+        <column name="hash" type="string" length="64" desc="文件哈希（去重/校验）"/>
+        <column name="owner_id" type="int64" desc="上传者用户ID"/>
+        <column name="biz_type" type="string" length="32" desc="业务类型（如assignment、article等）"/>
+        <column name="biz_id" type="int64" desc="业务ID（如作业ID、文章ID等）"/>
+        <column name="status" type="int32" default="1" desc="状态: 1正常 0禁用"/>
+        <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="上传时间"/>
+        <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="idx_owner" cols="owner_id" type="index"/>
+        <index name="idx_biz" cols="biz_type,biz_id" type="index"/>
+        <index name="uniq_hash" cols="hash" type="uniq"/>
+    </indexs>
+</table>
