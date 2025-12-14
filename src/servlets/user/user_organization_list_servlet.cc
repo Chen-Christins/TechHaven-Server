@@ -3,7 +3,6 @@
 #include <algorithm>
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -37,7 +36,8 @@ int32_t UserOrganizationListServlet::handle(chen::http::HttpRequest::ptr request
             item["type"] = org->getType();
             item["role"] = i->getRole();
             item["join_time"] = i->getCreateTime();
-            int32_t status = static_cast<int32_t>(types::Status::UserOrganization::APPROVED);
+            // 成员数
+            int32_t status = OrganizationUserRelManager::Status::APPROVED;
             item["count"] = OrganizationUserRelMgr::GetInstance()->getMemberCount(i->getOrgId(), status, true);
             list.append(item);
         }

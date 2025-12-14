@@ -13,6 +13,17 @@ namespace blog {
 
 class ArticleManager {
 public:
+    enum Status {
+        UNKNOWN = 0,
+        CHECKING = 1,
+        PUBLISHED = 2,
+        REJECTED = 3,
+        PRIVATE = 4
+    };
+    enum Type {
+        ORIGINAL = 1,
+        REPRINT = 2
+    };
     bool loadAll();
     void add(blog::data::ArticleInfo::ptr info);
     blog::data::ArticleInfo::ptr get(int64_t id);

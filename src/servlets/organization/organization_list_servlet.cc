@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -30,7 +29,8 @@ int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, ch
             item["status"] = i->getStatus();
             item["type"] = i->getType();
             item["description"] = i->getDescription();
-            int32_t status = static_cast<int32_t>(types::Status::UserOrganization::APPROVED);
+            // 获取成员数量
+            int32_t status = OrganizationUserRelManager::Status::APPROVED;
             item["count"] = OrganizationUserRelMgr::GetInstance()->getMemberCount(i->getId(), status, true);
             list.append(item);
         }

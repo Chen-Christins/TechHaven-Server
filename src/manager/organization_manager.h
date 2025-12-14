@@ -11,6 +11,15 @@ namespace blog {
 
 class OrganizationManager {
 public:
+    enum Role {
+        MEMBER = 1,
+        ADMIN = 2,
+        OWNER = 3
+    };
+    enum Status {
+        INACTIVE = 0,
+        ACTIVE = 1,
+    };
     bool loadAll();
     void add(data::OrganizationInfo::ptr info);
     data::OrganizationInfo::ptr get(int64_t id);

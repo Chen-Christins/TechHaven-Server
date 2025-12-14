@@ -3,7 +3,6 @@
 #include "../../manager/article_manager.h"
 #include "../../util.h"
 #include <chen/log/log.h>
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -33,11 +32,11 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
         }
 
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
-        if (role != static_cast<int32_t>(types::Role::System::ADMIN)) {
+        if (role != UserManager::Role::ADMIN) {
             if (article->getUserId() != uid) {
                 result->setResult(403, "Access Denied");
                 break;
-            } else if (new_state != static_cast<int32_t>(types::Status::Article::PRIVATE)) {
+            } else if (new_state != ArticleManager::Status::PRIVATE) {
                 result->setResult(400, "invalid new_state");
                 break;
             }

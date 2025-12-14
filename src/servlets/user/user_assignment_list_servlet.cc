@@ -3,7 +3,6 @@
 #include "../../manager/assignment_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -42,7 +41,7 @@ int32_t UserAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, 
                 int64_t assign_id = assign_org_rel->getAssignmentId();
                 auto assign_info = AssignmentMgr::GetInstance()->get(assign_id);
                 // 只返回激活状态的作业
-                if (!assign_info || assign_info->getStatus() == static_cast<int32_t>(types::Status::Assignment::DRAFT)
+                if (!assign_info || assign_info->getStatus() == AssignmentManager::Status::DRAFT
                         || assign_info->getIsDeleted()) {
                     continue;
                 }

@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../util.h"
 #include "../../manager/article_manager.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -20,8 +19,8 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
         DEFINE_AND_CHECK_TYPE(result, int64_t, state, "state");
         
         // 传入参数state，决定文章的去留
-        if (state != static_cast<int32_t>(types::Status::Article::PUBLISHED) 
-                && state != static_cast<int32_t>(types::Status::Article::REJECTED)) {
+        if (state != ArticleManager::Status::PUBLISHED
+                && state != ArticleManager::Status::REJECTED) {
             result->setResult(401, "invalid state");
             break;
         }
@@ -43,18 +42,18 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
 
-        if (info->getState() != static_cast<int32_t>(types::Status::Article::CHECKING)) {
+        if (info->getState() != ArticleManager::Status::CHECKING) {
             result->setResult(401, "invalid article state");
             break;
         }
 
-        if (state == static_cast<int32_t>(types::Status::Article::REJECTED)) {
+        if (state == ArticleManager::Status::REJECTED) {
             info->setState(state);
-        } else if (state == static_cast<int32_t>(types::Status::Article::PUBLISHED)) {
+        } else if (state == ArticleManager::Status::PUBLISHED) {
             if (info->getPublishTime() <= time(0)) {
-                info->setState(static_cast<int32_t>(types::Status::Article::PUBLISHED));
+                info->setState(ArticleManager::Status::PUBLISHED);
             } else {
-                info->setState(static_cast<int32_t>(types::Status::Article::PRIVATE));
+                info->setState(ArticleManager::Status::PRIVATE);
             }
         }
         info->setUpdateTime(time(0));
@@ -62,7 +61,7 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
         auto db = getDB();
         if (data::ArticleInfoDao::Update(info, db)) {
             result->setResult(500, "update article fail");
-            info->setState(static_cast<int32_t>(types::Status::Article::CHECKING));
+            info->setState(ArticleManager::Status::CHECKING);
             
             ERROR(logger) << "db error errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();

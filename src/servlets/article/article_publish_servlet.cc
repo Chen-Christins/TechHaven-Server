@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../manager/article_manager.h"
 #include "../../util.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -34,12 +33,12 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
             result->setResult(401, "invalid article");
             break;
         }
-        if (info->getState() == static_cast<int32_t>(types::Status::Article::PUBLISHED) 
-                || info->getState() == static_cast<int32_t>(types::Status::Article::CHECKING)) {
+        if (info->getState() == ArticleManager::Status::PUBLISHED
+                || info->getState() == ArticleManager::Status::CHECKING) {
             result->setResult(401, "invalid state");
             break;
         }
-        info->setState(static_cast<int32_t>(types::Status::Article::CHECKING));
+        info->setState(ArticleManager::Status::CHECKING);
         time_t now = time(0);
         if (publish_time > now) {
             info->setPublishTime(publish_time);

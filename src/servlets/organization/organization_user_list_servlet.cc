@@ -3,8 +3,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../types.h"
-#include <algorithm>
+#include "../../manager/organization_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -23,12 +22,12 @@ int32_t OrganizationUserListServlet::handle(chen::http::HttpRequest::ptr request
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, int32_t, status, "status");
 
-        if (status == static_cast<int32_t>(types::Status::UserOrganization::PENDING)) {
+        if (status == OrganizationUserRelManager::Status::PENDING) {
             int64_t uid = getUserId(request);
             auto info = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(id, uid);
-            if (info->getRole() != static_cast<int32_t>(types::Role::Organization::ADMIN)
-                    && info->getRole() != static_cast<int32_t>(types::Role::Organization::OWNER)
-                    && UserMgr::GetInstance()->get(uid)->getRole() != static_cast<int32_t>(types::Role::System::ADMIN)) {
+            if (info->getRole() != OrganizationManager::Role::ADMIN
+                    && info->getRole() != OrganizationManager::Role::OWNER
+                    && UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
                 result->setResult(403, "Access Denied");
                 break;
             }

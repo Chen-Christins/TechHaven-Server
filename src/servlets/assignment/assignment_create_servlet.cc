@@ -3,7 +3,6 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/assignment_manager.h"
 #include "../../util.h"
-#include "../../types.h"
 
 namespace blog {
 namespace servlet {
@@ -32,7 +31,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 			result->setResult(500, "not login");
 			break;
 		}
-		if (UserMgr::GetInstance()->get(uid)->getRole() != static_cast<int32_t>(types::Role::System::ADMIN)) {
+		if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
 			result->setResult(403, "Access Denied");
 			break;
 		}

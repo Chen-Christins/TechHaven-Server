@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include "../../types.h"
 #include <set>
 
 namespace blog {
@@ -32,7 +31,7 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
         }
 		int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
-		if (role != (int32_t)types::Role::System::ADMIN) {
+		if (role != UserManager::Role::ADMIN) {
 			result->setResult(403, "Access Denied");
 			break;
 		}
