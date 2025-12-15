@@ -13,6 +13,7 @@
 #include "../servlets/assignment/assignment_delete_servlet.h"               // IWYU pragma: keep
 #include "../servlets/assignment/assignment_detail_servlet.h"               // IWYU pragma: keep
 #include "../servlets/assignment/assignment_organization_create_servlet.h"  // IWYU pragma: keep
+#include "../servlets/assignment/assignment_submission_list_servlet.h"      // IWYU pragma: keep
 #include "../servlets/category/category_create_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_delete_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_query_servlet.h"                    // IWYU pragma: keep

@@ -46,12 +46,19 @@ bool ResourceManager::loadAll() {
     }
 
     std::unordered_map<int64_t, blog::data::ResourceInfo::ptr> datas;
+    std::unordered_map<std::string, std::unordered_map<std::string, blog::data::ResourceInfo::ptr>> biz_uid_name_map;
     for (auto& i : results) {
         datas[i->getId()] = i;
+        std::string biz_type = i->getBizType();
+        int64_t biz_id = i->getBizId();
+        int64_t uid = i->getOwnerId();
+        std::string filename = i->getName();
+        std::string key = chen::md5(biz_type + "|" + std::to_string(biz_id) + "|" + std::to_string(uid));
+        biz_uid_name_map[key][i->getName()] = i;
     }
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
-
+    m_biz_uid_name_map.swap(biz_uid_name_map);
     return true;
 }
 
@@ -59,6 +66,37 @@ void ResourceManager::add(blog::data::ResourceInfo::ptr info) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     // 添加资源信息
     m_datas[info->getId()] = info;
+    std::string biz_type = info->getBizType();
+    int64_t biz_id = info->getBizId();
+    int64_t uid = info->getOwnerId();
+    std::string filename = info->getName();
+    std::string key = chen::md5(biz_type + "|" + std::to_string(biz_id) + "|" + std::to_string(uid));
+    m_biz_uid_name_map[key][filename] = info;
 }
 
+data::ResourceInfo::ptr ResourceManager::get(int64_t id) {
+    auto it = m_datas.find(id);
+    return it == m_datas.end() ? nullptr : it->second;
 }
+
+void ResourceManager::getByHash(std::vector<data::ResourceInfo::ptr>& results, const std::string& hash) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    
+    for (auto& [f, info] : m_biz_uid_name_map[hash]) {
+        results.push_back(info);
+    }
+}
+
+data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_type
+        , int64_t biz_id, int64_t uid, const std::string& filename) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    for (auto& [id, info] : m_datas) {
+        if (info->getBizType() == biz_type && info->getBizId() == biz_id
+                && info->getOwnerId() == uid && info->getName() == filename) {
+            return info;
+        }
+    }
+    return nullptr;
+}
+
+} // namespace blog
