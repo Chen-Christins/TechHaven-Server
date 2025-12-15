@@ -148,6 +148,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
         dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
         dp->addServlet("/assignment/detail", XX(AssignmentDetailServlet));
+        dp->addServlet("/assignment/submission/list", XX(AssignmentSubmissionListServlet));
 
         dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));

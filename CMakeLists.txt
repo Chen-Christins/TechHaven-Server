@@ -53,6 +53,7 @@ set(LIB_SRC
     src/servlets/assignment/assignment_delete_servlet.cc
     src/servlets/assignment/assignment_detail_servlet.cc
     src/servlets/assignment/assignment_organization_create_servlet.cc
+    src/servlets/assignment/assignment_submission_list_servlet.cc
     src/servlets/category/category_create_servlet.cc
     src/servlets/category/category_delete_servlet.cc
     src/servlets/category/category_query_servlet.cc
