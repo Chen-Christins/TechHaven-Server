@@ -4,6 +4,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../types.h"
+#include <algorithm>
 
 namespace blog {
 namespace servlet {
