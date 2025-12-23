@@ -363,7 +363,7 @@ int AssignmentUserRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`assignment_id` bigint NOT NULL DEFAULT 0 COMMENT '作业ID',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '学生用户ID',"
-            "`status` int NOT NULL DEFAULT 1 COMMENT '状态: 1分配 2提交 3批改 4取消',"
+            "`status` int NOT NULL DEFAULT 1 COMMENT '状态: 1提交 2批改 3迟交',"
             "`score` int NOT NULL DEFAULT 0 COMMENT '成绩',"
             "`submit_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '提交时间',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"

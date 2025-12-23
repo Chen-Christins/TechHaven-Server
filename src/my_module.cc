@@ -143,6 +143,7 @@ bool MyModule::onServerReady() {
         dp->addServlet("/label/query", XX(LabelQueryServlet));
 
         dp->addServlet("/file/upload", XX(FileUploadServlet));
+        dp->addServlet("/file/download", XX(FileDownloadServlet));
 
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));

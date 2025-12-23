@@ -17,6 +17,7 @@
 #include "../servlets/category/category_create_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_delete_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_query_servlet.h"                    // IWYU pragma: keep
+#include "../servlets/file/file_download_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/file/file_upload_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/label/label_create_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/label/label_delete_servlet.h"                         // IWYU pragma: keep

@@ -18,6 +18,6 @@
         <index name="pk" cols="id" type="pk"/>
         <index name="idx_owner" cols="owner_id" type="index"/>
         <index name="idx_biz" cols="biz_type,biz_id" type="index"/>
-        <index name="uniq_hash" cols="hash" type="uniq"/>
+        <index name="idx_hash" cols="hash" type="index"/>
     </indexs>
 </table>

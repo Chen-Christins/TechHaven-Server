@@ -46,9 +46,11 @@ bool ResourceManager::loadAll() {
     }
 
     std::unordered_map<int64_t, blog::data::ResourceInfo::ptr> datas;
+    std::unordered_map<std::string, blog::data::ResourceInfo::ptr> path_map;
     std::unordered_map<std::string, std::unordered_map<std::string, blog::data::ResourceInfo::ptr>> biz_uid_name_map;
     for (auto& i : results) {
         datas[i->getId()] = i;
+        path_map[i->getPath()] = i;
         std::string biz_type = i->getBizType();
         int64_t biz_id = i->getBizId();
         int64_t uid = i->getOwnerId();
@@ -58,7 +60,9 @@ bool ResourceManager::loadAll() {
     }
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
+    m_path_map.swap(path_map);
     m_biz_uid_name_map.swap(biz_uid_name_map);
+
     return true;
 }
 
@@ -72,6 +76,7 @@ void ResourceManager::add(blog::data::ResourceInfo::ptr info) {
     std::string filename = info->getName();
     std::string key = chen::md5(biz_type + "|" + std::to_string(biz_id) + "|" + std::to_string(uid));
     m_biz_uid_name_map[key][filename] = info;
+    m_path_map[info->getPath()] = info;
 }
 
 data::ResourceInfo::ptr ResourceManager::get(int64_t id) {
@@ -97,6 +102,12 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
         }
     }
     return nullptr;
+}
+
+data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto it = m_path_map.find(path);
+    return it == m_path_map.end() ? nullptr : it->second;
 }
 
 } // namespace blog

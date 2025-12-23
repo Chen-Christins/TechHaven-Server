@@ -26,11 +26,6 @@ int32_t AssignmentSubmissionListServlet::handle(chen::http::HttpRequest::ptr req
             break;
         }
 
-        result->set("name", assign_info->getName());
-        result->set("subject_name", assign_info->getSubjectName());
-        result->set("description", assign_info->getDescription());
-        result->set("end_time", assign_info->getDeadline());
-
         int64_t uid = getUserId(request);
         auto rel_info = AssignmentUserRelMgr::GetInstance()->getByAssignAndUser(assign_id, uid);
         if (rel_info) {
@@ -52,10 +47,9 @@ int32_t AssignmentSubmissionListServlet::handle(chen::http::HttpRequest::ptr req
             for (auto& res : resources) {
                 Json::Value item;
                 item["id"] = res->getId();
-                item["name"] = res->getName();
-                item["path"] = res->getPath();
-                item["size"] = res->getSize();
-                item["hash"] = res->getHash();
+                item["file_name"] = res->getName();
+                item["file_path"] = res->getPath();
+                item["file_size"] = res->getSize();
                 list.append(item);
             }
             result->set("total", resources.size());

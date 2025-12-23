@@ -6,6 +6,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/assignment_user_rel_manager.h"
 #include "../../manager/resource_manager.h"
+#include "../../manager/assignment_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -38,13 +39,18 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             break;
         }
 
-        int64_t uid = getUserId(request);
-        std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
-		std::string dir_name = data[0].content + "/" + user_name;
-		std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
-
         std::string biz_type = biz_info[0];
         int64_t biz_id = chen::TypeUtil::Atoi(biz_info[1]);
+
+        std::string subject_name = AssignmentMgr::GetInstance()->get(biz_id)->getSubjectName();
+
+        int64_t uid = getUserId(request);
+        std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
+		std::string dir_name = biz_type + "/" + subject_name + "/" + data[0].content + "/" + user_name;
+		std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
+
+        INFO(logger) << "File upload save dir: " << save_dir;
+
 		for (size_t i = 2; i < data.size(); ++i) {
 			std::string filename = save_dir + "/" + data[i].filename;
 			std::ofstream ofs;

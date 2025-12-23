@@ -15,7 +15,7 @@
     </columns>
     <indexs>
         <index name="pk" cols="id" type="pk"/>
-        <index name="subject_name" cols="subject_name" type="index"/>
-		<index name="subject_name_name" cols="subject_name,name" type="uniq"/>
+        <index name="uniq_subject_name" cols="subject_name" type="uniq"/>
+		<index name="idx_subject_name_name" cols="subject_name,name" type="uniq"/>
     </indexs>
 </table>

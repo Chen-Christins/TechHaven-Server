@@ -364,37 +364,37 @@ int ResourceInfoDao::QueryByBizTypeBizId(std::vector<ResourceInfo::ptr>& results
     return 0;
 }
 
-ResourceInfo::ptr ResourceInfoDao::QueryByHash( const std::string& hash, chen::IDB::ptr conn) {
+int ResourceInfoDao::QueryByHash(std::vector<ResourceInfo::ptr>& results,  const std::string& hash, chen::IDB::ptr conn) {
     std::string sql = "select id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time from resource where hash = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
                  << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        return nullptr;
+        return conn->getErrno();
     }
     stmt->bindString(1, hash);
     auto rt = stmt->query();
     if(!rt) {
-        return nullptr;
+        return 0;
     }
-    if(!rt->next()) {
-        return nullptr;
-    }
-    ResourceInfo::ptr v(new ResourceInfo);
-    v->m_id = rt->getInt64(0);
-    v->m_name = rt->getString(1);
-    v->m_path = rt->getString(2);
-    v->m_type = rt->getInt32(3);
-    v->m_size = rt->getInt64(4);
-    v->m_hash = rt->getString(5);
-    v->m_ownerId = rt->getInt64(6);
-    v->m_bizType = rt->getString(7);
-    v->m_bizId = rt->getInt64(8);
-    v->m_status = rt->getInt32(9);
-    v->m_isDeleted = rt->getInt32(10);
-    v->m_createTime = rt->getTime(11);
-    v->m_updateTime = rt->getTime(12);
-    return v;
+    while (rt->next()) {
+        ResourceInfo::ptr v(new ResourceInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_path = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_size = rt->getInt64(4);
+        v->m_hash = rt->getString(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_bizType = rt->getString(7);
+        v->m_bizId = rt->getInt64(8);
+        v->m_status = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
 }
 
 int ResourceInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
@@ -414,7 +414,7 @@ int ResourceInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
             "CREATE INDEX resource_owner_id ON resource(owner_id);"
             "CREATE INDEX resource_biz_type_biz_id ON resource(biz_type,biz_id);"
-            "CREATE UNIQUE INDEX resource_hash ON resource(hash);"
+            "CREATE INDEX resource_hash ON resource(hash);"
             );
 }
 
@@ -427,16 +427,16 @@ int ResourceInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`size` bigint NOT NULL DEFAULT 0 COMMENT '文件大小（字节）',"
             "`hash` varchar(64) NOT NULL DEFAULT '' COMMENT '文件哈希（去重/校验）',"
             "`owner_id` bigint NOT NULL DEFAULT 0 COMMENT '上传者用户ID',"
-            "`biz_type` varchar(32) NOT NULL DEFAULT '' COMMENT '业务类型（如assignment、article等）',"
-            "`biz_id` bigint NOT NULL DEFAULT 0 COMMENT '业务ID（如作业ID、文章ID等）',"
-            "`status` int NOT NULL DEFAULT 1 COMMENT '状态: 1正常 0禁用',"
+            "`biz_type` varchar(32) NOT NULL DEFAULT '' COMMENT '业务类型 如assignment、article等',"
+            "`biz_id` bigint NOT NULL DEFAULT 0 COMMENT '业务ID 如作业ID、文章ID等',"
+            "`status` int NOT NULL DEFAULT 1 COMMENT '状态: 1正常 2删除',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '上传时间',"
             "`update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' ON UPDATE current_timestamp  COMMENT '更新时间',"
             "PRIMARY KEY(`id`),"
             "KEY `resource_owner_id` (`owner_id`),"
             "KEY `resource_biz_type_biz_id` (`biz_type`,`biz_id`),"
-            "UNIQUE KEY `resource_hash` (`hash`)) COMMENT='文件资源元数据表'");
+            "KEY `resource_hash` (`hash`)) COMMENT='文件资源元数据表'");
 }
 } //namespace data
 } //namespace blog

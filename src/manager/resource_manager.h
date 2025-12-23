@@ -40,10 +40,14 @@ public:
 
     data::ResourceInfo::ptr getByBizUidName(const std::string& biz_type
         , int64_t biz_id, int64_t uid, const std::string& filename);
+
+    data::ResourceInfo::ptr getByPath(const std::string& path);
 private:
     std::shared_mutex m_mutex;
     // id -> 资源信息
     std::unordered_map<int64_t, data::ResourceInfo::ptr> m_datas;
+    // path -> 资源信息
+    std::unordered_map<std::string, data::ResourceInfo::ptr> m_path_map;
     // hash(biz_type:biz_id:uid) -> [filename, 资源信息]
     std::unordered_map<std::string, std::unordered_map<std::string, data::ResourceInfo::ptr>> m_biz_uid_name_map;
 };
