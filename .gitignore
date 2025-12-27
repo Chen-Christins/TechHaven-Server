@@ -2,7 +2,7 @@
 .ccls-cache
 .vscode
 /build
-lib*.so
+lib*.so         
 !/bin/conf
 /bin
 *.log
@@ -10,3 +10,4 @@ lib*.so
 /uploads
 *3rdparty*
 *sdk*
+/.idea
