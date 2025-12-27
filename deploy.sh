@@ -13,7 +13,7 @@ SOURCE_DIR="bin"
 PROJECT_NAME='blog'  # 项目名称
 APP_NAME='main'  # 可执行文件名
 TEMP_DIR="deploy_package_$(date +%Y%m%d%H%M%S)"  # 临时目录名含时间戳防冲突
-SDK_DIR="chen-sdk-1.0.0"
+SDK_DIR="chen-sdk-1.0.2"
 
 # 检查源目录是否存在
 if [ ! -d "$SOURCE_DIR" ]; then
