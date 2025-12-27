@@ -88,6 +88,7 @@ if [ $# -eq 4 ]; then
 EOF
 
     # 检查 SCP 结果
+    # shellcheck disable=SC2181
     if [ $? -eq 0 ]; then
         echo "部署成功！文件已传输至：$REMOTE_IP:$REMOTE_PATH/$PACKAGE_NAME"
     else

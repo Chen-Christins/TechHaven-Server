@@ -92,6 +92,7 @@ set(LIB_SRC
     src/servlets/user/user_organization_list_servlet.cc
     src/index.cc
     src/my_module.cc
+    src/resource_servlet.cc
     src/struct.cc
 )
 
