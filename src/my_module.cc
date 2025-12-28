@@ -144,6 +144,10 @@ bool MyModule::onServerReady() {
 
         dp->addServlet("/file/upload", XX(FileUploadServlet));
         dp->addServlet("/file/download", XX(FileDownloadServlet));
+        dp->addServlet("/file/chunk_upload", XX(ChunkUploadServlet));
+        dp->addServlet("/file/chunk_init", XX(ChunkUploadServlet));
+        dp->addServlet("/file/chunk_complete", XX(ChunkUploadServlet));
+        dp->addServlet("/file/chunk_cancel", XX(ChunkUploadServlet));
 
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));

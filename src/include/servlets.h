@@ -50,3 +50,4 @@
 #include "../servlets/user/user_reset_passwd_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_update_servlet.h"                           // IWYU pragma: keep
+#include "../servlets/file/chunk_upload_servlet.h"                          // IWYU pragma: keep

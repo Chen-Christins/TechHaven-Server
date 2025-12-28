@@ -116,6 +116,8 @@ set(LIB_SRC
     src/servlets/user/user_update_servlet.cc
     src/servlets/user/user_query_servlet.cc
     src/servlets/user/user_organization_list_servlet.cc
+    src/chunk_parser.cc
+    src/chunk_upload.cc
     src/index.cc
     src/my_module.cc
     src/resource_servlet.cc
