@@ -34,6 +34,18 @@ public:
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result);
+    
+    int32_t handleStatus(chen::http::HttpRequest::ptr request
+                    ,chen::http::HttpResponse::ptr response
+                    ,chen::http::HttpSession::ptr session
+                    ,Result::ptr result);
+    
+    void parseBizInfo(const std::string& biz_info
+            , std::string& biz_type,  std::string& biz_id);
+
+    bool dumpToResource(const std::string& biz_type, int64_t biz_id
+        , const std::string& path, const std::string& hash_key
+        , int64_t uid, size_t size);
 };
 
 }

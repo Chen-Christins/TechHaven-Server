@@ -1,3 +1,19 @@
+# 一步设置变量并收集源文件
+function(chen_set_sources dir varname)
+    chen_collect_sources(${dir} _tmp_sources)
+    set(${varname} ${_tmp_sources} PARENT_SCOPE)
+endfunction()
+
+# 递归收集指定目录下所有源文件（.cc, .cpp, .c, .h, .hpp）
+function(chen_collect_sources dir outputlist)
+    file(GLOB_RECURSE all_sources
+        ${dir}/*.cc
+        ${dir}/*.cpp
+        ${dir}/*.c
+    )
+    set(${outputlist} ${all_sources} PARENT_SCOPE)
+endfunction()
+
 # 修改__FILE__的宏
 function(force_redefine_file_macro_for_sources targetname)
     get_target_property(source_files "${targetname}" SOURCES)
@@ -48,3 +64,4 @@ function(chen_add_executable targetname srcs depends libs)
     force_redefine_file_macro_for_sources(${targetname})
     target_link_libraries(${targetname} ${libs})
 endfunction()
+

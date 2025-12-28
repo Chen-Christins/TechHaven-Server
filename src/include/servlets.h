@@ -17,6 +17,7 @@
 #include "../servlets/category/category_create_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_delete_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_query_servlet.h"                    // IWYU pragma: keep
+#include "../servlets/file/chunk_upload_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/file/file_download_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/file/file_upload_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/label/label_create_servlet.h"                         // IWYU pragma: keep
@@ -50,4 +51,3 @@
 #include "../servlets/user/user_reset_passwd_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_update_servlet.h"                           // IWYU pragma: keep
-#include "../servlets/file/chunk_upload_servlet.h"                          // IWYU pragma: keep

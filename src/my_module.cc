@@ -72,6 +72,7 @@ bool MyModule::onServerReady() {
     XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
     XX(AssignmentUserRelInfoDao, "assignment_user_rel")
     XX(ResourceInfoDao, "resource")
+    XX(ChunkUploadInfoDao, "chunk_upload")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -98,6 +99,7 @@ bool MyModule::onServerReady() {
     XX(AssignmentOrganizationRelMgr)
     XX(AssignmentUserRelMgr)
     XX(ResourceMgr)
+    XX(ChunkUploadMgr)
 #undef XX
 
     for (auto& i : servers) {
@@ -144,10 +146,12 @@ bool MyModule::onServerReady() {
 
         dp->addServlet("/file/upload", XX(FileUploadServlet));
         dp->addServlet("/file/download", XX(FileDownloadServlet));
-        dp->addServlet("/file/chunk_upload", XX(ChunkUploadServlet));
-        dp->addServlet("/file/chunk_init", XX(ChunkUploadServlet));
-        dp->addServlet("/file/chunk_complete", XX(ChunkUploadServlet));
-        dp->addServlet("/file/chunk_cancel", XX(ChunkUploadServlet));
+
+        dp->addServlet("/upload/init", XX(ChunkUploadServlet));
+        dp->addServlet("/upload/chunk", XX(ChunkUploadServlet));
+        dp->addServlet("/upload/complete", XX(ChunkUploadServlet));
+        dp->addServlet("/upload/cancel", XX(ChunkUploadServlet));
+        dp->addServlet("/upload/status", XX(ChunkUploadServlet));
 
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));

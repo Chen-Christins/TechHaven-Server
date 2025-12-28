@@ -51,71 +51,12 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 
 include_directories(.)
 
+chen_set_sources(${PROJECT_SOURCE_DIR}/src/manager MANAGER_SRC)
+chen_set_sources(${PROJECT_SOURCE_DIR}/src/servlets SERVLETS_SRC)
+
 set(LIB_SRC
-    src/manager/article_category_rel_manager.cc
-    src/manager/article_label_rel_manager.cc
-    src/manager/article_manager.cc
-    src/manager/assignment_manager.cc
-    src/manager/category_manager.cc
-    src/manager/label_manager.cc
-    src/manager/user_manager.cc
-    src/manager/organization_manager.cc
-    src/manager/organization_user_rel_manager.cc
-    src/manager/assignment_organization_rel_manager.cc
-    src/manager/assignment_user_rel_manager.cc
-    src/manager/resource_manager.cc
-    src/servlets/article/article_admin_lists_servlet.cc
-    src/servlets/article/article_create_servlet.cc
-    src/servlets/article/article_delete_servlet.cc
-    src/servlets/article/article_detail_servlet.cc
-    src/servlets/article/article_publish_servlet.cc
-    src/servlets/article/article_query_servlet.cc
-    src/servlets/article/article_switch_state_servlet.cc
-    src/servlets/article/article_update_servlet.cc
-    src/servlets/article/article_verify_servlet.cc
-    src/servlets/article/article_update_category_servlet.cc
-    src/servlets/assignment/assignment_create_servlet.cc
-    src/servlets/assignment/assignment_admin_lists_servlet.cc
-    src/servlets/assignment/assignment_delete_servlet.cc
-    src/servlets/assignment/assignment_detail_servlet.cc
-    src/servlets/assignment/assignment_organization_create_servlet.cc
-    src/servlets/assignment/assignment_submission_list_servlet.cc
-    src/servlets/category/category_create_servlet.cc
-    src/servlets/category/category_delete_servlet.cc
-    src/servlets/category/category_query_servlet.cc
-    src/servlets/file/file_upload_servlet.cc
-    src/servlets/file/file_download_servlet.cc
-    src/servlets/label/label_create_servlet.cc
-    src/servlets/label/label_delete_servlet.cc
-    src/servlets/label/label_query_servlet.cc
-    src/servlets/organization/organization_admin_lists_servlet.cc
-    src/servlets/organization/organization_create_servlet.cc
-    src/servlets/organization/organization_delete_servlet.cc
-    src/servlets/organization/organization_detail_servlet.cc
-    src/servlets/organization/organization_join_servlet.cc
-    src/servlets/organization/organization_join_check_servlet.cc
-    src/servlets/organization/organization_list_servlet.cc
-    src/servlets/organization/organization_user_list_servlet.cc
-    src/servlets/organization/organization_user_switch_role_servlet.cc
-    src/servlets/organization/organization_user_kick_servlet.cc
-    src/servlets/organization/organization_assignment_list_servlet.cc
-    src/servlets/user/user_admin_create_servlet.cc
-    src/servlets/user/user_admin_delete_servlet.cc
-    src/servlets/user/user_admin_lists_servlet.cc
-    src/servlets/user/user_admin_recover_servlet.cc
-    src/servlets/user/user_admin_reset_passwd_servlet.cc
-    src/servlets/user/user_assignment_list_servlet.cc
-    src/servlets/user/user_create_servlet.cc
-    src/servlets/user/user_exists_servlet.cc
-    src/servlets/user/user_info_servlet.cc
-    src/servlets/user/user_list_servlet.cc
-    src/servlets/user/user_login_servlet.cc
-    src/servlets/user/user_logout_servlet.cc
-    src/servlets/user/user_reset_passwd_servlet.cc
-    src/servlets/user/user_send_code_servlet.cc
-    src/servlets/user/user_update_servlet.cc
-    src/servlets/user/user_query_servlet.cc
-    src/servlets/user/user_organization_list_servlet.cc
+    ${MANAGER_SRC}
+    ${SERVLETS_SRC}
     src/chunk_parser.cc
     src/chunk_upload.cc
     src/index.cc

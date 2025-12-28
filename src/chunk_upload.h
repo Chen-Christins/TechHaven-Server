@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <mutex>
+#include <shared_mutex>
 #include <memory>
 #include <chen/singleton.h>
 
@@ -31,6 +32,12 @@ struct ChunkUploadSession {
     size_t receivedCount = 0;
     // 是否完成上传
     bool completed = false;
+    // 业务类型
+    std::string bizType;
+    // 业务ID
+    int64_t bizId = 0;
+    // 存储目录
+    std::string dirName;
     // 互斥锁，保护会话数据
     std::mutex mtx;
 };
@@ -50,7 +57,8 @@ public:
      * @return ChunkUploadSession::ptr 
      */
     ChunkUploadSession::ptr createSession(const std::string& uploadId
-        , const std::string& fileName, size_t totalSize, size_t chunkSize, size_t totalChunks);
+        , const std::string& fileName, size_t totalSize, size_t chunkSize, size_t totalChunks
+        , const std::string& bizType, int64_t bizId, const std::string& dirName);
 
     /**
      * @brief 获取上传会话
@@ -65,8 +73,10 @@ public:
      */
     void removeSession(const std::string& uploadId);
 private:
+    // 存储所有上传会话
     std::unordered_map<std::string, ChunkUploadSession::ptr> sessions_;
-    std::mutex mtx_;
+    // 保护 sessions_ 的读写锁
+    std::shared_mutex mtx_;
 };
 
 typedef chen::Singleton<ChunkUploadManager> ChunkUploadMgr;
