@@ -59,6 +59,7 @@ set(LIB_SRC
     src/servlets/category/category_query_servlet.cc
     src/servlets/file/file_upload_servlet.cc
     src/servlets/file/file_download_servlet.cc
+    src/servlets/file/chunked_upload_servlet.cc
     src/servlets/label/label_create_servlet.cc
     src/servlets/label/label_delete_servlet.cc
     src/servlets/label/label_query_servlet.cc

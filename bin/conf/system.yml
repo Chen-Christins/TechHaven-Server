@@ -1,5 +1,5 @@
 server:
-  work_path: /home/blog
+  work_path: /home/chen/apps/blog
   pid_file: blog.pid
   email_service: 
     host: smtp.163.com
