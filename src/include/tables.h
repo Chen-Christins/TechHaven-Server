@@ -5,6 +5,7 @@
 #include "blog/data/assignment_organization_rel_info.h" // IWYU pragma: keep
 #include "blog/data/assignment_user_rel_info.h"         // IWYU pragma: keep
 #include "blog/data/category_info.h"                    // IWYU pragma: keep
+#include "blog/data/chunk_upload_info.h"                // IWYU pragma: keep
 #include "blog/data/email_verification_info.h"          // IWYU pragma: keep
 #include "blog/data/organization_info.h"                // IWYU pragma: keep
 #include "blog/data/organization_user_rel_info.h"       // IWYU pragma: keep

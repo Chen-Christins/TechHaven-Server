@@ -1,8 +1,9 @@
 #include "chunk_upload.h"
 
 ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& uploadId
-        , const std::string& fileName, size_t totalSize, size_t chunkSize, size_t totalChunks) {
-    std::lock_guard<std::mutex> lock(mtx_);
+        , const std::string& fileName, size_t totalSize, size_t chunkSize, size_t totalChunks
+        , const std::string& bizType, int64_t bizId, const std::string& dirName) {
+    std::lock_guard<std::shared_mutex> lock(mtx_);
 
     auto session = std::make_shared<ChunkUploadSession>();
     session->uploadId = uploadId;
@@ -10,6 +11,9 @@ ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upl
     session->totalSize = totalSize;
     session->chunkSize = chunkSize;
     session->totalChunks = totalChunks;
+    session->bizType = bizType;
+    session->bizId = bizId;
+    session->dirName = dirName;
     session->receivedChunks.resize(totalChunks, false);
     session->chunkData.resize(totalChunks);
 
@@ -18,7 +22,7 @@ ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upl
 }
 
 ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& uploadId) {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::shared_lock<std::shared_mutex> lock(mtx_);
     auto it = sessions_.find(uploadId);
     if (it != sessions_.end()) {
         return it->second;
@@ -27,6 +31,6 @@ ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload
 }
 
 void ChunkUploadManager::removeSession(const std::string& uploadId) {
-    std::lock_guard<std::mutex> lock(mtx_);
+    std::lock_guard<std::shared_mutex> lock(mtx_);
     sessions_.erase(uploadId);
 }
