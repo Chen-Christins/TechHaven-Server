@@ -5,8 +5,34 @@ include(cmake/utils.cmake)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -std=c++17 -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
-set(CMAKE_C_FLAGS "$ENV{CXXFLAGS} -rdynamic -O0 -ggdb -std=c17 -Wall -fPIC -Wno-deprecated -Werror -Wno-unused-function -Wno-builtin-macro-redefined -Wno-deprecated-declarations")
+
+# 设置C和C++标准
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# 设置构建类型及编译选项
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_C_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
+# 全局编译选项 - 对所有目标生效
+add_compile_options(
+    -rdynamic
+    -Wall
+    -fPIC
+    -Wno-deprecated
+    # -Werror
+    -Wno-unused-function
+    -Wno-builtin-macro-redefined
+    -Wno-deprecated-declarations
+)
 
 # Auto-detect chen-sdk directory by pattern "chen-sdk-*"
 file(GLOB CHEN_SDK_DIRS "${PROJECT_SOURCE_DIR}/chen-sdk-*")
@@ -59,7 +85,6 @@ set(LIB_SRC
     src/servlets/category/category_query_servlet.cc
     src/servlets/file/file_upload_servlet.cc
     src/servlets/file/file_download_servlet.cc
-    src/servlets/file/chunked_upload_servlet.cc
     src/servlets/label/label_create_servlet.cc
     src/servlets/label/label_delete_servlet.cc
     src/servlets/label/label_query_servlet.cc
