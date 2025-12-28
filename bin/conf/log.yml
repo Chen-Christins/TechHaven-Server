@@ -3,18 +3,17 @@ logs:
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/blog/logs/root.log
-      # - type: StdoutLogAppender
+        file: /home/chen/workspace/Blog/logs/root.log
+      - type: StdoutLogAppender
   - name: system
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/blog/logs/system.log
-      # - type: StdoutLogAppender
+        file: /home/chen/workspace/Blog/logs/system.log
+      - type: StdoutLogAppender
   - name: access
     level: info
-    # formatter: "%d{%H:%M:%S}%T%N%T[%p]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
-        file: /home/blog/logs/access.log
-      # - type: StdoutLogAppender
+        file: /home/chen/workspace/Blog/logs/access.log
+      - type: StdoutLogAppender

@@ -1,5 +1,5 @@
 sqlite3:
   dbs:
     blog:
-      path: /home/blog/blog.db
+      path: /home/chen/apps/blog/blog.db
       sql: PRAGMA synchronous = OFF
