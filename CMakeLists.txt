@@ -57,7 +57,6 @@ chen_set_sources(${PROJECT_SOURCE_DIR}/src/servlets SERVLETS_SRC)
 set(LIB_SRC
     ${MANAGER_SRC}
     ${SERVLETS_SRC}
-    src/chunk_parser.cc
     src/chunk_upload.cc
     src/index.cc
     src/my_module.cc
