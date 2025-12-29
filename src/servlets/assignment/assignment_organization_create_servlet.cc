@@ -41,6 +41,11 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
             break;
         }
 
+        if (max_size >= 96) {
+            result->setResult(400, "max_size exceed limit");
+            break;
+        }
+
         // create or update assignment
         bool new_assignment = false;
         data::AssignmentInfo::ptr assign_info;
