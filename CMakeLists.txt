@@ -51,17 +51,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 
 include_directories(.)
 
-chen_set_sources(${PROJECT_SOURCE_DIR}/src/manager MANAGER_SRC)
-chen_set_sources(${PROJECT_SOURCE_DIR}/src/servlets SERVLETS_SRC)
+chen_set_sources(${PROJECT_SOURCE_DIR}/src SOURCES)
 
 set(LIB_SRC
-    ${MANAGER_SRC}
-    ${SERVLETS_SRC}
-    src/chunk_upload.cc
-    src/index.cc
-    src/my_module.cc
-    src/resource_servlet.cc
-    src/struct.cc
+    ${SOURCES}
 )
 
 add_executable(gen generator/generator.cc)
