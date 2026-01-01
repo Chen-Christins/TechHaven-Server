@@ -32,6 +32,7 @@ add_compile_options(
     -Wno-unused-function
     -Wno-builtin-macro-redefined
     -Wno-deprecated-declarations
+    -Wno-use-after-free
 )
 
 # Auto-detect chen-sdk directory by pattern "chen-sdk-*"
