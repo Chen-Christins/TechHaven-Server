@@ -4,7 +4,7 @@ function(chen_set_sources dir varname)
     set(${varname} ${_tmp_sources} PARENT_SCOPE)
 endfunction()
 
-# 递归收集指定目录下所有源文件（.cc, .cpp, .c, .h, .hpp）
+# 递归收集指定目录下所有源文件（.cc, .cpp, .c）
 function(chen_collect_sources dir outputlist)
     file(GLOB_RECURSE all_sources
         ${dir}/*.cc
