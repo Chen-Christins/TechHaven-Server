@@ -1,4 +1,4 @@
-#include "my_module.h"
+#include "blog_module.h"
 #include <chen/http/http_server.h>
 #include <chen/log/log.h>
 #include <chen/db/sqlite3.h>
@@ -16,28 +16,21 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::string>::ptr sqlite3_db_name = 
     chen::Config::Lookup("sqlite3.db_name", std::string("blog.db"), "sqlite3 db file name");
 
-MyModule::MyModule()
+BlogModule::BlogModule()
     :chen::Module("Blog", "1.0", "") {
 }
 
-bool MyModule::onLoad() {
+bool BlogModule::onLoad() {
     INFO(logger) << "onLoad";
     return true;
 }
 
-bool MyModule::onUnload() {
+bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
     return true;
 }
 
-int32_t handle_request(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session) {
-    INFO(logger) << *request;
-    response->setBody("ok");
-    return 0;
-}
-
-bool MyModule::onServerReady() {
+bool BlogModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
     auto work_path = chen::Config::Lookup<std::string>("server.work_path");
@@ -178,7 +171,7 @@ bool MyModule::onServerReady() {
 }
 
 
-bool MyModule::onServerUp() {
+bool BlogModule::onServerUp() {
     INFO(logger) << "onServerUp";
     return true;
 }
@@ -188,7 +181,7 @@ bool MyModule::onServerUp() {
 extern "C" {
 
 chen::Module* CreateModule() {
-    chen::Module* module = new blog::MyModule;
+    chen::Module* module = new blog::BlogModule;
     INFO(blog::logger) << "CreateModule " << module;
     return module;
 }

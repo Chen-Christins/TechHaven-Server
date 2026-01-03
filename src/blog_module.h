@@ -12,10 +12,10 @@
 
 namespace blog {
 
-class MyModule : public chen::Module {
+class BlogModule : public chen::Module {
 public:
-    typedef std::shared_ptr<MyModule> ptr;
-    MyModule();
+    typedef std::shared_ptr<BlogModule> ptr;
+    BlogModule();
     bool onLoad() override;
     bool onUnload() override;
     bool onServerReady() override;
