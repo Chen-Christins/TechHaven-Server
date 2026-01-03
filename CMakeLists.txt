@@ -52,18 +52,35 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
 
 include_directories(.)
 
-chen_set_sources(${PROJECT_SOURCE_DIR}/src SOURCES)
+# 封装创建服务器模块的函数
+function(create_server_module module_name source_dir module_output_dir server_output_dir db_libs)
+    chen_set_sources(${source_dir} MODULE_SOURCES)
+    add_library(${module_name} SHARED ${MODULE_SOURCES})
+    if(db_libs)
+        target_link_libraries(${module_name} PRIVATE ${db_libs})
+    endif()
 
-set(LIB_SRC
-    ${SOURCES}
+    # 设置链接库变量 (例如 WORLD_LIBS)
+    string(TOUPPER ${module_name} MODULE_UPPER)
+    set(libs
+        ${CHEN_LIBRARY}
+        ${CHEN_SDK_DEP_LIBS}
+    )
+    message(STATUS "[DEBUG] create_server_module libs=${libs}")
+    set(${MODULE_UPPER}_LIBS ${libs} PARENT_SCOPE)
+    
+    force_redefine_file_macro_for_sources(${module_name})
+    chen_set_target_output_dir(${module_name} "${module_output_dir}")
+
+    # 服务器程序
+    chen_add_executable(${module_name}_server "servers/${module_name}.cc" "" "${libs}")
+    chen_set_target_output_dir(${module_name}_server "${server_output_dir}")
+endfunction()
+
+# 创建博客服务器模块
+create_server_module(blog
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/bin/module
+    ${PROJECT_SOURCE_DIR}/bin
+    orm_data
 )
-
-add_executable(gen generator/generator.cc)
-
-add_library(blog SHARED ${LIB_SRC})
-# 将orm_data和blog链接到一起
-target_link_libraries(blog PRIVATE orm_data)
-force_redefine_file_macro_for_sources(blog)
-
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin/module)

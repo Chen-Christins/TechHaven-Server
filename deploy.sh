@@ -11,7 +11,7 @@
 # 定义源目录（bin）和目标打包目录
 SOURCE_DIR="bin"
 PROJECT_NAME='blog'  # 项目名称
-APP_NAME='main'  # 可执行文件名
+APP_NAME='blog_server'  # 可执行文件名
 TEMP_DIR="deploy_package_$(date +%Y%m%d%H%M%S)"  # 临时目录名含时间戳防冲突
 SDK_DIR="chen-sdk-1.0.2"
 
