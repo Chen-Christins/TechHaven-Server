@@ -185,8 +185,8 @@ chen::Module* CreateModule() {
     return module;
 }
 
-void DestoryModule(chen::Module* module) {
-    INFO(blog::logger) << "DestoryModule " << module;
+void DestroyModule(chen::Module* module) {
+    INFO(blog::logger) << "DestroyModule " << module;
     delete module;
 }
 
