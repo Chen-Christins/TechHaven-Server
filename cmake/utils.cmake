@@ -1,3 +1,61 @@
+# 支持两种排除模式：
+# 1. 相对路径模式：相对于 dir
+# 2. 通配符模式：支持 ** 表示任意多级目录
+
+# 使用示例：
+# 1. 排除 src/gateway/grpc
+# chen_set_sources(src SOURCES gateway/grpc)
+#
+# 2. 排除任何层级的 test 目录
+# chen_set_sources(src SOURCES "**/test")
+#
+# 3. 排除任何以 mock 结尾的目录
+# chen_set_sources(src SOURCES "**/mock")
+
+function(chen_set_sources dir varname)
+    set(exclude_patterns "")
+    if(${ARGC} GREATER 2)
+        foreach(i RANGE 2 ${ARGC}-1)
+            list(APPEND exclude_patterns "${ARGV${i}}")
+        endforeach()
+    endif()
+    
+    chen_collect_sources(${dir} _tmp_sources "${exclude_patterns}")
+    set(${varname} ${_tmp_sources} PARENT_SCOPE)
+endfunction()
+
+function(chen_collect_sources dir outputlist exclude_patterns)
+    file(GLOB_RECURSE all_sources
+        ${dir}/*.cc
+        ${dir}/*.cpp
+        ${dir}/*.c
+    )
+    
+    if(exclude_patterns)
+        foreach(pattern ${exclude_patterns})
+            # 判断是否是通配符模式（包含 **）
+            if(pattern MATCHES "\\*\\*")
+                # 通配符模式：将 ** 替换为 .*
+                string(REPLACE "**" ".*" regex_pattern "${pattern}")
+            else()
+                # 相对路径模式：转换为完整路径
+                set(regex_pattern "${dir}/${pattern}")
+            endif()
+            
+            # 转义路径分隔符
+            string(REPLACE "/" "[/\\\\]" regex_pattern "${regex_pattern}")
+            # 确保匹配完整路径
+            set(regex_pattern ".*${regex_pattern}.*")
+            
+            # 排除匹配的文件
+            list(FILTER all_sources EXCLUDE REGEX "${regex_pattern}")
+        endforeach()
+    endif()
+    
+    list(SORT all_sources)
+    set(${outputlist} ${all_sources} PARENT_SCOPE)
+endfunction()
+
 # 修改__FILE__的宏
 function(force_redefine_file_macro_for_sources targetname)
     get_target_property(source_files "${targetname}" SOURCES)
@@ -44,7 +102,21 @@ endfunction(ragelmaker)
 # 简化cmake文件
 function(chen_add_executable targetname srcs depends libs)
     add_executable(${targetname} ${srcs})
-    add_dependencies(${targetname} ${depends})
+    if(depends)
+        add_dependencies(${targetname} ${depends})
+    endif()
     force_redefine_file_macro_for_sources(${targetname})
     target_link_libraries(${targetname} ${libs})
+endfunction()
+
+# 设置目标的输出目录
+# RUNTIME_OUTPUT_DIRECTORY：控制可执行文件（.exe）的输出目录
+# LIBRARY_OUTPUT_DIRECTORY：控制库文件（.dll/.so）的输出目录
+# ARCHIVE_OUTPUT_DIRECTORY：控制静态库（.lib/.a）的输出目录
+function(chen_set_target_output_dir targetname outputdir)
+    set_target_properties(${targetname} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${outputdir}"
+        LIBRARY_OUTPUT_DIRECTORY "${outputdir}"
+        ARCHIVE_OUTPUT_DIRECTORY "${outputdir}"
+    )
 endfunction()

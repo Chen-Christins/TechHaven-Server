@@ -36,6 +36,11 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 			break;
 		}
 
+        if (file_size > 96) {
+            result->setResult(400, "file_size exceed limit");
+            break;
+        }
+
 		bool new_assignment = false;
         data::AssignmentInfo::ptr info;
 		if (aid) {
