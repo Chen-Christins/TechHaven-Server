@@ -120,3 +120,28 @@ function(chen_set_target_output_dir targetname outputdir)
         ARCHIVE_OUTPUT_DIRECTORY "${outputdir}"
     )
 endfunction()
+
+# 封装创建服务器模块的函数
+function(create_server_module module_name source_dir module_output_dir server_output_dir db_libs)
+    chen_set_sources(${source_dir} MODULE_SOURCES)
+    add_library(${module_name} SHARED ${MODULE_SOURCES})
+    if(db_libs)
+        target_link_libraries(${module_name} PRIVATE ${db_libs})
+    endif()
+
+    # 设置链接库变量
+    string(TOUPPER ${module_name} MODULE_UPPER)
+    set(libs
+        ${CHEN_LIBRARY}
+        ${CHEN_SDK_DEP_LIBS}
+    )
+    message(STATUS "[DEBUG] create_server_module libs=${libs}")
+    set(${MODULE_UPPER}_LIBS ${libs} PARENT_SCOPE)
+    
+    force_redefine_file_macro_for_sources(${module_name})
+    chen_set_target_output_dir(${module_name} "${module_output_dir}")
+
+    # 服务器程序
+    chen_add_executable(${module_name}_server "servers/${module_name}.cc" "" "${libs}")
+    chen_set_target_output_dir(${module_name}_server "${server_output_dir}")
+endfunction()

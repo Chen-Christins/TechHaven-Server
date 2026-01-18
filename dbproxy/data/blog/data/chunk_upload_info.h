@@ -36,9 +36,6 @@ public:
     const int64_t& getSize() { return m_size; }
     void setSize(const int64_t& v);
 
-    const std::string& getHash() { return m_hash; }
-    void setHash(const std::string& v);
-
     const int64_t& getOwnerId() { return m_ownerId; }
     void setOwnerId(const int64_t& v);
 
@@ -66,7 +63,6 @@ private:
     int64_t m_ownerId;
     std::string m_uploadId;
     std::string m_filename;
-    std::string m_hash;
     int64_t m_createTime;
     int64_t m_updateTime;
 };
@@ -83,12 +79,10 @@ public:
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
     static int DeleteByUploadId( const std::string& upload_id, chen::IDB::ptr conn);
     static int DeleteByOwnerId( const int64_t& owner_id, chen::IDB::ptr conn);
-    static int DeleteByHash( const std::string& hash, chen::IDB::ptr conn);
     static int QueryAll(std::vector<ChunkUploadInfo::ptr>& results, chen::IDB::ptr conn);
     static ChunkUploadInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static ChunkUploadInfo::ptr QueryByUploadId( const std::string& upload_id, chen::IDB::ptr conn);
     static int QueryByOwnerId(std::vector<ChunkUploadInfo::ptr>& results,  const int64_t& owner_id, chen::IDB::ptr conn);
-    static int QueryByHash(std::vector<ChunkUploadInfo::ptr>& results,  const std::string& hash, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
 };

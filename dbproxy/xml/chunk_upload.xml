@@ -16,6 +16,6 @@
         <index name="pk" cols="id" type="pk"/>
         <index name="idx_upload_id" cols="upload_id" type="uniq"/>
         <index name="idx_owner" cols="owner_id" type="index"/>
-        <index name="idx_hash" cols="hash" type="index"/>
+        <!-- <index name="idx_hash" cols="hash" type="index"/> -->
     </indexs>
 </table>

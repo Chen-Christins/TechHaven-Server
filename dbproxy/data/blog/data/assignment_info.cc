@@ -274,36 +274,36 @@ AssignmentInfo::ptr AssignmentInfoDao::Query( const int64_t& id, chen::IDB::ptr 
     return v;
 }
 
-AssignmentInfo::ptr AssignmentInfoDao::QueryBySubjectName( const std::string& subject_name, chen::IDB::ptr conn) {
+int AssignmentInfoDao::QueryBySubjectName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name, chen::IDB::ptr conn) {
     std::string sql = "select id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time from assignment where subject_name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
                  << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        return nullptr;
+        return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
     auto rt = stmt->query();
     if(!rt) {
-        return nullptr;
+        return 0;
     }
-    if(!rt->next()) {
-        return nullptr;
-    }
-    AssignmentInfo::ptr v(new AssignmentInfo);
-    v->m_id = rt->getInt64(0);
-    v->m_name = rt->getString(1);
-    v->m_subjectName = rt->getString(2);
-    v->m_priority = rt->getInt32(3);
-    v->m_status = rt->getInt32(4);
-    v->m_description = rt->getString(5);
-    v->m_maxSize = rt->getInt32(6);
-    v->m_fileType = rt->getString(7);
-    v->m_deadline = rt->getTime(8);
-    v->m_isDeleted = rt->getInt32(9);
-    v->m_createTime = rt->getTime(10);
-    v->m_updateTime = rt->getTime(11);
-    return v;
+    while (rt->next()) {
+        AssignmentInfo::ptr v(new AssignmentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_subjectName = rt->getString(2);
+        v->m_priority = rt->getInt32(3);
+        v->m_status = rt->getInt32(4);
+        v->m_description = rt->getString(5);
+        v->m_maxSize = rt->getInt32(6);
+        v->m_fileType = rt->getString(7);
+        v->m_deadline = rt->getTime(8);
+        v->m_isDeleted = rt->getInt32(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
+        results.push_back(v);
+    };
+    return 0;
 }
 
 int AssignmentInfoDao::QueryBySubjectNameName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn) {
@@ -353,8 +353,8 @@ int AssignmentInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE UNIQUE INDEX assignment_subject_name ON assignment(subject_name);"
-            "CREATE UNIQUE INDEX assignment_subject_name_name ON assignment(subject_name,name);"
+            "CREATE INDEX assignment_subject_name ON assignment(subject_name);"
+            "CREATE INDEX assignment_subject_name_name ON assignment(subject_name,name);"
             );
 }
 
@@ -373,8 +373,8 @@ int AssignmentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间',"
             "`update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' ON UPDATE current_timestamp  COMMENT '更新时间',"
             "PRIMARY KEY(`id`),"
-            "UNIQUE KEY `assignment_subject_name` (`subject_name`),"
-            "UNIQUE KEY `assignment_subject_name_name` (`subject_name`,`name`)) COMMENT='作业'");
+            "KEY `assignment_subject_name` (`subject_name`),"
+            "KEY `assignment_subject_name_name` (`subject_name`,`name`)) COMMENT='作业'");
 }
 } //namespace data
 } //namespace blog
