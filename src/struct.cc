@@ -63,8 +63,8 @@ int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request
         ,chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
     uint64_t ts = chen::GetCurrentUs();
     Result::ptr result = std::make_shared<Result>();
-    response->setHeader("Access-Control-Allow-Origin", "*");
-    response->setHeader("Access-Control-Allow-Credentials", "true");
+    // response->setHeader("Access-Control-Allow-Origin", "*");
+    // response->setHeader("Access-Control-Allow-Credentials", "true");
     if (handlePre(request, response, session, result)) {
         handle(request, response, session, result);
     } else {
