@@ -18,10 +18,10 @@ else()
 endif()
 
 include_directories(${CHEN_SDK_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/orm_out)
+include_directories(${PROJECT_SOURCE_DIR}/dbproxy/data)
 
 add_subdirectory(${CHEN_SDK_DIR})
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/orm_out)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dbproxy/data)
 
 include_directories(.)
 
@@ -100,7 +100,7 @@ add_executable(gen generator/generator.cc)
 
 add_library(blog SHARED ${LIB_SRC})
 # 将orm_data和blog链接到一起
-target_link_libraries(blog PRIVATE orm_data)
+target_link_libraries(blog PRIVATE dbproxy_data)
 force_redefine_file_macro_for_sources(blog)
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)

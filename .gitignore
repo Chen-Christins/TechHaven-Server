@@ -11,3 +11,9 @@ lib*.so
 *3rdparty*
 *sdk*
 /.idea
+*.iml
+.DS_Store
+*.pid
+*.swp
+*.swo
+*.db

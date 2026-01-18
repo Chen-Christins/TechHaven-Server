@@ -34,3 +34,6 @@ clean:
 			cd build && $(MAKE) clean && cd ..; \
 			rm -rf build; \
 		fi)
+
+orm:
+	$(call time_wrapper, bin/orm dbproxy/xml dbproxy/data)

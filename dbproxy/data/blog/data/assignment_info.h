@@ -85,7 +85,7 @@ public:
     static int DeleteBySubjectNameName( const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn);
     static int QueryAll(std::vector<AssignmentInfo::ptr>& results, chen::IDB::ptr conn);
     static AssignmentInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
-    static int QueryBySubjectName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name, chen::IDB::ptr conn);
+    static AssignmentInfo::ptr QueryBySubjectName( const std::string& subject_name, chen::IDB::ptr conn);
     static AssignmentInfo::ptr QueryBySubjectNameName( const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
