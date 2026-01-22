@@ -3,7 +3,7 @@ project(Blog)
 
 include(cmake/common.cmake)
 include(cmake/utils.cmake)
-include(cmake/dependencies.cmake)
+include(cmake/dependcies.cmake)
 
 include_directories(.)
 
