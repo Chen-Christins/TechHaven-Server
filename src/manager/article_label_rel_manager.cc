@@ -20,14 +20,17 @@ bool ArticleLabelRelManager::loadAll() {
     
     std::unordered_map<int64_t, data::ArticleLabelRelInfo::ptr> datas;
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> articles;
+    std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> labels;
     for (auto& i : results) {
         datas[i->getId()] = i;
         articles[i->getArticleId()][i->getLabelId()] = i;
+        labels[i->getLabelId()][i->getArticleId()] = i;
     }
 
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
     m_articles.swap(articles);
+    m_labels.swap(labels);
     
     return true;
 }
@@ -36,6 +39,7 @@ void ArticleLabelRelManager::add(data::ArticleLabelRelInfo::ptr info) {
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas[info->getId()] = info;
     m_articles[info->getArticleId()][info->getLabelId()] = info;
+    m_labels[info->getLabelId()][info->getArticleId()] = info;
 }
 
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id) {
@@ -49,6 +53,22 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     auto it = m_articles.find(id);
     if (it == m_articles.end()) {
+        return false;
+    }
+
+    for (auto& i : it->second) {
+        if (!valid || !i.second->getIsDeleted()) {
+            infos.push_back(i.second);
+        }
+    }
+    return true;
+}
+
+bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
+        ,int64_t label_id, bool valid) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto it = m_labels.find(label_id);
+    if (it == m_labels.end()) {
         return false;
     }
 
