@@ -1,14 +1,17 @@
 #include "blog_module.h"
+
 #include <chen/http/http_server.h>
 #include <chen/log/log.h>
 #include <chen/db/sqlite3.h>
 #include <chen/config/config.h>
 #include <chen/application.h>
 #include <chen/http/ws_server.h>
+#include <chen/http/ws_servlet.h>
+#include <chen/env.h>
+
 #include "./include/tables.h"
 #include "./include/managers.h"
 #include "./include/servlets.h"
-#include <chen/env.h>
 
 namespace blog {
 
@@ -38,15 +41,22 @@ bool BlogModule::onServerReady() {
 		return false;
 	}
 
+	loadAllData();
+
     std::vector<chen::TcpServer::ptr> servers;
-    if (!chen::Application::GetInstance()->getServer("http", servers)) {
+    if (chen::Application::GetInstance()->getServer("http", servers)) {
+        registerServlets(servers);
+    } else {
         ERROR(logger) << "http_server not open";
         return false;
     }
 
-	loadAllData();
-
-	registerServlets(servers);
+	std::vector<chen::TcpServer::ptr> wsservers;
+	if (chen::Application::GetInstance()->getServer("ws", wsservers)) {
+		registerWSServlets(wsservers);
+	} else {
+		INFO(logger) << "ws_server not open, skip WebSocket servlets";
+	}
 
     return true;
 }
@@ -202,6 +212,60 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
 #undef XX
     }
 
+}
+
+void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) {
+    INFO(logger) << "registerWSServlets";
+
+    for (auto& i : servers) {
+        auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
+        auto dp = ws->getWSServletDispatch();
+
+        dp->addServlet("/notification",
+            // handle: received message from client
+            [](chen::http::HttpRequest::ptr header, chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session) -> int32_t {
+                return 0;
+            },
+            // onConnect: authenticate user
+            [](chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) -> int32_t {
+                std::string uid_str = header->getParam("uid");
+                std::string token = header->getParam("token");
+                std::string token_time_str = header->getParam("token_time");
+
+                if (uid_str.empty() || token.empty() || token_time_str.empty()) {
+                    return -1;
+                }
+
+                int64_t uid = std::stoll(uid_str);
+                int64_t token_time = std::stoll(token_time_str);
+
+                if (token_time <= time(0)) {
+                    return -1;
+                }
+
+                data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
+                if (!uinfo || uinfo->getState() != 1) {
+                    return -1;
+                }
+
+                auto expected_token = UserManager::GetToken(uinfo, token_time);
+                if (expected_token != token) {
+                    return -1;
+                }
+
+                NotificationMgr::GetInstance()->addConnection(uid, session);
+                return 0;
+            },
+            // onClose: remove connection
+            [](chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) -> int32_t {
+                std::string uid_str = header->getParam("uid");
+                if (!uid_str.empty()) {
+                    int64_t uid = std::stoll(uid_str);
+                    NotificationMgr::GetInstance()->removeConnection(uid);
+                }
+                return 0;
+            });
+    }
 }
 
 }
