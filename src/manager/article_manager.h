@@ -32,6 +32,8 @@ public:
                              ,int32_t offset, int32_t size, bool valid, int state);
     int64_t listByLabelPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t label_id
                              ,int32_t offset, int32_t size, bool valid);
+    int64_t listByCategoryPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t category_id
+                                ,int32_t offset, int32_t size, bool valid);
     
     void delVerify(int64_t id);
     void addVerify(data::ArticleInfo::ptr info);

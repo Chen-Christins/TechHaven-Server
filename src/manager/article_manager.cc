@@ -5,6 +5,7 @@
 #include <chen/db/redis.h>
 #include "user_manager.h"
 #include "article_label_rel_manager.h"
+#include "article_category_rel_manager.h"
 
 namespace blog {
 
@@ -160,6 +161,35 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
         ,int32_t offset, int32_t size, bool valid) {
     std::vector<data::ArticleLabelRelInfo::ptr> rels;
     ArticleLabelRelMgr::GetInstance()->listByLabelId(rels, label_id, valid);
+
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    // 收集有效文章并按 id 降序排列
+    std::vector<data::ArticleInfo::ptr> matched;
+    for (auto& rel : rels) {
+        auto it = m_datas.find(rel->getArticleId());
+        if (it != m_datas.end() && (!valid || !it->second->getIsDeleted())) {
+            matched.push_back(it->second);
+        }
+    }
+    std::sort(matched.begin(), matched.end(), [](const data::ArticleInfo::ptr& a, const data::ArticleInfo::ptr& b) {
+        return a->getId() > b->getId();
+    });
+
+    int64_t total = matched.size();
+
+    if (offset < (int32_t)matched.size()) {
+        for (int32_t i = offset; i < (int32_t)matched.size() && (int32_t)infos.size() < size; ++i) {
+            infos.push_back(matched[i]);
+        }
+    }
+    return total;
+}
+
+int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t category_id
+        ,int32_t offset, int32_t size, bool valid) {
+    std::vector<data::ArticleCategoryRelInfo::ptr> rels;
+    ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, category_id, valid);
 
     std::shared_lock<std::shared_mutex> lock(m_mutex);
 

@@ -157,6 +157,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/article/publish", XX(ArticlePublishServlet));
         dp->addServlet("/article/query", XX(ArticleQueryServlet));
         dp->addServlet("/article/list_by_label", XX(ArticleListByLabelServlet));
+        dp->addServlet("/article/list_by_category", XX(ArticleListByCategoryServlet));
         dp->addServlet("/article/delete", XX(ArticleDeleteServlet));
         dp->addServlet("/article/verify", XX(ArticleVerifyServlet));
         dp->addServlet("/article/update", XX(ArticleUpdateServlet));
