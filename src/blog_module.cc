@@ -33,7 +33,34 @@ bool BlogModule::onUnload() {
 bool BlogModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
-    auto work_path = chen::Config::Lookup<std::string>("server.work_path");
+	if (!initDB()) {
+		ERROR(logger) << "initDB failed";
+		return false;
+	}
+
+    std::vector<chen::TcpServer::ptr> servers;
+    if (!chen::Application::GetInstance()->getServer("http", servers)) {
+        ERROR(logger) << "http_server not open";
+        return false;
+    }
+
+	loadAllData();
+
+	registerServlets(servers);
+
+    return true;
+}
+
+
+bool BlogModule::onServerUp() {
+    INFO(logger) << "onServerUp";
+    return true;
+}
+
+bool BlogModule::initDB() {
+	INFO(logger) << "initDB";
+
+	auto work_path = chen::Config::Lookup<std::string>("server.work_path");
     auto db_path = work_path->getValue() + "/" + sqlite3_db_name->getValue();
 
     chen::SQLite3::ptr db;
@@ -70,11 +97,11 @@ bool BlogModule::onServerReady() {
         INFO(logger) << "init database end";
     }
 
-    std::vector<chen::TcpServer::ptr> servers;
-    if (!chen::Application::GetInstance()->getServer("http", servers)) {
-        ERROR(logger) << "http_server not open";
-        return false;
-    }
+	return true;
+}
+
+void BlogModule::loadAllData() {
+	INFO(logger) << "loadAllData";
 
 #define XX(clazz)                                 \
     if (!clazz::GetInstance()->loadAll()) {       \
@@ -95,11 +122,17 @@ bool BlogModule::onServerReady() {
     XX(ChunkUploadMgr)
 #undef XX
 
-    for (auto& i : servers) {
+}
+
+void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
+	INFO(logger) << "registerServlets";
+
+	for (auto& i : servers) {
         auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         auto dp = hs->getServletDispatch();
 
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
+		// 用户相关
         dp->addServlet("/user/send_code", XX(UserSendCodeServlet));
         dp->addServlet("/user/create", XX(UserCreateServlet));
         dp->addServlet("/user/login", XX(UserLoginServlet));
@@ -117,7 +150,7 @@ bool BlogModule::onServerReady() {
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
         dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
-
+		// 文章相关
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));
@@ -128,30 +161,30 @@ bool BlogModule::onServerReady() {
         dp->addServlet("/article/update", XX(ArticleUpdateServlet));
         dp->addServlet("/article/update_category", XX(ArticleUpdateCategoryServlet));
         dp->addServlet("/article/switch_state", XX(ArticleSwitchStateServlet));
-
+		// 文章分类相关
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/category/admin/query", XX(CategoryQueryServlet));
-
+		// 文章标签相关
         dp->addServlet("/label/create", XX(LabelCreateServlet));
         dp->addServlet("/label/delete", XX(LabelDeleteServlet));
         dp->addServlet("/label/query", XX(LabelQueryServlet));
-
+		// 文件相关
         dp->addServlet("/file/upload", XX(FileUploadServlet));
         dp->addServlet("/file/download", XX(FileDownloadServlet));
-
+		// 大文件分片上传相关
         dp->addServlet("/upload/init", XX(ChunkUploadServlet));
         dp->addServlet("/upload/chunk", XX(ChunkUploadServlet));
         dp->addServlet("/upload/complete", XX(ChunkUploadServlet));
         dp->addServlet("/upload/cancel", XX(ChunkUploadServlet));
         dp->addServlet("/upload/status", XX(ChunkUploadServlet));
-
+		// 作业相关
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
         dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
         dp->addServlet("/assignment/detail", XX(AssignmentDetailServlet));
         dp->addServlet("/assignment/submission/list", XX(AssignmentSubmissionListServlet));
-
+		// 组织相关
         dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
         dp->addServlet("/organization/delete", XX(OrganizationDeleteServlet));
@@ -167,13 +200,6 @@ bool BlogModule::onServerReady() {
 #undef XX
     }
 
-    return true;
-}
-
-
-bool BlogModule::onServerUp() {
-    INFO(logger) << "onServerUp";
-    return true;
 }
 
 }

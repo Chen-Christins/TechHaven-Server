@@ -17,3 +17,7 @@ lib*.so
 *.swp
 *.swo
 *.db
+.venv
+*.pyc
+dataset
+models
