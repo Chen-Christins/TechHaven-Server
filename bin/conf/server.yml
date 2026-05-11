@@ -9,7 +9,7 @@ servers:
     type: http
   - address: ["0.0.0.0:8091"]
     keepalive: 1
-    timeout: 1000
+    timeout: 0
     name: chen/1.0.0
     accept_worker: accept
     io_worker: io
