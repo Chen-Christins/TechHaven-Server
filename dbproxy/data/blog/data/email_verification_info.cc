@@ -385,7 +385,7 @@ int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInf
 }
 
 int EmailVerificationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE email_verification("
+    return conn->execute("CREATE TABLE IF NOT EXISTS email_verification("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "email TEXT NOT NULL DEFAULT '',"
             "code TEXT NOT NULL DEFAULT '',"
@@ -395,15 +395,15 @@ int EmailVerificationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "expires_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "client_ip TEXT NOT NULL DEFAULT '',"
             "user_agent TEXT NOT NULL DEFAULT '');"
-            "CREATE INDEX email_verification_email_code ON email_verification(email,code);"
-            "CREATE INDEX email_verification_email_type ON email_verification(email,type);"
-            "CREATE INDEX email_verification_expires_time ON email_verification(expires_time);"
-            "CREATE INDEX email_verification_create_time ON email_verification(create_time);"
+            "CREATE INDEX IF NOT EXISTS email_verification_email_code ON email_verification(email,code);"
+            "CREATE INDEX IF NOT EXISTS email_verification_email_type ON email_verification(email,type);"
+            "CREATE INDEX IF NOT EXISTS email_verification_expires_time ON email_verification(expires_time);"
+            "CREATE INDEX IF NOT EXISTS email_verification_create_time ON email_verification(create_time);"
             );
 }
 
 int EmailVerificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE email_verification("
+    return conn->execute("CREATE TABLE IF NOT EXISTS email_verification("
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`email` varchar(128) NOT NULL DEFAULT '' COMMENT '用户邮箱地址',"
             "`code` varchar(128) NOT NULL DEFAULT '' COMMENT '验证码',"

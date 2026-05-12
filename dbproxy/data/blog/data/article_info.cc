@@ -330,7 +330,7 @@ int ArticleInfoDao::QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const
 }
 
 int ArticleInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE article("
+    return conn->execute("CREATE TABLE IF NOT EXISTS article("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
             "title TEXT NOT NULL DEFAULT '',"
@@ -346,12 +346,12 @@ int ArticleInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "favorites INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE INDEX article_user_id ON article(user_id);"
+            "CREATE INDEX IF NOT EXISTS article_user_id ON article(user_id);"
             );
 }
 
 int ArticleInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE article("
+    return conn->execute("CREATE TABLE IF NOT EXISTS article("
             "`id` bigint AUTO_INCREMENT COMMENT '文章id',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户id',"
             "`title` varchar(256) NOT NULL DEFAULT '' COMMENT '文章标题',"

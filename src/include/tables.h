@@ -9,4 +9,5 @@
 #include "blog/data/email_verification_info.h"          // IWYU pragma: keep
 #include "blog/data/organization_info.h"                // IWYU pragma: keep
 #include "blog/data/organization_user_rel_info.h"       // IWYU pragma: keep
+#include "blog/data/notification_info.h"                // IWYU pragma: keep
 #include "blog/data/resource_info.h"                    // IWYU pragma: keep

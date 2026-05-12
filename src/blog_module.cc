@@ -103,6 +103,7 @@ bool BlogModule::initDB() {
     XX(AssignmentUserRelInfoDao, "assignment_user_rel")
     XX(ResourceInfoDao, "resource")
     XX(ChunkUploadInfoDao, "chunk_upload")
+    XX(NotificationInfoDao, "notification")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -130,6 +131,7 @@ void BlogModule::loadAllData() {
     XX(AssignmentUserRelMgr)
     XX(ResourceMgr)
     XX(ChunkUploadMgr)
+    XX(NotificationMgr)
 #undef XX
 
 }
@@ -153,6 +155,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/exists", XX(UserExistsServlet));
         dp->addServlet("/user/update", XX(UserUpdateServlet));
         dp->addServlet("/user/query", XX(UserQueryServlet));
+        dp->addServlet("/user/stats", XX(UserStatsServlet));
         dp->addServlet("/user/admin/create", XX(UserAdminCreateServlet));
         dp->addServlet("/user/admin/delete", XX(UserAdminDeleteServlet));
         dp->addServlet("/user/admin/recover", XX(UserAdminRecoverServlet));
@@ -160,6 +163,8 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
         dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
+        // 通知相关
+        dp->addServlet("/notification/send", XX(NotificationSendServlet));
 		// 文章相关
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
@@ -219,70 +224,13 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
 
     for (auto& i : servers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
-        auto dp = ws->getWSServletDispatch();
+		ASSERT(ws);
 
-        dp->addServlet("/notification",
-            // handle: received message from client
-            [](chen::http::HttpRequest::ptr header, chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session) -> int32_t {
-                INFO(logger) << "[WS] handle: opcode=" << msg->getOpcode()
-                    << " data=" << msg->getData();
-                return 0;
-            },
-            // onConnect: authenticate user
-            [](chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) -> int32_t {
-                std::string uid_str = header->getParam("uid");
-                std::string token = header->getParam("token");
-                std::string token_time_str = header->getParam("token_time");
+        chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
+		ASSERT(dp);
 
-                INFO(logger) << "[WS] onConnect: uid=" << uid_str
-                    << " token=" << (token.empty() ? "(empty)" : "***")
-                    << " token_time=" << token_time_str;
-
-                if (uid_str.empty() || token.empty() || token_time_str.empty()) {
-                    INFO(logger) << "[WS] onConnect FAIL: missing params";
-                    return -1;
-                }
-
-                int64_t uid = std::stoll(uid_str);
-                int64_t token_time = std::stoll(token_time_str);
-
-                if (token_time <= time(0)) {
-                    INFO(logger) << "[WS] onConnect FAIL: token expired, token_time="
-                        << token_time << " now=" << time(0);
-                    return -1;
-                }
-
-                data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
-                if (!uinfo) {
-                    INFO(logger) << "[WS] onConnect FAIL: user not found uid=" << uid;
-                    return -1;
-                }
-                if (uinfo->getState() != 1) {
-                    INFO(logger) << "[WS] onConnect FAIL: user state=" << uinfo->getState()
-                        << " uid=" << uid;
-                    return -1;
-                }
-
-                auto expected_token = UserManager::GetToken(uinfo, token_time);
-                if (expected_token != token) {
-                    INFO(logger) << "[WS] onConnect FAIL: token mismatch, expected="
-                        << expected_token << " got=" << token;
-                    return -1;
-                }
-
-                NotificationMgr::GetInstance()->addConnection(uid, session);
-                INFO(logger) << "[WS] onConnect OK: uid=" << uid;
-                return 0;
-            },
-            // onClose: remove connection
-            [](chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) -> int32_t {
-                std::string uid_str = header->getParam("uid");
-                if (!uid_str.empty()) {
-                    int64_t uid = std::stoll(uid_str);
-                    NotificationMgr::GetInstance()->removeConnection(uid);
-                }
-                return 0;
-            });
+		NotifyServlet::ptr notify_servlet(std::make_shared<NotifyServlet>());
+        dp->addServlet("/notification", notify_servlet);
     }
 }
 

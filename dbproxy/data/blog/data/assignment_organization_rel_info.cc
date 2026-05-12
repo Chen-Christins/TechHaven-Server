@@ -328,7 +328,7 @@ int AssignmentOrganizationRelInfoDao::QueryByOrganizationId(std::vector<Assignme
 }
 
 int AssignmentOrganizationRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE assignment_organization_rel("
+    return conn->execute("CREATE TABLE IF NOT EXISTS assignment_organization_rel("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "assignment_id INTEGER NOT NULL DEFAULT 0,"
             "organization_id INTEGER NOT NULL DEFAULT 0,"
@@ -337,14 +337,14 @@ int AssignmentOrganizationRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE UNIQUE INDEX assignment_organization_rel_assignment_id_organization_id ON assignment_organization_rel(assignment_id,organization_id);"
-            "CREATE INDEX assignment_organization_rel_assignment_id ON assignment_organization_rel(assignment_id);"
-            "CREATE INDEX assignment_organization_rel_organization_id ON assignment_organization_rel(organization_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS assignment_organization_rel_assignment_id_organization_id ON assignment_organization_rel(assignment_id,organization_id);"
+            "CREATE INDEX IF NOT EXISTS assignment_organization_rel_assignment_id ON assignment_organization_rel(assignment_id);"
+            "CREATE INDEX IF NOT EXISTS assignment_organization_rel_organization_id ON assignment_organization_rel(organization_id);"
             );
 }
 
 int AssignmentOrganizationRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE assignment_organization_rel("
+    return conn->execute("CREATE TABLE IF NOT EXISTS assignment_organization_rel("
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`assignment_id` bigint NOT NULL DEFAULT 0 COMMENT '作业ID',"
             "`organization_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID',"

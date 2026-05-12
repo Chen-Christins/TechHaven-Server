@@ -288,7 +288,7 @@ int OrganizationUserRelInfoDao::QueryByUserId(std::vector<OrganizationUserRelInf
 }
 
 int OrganizationUserRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE organization_user_rel("
+    return conn->execute("CREATE TABLE IF NOT EXISTS organization_user_rel("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "org_id INTEGER NOT NULL DEFAULT 0,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
@@ -297,13 +297,13 @@ int OrganizationUserRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE UNIQUE INDEX organization_user_rel_org_id_user_id ON organization_user_rel(org_id,user_id);"
-            "CREATE INDEX organization_user_rel_user_id ON organization_user_rel(user_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS organization_user_rel_org_id_user_id ON organization_user_rel(org_id,user_id);"
+            "CREATE INDEX IF NOT EXISTS organization_user_rel_user_id ON organization_user_rel(user_id);"
             );
 }
 
 int OrganizationUserRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE organization_user_rel("
+    return conn->execute("CREATE TABLE IF NOT EXISTS organization_user_rel("
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID',"

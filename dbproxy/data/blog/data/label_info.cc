@@ -288,7 +288,7 @@ LabelInfo::ptr LabelInfoDao::QueryByUserIdName( const int64_t& user_id,  const s
 }
 
 int LabelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE label("
+    return conn->execute("CREATE TABLE IF NOT EXISTS label("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
             "name TEXT NOT NULL DEFAULT '',"
@@ -297,13 +297,13 @@ int LabelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE INDEX label_user_id ON label(user_id);"
-            "CREATE UNIQUE INDEX label_user_id_name ON label(user_id,name);"
+            "CREATE INDEX IF NOT EXISTS label_user_id ON label(user_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS label_user_id_name ON label(user_id,name);"
             );
 }
 
 int LabelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE label("
+    return conn->execute("CREATE TABLE IF NOT EXISTS label("
             "`id` bigint AUTO_INCREMENT,"
             "`user_id` bigint NOT NULL DEFAULT 0,"
             "`name` varchar(20) NOT NULL DEFAULT '',"

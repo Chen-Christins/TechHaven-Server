@@ -12,6 +12,7 @@ set(LIB_SRC
     blog/data/chunk_upload_info.cc
     blog/data/email_verification_info.cc
     blog/data/label_info.cc
+    blog/data/notification_info.cc
     blog/data/organization_info.cc
     blog/data/organization_user_rel_info.cc
     blog/data/resource_info.cc

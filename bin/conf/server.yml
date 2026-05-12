@@ -2,15 +2,15 @@ servers:
   - address: ["0.0.0.0:8090"]
     keepalive: 1
     timeout: 1000
-    name: chen/1.0.0
+    name: chen-http/1.0.0
     accept_worker: accept
     io_worker: io
     process_worker: io
     type: http
   - address: ["0.0.0.0:8091"]
     keepalive: 1
-    timeout: 0
-    name: chen/1.0.0
+    timeout: 300000
+    name: chen-ws/1.0.0
     accept_worker: accept
     io_worker: io
     process_worker: io
