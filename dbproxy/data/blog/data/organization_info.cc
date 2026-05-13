@@ -299,7 +299,7 @@ OrganizationInfo::ptr OrganizationInfoDao::QueryByName( const std::string& name,
 }
 
 int OrganizationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE organization("
+    return conn->execute("CREATE TABLE IF NOT EXISTS organization("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT NOT NULL DEFAULT '',"
             "type TEXT NOT NULL DEFAULT '',"
@@ -309,13 +309,13 @@ int OrganizationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE INDEX organization_owner_id ON organization(owner_id);"
-            "CREATE UNIQUE INDEX organization_name ON organization(name);"
+            "CREATE INDEX IF NOT EXISTS organization_owner_id ON organization(owner_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS organization_name ON organization(name);"
             );
 }
 
 int OrganizationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE organization("
+    return conn->execute("CREATE TABLE IF NOT EXISTS organization("
             "`id` bigint AUTO_INCREMENT COMMENT '组织ID',"
             "`name` varchar(100) NOT NULL DEFAULT '' COMMENT '组织名称',"
             "`type` varchar(50) NOT NULL DEFAULT '' COMMENT '组织类型',"

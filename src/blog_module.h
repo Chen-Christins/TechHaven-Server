@@ -61,6 +61,11 @@ private:
 	 * @brief 注册Servlet
 	 */
 	void registerServlets(std::vector<chen::TcpServer::ptr>& servers);
+
+	/**
+	 * @brief 注册WebSocket Servlet
+	 */
+	void registerWSServlets(std::vector<chen::TcpServer::ptr>& servers);
 };
 
 }

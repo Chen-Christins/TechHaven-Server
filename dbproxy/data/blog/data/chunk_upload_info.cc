@@ -325,7 +325,7 @@ int ChunkUploadInfoDao::QueryByOwnerId(std::vector<ChunkUploadInfo::ptr>& result
 }
 
 int ChunkUploadInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE chunk_upload("
+    return conn->execute("CREATE TABLE IF NOT EXISTS chunk_upload("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "upload_id TEXT NOT NULL DEFAULT '',"
             "filename TEXT NOT NULL DEFAULT '',"
@@ -337,13 +337,13 @@ int ChunkUploadInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE UNIQUE INDEX chunk_upload_upload_id ON chunk_upload(upload_id);"
-            "CREATE INDEX chunk_upload_owner_id ON chunk_upload(owner_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS chunk_upload_upload_id ON chunk_upload(upload_id);"
+            "CREATE INDEX IF NOT EXISTS chunk_upload_owner_id ON chunk_upload(owner_id);"
             );
 }
 
 int ChunkUploadInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE chunk_upload("
+    return conn->execute("CREATE TABLE IF NOT EXISTS chunk_upload("
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`upload_id` varchar(64) NOT NULL DEFAULT '' COMMENT '上传任务唯一ID',"
             "`filename` varchar(256) NOT NULL DEFAULT '' COMMENT '原始文件名',"

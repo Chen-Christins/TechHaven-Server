@@ -410,7 +410,7 @@ UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr 
 }
 
 int UserInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE user("
+    return conn->execute("CREATE TABLE IF NOT EXISTS user("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT NOT NULL DEFAULT '',"
             "account TEXT NOT NULL DEFAULT '',"
@@ -425,14 +425,14 @@ int UserInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT current_timestamp);"
-            "CREATE UNIQUE INDEX user_account ON user(account);"
-            "CREATE UNIQUE INDEX user_email ON user(email);"
-            "CREATE UNIQUE INDEX user_name ON user(name);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS user_account ON user(account);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS user_email ON user(email);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS user_name ON user(name);"
             );
 }
 
 int UserInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE user("
+    return conn->execute("CREATE TABLE IF NOT EXISTS user("
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`name` varchar(128) NOT NULL DEFAULT '' COMMENT '用户名',"
             "`account` varchar(128) NOT NULL DEFAULT '' COMMENT '账户名称',"

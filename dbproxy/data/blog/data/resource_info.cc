@@ -398,7 +398,7 @@ int ResourceInfoDao::QueryByHash(std::vector<ResourceInfo::ptr>& results,  const
 }
 
 int ResourceInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE resource("
+    return conn->execute("CREATE TABLE IF NOT EXISTS resource("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT NOT NULL DEFAULT '',"
             "path TEXT NOT NULL DEFAULT '',"
@@ -412,14 +412,14 @@ int ResourceInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE INDEX resource_owner_id ON resource(owner_id);"
-            "CREATE INDEX resource_biz_type_biz_id ON resource(biz_type,biz_id);"
-            "CREATE INDEX resource_hash ON resource(hash);"
+            "CREATE INDEX IF NOT EXISTS resource_owner_id ON resource(owner_id);"
+            "CREATE INDEX IF NOT EXISTS resource_biz_type_biz_id ON resource(biz_type,biz_id);"
+            "CREATE INDEX IF NOT EXISTS resource_hash ON resource(hash);"
             );
 }
 
 int ResourceInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE resource("
+    return conn->execute("CREATE TABLE IF NOT EXISTS resource("
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`name` varchar(256) NOT NULL DEFAULT '' COMMENT '原始文件名',"
             "`path` varchar(512) NOT NULL DEFAULT '' COMMENT '存储路径（相对或绝对）',"

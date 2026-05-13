@@ -340,7 +340,7 @@ int AssignmentInfoDao::QueryBySubjectNameName(std::vector<AssignmentInfo::ptr>& 
 }
 
 int AssignmentInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE assignment("
+    return conn->execute("CREATE TABLE IF NOT EXISTS assignment("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT NOT NULL DEFAULT '',"
             "subject_name TEXT NOT NULL DEFAULT '',"
@@ -353,13 +353,13 @@ int AssignmentInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE INDEX assignment_subject_name ON assignment(subject_name);"
-            "CREATE INDEX assignment_subject_name_name ON assignment(subject_name,name);"
+            "CREATE INDEX IF NOT EXISTS assignment_subject_name ON assignment(subject_name);"
+            "CREATE INDEX IF NOT EXISTS assignment_subject_name_name ON assignment(subject_name,name);"
             );
 }
 
 int AssignmentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE assignment("
+    return conn->execute("CREATE TABLE IF NOT EXISTS assignment("
             "`id` bigint AUTO_INCREMENT COMMENT '作业id',"
             "`name` varchar(256) NOT NULL DEFAULT '' COMMENT '作业名称',"
             "`subject_name` varchar(256) NOT NULL DEFAULT '' COMMENT '科目名称',"

@@ -282,7 +282,7 @@ CategoryInfo::ptr CategoryInfoDao::QueryByName( const std::string& name, chen::I
 }
 
 int CategoryInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE category("
+    return conn->execute("CREATE TABLE IF NOT EXISTS category("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "name TEXT NOT NULL DEFAULT '',"
             "color TEXT NOT NULL DEFAULT '',"
@@ -294,12 +294,12 @@ int CategoryInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE UNIQUE INDEX category_name ON category(name);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS category_name ON category(name);"
             );
 }
 
 int CategoryInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE category("
+    return conn->execute("CREATE TABLE IF NOT EXISTS category("
             "`id` bigint AUTO_INCREMENT,"
             "`name` varchar(50) NOT NULL DEFAULT '',"
             "`color` varchar(10) NOT NULL DEFAULT '',"

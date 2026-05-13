@@ -1,0 +1,50 @@
+#include "notification_read_servlet.h"
+#include "../../manager/notification_manager.h"
+
+#include <vector>
+
+namespace blog {
+namespace servlet {
+
+NotificationReadServlet::NotificationReadServlet()
+    :BlogLoginedServlet("NotificationReadServlet") {
+}
+
+int32_t NotificationReadServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+		,chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(410, "not login");
+            break;
+        }
+
+        // 支持两种格式: ?id=123 或 ?ids=1,2,3
+        std::vector<int64_t> ids;
+        std::string ids_str = request->getParam("ids");
+        if (!ids_str.empty()) {
+            for (auto& s : chen::split(ids_str, ',')) {
+                auto trimmed = chen::StringUtil::Trim(s);
+                if (!trimmed.empty()) {
+                    ids.push_back(std::stoll(trimmed));
+                }
+            }
+        } else {
+            int64_t single_id = request->getParamAs<int64_t>("id", 0);
+            if (!single_id) {
+                result->setResult(400, "param id or ids is required");
+                break;
+            }
+            ids.push_back(single_id);
+        }
+
+        NotificationMgr::GetInstance()->markRead(ids);
+
+        result->setResult(200, "ok");
+    } while (0);
+
+    response->setBody(result->toJsonString());
+    return 0;
+}
+}
+}

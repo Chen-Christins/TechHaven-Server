@@ -1,14 +1,17 @@
 #include "blog_module.h"
+
 #include <chen/http/http_server.h>
 #include <chen/log/log.h>
 #include <chen/db/sqlite3.h>
 #include <chen/config/config.h>
 #include <chen/application.h>
 #include <chen/http/ws_server.h>
+#include <chen/http/ws_servlet.h>
+#include <chen/env.h>
+
 #include "./include/tables.h"
 #include "./include/managers.h"
 #include "./include/servlets.h"
-#include <chen/env.h>
 
 namespace blog {
 
@@ -38,15 +41,22 @@ bool BlogModule::onServerReady() {
 		return false;
 	}
 
+	loadAllData();
+
     std::vector<chen::TcpServer::ptr> servers;
-    if (!chen::Application::GetInstance()->getServer("http", servers)) {
+    if (chen::Application::GetInstance()->getServer("http", servers)) {
+        registerServlets(servers);
+    } else {
         ERROR(logger) << "http_server not open";
         return false;
     }
 
-	loadAllData();
-
-	registerServlets(servers);
+	std::vector<chen::TcpServer::ptr> wsservers;
+	if (chen::Application::GetInstance()->getServer("ws", wsservers)) {
+		registerWSServlets(wsservers);
+	} else {
+		INFO(logger) << "ws_server not open, skip WebSocket servlets";
+	}
 
     return true;
 }
@@ -93,6 +103,7 @@ bool BlogModule::initDB() {
     XX(AssignmentUserRelInfoDao, "assignment_user_rel")
     XX(ResourceInfoDao, "resource")
     XX(ChunkUploadInfoDao, "chunk_upload")
+    XX(NotificationInfoDao, "notification")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -120,6 +131,7 @@ void BlogModule::loadAllData() {
     XX(AssignmentUserRelMgr)
     XX(ResourceMgr)
     XX(ChunkUploadMgr)
+    XX(NotificationMgr)
 #undef XX
 
 }
@@ -143,6 +155,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/exists", XX(UserExistsServlet));
         dp->addServlet("/user/update", XX(UserUpdateServlet));
         dp->addServlet("/user/query", XX(UserQueryServlet));
+        dp->addServlet("/user/stats", XX(UserStatsServlet));
         dp->addServlet("/user/admin/create", XX(UserAdminCreateServlet));
         dp->addServlet("/user/admin/delete", XX(UserAdminDeleteServlet));
         dp->addServlet("/user/admin/recover", XX(UserAdminRecoverServlet));
@@ -150,6 +163,11 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
         dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
+        // 通知相关
+        dp->addServlet("/notification/send", XX(NotificationSendServlet));
+        dp->addServlet("/notification/list", XX(NotificationListServlet));
+        dp->addServlet("/notification/unread_count", XX(NotificationUnreadCountServlet));
+        dp->addServlet("/notification/read", XX(NotificationReadServlet));
 		// 文章相关
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
@@ -202,6 +220,21 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
 #undef XX
     }
 
+}
+
+void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) {
+    INFO(logger) << "registerWSServlets";
+
+    for (auto& i : servers) {
+        auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
+		ASSERT(ws);
+
+        chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
+		ASSERT(dp);
+
+		servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
+        dp->addServlet("/notification", notify_servlet);
+    }
 }
 
 }

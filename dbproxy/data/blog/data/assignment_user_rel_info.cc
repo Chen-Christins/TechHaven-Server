@@ -342,7 +342,7 @@ int AssignmentUserRelInfoDao::QueryByUserId(std::vector<AssignmentUserRelInfo::p
 }
 
 int AssignmentUserRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE assignment_user_rel("
+    return conn->execute("CREATE TABLE IF NOT EXISTS assignment_user_rel("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
             "assignment_id INTEGER NOT NULL DEFAULT 0,"
             "user_id INTEGER NOT NULL DEFAULT 0,"
@@ -352,14 +352,14 @@ int AssignmentUserRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
-            "CREATE UNIQUE INDEX assignment_user_rel_assignment_id_user_id ON assignment_user_rel(assignment_id,user_id);"
-            "CREATE INDEX assignment_user_rel_assignment_id ON assignment_user_rel(assignment_id);"
-            "CREATE INDEX assignment_user_rel_user_id ON assignment_user_rel(user_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS assignment_user_rel_assignment_id_user_id ON assignment_user_rel(assignment_id,user_id);"
+            "CREATE INDEX IF NOT EXISTS assignment_user_rel_assignment_id ON assignment_user_rel(assignment_id);"
+            "CREATE INDEX IF NOT EXISTS assignment_user_rel_user_id ON assignment_user_rel(user_id);"
             );
 }
 
 int AssignmentUserRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
-    return conn->execute("CREATE TABLE assignment_user_rel("
+    return conn->execute("CREATE TABLE IF NOT EXISTS assignment_user_rel("
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`assignment_id` bigint NOT NULL DEFAULT 0 COMMENT '作业ID',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '学生用户ID',"
