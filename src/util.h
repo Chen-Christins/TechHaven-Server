@@ -2,6 +2,8 @@
 #define __BLOG_UTIL_H__
 
 #include <chen/db/sqlite3.h>
+#include <chen/util/hash_util.h>
+
 #include <regex>
 
 namespace blog {
@@ -9,6 +11,34 @@ namespace blog {
 inline bool is_email(const std::string& str) {
     static const std::regex pattern("([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,8}(\\.[a-z]{2,8})?)");
     return std::regex_match(str, pattern);
+}
+
+static const std::string s_uid_secret = "BlogServer!2025$%^UID#@!EncryptKey";
+
+inline std::string encryptUserId(int64_t uid) {
+    std::string plain = std::to_string(uid);
+    for (size_t i = 0; i < plain.size(); i++) {
+        plain[i] ^= s_uid_secret[i % s_uid_secret.size()];
+    }
+    return chen::base64encode(plain);
+}
+
+inline int64_t decryptUserId(const std::string& encrypted) {
+    if (encrypted.empty()) {
+        return 0;
+    }
+    std::string data = chen::base64decode(encrypted);
+    if (data.empty()) {
+        return 0;
+    }
+    for (size_t i = 0; i < data.size(); i++) {
+        data[i] ^= s_uid_secret[i % s_uid_secret.size()];
+    }
+    try {
+        return std::stoll(data);
+    } catch (...) {
+        return 0;
+    }
 }
 
 inline bool is_vaild_account(const std::string& str) {
