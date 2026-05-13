@@ -204,6 +204,38 @@ int64_t NotificationManager::markAllRead(int64_t user_id) {
     return count;
 }
 
+int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& type) {
+    auto db = GetDB();
+    if (!db) {
+        return 0;
+    }
+
+    std::vector<data::NotificationInfo::ptr> matchedList;
+    {
+        std::shared_lock<std::shared_mutex> lock(m_dataMutex);
+        auto it = m_userNotifications.find(user_id);
+        if (it == m_userNotifications.end()) {
+            return 0;
+        }
+        for (auto& [id, info] : it->second) {
+            if (info->getIsRead() == 0 && info->getIsDeleted() == 0
+                    && info->getType() == type) {
+                matchedList.push_back(info);
+            }
+        }
+    }
+
+    int64_t count = 0;
+    for (auto& info : matchedList) {
+        info->setIsRead(1);
+        info->setReadTime(time(0));
+        if (data::NotificationInfoDao::Update(info, db) == 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
 bool NotificationManager::markRead(const std::vector<int64_t>& ids) {
     auto db = GetDB();
     if (!db) {

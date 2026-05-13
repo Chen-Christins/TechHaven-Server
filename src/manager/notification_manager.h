@@ -30,6 +30,7 @@ public:
     bool markRead(int64_t notification_id);
     bool markRead(const std::vector<int64_t>& ids);
     int64_t markAllRead(int64_t user_id);
+    int64_t markReadByType(int64_t user_id, const std::string& type);
 
 private:
     // WS connections
