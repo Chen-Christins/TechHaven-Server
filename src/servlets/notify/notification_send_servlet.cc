@@ -6,7 +6,6 @@
 #include <chen/log/log.h>
 #include <json/json.h>
 
-#include <sstream>
 #include <vector>
 
 namespace blog {
@@ -72,11 +71,10 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             }
 
             std::vector<int64_t> ids;
-            std::istringstream iss(user_ids_str);
-            std::string token;
-            while (std::getline(iss, token, ',')) {
-                if (!token.empty()) {
-                    ids.push_back(std::stoll(token));
+            for (auto& s : chen::split(user_ids_str, ',')) {
+                auto trimmed = chen::StringUtil::Trim(s);
+                if (!trimmed.empty()) {
+                    ids.push_back(std::stoll(trimmed));
                 }
             }
 

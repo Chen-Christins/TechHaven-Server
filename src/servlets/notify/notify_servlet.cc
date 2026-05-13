@@ -5,7 +5,7 @@
 
 #include <chen/log/log.h>
 
-namespace blog {
+namespace blog::servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
@@ -81,4 +81,4 @@ int32_t NotifyServlet::handle(chen::http::HttpRequest::ptr header
     return 0;
 }
 
-} // namespace blog
+} // namespace blog::servlet

@@ -54,5 +54,8 @@
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_stats_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_update_servlet.h"                           // IWYU pragma: keep
+#include "../servlets/notify/notification_list_servlet.h"                  // IWYU pragma: keep
+#include "../servlets/notify/notification_read_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/notify/notification_send_servlet.h"                  // IWYU pragma: keep
+#include "../servlets/notify/notification_unread_count_servlet.h"          // IWYU pragma: keep
 #include "../servlets/notify/notify_servlet.h"                              // IWYU pragma: keep

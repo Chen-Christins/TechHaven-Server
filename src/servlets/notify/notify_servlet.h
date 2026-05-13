@@ -2,7 +2,7 @@
 
 #include <chen/http/ws_servlet.h>
 
-namespace blog {
+namespace blog::servlet {
 
 class NotifyServlet : public chen::http::WSServlet {
 public:
@@ -19,4 +19,4 @@ public:
                             ,chen::http::WSSession::ptr session) override;
 };
 
-} // namespace blog
+} // namespace blog::servlet

@@ -165,6 +165,9 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
         // 通知相关
         dp->addServlet("/notification/send", XX(NotificationSendServlet));
+        dp->addServlet("/notification/list", XX(NotificationListServlet));
+        dp->addServlet("/notification/unread_count", XX(NotificationUnreadCountServlet));
+        dp->addServlet("/notification/read", XX(NotificationReadServlet));
 		// 文章相关
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
@@ -229,7 +232,7 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
         chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
 		ASSERT(dp);
 
-		NotifyServlet::ptr notify_servlet(std::make_shared<NotifyServlet>());
+		servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
         dp->addServlet("/notification", notify_servlet);
     }
 }
