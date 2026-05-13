@@ -94,4 +94,27 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
     return tmp.size();
 }
 
+OrganizationManager::OrganizationStats OrganizationManager::getStats() {
+    OrganizationStats stats;
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    for (auto& i : m_datas) {
+        auto& info = i.second;
+        if (info->getIsDeleted()) {
+            continue;
+        }
+        stats.total++;
+        switch (info->getStatus()) {
+        case Status::ACTIVE:
+            stats.active++;
+            break;
+        case Status::INACTIVE:
+            stats.inactive++;
+            break;
+        }
+    }
+
+    return stats;
+}
+
 } // namespace blog

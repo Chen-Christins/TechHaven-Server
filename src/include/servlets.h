@@ -1,4 +1,5 @@
 #include "../servlets/article/article_admin_lists_servlet.h"                // IWYU pragma: keep
+#include "../servlets/article/article_admin_stats_servlet.h"                // IWYU pragma: keep
 #include "../servlets/article/article_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_list_by_category_servlet.h"           // IWYU pragma: keep
@@ -11,6 +12,7 @@
 #include "../servlets/article/article_update_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_verify_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/assignment/assignment_admin_lists_servlet.h"          // IWYU pragma: keep
+#include "../servlets/assignment/assignment_admin_stats_servlet.h"          // IWYU pragma: keep
 #include "../servlets/assignment/assignment_create_servlet.h"               // IWYU pragma: keep
 #include "../servlets/assignment/assignment_delete_servlet.h"               // IWYU pragma: keep
 #include "../servlets/assignment/assignment_detail_servlet.h"               // IWYU pragma: keep
@@ -25,7 +27,13 @@
 #include "../servlets/label/label_create_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/label/label_delete_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/label/label_query_servlet.h"                          // IWYU pragma: keep
+#include "../servlets/notify/notification_list_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/notify/notification_read_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/notify/notification_send_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/notify/notification_unread_count_servlet.h"           // IWYU pragma: keep
+#include "../servlets/notify/notify_servlet.h"                              // IWYU pragma: keep
 #include "../servlets/organization/organization_admin_lists_servlet.h"      // IWYU pragma: keep
+#include "../servlets/organization/organization_admin_stats_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_assignment_list_servlet.h"  // IWYU pragma: keep
 #include "../servlets/organization/organization_create_servlet.h"           // IWYU pragma: keep
 #include "../servlets/organization/organization_delete_servlet.h"           // IWYU pragma: keep
@@ -52,10 +60,5 @@
 #include "../servlets/user/user_query_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/user/user_reset_passwd_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
-#include "../servlets/user/user_stats_servlet.h"                           // IWYU pragma: keep
+#include "../servlets/user/user_stats_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/user/user_update_servlet.h"                           // IWYU pragma: keep
-#include "../servlets/notify/notification_list_servlet.h"                  // IWYU pragma: keep
-#include "../servlets/notify/notification_read_servlet.h"                  // IWYU pragma: keep
-#include "../servlets/notify/notification_send_servlet.h"                  // IWYU pragma: keep
-#include "../servlets/notify/notification_unread_count_servlet.h"          // IWYU pragma: keep
-#include "../servlets/notify/notify_servlet.h"                              // IWYU pragma: keep

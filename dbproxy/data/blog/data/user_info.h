@@ -45,6 +45,9 @@ public:
     const std::string& getBio() { return m_bio; }
     void setBio(const std::string& v);
 
+    const std::string& getWebsite() { return m_website; }
+    void setWebsite(const std::string& v);
+
     const std::string& getLocation() { return m_location; }
     void setLocation(const std::string& v);
 
@@ -73,6 +76,7 @@ private:
     std::string m_email;
     std::string m_passwd;
     std::string m_bio;
+    std::string m_website;
     std::string m_location;
     int64_t m_loginTime;
     int64_t m_createTime;

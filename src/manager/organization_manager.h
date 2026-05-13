@@ -26,6 +26,13 @@ public:
     data::OrganizationInfo::ptr getByName(const std::string& name);
     int64_t listByPages(std::vector<data::OrganizationInfo::ptr>& orgs
         , uint64_t offset, uint64_t limit, int32_t status, bool isValid);
+
+    struct OrganizationStats {
+        int64_t total = 0;
+        int64_t active = 0;
+        int64_t inactive = 0;
+    };
+    OrganizationStats getStats();
 private:
     // 读写锁
     std::shared_mutex m_mutex;

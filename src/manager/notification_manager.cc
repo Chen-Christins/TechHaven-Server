@@ -125,6 +125,15 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
     }
 }
 
+int64_t NotificationManager::countByUser(int64_t user_id) {
+    std::shared_lock<std::shared_mutex> lock(m_dataMutex);
+    auto it = m_userNotifications.find(user_id);
+    if (it == m_userNotifications.end()) {
+        return 0;
+    }
+    return it->second.size();
+}
+
 int64_t NotificationManager::unreadCount(int64_t user_id) {
     std::shared_lock<std::shared_mutex> lock(m_dataMutex);
     auto it = m_userNotifications.find(user_id);

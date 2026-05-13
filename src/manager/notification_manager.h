@@ -25,6 +25,7 @@ public:
         const std::string& content, const std::string& type, int64_t sender_id);
     void listByUser(std::vector<data::NotificationInfo::ptr>& results, int64_t user_id,
         uint64_t offset, uint64_t size);
+    int64_t countByUser(int64_t user_id);
     int64_t unreadCount(int64_t user_id);
     bool markRead(int64_t notification_id);
     bool markRead(const std::vector<int64_t>& ids);

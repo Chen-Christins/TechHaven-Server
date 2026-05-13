@@ -1,0 +1,45 @@
+#include "article_admin_stats_servlet.h"
+#include "../../manager/user_manager.h"
+#include "../../manager/article_manager.h"
+
+namespace blog {
+namespace servlet {
+
+ArticleAdminStatsServlet::ArticleAdminStatsServlet()
+    : BlogLoginedServlet("ArticleAdminStatsServlet") {
+}
+
+int32_t ArticleAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int32_t category = request->getParamAs<int32_t>("category_id", 0);
+        int32_t role = request->getParamAs<int32_t>("role", -1);
+        int32_t days = request->getParamAs<int32_t>("days", 0);
+        std::string keyword = request->getParam("keyword");
+
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(401, "not login");
+            break;
+        }
+        int32_t userRole = UserMgr::GetInstance()->get(uid)->getRole();
+        if (userRole != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
+
+        auto stats = ArticleMgr::GetInstance()->getStats(category, role, days, keyword);
+
+        result->setResult(200, "ok");
+        result->set("total_articles", stats.total);
+        result->set("pending_articles", stats.pending);
+        result->set("published_articles", stats.published);
+        result->set("rejected_articles", stats.rejected);
+        result->set("reported_articles", stats.reported);
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}
