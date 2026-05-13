@@ -1,7 +1,6 @@
 #include "user_update_servlet.h"
 #include <chen/log/log.h>
 #include "../../manager/user_manager.h"
-#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -15,14 +14,23 @@ UserUpdateServlet::UserUpdateServlet()
 int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        DEFINE_AND_CHECK_STRING(result, name, "name");
-        DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
+        std::string name = request->getParam("name");
+        std::string passwd = request->getParam("passwd");
+        std::string bio = request->getParam("bio");
+        std::string website = request->getParam("website");
+        std::string avatar = request->getParam("avatar");
+        std::string old_passwd = request->getParam("old_passwd");
 
-        if (name.empty() && passwd.empty()) {
-            result->setResult(400, "no param");
+        if (name.empty() && passwd.empty() && bio.empty() && website.empty() && avatar.empty()) {
+            result->setResult(400, "no param provided");
             break;
         }
-        
+
+        if (!passwd.empty() && passwd.length() < 6) {
+            result->setResult(400, "passwd must be at least 6 characters");
+            break;
+        }
+
         auto sdata = getSessionData(request, response);
         int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
         if (!uid) {
@@ -36,12 +44,34 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             break;
         }
 
+        // 修改密码时必须提供旧密码校验
+        if (!passwd.empty()) {
+            if (old_passwd.empty()) {
+                result->setResult(400, "param old_passwd is null");
+                break;
+            }
+            if (info->getPasswd() != chen::md5(old_passwd)) {
+                result->setResult(403, "invalid old password");
+                break;
+            }
+        }
+
         if (!name.empty()) {
             info->setName(name);
         }
         if (!passwd.empty()) {
-            info->setPasswd(passwd);
+            info->setPasswd(chen::md5(passwd));
         }
+        if (!bio.empty()) {
+            info->setBio(bio);
+        }
+        if (!website.empty()) {
+            info->setWebsite(website);
+        }
+        if (!avatar.empty()) {
+            info->setAvatar(avatar);
+        }
+        info->setUpdateTime(time(0));
 
         auto db = getDB();
         if (!db) {
