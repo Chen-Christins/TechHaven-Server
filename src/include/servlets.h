@@ -2,9 +2,9 @@
 #include "../servlets/article/article_admin_stats_servlet.h"                // IWYU pragma: keep
 #include "../servlets/article/article_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_delete_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/article/article_detail_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_list_by_category_servlet.h"           // IWYU pragma: keep
 #include "../servlets/article/article_list_by_label_servlet.h"              // IWYU pragma: keep
-#include "../servlets/article/article_detail_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_publish_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/article/article_query_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/article/article_switch_state_servlet.h"               // IWYU pragma: keep
@@ -28,6 +28,7 @@
 #include "../servlets/label/label_delete_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/label/label_query_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/notify/notification_list_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/notify/notification_read_all_servlet.h"               // IWYU pragma: keep
 #include "../servlets/notify/notification_read_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/notify/notification_send_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/notify/notification_unread_count_servlet.h"           // IWYU pragma: keep

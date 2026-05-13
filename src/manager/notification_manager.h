@@ -29,6 +29,7 @@ public:
     int64_t unreadCount(int64_t user_id);
     bool markRead(int64_t notification_id);
     bool markRead(const std::vector<int64_t>& ids);
+    int64_t markAllRead(int64_t user_id);
 
 private:
     // WS connections

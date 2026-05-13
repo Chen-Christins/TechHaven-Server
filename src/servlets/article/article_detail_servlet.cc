@@ -46,9 +46,10 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
 			result->setResult(403, "Access Denied");
 			break;
 		}
-        std::string author = UserMgr::GetInstance()->get(uid)->getName();
+        auto authorInfo = UserMgr::GetInstance()->get(uid);
         result->set("id", info->getId());
-        result->set("author", author);
+        result->set("author", authorInfo->getName());
+        result->set("author_avatar", authorInfo->getAvatar());
         result->set("title", info->getTitle());
         result->set("content", info->getContent());
         result->set("user_id", uid);

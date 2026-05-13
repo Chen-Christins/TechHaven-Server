@@ -168,6 +168,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/notification/list", XX(NotificationListServlet));
         dp->addServlet("/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/notification/read", XX(NotificationReadServlet));
+        dp->addServlet("/notification/read_all", XX(NotificationReadAllServlet));
 		// 文章相关
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/article/admin/stats", XX(ArticleAdminStatsServlet));
