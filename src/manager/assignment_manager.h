@@ -26,6 +26,14 @@ public:
 	data::AssignmentInfo::ptr get(int64_t id);
     data::AssignmentInfo::ptr getByName(const std::string& subject_name, const std::string& name);
 
+    struct AssignmentStats {
+        int64_t total = 0;
+        int64_t active = 0;
+        int64_t closed = 0;
+        int64_t draft = 0;
+    };
+    AssignmentStats getStats();
+
 private:
 	std::shared_mutex m_mutex;
 	// 作业id -> data

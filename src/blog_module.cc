@@ -170,6 +170,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/notification/read", XX(NotificationReadServlet));
 		// 文章相关
         dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
+        dp->addServlet("/article/admin/stats", XX(ArticleAdminStatsServlet));
         dp->addServlet("/article/create", XX(ArticleCreateServlet));
         dp->addServlet("/article/detail", XX(ArticleDetailServlet));
         dp->addServlet("/article/publish", XX(ArticlePublishServlet));
@@ -200,12 +201,14 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/upload/status", XX(ChunkUploadServlet));
 		// 作业相关
         dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
+        dp->addServlet("/assignment/admin/stats", XX(AssignmentAdminStatsServlet));
         dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
         dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
         dp->addServlet("/assignment/detail", XX(AssignmentDetailServlet));
         dp->addServlet("/assignment/submission/list", XX(AssignmentSubmissionListServlet));
 		// 组织相关
         dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
+        dp->addServlet("/organization/admin/stats", XX(OrganizationAdminStatsServlet));
         dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
         dp->addServlet("/organization/delete", XX(OrganizationDeleteServlet));
         dp->addServlet("/organization/detail", XX(OrganizationDetailServlet));

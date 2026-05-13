@@ -85,4 +85,30 @@ data::AssignmentInfo::ptr AssignmentManager::getByName(const std::string& subjec
     return nit == sit->second.end() ? nullptr : nit->second;
 }
 
+AssignmentManager::AssignmentStats AssignmentManager::getStats() {
+    AssignmentStats stats;
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    for (auto& i : m_datas) {
+        auto& info = i.second;
+        if (info->getIsDeleted()) {
+            continue;
+        }
+        stats.total++;
+        switch (info->getStatus()) {
+        case Status::ACTIVE:
+            stats.active++;
+            break;
+        case Status::INACTIVE:
+            stats.closed++;
+            break;
+        case Status::DRAFT:
+            stats.draft++;
+            break;
+        }
+    }
+
+    return stats;
+}
+
 }
