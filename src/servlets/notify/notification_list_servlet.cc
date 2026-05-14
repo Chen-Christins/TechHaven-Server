@@ -1,6 +1,5 @@
 #include "notification_list_servlet.h"
 #include "../../manager/notification_manager.h"
-#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -36,8 +35,11 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
             arr.append(item);
         }
 
+        int64_t total = NotificationMgr::GetInstance()->countByUser(uid);
+
         result->setResult(200, "ok");
         result->set("list", arr);
+        result->set("total", total);
         result->set("offset", offset);
         result->set("size", (int32_t)notifications.size());
     } while (0);

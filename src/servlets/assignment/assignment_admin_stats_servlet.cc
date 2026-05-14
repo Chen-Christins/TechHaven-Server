@@ -1,0 +1,38 @@
+#include "assignment_admin_stats_servlet.h"
+#include "../../manager/user_manager.h"
+#include "../../manager/assignment_manager.h"
+
+namespace blog {
+namespace servlet {
+
+AssignmentAdminStatsServlet::AssignmentAdminStatsServlet()
+    : BlogLoginedServlet("AssignmentAdminStatsServlet") {
+}
+
+int32_t AssignmentAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(401, "not login");
+            break;
+        }
+        if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
+
+        auto stats = AssignmentMgr::GetInstance()->getStats();
+
+        result->setResult(200, "ok");
+        result->set("total_assignments", stats.total);
+        result->set("active_assignments", stats.active);
+        result->set("closed_assignments", stats.closed);
+        result->set("draft_assignments", stats.draft);
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}

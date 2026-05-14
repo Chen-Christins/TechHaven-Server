@@ -39,6 +39,7 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         result->set("email", info->getEmail());
         result->set("role", info->getRole());
         result->set("bio", info->getBio());
+		result->set("website", info->getWebsite());
         result->set("location", info->getLocation());
         result->set("status", info->getIsDeleted());
         result->set("login_time", info->getLoginTime());

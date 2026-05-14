@@ -125,6 +125,15 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
     }
 }
 
+int64_t NotificationManager::countByUser(int64_t user_id) {
+    std::shared_lock<std::shared_mutex> lock(m_dataMutex);
+    auto it = m_userNotifications.find(user_id);
+    if (it == m_userNotifications.end()) {
+        return 0;
+    }
+    return it->second.size();
+}
+
 int64_t NotificationManager::unreadCount(int64_t user_id) {
     std::shared_lock<std::shared_mutex> lock(m_dataMutex);
     auto it = m_userNotifications.find(user_id);
@@ -162,6 +171,69 @@ bool NotificationManager::markRead(int64_t notification_id) {
         return false;
     }
     return true;
+}
+
+int64_t NotificationManager::markAllRead(int64_t user_id) {
+    auto db = GetDB();
+    if (!db) {
+        return 0;
+    }
+
+    std::vector<data::NotificationInfo::ptr> unreadList;
+    {
+        std::shared_lock<std::shared_mutex> lock(m_dataMutex);
+        auto it = m_userNotifications.find(user_id);
+        if (it == m_userNotifications.end()) {
+            return 0;
+        }
+        for (auto& [id, info] : it->second) {
+            if (info->getIsRead() == 0 && info->getIsDeleted() == 0) {
+                unreadList.push_back(info);
+            }
+        }
+    }
+
+    int64_t count = 0;
+    for (auto& info : unreadList) {
+        info->setIsRead(1);
+        info->setReadTime(time(0));
+        if (data::NotificationInfoDao::Update(info, db) == 0) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& type) {
+    auto db = GetDB();
+    if (!db) {
+        return 0;
+    }
+
+    std::vector<data::NotificationInfo::ptr> matchedList;
+    {
+        std::shared_lock<std::shared_mutex> lock(m_dataMutex);
+        auto it = m_userNotifications.find(user_id);
+        if (it == m_userNotifications.end()) {
+            return 0;
+        }
+        for (auto& [id, info] : it->second) {
+            if (info->getIsRead() == 0 && info->getIsDeleted() == 0
+                    && info->getType() == type) {
+                matchedList.push_back(info);
+            }
+        }
+    }
+
+    int64_t count = 0;
+    for (auto& info : matchedList) {
+        info->setIsRead(1);
+        info->setReadTime(time(0));
+        if (data::NotificationInfoDao::Update(info, db) == 0) {
+            count++;
+        }
+    }
+    return count;
 }
 
 bool NotificationManager::markRead(const std::vector<int64_t>& ids) {

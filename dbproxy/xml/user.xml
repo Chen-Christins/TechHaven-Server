@@ -9,6 +9,7 @@
         <column name="passwd" type="string" desc="用户密码"/>
         <column name="state" type="int32" desc="账号状态"/>
         <column name="bio" type="string" desc="用户简介"/>
+        <column name="website" type="string" desc="个人网站"/>
         <column name="location" type="string" desc="用户所在地"/>
         <column name="login_time" type="datetime" desc="上次登录时间"/>
         <column name="is_deleted" type="int32" desc="账号是否已经删除"/>

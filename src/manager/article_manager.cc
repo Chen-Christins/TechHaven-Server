@@ -217,6 +217,16 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
 
 int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
         , int category, int32_t role, int32_t days, int32_t size, bool valid) {
+    // 如果按分类筛选，先获取该分类下的文章ID集合
+    std::set<int64_t> categoryArticleIds;
+    if (category > 0) {
+        std::vector<data::ArticleCategoryRelInfo::ptr> rels;
+        ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, category, true);
+        for (auto& rel : rels) {
+            categoryArticleIds.insert(rel->getArticleId());
+        }
+    }
+
     std::shared_lock<std::shared_mutex> lock(m_mutex);
 
     auto check = [&](data::ArticleInfo::ptr info) {
@@ -226,9 +236,9 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         if (state && info->getState() != state) {
             return false;
         }
-        // if (category && info->getCategoryId() != category) {
-        //     return false;
-        // }
+        if (category > 0 && categoryArticleIds.find(info->getId()) == categoryArticleIds.end()) {
+            return false;
+        }
         if (role != -1) {
             auto user = UserMgr::GetInstance()->get(info->getUserId());
             if (!user || user->getRole() != role) {
@@ -330,6 +340,72 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
         }
     }
     return std::pair(prev, next);
+}
+
+ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword) {
+    ArticleStats stats;
+
+    // 如果按分类筛选，先获取该分类下的文章ID集合
+    std::set<int64_t> categoryArticleIds;
+    if (category > 0) {
+        std::vector<data::ArticleCategoryRelInfo::ptr> rels;
+        ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, category, true);
+        for (auto& rel : rels) {
+            categoryArticleIds.insert(rel->getArticleId());
+        }
+    }
+
+    time_t now = time(0);
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+
+    for (auto& i : m_datas) {
+        auto& info = i.second;
+        if (info->getIsDeleted()) {
+            continue;
+        }
+
+        // 分类筛选
+        if (category > 0 && categoryArticleIds.find(info->getId()) == categoryArticleIds.end()) {
+            continue;
+        }
+
+        // 角色筛选
+        if (role != -1) {
+            auto user = UserMgr::GetInstance()->get(info->getUserId());
+            if (!user || user->getRole() != role) {
+                continue;
+            }
+        }
+
+        // 时间筛选
+        if (days > 0) {
+            if (info->getCreateTime() < now - days * 24 * 3600) {
+                continue;
+            }
+        }
+
+        // 关键词筛选
+        if (!keyword.empty()) {
+            if (info->getTitle().find(keyword) == std::string::npos) {
+                continue;
+            }
+        }
+
+        stats.total++;
+        switch (info->getState()) {
+        case Status::CHECKING:
+            stats.pending++;
+            break;
+        case Status::PUBLISHED:
+            stats.published++;
+            break;
+        case Status::REJECTED:
+            stats.rejected++;
+            break;
+        }
+    }
+
+    return stats;
 }
 
 std::string ArticleManager::statusString() {

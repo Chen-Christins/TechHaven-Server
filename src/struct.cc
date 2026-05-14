@@ -1,5 +1,6 @@
 #include "struct.h"
 #include <chen/log/log.h>
+
 #include "blog/data/user_info.h"
 #include "manager/user_manager.h"
 #include "util.h"
@@ -131,7 +132,7 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
     }
     bool is_login = false;
     do {
-        int64_t uid = request->getCookieAs<int64_t>(CookieKey::USER_ID);
+        int64_t uid = decryptUserId(request->getCookie(CookieKey::USER_ID));
         if (!uid) {
             break;
         }

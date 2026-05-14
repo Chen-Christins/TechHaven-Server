@@ -1,9 +1,11 @@
 #include "organization_join_check_servlet.h"
 #include <chen/log/log.h>
+#include <json/json.h>
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/notification_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -72,6 +74,44 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
             ERROR(logger) << "db error, errno=" << db->getErrno()
                           << ", errstr=" << db->getErrStr();
             break;
+        }
+
+        // 通知申请人审批结果
+        {
+            const char* notif_type = (state == OrganizationUserRelManager::Status::APPROVED)
+                ? "org_join_approved" : "org_join_rejected";
+            std::string title = (state == OrganizationUserRelManager::Status::APPROVED)
+                ? "加入申请已通过" : "加入申请被拒绝";
+            std::string content = (state == OrganizationUserRelManager::Status::APPROVED)
+                ? "您申请加入组织「" + org->getName() + "」的请求已通过"
+                : "您申请加入组织「" + org->getName() + "」的请求已被拒绝";
+
+            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                user_id, title, content, notif_type, uid);
+            if (notifInfo) {
+                Json::Value wsMsg;
+                wsMsg["id"] = notifInfo->getId();
+                wsMsg["title"] = title;
+                wsMsg["content"] = content;
+                wsMsg["type"] = notif_type;
+                wsMsg["is_read"] = false;
+                wsMsg["create_time"] = notifInfo->getCreateTime();
+                NotificationMgr::GetInstance()->sendToUser(
+                    user_id, chen::JsonUtil::ToString(wsMsg));
+            }
+        }
+
+        // 将该组织其他管理员的 org_join_request 通知标记已读，避免上线后看到已处理的通知
+        {
+            std::vector<data::OrganizationUserRelInfo::ptr> members;
+            OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
+            for (auto& m : members) {
+                if (m->getRole() == OrganizationManager::Role::ADMIN
+                        || m->getRole() == OrganizationManager::Role::OWNER) {
+                    NotificationMgr::GetInstance()->markReadByType(
+                        m->getUserId(), "org_join_request");
+                }
+            }
         }
 
         result->set("success", true);

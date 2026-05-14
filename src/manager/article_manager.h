@@ -57,6 +57,15 @@ public:
     bool listUserPra(int64_t id, std::map<int64_t, int64_t>& articles);
     bool listArticleFav(int64_t id, std::map<int64_t, int64_t>& users);
     bool listArticlePra(int64_t id, std::map<int64_t, int64_t>& users);
+
+    struct ArticleStats {
+        int64_t total = 0;
+        int64_t pending = 0;
+        int64_t published = 0;
+        int64_t rejected = 0;
+        int64_t reported = 0;
+    };
+    ArticleStats getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword);
 private:
     void onTimer();
     void onUpdateTimer();

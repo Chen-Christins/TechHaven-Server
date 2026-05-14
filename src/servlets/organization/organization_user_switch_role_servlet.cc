@@ -1,9 +1,11 @@
 #include "organization_user_switch_role_servlet.h"
 #include <chen/log/log.h>
+#include <json/json.h>
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
+#include "../../manager/notification_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -62,6 +64,33 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
             ERROR(logger) << "db error, errno=" << db->getErrno()
                           << ", errstr=" << db->getErrStr();
             break;
+        }
+
+        // 发送角色变更通知给被操作的用户
+        {
+            auto org = OrganizationMgr::GetInstance()->get(org_id);
+            std::string org_name = org ? org->getName() : std::to_string(org_id);
+            const char* role_name = "成员";
+            if (role == OrganizationManager::Role::ADMIN) role_name = "管理员";
+            else if (role == OrganizationManager::Role::OWNER) role_name = "拥有者";
+
+            std::string title = "组织角色变更";
+            std::string content = "您在组织「" + org_name + "」中的角色已被更新为" + role_name;
+
+            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                user_id, title, content, "org_role_change", uid);
+
+            if (notifInfo) {
+                Json::Value wsMsg;
+                wsMsg["id"] = notifInfo->getId();
+                wsMsg["title"] = title;
+                wsMsg["content"] = content;
+                wsMsg["type"] = "org_role_change";
+                wsMsg["is_read"] = false;
+                wsMsg["create_time"] = notifInfo->getCreateTime();
+                NotificationMgr::GetInstance()->sendToUser(
+                    user_id, chen::JsonUtil::ToString(wsMsg));
+            }
         }
 
         auto user = blog::UserMgr::GetInstance()->get(rel->getUserId());

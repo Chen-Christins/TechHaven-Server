@@ -60,7 +60,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         INFO(logger) << "update used: " << (chen::GetCurrentUs() - ts1) / 1000.0 << " ms";
 
         int64_t token_time = time(0) + 3600 * 24;
-        response->setCookie(CookieKey::USER_ID, std::to_string(info->getId()), token_time, "/");
+        response->setCookie(CookieKey::USER_ID, encryptUserId(info->getId()), token_time, "/");
         auto token = UserManager::GetToken(info, token_time);
         response->setCookie(CookieKey::TOKEN, token, token_time, "/");
         response->setCookie(CookieKey::TOKEN_TIME, std::to_string(token_time), token_time, "/");

@@ -1,6 +1,9 @@
 #include "article_publish_servlet.h"
 #include <chen/log/log.h>
+#include <json/json.h>
 #include "../../manager/article_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../manager/notification_manager.h"
 #include "../../util.h"
 
 namespace blog {
@@ -57,6 +60,36 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
             break;
         }
         ArticleMgr::GetInstance()->add(info);
+
+        // 通知管理员和审核员有新文章待审核
+        {
+            auto author = UserMgr::GetInstance()->get(uid);
+            std::string author_name = author ? author->getName() : std::to_string(uid);
+            std::string title = "新的文章待审核";
+            std::string content = "「" + author_name + "」提交了文章「" + info->getTitle() + "」等待审核";
+
+            std::vector<int64_t> userIds;
+            UserMgr::GetInstance()->getAllIds(userIds, true);
+            for (auto targetId : userIds) {
+                auto u = UserMgr::GetInstance()->get(targetId);
+                if (u && (u->getRole() == UserManager::Role::ADMIN
+                        || u->getRole() == UserManager::Role::CHECKER)) {
+                    auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                        targetId, title, content, "article_review_request", uid);
+                    if (notifInfo) {
+                        Json::Value wsMsg;
+                        wsMsg["id"] = notifInfo->getId();
+                        wsMsg["title"] = title;
+                        wsMsg["content"] = content;
+                        wsMsg["type"] = "article_review_request";
+                        wsMsg["is_read"] = false;
+                        wsMsg["create_time"] = notifInfo->getCreateTime();
+                        NotificationMgr::GetInstance()->sendToUser(
+                            targetId, chen::JsonUtil::ToString(wsMsg));
+                    }
+                }
+            }
+        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

@@ -1,8 +1,11 @@
 #include "organization_join_servlet.h"
 #include <chen/log/log.h>
+#include <json/json.h>
 #include "../../util.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/user_manager.h"
+#include "../../manager/notification_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -62,6 +65,35 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
         }
 
         OrganizationUserRelMgr::GetInstance()->add(info);
+
+        // 通知组织管理员及拥有者有新的加入申请
+        {
+            auto applicant = UserMgr::GetInstance()->get(uid);
+            std::string applicant_name = applicant ? applicant->getName() : std::to_string(uid);
+            std::string title = "新的加入申请";
+            std::string content = "用户「" + applicant_name + "」申请加入组织「" + org->getName() + "」";
+
+            std::vector<data::OrganizationUserRelInfo::ptr> members;
+            OrganizationUserRelMgr::GetInstance()->getByPages(members, id, 0, 10000, -1, true);
+            for (auto& m : members) {
+                if (m->getRole() == OrganizationManager::Role::ADMIN
+                        || m->getRole() == OrganizationManager::Role::OWNER) {
+                    auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                        m->getUserId(), title, content, "org_join_request", uid);
+                    if (notifInfo) {
+                        Json::Value wsMsg;
+                        wsMsg["id"] = notifInfo->getId();
+                        wsMsg["title"] = title;
+                        wsMsg["content"] = content;
+                        wsMsg["type"] = "org_join_request";
+                        wsMsg["is_read"] = false;
+                        wsMsg["create_time"] = notifInfo->getCreateTime();
+                        NotificationMgr::GetInstance()->sendToUser(
+                            m->getUserId(), chen::JsonUtil::ToString(wsMsg));
+                    }
+                }
+            }
+        }
 
         result->set("id", org->getId());
         result->set("name", org->getName());
