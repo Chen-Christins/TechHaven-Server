@@ -30,6 +30,7 @@ bool BlogModule::onLoad() {
 
 bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
+    ArticleMgr::GetInstance()->stop();
     return true;
 }
 
@@ -42,6 +43,8 @@ bool BlogModule::onServerReady() {
 	}
 
 	loadAllData();
+	
+	ArticleMgr::GetInstance()->start();
 
     std::vector<chen::TcpServer::ptr> servers;
     if (chen::Application::GetInstance()->getServer("http", servers)) {
@@ -195,6 +198,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/article/is_praising", XX(ArticleIsPraisingServlet));
         dp->addServlet("/article/praise", XX(ArticlePraiseServlet));
         dp->addServlet("/article/praise/list", XX(ArticlePraiseListServlet));
+        dp->addServlet("/article/view", XX(ArticleViewServlet));
 		// 文章分类相关
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));

@@ -34,6 +34,9 @@ int32_t ArticleListByCategoryServlet::handle(chen::http::HttpRequest::ptr reques
             item["summary"] = i->getContent().substr(0, 100);
             item["type"] = i->getType();
             item["state"] = i->getState();
+            item["views"] = i->getViews();
+            item["praise"] = i->getPraise();
+            item["favorites"] = i->getFavorites();
             item["publish_time"] = i->getPublishTime();
             list.append(item);
         }

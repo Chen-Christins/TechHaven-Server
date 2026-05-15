@@ -47,6 +47,9 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
             item["email"] = user->getEmail();
             item["title"] = atc->getTitle();
             item["state"] = atc->getState();
+            item["views"] = atc->getViews();
+            item["praise"] = atc->getPraise();
+            item["favorites"] = atc->getFavorites();
             item["author_role"] = user->getRole();
             item["publish_time"] = atc->getPublishTime();
             item["summary"] = atc->getContent().substr(0, 100);

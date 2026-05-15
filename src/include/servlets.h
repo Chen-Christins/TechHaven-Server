@@ -14,6 +14,7 @@
 #include "../servlets/article/article_update_category_servlet.h"            // IWYU pragma: keep
 #include "../servlets/article/article_update_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_verify_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/article/article_view_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/assignment/assignment_admin_lists_servlet.h"          // IWYU pragma: keep
 #include "../servlets/assignment/assignment_admin_stats_servlet.h"          // IWYU pragma: keep
 #include "../servlets/assignment/assignment_create_servlet.h"               // IWYU pragma: keep
