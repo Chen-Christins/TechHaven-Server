@@ -11,6 +11,8 @@ set(LIB_SRC
     blog/data/assignment_user_rel_info.cc
     blog/data/category_info.cc
     blog/data/chunk_upload_info.cc
+    blog/data/comment_info.cc
+    blog/data/comment_praise_rel_info.cc
     blog/data/email_verification_info.cc
     blog/data/label_info.cc
     blog/data/notification_info.cc

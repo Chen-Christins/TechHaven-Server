@@ -30,6 +30,7 @@ bool BlogModule::onLoad() {
 
 bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
+    ArticleMgr::GetInstance()->stop();
     return true;
 }
 
@@ -42,6 +43,8 @@ bool BlogModule::onServerReady() {
 	}
 
 	loadAllData();
+	
+	ArticleMgr::GetInstance()->start();
 
     std::vector<chen::TcpServer::ptr> servers;
     if (chen::Application::GetInstance()->getServer("http", servers)) {
@@ -106,6 +109,8 @@ bool BlogModule::initDB() {
     XX(NotificationInfoDao, "notification")
     XX(UserFollowRelInfoDao, "user_follow_rel")
     XX(ArticlePraiseRelInfoDao, "article_praise_rel")
+    XX(CommentInfoDao, "comment")
+    XX(CommentPraiseRelInfoDao, "comment_praise_rel")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -136,6 +141,8 @@ void BlogModule::loadAllData() {
     XX(NotificationMgr)
     XX(UserFollowRelMgr)
     XX(ArticlePraiseRelMgr)
+    XX(CommentMgr)
+    XX(CommentPraiseRelMgr)
 #undef XX
 
 }
@@ -195,7 +202,22 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/article/is_praising", XX(ArticleIsPraisingServlet));
         dp->addServlet("/article/praise", XX(ArticlePraiseServlet));
         dp->addServlet("/article/praise/list", XX(ArticlePraiseListServlet));
-		// 文章分类相关
+        dp->addServlet("/article/view", XX(ArticleViewServlet));
+        // 文章评论相关
+        dp->addServlet("/article/comment/list", XX(CommentListServlet));
+        dp->addServlet("/article/comment/replies", XX(CommentRepliesServlet));
+        dp->addServlet("/article/comment/create", XX(CommentCreateServlet));
+        dp->addServlet("/article/comment/update", XX(CommentUpdateServlet));
+        dp->addServlet("/article/comment/delete", XX(CommentDeleteServlet));
+        dp->addServlet("/article/comment/praise", XX(CommentPraiseServlet));
+		// 管理端评论相关
+        dp->addServlet("/admin/comment/list", XX(AdminCommentListServlet));
+        dp->addServlet("/admin/comment/approve", XX(AdminCommentApproveServlet));
+        dp->addServlet("/admin/comment/reject", XX(AdminCommentRejectServlet));
+        dp->addServlet("/admin/comment/spam", XX(AdminCommentSpamServlet));
+        dp->addServlet("/admin/comment/delete", XX(AdminCommentDeleteServlet));
+        dp->addServlet("/admin/comment/stats", XX(AdminCommentStatsServlet));
+        // 文章分类相关
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/category/admin/query", XX(CategoryQueryServlet));
