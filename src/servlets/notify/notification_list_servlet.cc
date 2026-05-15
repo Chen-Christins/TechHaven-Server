@@ -19,9 +19,10 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         int32_t offset = request->getParamAs<int32_t>("offset", 0);
         int32_t size = request->getParamAs<int32_t>("size", 20);
+        std::string type = request->getParam("type");
 
         std::vector<data::NotificationInfo::ptr> notifications;
-        NotificationMgr::GetInstance()->listByUser(notifications, uid, offset, size);
+        NotificationMgr::GetInstance()->listByUser(notifications, uid, offset, size, type);
 
         Json::Value arr(Json::arrayValue);
         for (auto& n : notifications) {
@@ -35,7 +36,7 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
             arr.append(item);
         }
 
-        int64_t total = NotificationMgr::GetInstance()->countByUser(uid);
+        int64_t total = NotificationMgr::GetInstance()->countByUser(uid, type);
 
         result->setResult(200, "ok");
         result->set("list", arr);

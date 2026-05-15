@@ -104,6 +104,8 @@ bool BlogModule::initDB() {
     XX(ResourceInfoDao, "resource")
     XX(ChunkUploadInfoDao, "chunk_upload")
     XX(NotificationInfoDao, "notification")
+    XX(UserFollowRelInfoDao, "user_follow_rel")
+    XX(ArticlePraiseRelInfoDao, "article_praise_rel")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -132,6 +134,8 @@ void BlogModule::loadAllData() {
     XX(ResourceMgr)
     XX(ChunkUploadMgr)
     XX(NotificationMgr)
+    XX(UserFollowRelMgr)
+    XX(ArticlePraiseRelMgr)
 #undef XX
 
 }
@@ -163,6 +167,11 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
         dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
+        dp->addServlet("/user/is_following", XX(UserIsFollowingServlet));
+        dp->addServlet("/user/follow", XX(UserFollowServlet));
+        dp->addServlet("/user/unfollow", XX(UserUnfollowServlet));
+        dp->addServlet("/user/following/list", XX(UserFollowingListServlet));
+        dp->addServlet("/user/follower/list", XX(UserFollowerListServlet));
         // 通知相关
         dp->addServlet("/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/notification/list", XX(NotificationListServlet));
@@ -183,6 +192,9 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/article/update", XX(ArticleUpdateServlet));
         dp->addServlet("/article/update_category", XX(ArticleUpdateCategoryServlet));
         dp->addServlet("/article/switch_state", XX(ArticleSwitchStateServlet));
+        dp->addServlet("/article/is_praising", XX(ArticleIsPraisingServlet));
+        dp->addServlet("/article/praise", XX(ArticlePraiseServlet));
+        dp->addServlet("/article/praise/list", XX(ArticlePraiseListServlet));
 		// 文章分类相关
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));

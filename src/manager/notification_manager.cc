@@ -105,16 +105,18 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
 }
 
 void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& results,
-    int64_t user_id, uint64_t offset, uint64_t size) {
+    int64_t user_id, uint64_t offset, uint64_t size, const std::string& type) {
     std::shared_lock<std::shared_mutex> lock(m_dataMutex);
     auto it = m_userNotifications.find(user_id);
     if (it == m_userNotifications.end()) {
         return;
     }
-    // m_userNotifications[user_id] is std::map<int64_t, ptr> ordered by id DESC
     auto& userMap = it->second;
     uint64_t idx = 0;
     for (auto rit = userMap.rbegin(); rit != userMap.rend(); ++rit) {
+        if (!type.empty() && rit->second->getType() != type) {
+            continue;
+        }
         if (idx >= offset && results.size() < size) {
             results.push_back(rit->second);
         }
@@ -125,13 +127,22 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
     }
 }
 
-int64_t NotificationManager::countByUser(int64_t user_id) {
+int64_t NotificationManager::countByUser(int64_t user_id, const std::string& type) {
     std::shared_lock<std::shared_mutex> lock(m_dataMutex);
     auto it = m_userNotifications.find(user_id);
     if (it == m_userNotifications.end()) {
         return 0;
     }
-    return it->second.size();
+    if (type.empty()) {
+        return it->second.size();
+    }
+    int64_t count = 0;
+    for (auto& [id, info] : it->second) {
+        if (info->getType() == type) {
+            count++;
+        }
+    }
+    return count;
 }
 
 int64_t NotificationManager::unreadCount(int64_t user_id) {

@@ -1,6 +1,7 @@
 #include "user_info_servlet.h"
 #include <chen/log/log.h>
 #include "../../manager/user_manager.h"
+#include "../../manager/user_follow_rel_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -44,6 +45,8 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         result->set("status", info->getIsDeleted());
         result->set("login_time", info->getLoginTime());
         result->set("create_time", info->getCreateTime());
+        result->set("following_count", UserFollowRelMgr::GetInstance()->countFollowing(uid));
+        result->set("follower_count", UserFollowRelMgr::GetInstance()->countFollowers(uid));
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

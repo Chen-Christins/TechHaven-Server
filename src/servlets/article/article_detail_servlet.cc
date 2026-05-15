@@ -7,6 +7,7 @@
 #include "../../manager/label_manager.h"
 #include "../../manager/article_category_rel_manager.h"
 #include "../../manager/article_label_rel_manager.h"
+#include "../../manager/user_follow_rel_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -56,6 +57,22 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         result->set("id", info->getId());
         result->set("author", authorInfo->getName());
         result->set("author_avatar", authorInfo->getAvatar());
+
+        // author stats
+        std::vector<data::ArticleInfo::ptr> authorArticles;
+        ArticleMgr::GetInstance()->listByUserId(authorArticles, uid, true);
+        int64_t authorPraiseTotal = 0;
+        int64_t authorArticleCount = 0;
+        for (auto& a : authorArticles) {
+            if (a->getState() == ArticleManager::Status::PUBLISHED) {
+                authorArticleCount++;
+                authorPraiseTotal += a->getPraise();
+            }
+        }
+        result->set("author_article_count", authorArticleCount);
+        result->set("author_praise_count", authorPraiseTotal);
+        result->set("author_follower_count",
+            UserFollowRelMgr::GetInstance()->countFollowers(uid));
         result->set("title", info->getTitle());
         result->set("content", info->getContent());
         result->set("user_id", uid);
