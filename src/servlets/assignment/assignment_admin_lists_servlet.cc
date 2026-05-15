@@ -1,6 +1,8 @@
 #include "assignment_admin_lists_servlet.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/assignment_manager.h"
+#include "../../manager/assignment_organization_rel_manager.h"
+#include "../../manager/organization_manager.h"
 #include "../../util.h"
 #include <chen/log/log.h>
 
@@ -49,6 +51,18 @@ int32_t AssignmentAdminListsServlet::handle(chen::http::HttpRequest::ptr request
             item["description"] = i->getDescription();
             item["file_type"] = i->getFileType();
             item["file_size"] = i->getMaxSize();
+
+            // organization info (负责人)
+            std::vector<data::AssignmentOrganizationRelInfo::ptr> org_rels;
+            AssignmentOrganizationRelMgr::GetInstance()->getByAssignmentId(org_rels, i->getId());
+            if (!org_rels.empty()) {
+                auto org = OrganizationMgr::GetInstance()->get(org_rels[0]->getOrganizationId());
+                if (org) {
+                    item["organization_name"] = org->getName();
+                }
+                item["assigned_by"] = org_rels[0]->getAssignedBy();
+            }
+
             list.append(item);
         }
     } while (0);

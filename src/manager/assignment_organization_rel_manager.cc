@@ -20,14 +20,17 @@ bool AssignmentOrganizationRelManager::loadAll() {
 
     std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr> datas;
     std::unordered_map<int64_t, std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr>> org_assign_datas;
+    std::unordered_map<int64_t, std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr>> assign_org_datas;
     for (auto& i : results) {
         datas[i->getId()] = i;
         org_assign_datas[i->getOrganizationId()][i->getAssignmentId()] = i;
+        assign_org_datas[i->getAssignmentId()][i->getOrganizationId()] = i;
     }
 
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
     m_org_assign_datas.swap(org_assign_datas);
+    m_assign_org_datas.swap(assign_org_datas);
     return true;
 }
 
@@ -35,6 +38,7 @@ void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRel
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas[info->getId()] = info;
     m_org_assign_datas[info->getOrganizationId()][info->getAssignmentId()] = info;
+    m_assign_org_datas[info->getAssignmentId()][info->getOrganizationId()] = info;
 }
 
 blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::get(int64_t id) {
@@ -56,6 +60,17 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
         }
     }
     return nullptr;
+}
+
+int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results, int64_t assign_id) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto assign_it = m_assign_org_datas.find(assign_id);
+    if (assign_it != m_assign_org_datas.end()) {
+        for (auto& i : assign_it->second) {
+            results.push_back(i.second);
+        }
+    }
+    return results.size();
 }
 
 int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results
