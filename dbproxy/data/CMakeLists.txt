@@ -17,6 +17,7 @@ set(LIB_SRC
     blog/data/organization_user_rel_info.cc
     blog/data/resource_info.cc
     blog/data/user_info.cc
+    blog/data/user_follow_rel_info.cc
 )
 add_library(dbproxy_data ${LIB_SRC})
 force_redefine_file_macro_for_sources(dbproxy_data)

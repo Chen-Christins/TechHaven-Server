@@ -104,6 +104,7 @@ bool BlogModule::initDB() {
     XX(ResourceInfoDao, "resource")
     XX(ChunkUploadInfoDao, "chunk_upload")
     XX(NotificationInfoDao, "notification")
+    XX(UserFollowRelInfoDao, "user_follow_rel")
 #undef XX
         INFO(logger) << "init database end";
     }
@@ -132,6 +133,7 @@ void BlogModule::loadAllData() {
     XX(ResourceMgr)
     XX(ChunkUploadMgr)
     XX(NotificationMgr)
+    XX(UserFollowRelMgr)
 #undef XX
 
 }
@@ -163,6 +165,11 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
         dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
         dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
+        dp->addServlet("/user/is_following", XX(UserIsFollowingServlet));
+        dp->addServlet("/user/follow", XX(UserFollowServlet));
+        dp->addServlet("/user/unfollow", XX(UserUnfollowServlet));
+        dp->addServlet("/user/following/list", XX(UserFollowingListServlet));
+        dp->addServlet("/user/follower/list", XX(UserFollowerListServlet));
         // 通知相关
         dp->addServlet("/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/notification/list", XX(NotificationListServlet));

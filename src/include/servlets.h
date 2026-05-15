@@ -53,7 +53,11 @@
 #include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_exists_servlet.h"                           // IWYU pragma: keep
+#include "../servlets/user/user_follow_servlet.h"                          // IWYU pragma: keep
+#include "../servlets/user/user_follower_list_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/user/user_following_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_info_servlet.h"                             // IWYU pragma: keep
+#include "../servlets/user/user_is_following_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/user/user_list_servlet.h"                             // IWYU pragma: keep
 #include "../servlets/user/user_login_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/user/user_logout_servlet.h"                           // IWYU pragma: keep
@@ -62,4 +66,5 @@
 #include "../servlets/user/user_reset_passwd_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_stats_servlet.h"                            // IWYU pragma: keep
+#include "../servlets/user/user_unfollow_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/user/user_update_servlet.h"                           // IWYU pragma: keep
