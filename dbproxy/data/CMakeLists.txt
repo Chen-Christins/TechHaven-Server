@@ -5,6 +5,7 @@ set(LIB_SRC
     blog/data/article_info.cc
     blog/data/article_category_rel_info.cc
     blog/data/article_label_rel_info.cc
+    blog/data/article_praise_rel_info.cc
     blog/data/assignment_info.cc
     blog/data/assignment_organization_rel_info.cc
     blog/data/assignment_user_rel_info.cc

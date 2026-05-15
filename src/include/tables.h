@@ -1,6 +1,7 @@
 #include "blog/data/article_category_rel_info.h"        // IWYU pragma: keep
 #include "blog/data/article_info.h"                     // IWYU pragma: keep
 #include "blog/data/article_label_rel_info.h"           // IWYU pragma: keep
+#include "blog/data/article_praise_rel_info.h"          // IWYU pragma: keep
 #include "blog/data/assignment_info.h"                  // IWYU pragma: keep
 #include "blog/data/assignment_organization_rel_info.h" // IWYU pragma: keep
 #include "blog/data/assignment_user_rel_info.h"         // IWYU pragma: keep

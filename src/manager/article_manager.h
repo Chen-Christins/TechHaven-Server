@@ -53,6 +53,10 @@ public:
     bool decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id);
     bool decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id);
 
+    // directly update the praise counter (for use with ArticlePraiseRelManager)
+    void incPraiseCount(int64_t id);
+    void decPraiseCount(int64_t id);
+
     bool listUserFav(int64_t id, std::map<int64_t, int64_t>& articles);
     bool listUserPra(int64_t id, std::map<int64_t, int64_t>& articles);
     bool listArticleFav(int64_t id, std::map<int64_t, int64_t>& users);

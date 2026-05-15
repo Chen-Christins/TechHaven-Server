@@ -689,4 +689,24 @@ void ArticleManager::addUpdate(int64_t id) {
     m_updates.insert(id);
 }
 
+void ArticleManager::incPraiseCount(int64_t id) {
+    auto info = get(id);
+    if (!info) {
+        return;
+    }
+    info->setPraise(info->getPraise() + 1);
+    addUpdate(id);
+}
+
+void ArticleManager::decPraiseCount(int64_t id) {
+    auto info = get(id);
+    if (!info) {
+        return;
+    }
+    if (info->getPraise() > 0) {
+        info->setPraise(info->getPraise() - 1);
+        addUpdate(id);
+    }
+}
+
 }

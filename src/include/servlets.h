@@ -3,8 +3,11 @@
 #include "../servlets/article/article_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_detail_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/article/article_is_praising_servlet.h"               // IWYU pragma: keep
 #include "../servlets/article/article_list_by_category_servlet.h"           // IWYU pragma: keep
 #include "../servlets/article/article_list_by_label_servlet.h"              // IWYU pragma: keep
+#include "../servlets/article/article_praise_list_servlet.h"                // IWYU pragma: keep
+#include "../servlets/article/article_praise_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_publish_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/article/article_query_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/article/article_switch_state_servlet.h"               // IWYU pragma: keep
