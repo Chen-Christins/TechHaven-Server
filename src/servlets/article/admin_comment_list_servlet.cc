@@ -30,7 +30,14 @@ int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, ch
         DEFINE_AND_CHECK_TYPE(result, int64_t, page_num, "page_num");
         DEFINE_AND_CHECK_TYPE(result, int64_t, page_size, "page_size");
 
-        int32_t status = request->getParamAs<int32_t>("status", 0);
+        std::string status_str = request->getParam("status");
+        int32_t status = 0;
+        if (!status_str.empty()) {
+            if (status_str == "approved") status = CommentManager::APPROVED;
+            else if (status_str == "pending") status = CommentManager::PENDING;
+            else if (status_str == "rejected") status = CommentManager::REJECTED;
+            else if (status_str == "spam") status = CommentManager::SPAM;
+        }
         std::string keyword = request->getParam("keyword");
         int64_t article_id = request->getParamAs<int64_t>("article_id", 0);
         int32_t is_reported = request->getParamAs<int32_t>("is_reported", -1);
