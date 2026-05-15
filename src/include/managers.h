@@ -2,6 +2,8 @@
 #include "../manager/article_label_rel_manager.h"           // IWYU pragma: keep
 #include "../manager/article_manager.h"                     // IWYU pragma: keep
 #include "../manager/article_praise_rel_manager.h"          // IWYU pragma: keep
+#include "../manager/comment_manager.h"                     // IWYU pragma: keep
+#include "../manager/comment_praise_rel_manager.h"          // IWYU pragma: keep
 #include "../manager/assignment_manager.h"                  // IWYU pragma: keep
 #include "../manager/assignment_organization_rel_manager.h" // IWYU pragma: keep
 #include "../manager/assignment_user_rel_manager.h"         // IWYU pragma: keep
