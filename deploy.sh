@@ -13,7 +13,7 @@ SOURCE_DIR="bin"
 PROJECT_NAME='blog'  # 项目名称
 APP_NAME='blog_server'  # 可执行文件名
 TEMP_DIR="deploy_package_$(date +%Y%m%d%H%M%S)"  # 临时目录名含时间戳防冲突
-SDK_DIR="chen-sdk-1.0.2"
+SDK_DIR="chen-sdk-1.1.0"
 
 # 检查源目录是否存在
 if [ ! -d "$SOURCE_DIR" ]; then
@@ -75,7 +75,7 @@ if [ $# -eq 4 ]; then
 
     # 使用 expect 自动化 SCP 传输
     echo "正在通过 SCP 部署到 $REMOTE_USER@$REMOTE_IP:$REMOTE_PATH ..."
-    /usr/bin/expect << EOF
+    expect << EOF
         set timeout 30
         spawn scp "$PACKAGE_NAME" $REMOTE_USER@$REMOTE_IP:$REMOTE_PATH
         expect {
@@ -97,7 +97,7 @@ EOF
     fi
 
 	echo "正在登录服务器部署程序 $REMOTE_USER@$REMOTE_IP ..."
-	/usr/bin/expect << EOF
+	expect << EOF
         set timeout 30
         spawn ssh $REMOTE_USER@$REMOTE_IP
         expect {

@@ -156,112 +156,112 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
 
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
 		// 用户相关
-        dp->addServlet("/user/send_code", XX(UserSendCodeServlet));
-        dp->addServlet("/user/create", XX(UserCreateServlet));
-        dp->addServlet("/user/login", XX(UserLoginServlet));
-        dp->addServlet("/user/info", XX(UserInfoServlet));
-        dp->addServlet("/user/list", XX(UserListServlet));
-        dp->addServlet("/user/logout", XX(UserLogoutServlet));
-        dp->addServlet("/user/forget_passwd", XX(UserResetPasswdServlet));
-        dp->addServlet("/user/exists", XX(UserExistsServlet));
-        dp->addServlet("/user/update", XX(UserUpdateServlet));
-        dp->addServlet("/user/query", XX(UserQueryServlet));
-        dp->addServlet("/user/stats", XX(UserStatsServlet));
-        dp->addServlet("/user/admin/create", XX(UserAdminCreateServlet));
-        dp->addServlet("/user/admin/delete", XX(UserAdminDeleteServlet));
-        dp->addServlet("/user/admin/recover", XX(UserAdminRecoverServlet));
-        dp->addServlet("/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
-        dp->addServlet("/user/admin/lists", XX(UserAdminListsServlet));
-        dp->addServlet("/user/organization/list", XX(UserOrganizationListServlet));
-        dp->addServlet("/user/assignment/list", XX(UserAssignmentListServlet));
-        dp->addServlet("/user/is_following", XX(UserIsFollowingServlet));
-        dp->addServlet("/user/follow", XX(UserFollowServlet));
-        dp->addServlet("/user/unfollow", XX(UserUnfollowServlet));
-        dp->addServlet("/user/following/list", XX(UserFollowingListServlet));
-        dp->addServlet("/user/follower/list", XX(UserFollowerListServlet));
+        dp->addServlet("/api/v1/user/send_code", XX(UserSendCodeServlet));
+        dp->addServlet("/api/v1/user/create", XX(UserCreateServlet));
+        dp->addServlet("/api/v1/user/login", XX(UserLoginServlet));
+        dp->addServlet("/api/v1/user/info", XX(UserInfoServlet));
+        dp->addServlet("/api/v1/user/list", XX(UserListServlet));
+        dp->addServlet("/api/v1/user/logout", XX(UserLogoutServlet));
+        dp->addServlet("/api/v1/user/forget_passwd", XX(UserResetPasswdServlet));
+        dp->addServlet("/api/v1/user/exists", XX(UserExistsServlet));
+        dp->addServlet("/api/v1/user/update", XX(UserUpdateServlet));
+        dp->addServlet("/api/v1/user/query", XX(UserQueryServlet));
+        dp->addServlet("/api/v1/user/stats", XX(UserStatsServlet));
+        dp->addServlet("/api/v1/user/admin/create", XX(UserAdminCreateServlet));
+        dp->addServlet("/api/v1/user/admin/delete", XX(UserAdminDeleteServlet));
+        dp->addServlet("/api/v1/user/admin/recover", XX(UserAdminRecoverServlet));
+        dp->addServlet("/api/v1/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
+        dp->addServlet("/api/v1/user/admin/lists", XX(UserAdminListsServlet));
+        dp->addServlet("/api/v1/user/organization/list", XX(UserOrganizationListServlet));
+        dp->addServlet("/api/v1/user/assignment/list", XX(UserAssignmentListServlet));
+        dp->addServlet("/api/v1/user/is_following", XX(UserIsFollowingServlet));
+        dp->addServlet("/api/v1/user/follow", XX(UserFollowServlet));
+        dp->addServlet("/api/v1/user/unfollow", XX(UserUnfollowServlet));
+        dp->addServlet("/api/v1/user/following/list", XX(UserFollowingListServlet));
+        dp->addServlet("/api/v1/user/follower/list", XX(UserFollowerListServlet));
         // 通知相关
-        dp->addServlet("/notification/send", XX(NotificationSendServlet));
-        dp->addServlet("/notification/list", XX(NotificationListServlet));
-        dp->addServlet("/notification/unread_count", XX(NotificationUnreadCountServlet));
-        dp->addServlet("/notification/read", XX(NotificationReadServlet));
-        dp->addServlet("/notification/read_all", XX(NotificationReadAllServlet));
+        dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
+        dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
+        dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
+        dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
+        dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));
 		// 文章相关
-        dp->addServlet("/article/admin/lists", XX(ArticleAdminListsServlet));
-        dp->addServlet("/article/admin/stats", XX(ArticleAdminStatsServlet));
-        dp->addServlet("/article/create", XX(ArticleCreateServlet));
-        dp->addServlet("/article/detail", XX(ArticleDetailServlet));
-        dp->addServlet("/article/publish", XX(ArticlePublishServlet));
-        dp->addServlet("/article/query", XX(ArticleQueryServlet));
-        dp->addServlet("/article/list_by_label", XX(ArticleListByLabelServlet));
-        dp->addServlet("/article/list_by_category", XX(ArticleListByCategoryServlet));
-        dp->addServlet("/article/delete", XX(ArticleDeleteServlet));
-        dp->addServlet("/article/verify", XX(ArticleVerifyServlet));
-        dp->addServlet("/article/update", XX(ArticleUpdateServlet));
-        dp->addServlet("/article/update_category", XX(ArticleUpdateCategoryServlet));
-        dp->addServlet("/article/switch_state", XX(ArticleSwitchStateServlet));
-        dp->addServlet("/article/is_praising", XX(ArticleIsPraisingServlet));
-        dp->addServlet("/article/praise", XX(ArticlePraiseServlet));
-        dp->addServlet("/article/praise/list", XX(ArticlePraiseListServlet));
-        dp->addServlet("/article/view", XX(ArticleViewServlet));
+        dp->addServlet("/api/v1/article/admin/lists", XX(ArticleAdminListsServlet));
+        dp->addServlet("/api/v1/article/admin/stats", XX(ArticleAdminStatsServlet));
+        dp->addServlet("/api/v1/article/create", XX(ArticleCreateServlet));
+        dp->addServlet("/api/v1/article/detail", XX(ArticleDetailServlet));
+        dp->addServlet("/api/v1/article/publish", XX(ArticlePublishServlet));
+        dp->addServlet("/api/v1/article/query", XX(ArticleQueryServlet));
+        dp->addServlet("/api/v1/article/list_by_label", XX(ArticleListByLabelServlet));
+        dp->addServlet("/api/v1/article/list_by_category", XX(ArticleListByCategoryServlet));
+        dp->addServlet("/api/v1/article/delete", XX(ArticleDeleteServlet));
+        dp->addServlet("/api/v1/article/verify", XX(ArticleVerifyServlet));
+        dp->addServlet("/api/v1/article/update", XX(ArticleUpdateServlet));
+        dp->addServlet("/api/v1/article/update_category", XX(ArticleUpdateCategoryServlet));
+        dp->addServlet("/api/v1/article/switch_state", XX(ArticleSwitchStateServlet));
+        dp->addServlet("/api/v1/article/is_praising", XX(ArticleIsPraisingServlet));
+        dp->addServlet("/api/v1/article/praise", XX(ArticlePraiseServlet));
+        dp->addServlet("/api/v1/article/praise/list", XX(ArticlePraiseListServlet));
+        dp->addServlet("/api/v1/article/view", XX(ArticleViewServlet));
         // 文章评论相关
-        dp->addServlet("/article/comment/list", XX(CommentListServlet));
-        dp->addServlet("/article/comment/replies", XX(CommentRepliesServlet));
-        dp->addServlet("/article/comment/create", XX(CommentCreateServlet));
-        dp->addServlet("/article/comment/update", XX(CommentUpdateServlet));
-        dp->addServlet("/article/comment/delete", XX(CommentDeleteServlet));
-        dp->addServlet("/article/comment/praise", XX(CommentPraiseServlet));
+        dp->addServlet("/api/v1/article/comment/list", XX(CommentListServlet));
+        dp->addServlet("/api/v1/article/comment/replies", XX(CommentRepliesServlet));
+        dp->addServlet("/api/v1/article/comment/create", XX(CommentCreateServlet));
+        dp->addServlet("/api/v1/article/comment/update", XX(CommentUpdateServlet));
+        dp->addServlet("/api/v1/article/comment/delete", XX(CommentDeleteServlet));
+        dp->addServlet("/api/v1/article/comment/praise", XX(CommentPraiseServlet));
 		// 管理端评论相关
-        dp->addServlet("/admin/comment/list", XX(AdminCommentListServlet));
-        dp->addServlet("/admin/comment/approve", XX(AdminCommentApproveServlet));
-        dp->addServlet("/admin/comment/reject", XX(AdminCommentRejectServlet));
-        dp->addServlet("/admin/comment/spam", XX(AdminCommentSpamServlet));
-        dp->addServlet("/admin/comment/delete", XX(AdminCommentDeleteServlet));
-        dp->addServlet("/admin/comment/stats", XX(AdminCommentStatsServlet));
+        dp->addServlet("/api/v1/admin/comment/list", XX(AdminCommentListServlet));
+        dp->addServlet("/api/v1/admin/comment/approve", XX(AdminCommentApproveServlet));
+        dp->addServlet("/api/v1/admin/comment/reject", XX(AdminCommentRejectServlet));
+        dp->addServlet("/api/v1/admin/comment/spam", XX(AdminCommentSpamServlet));
+        dp->addServlet("/api/v1/admin/comment/delete", XX(AdminCommentDeleteServlet));
+        dp->addServlet("/api/v1/admin/comment/stats", XX(AdminCommentStatsServlet));
         // 仪表盘相关
-        dp->addServlet("/admin/dashboard/stats", XX(DashboardStatsServlet));
-        dp->addServlet("/admin/dashboard/trend", XX(DashboardTrendServlet));
-        dp->addServlet("/admin/dashboard/activities", XX(DashboardActivitiesServlet));
-        dp->addServlet("/admin/dashboard/recent-users", XX(DashboardRecentUsersServlet));
+        dp->addServlet("/api/v1/admin/dashboard/stats", XX(DashboardStatsServlet));
+        dp->addServlet("/api/v1/admin/dashboard/trend", XX(DashboardTrendServlet));
+        dp->addServlet("/api/v1/admin/dashboard/activities", XX(DashboardActivitiesServlet));
+        dp->addServlet("/api/v1/admin/dashboard/recent-users", XX(DashboardRecentUsersServlet));
         // 文章分类相关
-        dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
-        dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
-        dp->addServlet("/category/admin/query", XX(CategoryQueryServlet));
+        dp->addServlet("/api/v1/category/admin/create", XX(CategoryCreateServlet));
+        dp->addServlet("/api/v1/category/admin/delete", XX(CategoryDeleteServlet));
+        dp->addServlet("/api/v1/category/admin/query", XX(CategoryQueryServlet));
         // 首页统计（公开接口）
-        dp->addServlet("/stats", XX(StatsServlet));
+        dp->addServlet("/api/v1/stats", XX(StatsServlet));
 		// 文章标签相关
-        dp->addServlet("/label/create", XX(LabelCreateServlet));
-        dp->addServlet("/label/delete", XX(LabelDeleteServlet));
-        dp->addServlet("/label/query", XX(LabelQueryServlet));
+        dp->addServlet("/api/v1/label/create", XX(LabelCreateServlet));
+        dp->addServlet("/api/v1/label/delete", XX(LabelDeleteServlet));
+        dp->addServlet("/api/v1/label/query", XX(LabelQueryServlet));
 		// 文件相关
-        dp->addServlet("/file/upload", XX(FileUploadServlet));
-        dp->addServlet("/file/download", XX(FileDownloadServlet));
+        dp->addServlet("/api/v1/file/upload", XX(FileUploadServlet));
+        dp->addServlet("/api/v1/file/download", XX(FileDownloadServlet));
 		// 大文件分片上传相关
-        dp->addServlet("/upload/init", XX(ChunkUploadServlet));
-        dp->addServlet("/upload/chunk", XX(ChunkUploadServlet));
-        dp->addServlet("/upload/complete", XX(ChunkUploadServlet));
-        dp->addServlet("/upload/cancel", XX(ChunkUploadServlet));
-        dp->addServlet("/upload/status", XX(ChunkUploadServlet));
+        dp->addServlet("/api/v1/upload/init", XX(ChunkUploadServlet));
+        dp->addServlet("/api/v1/upload/chunk", XX(ChunkUploadServlet));
+        dp->addServlet("/api/v1/upload/complete", XX(ChunkUploadServlet));
+        dp->addServlet("/api/v1/upload/cancel", XX(ChunkUploadServlet));
+        dp->addServlet("/api/v1/upload/status", XX(ChunkUploadServlet));
 		// 作业相关
-        dp->addServlet("/assignment/admin/lists", XX(AssignmentAdminListsServlet));
-        dp->addServlet("/assignment/admin/stats", XX(AssignmentAdminStatsServlet));
-        dp->addServlet("/assignment/create", XX(AssignmentCreateServlet));
-        dp->addServlet("/assignment/delete", XX(AssignmentDeleteServlet));
-        dp->addServlet("/assignment/detail", XX(AssignmentDetailServlet));
-        dp->addServlet("/assignment/submission/list", XX(AssignmentSubmissionListServlet));
+        dp->addServlet("/api/v1/assignment/admin/lists", XX(AssignmentAdminListsServlet));
+        dp->addServlet("/api/v1/assignment/admin/stats", XX(AssignmentAdminStatsServlet));
+        dp->addServlet("/api/v1/assignment/create", XX(AssignmentCreateServlet));
+        dp->addServlet("/api/v1/assignment/delete", XX(AssignmentDeleteServlet));
+        dp->addServlet("/api/v1/assignment/detail", XX(AssignmentDetailServlet));
+        dp->addServlet("/api/v1/assignment/submission/list", XX(AssignmentSubmissionListServlet));
 		// 组织相关
-        dp->addServlet("/organization/admin/lists", XX(OrganizationAdminListsServlet));
-        dp->addServlet("/organization/admin/stats", XX(OrganizationAdminStatsServlet));
-        dp->addServlet("/organization/create", XX(OrganizationCreateServlet));
-        dp->addServlet("/organization/delete", XX(OrganizationDeleteServlet));
-        dp->addServlet("/organization/detail", XX(OrganizationDetailServlet));
-        dp->addServlet("/organization/join", XX(OrganizationJoinServlet));
-        dp->addServlet("/organization/join_check", XX(OrganizationJoinCheckServlet));
-        dp->addServlet("/organization/list", XX(OrganizationListServlet));
-        dp->addServlet("/organization/user_list", XX(OrganizationUserListServlet));
-        dp->addServlet("/organization/user_switch_role", XX(OrganizationUserSwitchRoleServlet));
-        dp->addServlet("/organization/user_kick", XX(OrganizationUserKickServlet));
-        dp->addServlet("/organization/assignment_create", XX(AssignmentOrganizationCreateServlet));
-        dp->addServlet("/organization/assignment_list", XX(OrganizationAssignmentListServlet));
+        dp->addServlet("/api/v1/organization/admin/lists", XX(OrganizationAdminListsServlet));
+        dp->addServlet("/api/v1/organization/admin/stats", XX(OrganizationAdminStatsServlet));
+        dp->addServlet("/api/v1/organization/create", XX(OrganizationCreateServlet));
+        dp->addServlet("/api/v1/organization/delete", XX(OrganizationDeleteServlet));
+        dp->addServlet("/api/v1/organization/detail", XX(OrganizationDetailServlet));
+        dp->addServlet("/api/v1/organization/join", XX(OrganizationJoinServlet));
+        dp->addServlet("/api/v1/organization/join_check", XX(OrganizationJoinCheckServlet));
+        dp->addServlet("/api/v1/organization/list", XX(OrganizationListServlet));
+        dp->addServlet("/api/v1/organization/user_list", XX(OrganizationUserListServlet));
+        dp->addServlet("/api/v1/organization/user_switch_role", XX(OrganizationUserSwitchRoleServlet));
+        dp->addServlet("/api/v1/organization/user_kick", XX(OrganizationUserKickServlet));
+        dp->addServlet("/api/v1/organization/assignment_create", XX(AssignmentOrganizationCreateServlet));
+        dp->addServlet("/api/v1/organization/assignment_list", XX(OrganizationAssignmentListServlet));
 #undef XX
     }
 
@@ -278,7 +278,7 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
 		ASSERT(dp);
 
 		servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
-        dp->addServlet("/notification", notify_servlet);
+        dp->addServlet("/ws/v1/notification", notify_servlet);
     }
 }
 

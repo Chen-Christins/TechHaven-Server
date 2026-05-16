@@ -27,6 +27,9 @@ public:
     // soft-delete a comment
     bool del(int64_t id);
 
+    // list all approved comments for an article (top-level + all nested replies)
+    void listAllByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id);
+
     // list top-level approved comments (parent_id == 0, status == APPROVED) for an article, latest first
     void listByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id, uint64_t offset,
                        uint64_t size);

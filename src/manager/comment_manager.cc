@@ -135,6 +135,19 @@ bool CommentManager::del(int64_t id) {
     return true;
 }
 
+void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id) {
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto it = m_articleComments.find(article_id);
+    if (it == m_articleComments.end()) {
+        return;
+    }
+    for (auto& [id, info] : it->second) {
+        if (!info->getIsDeleted() && info->getStatus() == APPROVED) {
+            results.push_back(info);
+        }
+    }
+}
+
 void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     int64_t article_id, uint64_t offset, uint64_t size) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
