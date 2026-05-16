@@ -226,6 +226,8 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/category/admin/query", XX(CategoryQueryServlet));
+        // 首页统计（公开接口）
+        dp->addServlet("/stats", XX(StatsServlet));
 		// 文章标签相关
         dp->addServlet("/label/create", XX(LabelCreateServlet));
         dp->addServlet("/label/delete", XX(LabelDeleteServlet));

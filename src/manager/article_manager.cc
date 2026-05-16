@@ -453,6 +453,17 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
     if (v) {
         info->setViews(info->getViews() + 1);
         addUpdate(id);
+        // Redis: cumulative PV (never expires)
+        chen::RedisUtil::Cmd("blog", "incr blog:total_visits");
+        // Redis: today PV (expires at midnight)
+        auto rpy = chen::RedisUtil::Cmd("blog", "incr blog:today_visits");
+        if (rpy && rpy->integer == 1) {
+            int64_t now = time(0);
+            int64_t tomorrow_midnight = now - (now % 86400) + 86400;
+            chen::RedisUtil::Cmd("blog", "expireat blog:today_visits %lld", tomorrow_midnight);
+        }
+        // Redis: unique visitor tracking via HyperLogLog
+        chen::RedisUtil::Cmd("blog", "pfadd blog:visitors %lld", user_id);
     }
     return true;
 }
@@ -707,6 +718,40 @@ void ArticleManager::decPraiseCount(int64_t id) {
         info->setPraise(info->getPraise() - 1);
         addUpdate(id);
     }
+}
+
+int64_t ArticleManager::getTodayViews() {
+    auto rpy = chen::RedisUtil::Cmd("blog", "get blog:today_visits");
+    if (rpy && rpy->str) {
+        return chen::TypeUtil::Atoi(rpy->str);
+    }
+    return 0;
+}
+
+int64_t ArticleManager::getTotalViews() {
+    auto rpy = chen::RedisUtil::Cmd("blog", "get blog:total_visits");
+    if (rpy && rpy->str) {
+        return chen::TypeUtil::Atoi(rpy->str);
+    }
+    // Redis key not yet seeded — compute from articles and initialise
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    int64_t total = 0;
+    for (auto& i : m_datas) {
+        if (!i.second->getIsDeleted()) {
+            total += i.second->getViews();
+        }
+    }
+    lock.unlock();
+    chen::RedisUtil::Cmd("blog", "set blog:total_visits %lld", total);
+    return total;
+}
+
+int64_t ArticleManager::getTotalVisitors() {
+    auto rpy = chen::RedisUtil::Cmd("blog", "pfcount blog:visitors");
+    if (rpy) {
+        return rpy->integer;
+    }
+    return 0;
 }
 
 }

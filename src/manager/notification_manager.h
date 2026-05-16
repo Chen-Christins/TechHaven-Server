@@ -18,6 +18,7 @@ public:
     int32_t sendToUser(int64_t user_id, const std::string& message);
     void broadcast(const std::string& message);
     bool isConnected(int64_t user_id);
+    int32_t getOnlineCount();
 
     // DB persistence
     bool loadAll();

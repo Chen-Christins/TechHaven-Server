@@ -1,0 +1,35 @@
+#include "stats_servlet.h"
+#include "../../manager/article_manager.h"
+#include "../../manager/notification_manager.h"
+
+
+namespace blog {
+namespace servlet {
+
+StatsServlet::StatsServlet()
+    :BlogServlet("StatsServlet") {
+}
+
+int32_t StatsServlet::handle(chen::http::HttpRequest::ptr request,
+        chen::http::HttpResponse::ptr response,
+        chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        // online_users: active WebSocket connections
+        int64_t online_users = NotificationMgr::GetInstance()->getOnlineCount();
+
+        int64_t today_visits = ArticleMgr::GetInstance()->getTodayViews();
+        int64_t total_visits = ArticleMgr::GetInstance()->getTotalViews();
+        int64_t total_visitors = ArticleMgr::GetInstance()->getTotalVisitors();
+
+        result->set("online_users", online_users);
+        result->set("today_visits", today_visits);
+        result->set("total_visits", total_visits);
+        result->set("total_visitors", total_visitors);
+        result->setResult(200, "ok");
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}

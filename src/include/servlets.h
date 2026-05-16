@@ -65,6 +65,7 @@
 #include "../servlets/organization/organization_user_kick_servlet.h"        // IWYU pragma: keep
 #include "../servlets/organization/organization_user_list_servlet.h"        // IWYU pragma: keep
 #include "../servlets/organization/organization_user_switch_role_servlet.h" // IWYU pragma: keep
+#include "../servlets/stats/stats_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/user/user_admin_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_lists_servlet.h"                      // IWYU pragma: keep

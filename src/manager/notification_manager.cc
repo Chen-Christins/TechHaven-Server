@@ -41,6 +41,11 @@ bool NotificationManager::isConnected(int64_t user_id) {
     return m_connections.find(user_id) != m_connections.end();
 }
 
+int32_t NotificationManager::getOnlineCount() {
+    std::shared_lock<std::shared_mutex> lock(m_connMutex);
+    return (int32_t)m_connections.size();
+}
+
 // ========== DB persistence ==========
 
 bool NotificationManager::loadAll() {

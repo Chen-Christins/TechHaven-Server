@@ -70,6 +70,10 @@ public:
         int64_t reported = 0;
     };
     ArticleStats getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword);
+
+    int64_t getTodayViews();
+    int64_t getTotalViews();
+    int64_t getTotalVisitors();
 private:
     void onTimer();
     void onUpdateTimer();
