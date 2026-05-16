@@ -123,7 +123,13 @@ std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us) {
        << "|" << info->getEmail()
        << "|" << info->getPasswd()
        << "|" << us;
-    return chen::md5(ss.str()); 
+    return chen::md5(ss.str());
+}
+
+std::string UserManager::generateToken() {
+    std::stringstream ss;
+    ss << std::hex << chen::GetCurrentUs() << rand() << rand();
+    return chen::md5(ss.str());
 }
 
 #define XX(map, key)                                   \

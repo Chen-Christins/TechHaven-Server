@@ -51,6 +51,12 @@ public:
     const std::string& getLocation() { return m_location; }
     void setLocation(const std::string& v);
 
+    const std::string& getToken() { return m_token; }
+    void setToken(const std::string& v);
+
+    const int64_t& getTokenTime() { return m_tokenTime; }
+    void setTokenTime(const int64_t& v);
+
     const int64_t& getLoginTime() { return m_loginTime; }
     void setLoginTime(const int64_t& v);
 
@@ -70,6 +76,7 @@ private:
     int32_t m_state;
     int32_t m_isDeleted;
     int64_t m_id;
+    int64_t m_tokenTime;
     std::string m_name;
     std::string m_account;
     std::string m_avatar;
@@ -78,6 +85,7 @@ private:
     std::string m_bio;
     std::string m_website;
     std::string m_location;
+    std::string m_token;
     int64_t m_loginTime;
     int64_t m_createTime;
     int64_t m_updateTime;

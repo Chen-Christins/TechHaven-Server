@@ -6,6 +6,8 @@
         <column name="content" type="text" desc="通知内容"/>
         <column name="type" type="string" length="32" desc="通知类型: system/announcement/article"/>
         <column name="sender_id" type="int64" desc="发送者id(0=系统)"/>
+        <column name="article_id" type="int64" desc="关联文章ID"/>
+        <column name="comment_id" type="int64" desc="关联评论ID"/>
         <column name="is_read" type="int32" default="0" desc="是否已读: 0未读 1已读"/>
         <column name="read_time" type="datetime" desc="阅读时间"/>
         <column name="is_deleted" type="int32" default="0" desc="是否删除"/>

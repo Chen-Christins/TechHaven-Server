@@ -75,13 +75,14 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
                 if (u && (u->getRole() == UserManager::Role::ADMIN
                         || u->getRole() == UserManager::Role::CHECKER)) {
                     auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                        targetId, title, content, "article_review_request", uid);
+                        targetId, title, content, "article_review_request", uid, id);
                     if (notifInfo) {
                         Json::Value wsMsg;
                         wsMsg["id"] = notifInfo->getId();
                         wsMsg["title"] = title;
                         wsMsg["content"] = content;
                         wsMsg["type"] = "article_review_request";
+                        wsMsg["article_id"] = id;
                         wsMsg["is_read"] = false;
                         wsMsg["create_time"] = notifInfo->getCreateTime();
                         NotificationMgr::GetInstance()->sendToUser(

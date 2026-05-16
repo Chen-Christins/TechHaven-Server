@@ -42,12 +42,19 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             break;
         }
 
+        int64_t article_id = 0;
+        request->checkGetParamAs("article_id", article_id);
+        int64_t comment_id = 0;
+        request->checkGetParamAs("comment_id", comment_id);
+
         // 构建通知 JSON
         Json::Value notif;
         notif["type"] = "notification";
         notif["notification_type"] = type;
         notif["title"] = title;
         notif["content"] = content;
+        notif["article_id"] = article_id;
+        notif["comment_id"] = comment_id;
         notif["create_time"] = (int64_t)time(0);
         std::string msg = chen::JsonUtil::ToString(notif);
 
@@ -58,7 +65,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             std::vector<int64_t> user_ids;
             UserMgr::GetInstance()->getAllIds(user_ids, true);
             for (auto uid : user_ids) {
-                notifMgr.addNotification(uid, title, content, type, uid);
+                notifMgr.addNotification(uid, title, content, type, uid, article_id, comment_id);
             }
             notifMgr.broadcast(msg);
             INFO(logger) << "[NOTIFY] broadcast: type=" << type
@@ -80,7 +87,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             int32_t sent = 0;
             for (auto id : ids) {
-                notifMgr.addNotification(id, title, content, type, uid);
+                notifMgr.addNotification(id, title, content, type, uid, article_id, comment_id);
                 if (notifMgr.sendToUser(id, msg) == 0) {
                     sent++;
                 }

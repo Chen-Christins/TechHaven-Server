@@ -54,14 +54,18 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             break;
         }
         
-        info->setLoginTime(time(0));
+        int64_t now = time(0);
+        int64_t token_time = now + 3600 * 24;
+        std::string token = UserManager::generateToken();
+
+        info->setToken(token);
+        info->setTokenTime(token_time);
+        info->setLoginTime(now);
         uint64_t ts1 = chen::GetCurrentUs();
         data::UserInfoDao::Update(info, db);
         INFO(logger) << "update used: " << (chen::GetCurrentUs() - ts1) / 1000.0 << " ms";
 
-        int64_t token_time = time(0) + 3600 * 24;
         response->setCookie(CookieKey::USER_ID, encryptUserId(info->getId()), token_time, "/");
-        auto token = UserManager::GetToken(info, token_time);
         response->setCookie(CookieKey::TOKEN, token, token_time, "/");
         response->setCookie(CookieKey::TOKEN_TIME, std::to_string(token_time), token_time, "/");
         sdata->setData(CookieKey::USER_ID, info->getId());

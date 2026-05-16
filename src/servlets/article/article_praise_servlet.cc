@@ -61,13 +61,14 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
                 std::string notifyContent = likerName + " 赞了你的文章《" + article->getTitle() + "》";
 
                 auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                    authorId, notifyTitle, notifyContent, "praise", uid);
+                    authorId, notifyTitle, notifyContent, "praise", uid, article_id);
                 if (notifInfo) {
                     Json::Value wsMsg;
                     wsMsg["id"] = notifInfo->getId();
                     wsMsg["title"] = notifyTitle;
                     wsMsg["content"] = notifyContent;
                     wsMsg["type"] = "praise";
+                    wsMsg["article_id"] = article_id;
                     wsMsg["is_read"] = false;
                     wsMsg["create_time"] = notifInfo->getCreateTime();
                     NotificationMgr::GetInstance()->sendToUser(authorId,

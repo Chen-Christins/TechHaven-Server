@@ -23,7 +23,8 @@ public:
     // DB persistence
     bool loadAll();
     data::NotificationInfo::ptr addNotification(int64_t user_id, const std::string& title,
-        const std::string& content, const std::string& type, int64_t sender_id);
+        const std::string& content, const std::string& type, int64_t sender_id,
+        int64_t article_id = 0, int64_t comment_id = 0);
     void listByUser(std::vector<data::NotificationInfo::ptr>& results, int64_t user_id,
         uint64_t offset, uint64_t size, const std::string& type = "");
     int64_t countByUser(int64_t user_id, const std::string& type = "");

@@ -1,5 +1,7 @@
 #include "user_logout_servlet.h"
 #include <chen/log/log.h>
+#include "../../manager/user_manager.h"
+#include "../../include/tables.h"
 
 namespace blog {
 namespace servlet {
@@ -19,7 +21,20 @@ int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             break;
         }
 
+        int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
         result->setResult(200, "ok");
+
+        // 清除数据库中存储的 token，使其他设备登录失效
+        auto uinfo = UserMgr::GetInstance()->get(uid);
+        if (uinfo) {
+            uinfo->setToken("");
+            uinfo->setTokenTime(0);
+            auto db = getDB();
+            if (db) {
+                data::UserInfoDao::Update(uinfo, db);
+            }
+        }
+
         int64_t token_time = time(0) - 3600 * 24;
         response->setCookie(CookieKey::USER_ID, "", token_time, "/");
         response->setCookie(CookieKey::TOKEN, "", token_time, "/");

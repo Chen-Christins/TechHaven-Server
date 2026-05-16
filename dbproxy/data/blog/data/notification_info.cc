@@ -12,6 +12,8 @@ NotificationInfo::NotificationInfo()
     ,m_id()
     ,m_userId()
     ,m_senderId()
+    ,m_articleId()
+    ,m_commentId()
     ,m_title()
     ,m_type()
     ,m_content()
@@ -28,6 +30,8 @@ std::string NotificationInfo::toJsonString() const {
     v["content"] = m_content;
     v["type"] = m_type;
     v["sender_id"] = std::to_string(m_senderId);
+    v["article_id"] = std::to_string(m_articleId);
+    v["comment_id"] = std::to_string(m_commentId);
     v["is_read"] = m_isRead;
     v["read_time"] = chen::Time2Str(m_readTime);
     v["is_deleted"] = m_isDeleted;
@@ -60,6 +64,14 @@ void NotificationInfo::setSenderId(const int64_t& v) {
     m_senderId = v;
 }
 
+void NotificationInfo::setArticleId(const int64_t& v) {
+    m_articleId = v;
+}
+
+void NotificationInfo::setCommentId(const int64_t& v) {
+    m_commentId = v;
+}
+
 void NotificationInfo::setIsRead(const int32_t& v) {
     m_isRead = v;
 }
@@ -82,7 +94,7 @@ void NotificationInfo::setUpdateTime(const int64_t& v) {
 
 
 int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, article_id = ?, comment_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -94,17 +106,19 @@ int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindString(3, info->m_content);
     stmt->bindString(4, info->m_type);
     stmt->bindInt64(5, info->m_senderId);
-    stmt->bindInt32(6, info->m_isRead);
-    stmt->bindTime(7, info->m_readTime);
-    stmt->bindInt32(8, info->m_isDeleted);
-    stmt->bindTime(9, info->m_createTime);
-    stmt->bindTime(10, info->m_updateTime);
-    stmt->bindInt64(11, info->m_id);
+    stmt->bindInt64(6, info->m_articleId);
+    stmt->bindInt64(7, info->m_commentId);
+    stmt->bindInt32(8, info->m_isRead);
+    stmt->bindTime(9, info->m_readTime);
+    stmt->bindInt32(10, info->m_isDeleted);
+    stmt->bindTime(11, info->m_createTime);
+    stmt->bindTime(12, info->m_updateTime);
+    stmt->bindInt64(13, info->m_id);
     return stmt->execute();
 }
 
 int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into notification (user_id, title, content, type, sender_id, is_read, read_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into notification (user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -116,11 +130,13 @@ int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindString(3, info->m_content);
     stmt->bindString(4, info->m_type);
     stmt->bindInt64(5, info->m_senderId);
-    stmt->bindInt32(6, info->m_isRead);
-    stmt->bindTime(7, info->m_readTime);
-    stmt->bindInt32(8, info->m_isDeleted);
-    stmt->bindTime(9, info->m_createTime);
-    stmt->bindTime(10, info->m_updateTime);
+    stmt->bindInt64(6, info->m_articleId);
+    stmt->bindInt64(7, info->m_commentId);
+    stmt->bindInt32(8, info->m_isRead);
+    stmt->bindTime(9, info->m_readTime);
+    stmt->bindInt32(10, info->m_isDeleted);
+    stmt->bindTime(11, info->m_createTime);
+    stmt->bindTime(12, info->m_updateTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -132,7 +148,7 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into notification (id, user_id, title, content, type, sender_id, is_read, read_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into notification (id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -145,11 +161,13 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     stmt->bindString(4, info->m_content);
     stmt->bindString(5, info->m_type);
     stmt->bindInt64(6, info->m_senderId);
-    stmt->bindInt32(7, info->m_isRead);
-    stmt->bindTime(8, info->m_readTime);
-    stmt->bindInt32(9, info->m_isDeleted);
-    stmt->bindTime(10, info->m_createTime);
-    stmt->bindTime(11, info->m_updateTime);
+    stmt->bindInt64(7, info->m_articleId);
+    stmt->bindInt64(8, info->m_commentId);
+    stmt->bindInt32(9, info->m_isRead);
+    stmt->bindTime(10, info->m_readTime);
+    stmt->bindInt32(11, info->m_isDeleted);
+    stmt->bindTime(12, info->m_createTime);
+    stmt->bindTime(13, info->m_updateTime);
     return stmt->execute();
 }
 
@@ -203,7 +221,7 @@ int NotificationInfoDao::DeleteByUserIdIsRead( const int64_t& user_id,  const in
 }
 
 int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, is_read, read_time, is_deleted, create_time, update_time from notification";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -222,18 +240,20 @@ int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, c
         v->m_content = rt->getString(3);
         v->m_type = rt->getString(4);
         v->m_senderId = rt->getInt64(5);
-        v->m_isRead = rt->getInt32(6);
-        v->m_readTime = rt->getTime(7);
-        v->m_isDeleted = rt->getInt32(8);
-        v->m_createTime = rt->getTime(9);
-        v->m_updateTime = rt->getTime(10);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
         results.push_back(v);
     }
     return 0;
 }
 
 NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, is_read, read_time, is_deleted, create_time, update_time from notification where id = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -255,16 +275,18 @@ NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::
     v->m_content = rt->getString(3);
     v->m_type = rt->getString(4);
     v->m_senderId = rt->getInt64(5);
-    v->m_isRead = rt->getInt32(6);
-    v->m_readTime = rt->getTime(7);
-    v->m_isDeleted = rt->getInt32(8);
-    v->m_createTime = rt->getTime(9);
-    v->m_updateTime = rt->getTime(10);
+    v->m_articleId = rt->getInt64(6);
+    v->m_commentId = rt->getInt64(7);
+    v->m_isRead = rt->getInt32(8);
+    v->m_readTime = rt->getTime(9);
+    v->m_isDeleted = rt->getInt32(10);
+    v->m_createTime = rt->getTime(11);
+    v->m_updateTime = rt->getTime(12);
     return v;
 }
 
 int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -284,18 +306,20 @@ int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& resul
         v->m_content = rt->getString(3);
         v->m_type = rt->getString(4);
         v->m_senderId = rt->getInt64(5);
-        v->m_isRead = rt->getInt32(6);
-        v->m_readTime = rt->getTime(7);
-        v->m_isDeleted = rt->getInt32(8);
-        v->m_createTime = rt->getTime(9);
-        v->m_updateTime = rt->getTime(10);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
         results.push_back(v);
     };
     return 0;
 }
 
 int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id,  const int32_t& is_read, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? and is_read = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? and is_read = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -316,11 +340,13 @@ int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>&
         v->m_content = rt->getString(3);
         v->m_type = rt->getString(4);
         v->m_senderId = rt->getInt64(5);
-        v->m_isRead = rt->getInt32(6);
-        v->m_readTime = rt->getTime(7);
-        v->m_isDeleted = rt->getInt32(8);
-        v->m_createTime = rt->getTime(9);
-        v->m_updateTime = rt->getTime(10);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
         results.push_back(v);
     };
     return 0;
@@ -334,6 +360,8 @@ int NotificationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "content TEXT NOT NULL DEFAULT '',"
             "type TEXT NOT NULL DEFAULT '',"
             "sender_id INTEGER NOT NULL DEFAULT 0,"
+            "article_id INTEGER NOT NULL DEFAULT 0,"
+            "comment_id INTEGER NOT NULL DEFAULT 0,"
             "is_read INTEGER NOT NULL DEFAULT 0,"
             "read_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
@@ -352,6 +380,8 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`content` text NOT NULL DEFAULT '' COMMENT '通知内容',"
             "`type` varchar(32) NOT NULL DEFAULT '' COMMENT '通知类型: system/announcement/article',"
             "`sender_id` bigint NOT NULL DEFAULT 0 COMMENT '发送者id(0=系统)',"
+            "`article_id` bigint NOT NULL DEFAULT 0 COMMENT '关联文章ID',"
+            "`comment_id` bigint NOT NULL DEFAULT 0 COMMENT '关联评论ID',"
             "`is_read` int NOT NULL DEFAULT 0 COMMENT '是否已读: 0未读 1已读',"
             "`read_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '阅读时间',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"

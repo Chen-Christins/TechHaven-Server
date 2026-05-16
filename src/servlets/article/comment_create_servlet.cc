@@ -84,13 +84,15 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         auto sendNotify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
             if (targetUid == uid) return;
             auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                targetUid, title, content, "comment", uid);
+                targetUid, title, content, "comment", uid, article_id, info->getId());
             if (notifInfo) {
                 Json::Value wsMsg;
                 wsMsg["id"] = notifInfo->getId();
                 wsMsg["title"] = title;
                 wsMsg["content"] = content;
                 wsMsg["type"] = "comment";
+                wsMsg["article_id"] = article_id;
+                wsMsg["comment_id"] = info->getId();
                 wsMsg["is_read"] = false;
                 wsMsg["create_time"] = notifInfo->getCreateTime();
                 NotificationMgr::GetInstance()->sendToUser(targetUid,

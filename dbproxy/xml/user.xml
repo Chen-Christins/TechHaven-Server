@@ -11,6 +11,8 @@
         <column name="bio" type="string" desc="用户简介"/>
         <column name="website" type="string" desc="个人网站"/>
         <column name="location" type="string" desc="用户所在地"/>
+        <column name="token" type="string" length="64" desc="登录凭证"/>
+        <column name="token_time" type="int64" desc="凭证过期时间"/>
         <column name="login_time" type="datetime" desc="上次登录时间"/>
         <column name="is_deleted" type="int32" desc="账号是否已经删除"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="账号创建时间"/>

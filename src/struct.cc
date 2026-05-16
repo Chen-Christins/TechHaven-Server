@@ -124,6 +124,20 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
     auto data = getSessionData(request, response);
     int64_t uid = data->getData<int64_t>(CookieKey::USER_ID);
     if (uid) {
+        // 即使 session 已登录，也要校验 token 是否仍然有效（单设备登录）
+        data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
+        if (uinfo && uinfo->getState() == 1) {
+            const std::string& stored_token = uinfo->getToken();
+            if (!stored_token.empty()) {
+                auto cookie_token = request->getCookie(CookieKey::TOKEN);
+                if (stored_token != cookie_token) {
+                    // token 不匹配，已被其他设备登录顶掉
+                    data->setData(CookieKey::USER_ID, (int64_t)0);
+                    data->setData(CookieKey::IS_AUTH, (int32_t)1);
+                    return false;
+                }
+            }
+        }
         return true;
     }
     int32_t is_auth = data->getData<int32_t>(CookieKey::IS_AUTH);
@@ -151,8 +165,20 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
         if (uinfo->getState() != 1) {
             break;
         }
-        auto md5 = UserManager::GetToken(uinfo, token_time);
-        if (md5 != token) {
+        // 验证 token：优先用数据库存储的随机 token（单设备登录），
+        // 若为空则回退到旧的 MD5 计算方式（兼容旧账号）
+        bool token_valid = false;
+        const std::string& stored_token = uinfo->getToken();
+        if (!stored_token.empty()) {
+            if (stored_token == token) {
+                token_valid = true;
+            }
+        } else {
+            if (UserManager::GetToken(uinfo, token_time) == token) {
+                token_valid = true;
+            }
+        }
+        if (!token_valid) {
             INFO(logger)
                 << GetRemoteIP(request, session) << "\t"
                 << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"

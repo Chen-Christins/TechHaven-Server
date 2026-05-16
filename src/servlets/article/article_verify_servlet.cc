@@ -83,13 +83,14 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 + (approved ? "已通过审核" : "未通过审核");
 
             auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                author_id, title, content, notif_type, uid);
+                author_id, title, content, notif_type, uid, id);
             if (notifInfo) {
                 Json::Value wsMsg;
                 wsMsg["id"] = notifInfo->getId();
                 wsMsg["title"] = title;
                 wsMsg["content"] = content;
                 wsMsg["type"] = notif_type;
+                wsMsg["article_id"] = id;
                 wsMsg["is_read"] = false;
                 wsMsg["create_time"] = notifInfo->getCreateTime();
                 NotificationMgr::GetInstance()->sendToUser(

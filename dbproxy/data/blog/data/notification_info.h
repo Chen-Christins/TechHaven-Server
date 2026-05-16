@@ -36,6 +36,12 @@ public:
     const int64_t& getSenderId() { return m_senderId; }
     void setSenderId(const int64_t& v);
 
+    const int64_t& getArticleId() { return m_articleId; }
+    void setArticleId(const int64_t& v);
+
+    const int64_t& getCommentId() { return m_commentId; }
+    void setCommentId(const int64_t& v);
+
     const int32_t& getIsRead() { return m_isRead; }
     void setIsRead(const int32_t& v);
 
@@ -59,6 +65,8 @@ private:
     int64_t m_id;
     int64_t m_userId;
     int64_t m_senderId;
+    int64_t m_articleId;
+    int64_t m_commentId;
     std::string m_title;
     std::string m_type;
     std::string m_content;

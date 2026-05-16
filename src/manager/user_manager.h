@@ -34,6 +34,7 @@ public:
     blog::data::UserInfo::ptr getByName(const std::string& v);
 
     static std::string GetToken(data::UserInfo::ptr info, int64_t us);
+    static std::string generateToken();
 private:
     std::unordered_map<int64_t, blog::data::UserInfo::ptr> m_datas;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> m_accounts;

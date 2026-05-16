@@ -115,6 +115,21 @@ bool BlogModule::initDB() {
         INFO(logger) << "init database end";
     }
 
+    // 数据库迁移：为已有表补充新增列
+    {
+        const char* migrations[] = {
+            "ALTER TABLE notification ADD COLUMN article_id INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE notification ADD COLUMN comment_id INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE user ADD COLUMN token TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE user ADD COLUMN token_time INTEGER NOT NULL DEFAULT 0",
+        };
+        for (auto& sql : migrations) {
+            if (db->execute(sql)) {
+                INFO(logger) << "migration: " << sql << " (column may already exist)";
+            }
+        }
+    }
+
 	return true;
 }
 

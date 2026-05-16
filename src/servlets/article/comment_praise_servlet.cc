@@ -58,13 +58,16 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 std::string notifyContent = likerName + " 赞了你的评论";
 
                 auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                    authorId, notifyTitle, notifyContent, "comment_praise", uid);
+                    authorId, notifyTitle, notifyContent, "comment_praise", uid,
+                    comment->getArticleId(), comment_id);
                 if (notifInfo) {
                     Json::Value wsMsg;
                     wsMsg["id"] = notifInfo->getId();
                     wsMsg["title"] = notifyTitle;
                     wsMsg["content"] = notifyContent;
                     wsMsg["type"] = "comment_praise";
+                    wsMsg["article_id"] = comment->getArticleId();
+                    wsMsg["comment_id"] = comment_id;
                     wsMsg["is_read"] = false;
                     wsMsg["create_time"] = notifInfo->getCreateTime();
                     NotificationMgr::GetInstance()->sendToUser(authorId,

@@ -76,7 +76,8 @@ bool NotificationManager::loadAll() {
 
 data::NotificationInfo::ptr NotificationManager::addNotification(
     int64_t user_id, const std::string& title,
-    const std::string& content, const std::string& type, int64_t sender_id) {
+    const std::string& content, const std::string& type, int64_t sender_id,
+    int64_t article_id, int64_t comment_id) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get SQLite3 connection fail";
@@ -89,6 +90,8 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
     info->setContent(content);
     info->setType(type);
     info->setSenderId(sender_id);
+    info->setArticleId(article_id);
+    info->setCommentId(comment_id);
     info->setIsRead(0);
     info->setReadTime(0);
     info->setIsDeleted(0);

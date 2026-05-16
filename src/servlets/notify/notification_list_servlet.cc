@@ -31,6 +31,8 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
             item["title"] = n->getTitle();
             item["content"] = n->getContent();
             item["type"] = n->getType();
+            item["article_id"] = n->getArticleId();
+            item["comment_id"] = n->getCommentId();
             item["is_read"] = n->getIsRead();
             item["create_time"] = n->getCreateTime();
             arr.append(item);

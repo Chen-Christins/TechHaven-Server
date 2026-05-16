@@ -11,6 +11,7 @@ UserInfo::UserInfo()
     ,m_state()
     ,m_isDeleted()
     ,m_id()
+    ,m_tokenTime()
     ,m_name()
     ,m_account()
     ,m_avatar()
@@ -19,6 +20,7 @@ UserInfo::UserInfo()
     ,m_bio()
     ,m_website()
     ,m_location()
+    ,m_token()
     ,m_loginTime()
     ,m_createTime(time(0))
     ,m_updateTime(time(0)) {
@@ -37,6 +39,8 @@ std::string UserInfo::toJsonString() const {
     v["bio"] = m_bio;
     v["website"] = m_website;
     v["location"] = m_location;
+    v["token"] = m_token;
+    v["token_time"] = std::to_string(m_tokenTime);
     v["login_time"] = chen::Time2Str(m_loginTime);
     v["is_deleted"] = m_isDeleted;
     v["create_time"] = chen::Time2Str(m_createTime);
@@ -88,6 +92,14 @@ void UserInfo::setLocation(const std::string& v) {
     m_location = v;
 }
 
+void UserInfo::setToken(const std::string& v) {
+    m_token = v;
+}
+
+void UserInfo::setTokenTime(const int64_t& v) {
+    m_tokenTime = v;
+}
+
 void UserInfo::setLoginTime(const int64_t& v) {
     m_loginTime = v;
 }
@@ -106,7 +118,7 @@ void UserInfo::setUpdateTime(const int64_t& v) {
 
 
 int UserInfoDao::Update(UserInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update user set name = ?, account = ?, avatar = ?, email = ?, role = ?, passwd = ?, state = ?, bio = ?, website = ?, location = ?, login_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update user set name = ?, account = ?, avatar = ?, email = ?, role = ?, passwd = ?, state = ?, bio = ?, website = ?, location = ?, token = ?, token_time = ?, login_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -123,16 +135,18 @@ int UserInfoDao::Update(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindString(8, info->m_bio);
     stmt->bindString(9, info->m_website);
     stmt->bindString(10, info->m_location);
-    stmt->bindTime(11, info->m_loginTime);
-    stmt->bindInt32(12, info->m_isDeleted);
-    stmt->bindTime(13, info->m_createTime);
-    stmt->bindTime(14, info->m_updateTime);
-    stmt->bindInt64(15, info->m_id);
+    stmt->bindString(11, info->m_token);
+    stmt->bindInt64(12, info->m_tokenTime);
+    stmt->bindTime(13, info->m_loginTime);
+    stmt->bindInt32(14, info->m_isDeleted);
+    stmt->bindTime(15, info->m_createTime);
+    stmt->bindTime(16, info->m_updateTime);
+    stmt->bindInt64(17, info->m_id);
     return stmt->execute();
 }
 
 int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into user (name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into user (name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -149,10 +163,12 @@ int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindString(8, info->m_bio);
     stmt->bindString(9, info->m_website);
     stmt->bindString(10, info->m_location);
-    stmt->bindTime(11, info->m_loginTime);
-    stmt->bindInt32(12, info->m_isDeleted);
-    stmt->bindTime(13, info->m_createTime);
-    stmt->bindTime(14, info->m_updateTime);
+    stmt->bindString(11, info->m_token);
+    stmt->bindInt64(12, info->m_tokenTime);
+    stmt->bindTime(13, info->m_loginTime);
+    stmt->bindInt32(14, info->m_isDeleted);
+    stmt->bindTime(15, info->m_createTime);
+    stmt->bindTime(16, info->m_updateTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -164,7 +180,7 @@ int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn) {
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into user (id, name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into user (id, name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -182,10 +198,12 @@ int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindString(9, info->m_bio);
     stmt->bindString(10, info->m_website);
     stmt->bindString(11, info->m_location);
-    stmt->bindTime(12, info->m_loginTime);
-    stmt->bindInt32(13, info->m_isDeleted);
-    stmt->bindTime(14, info->m_createTime);
-    stmt->bindTime(15, info->m_updateTime);
+    stmt->bindString(12, info->m_token);
+    stmt->bindInt64(13, info->m_tokenTime);
+    stmt->bindTime(14, info->m_loginTime);
+    stmt->bindInt32(15, info->m_isDeleted);
+    stmt->bindTime(16, info->m_createTime);
+    stmt->bindTime(17, info->m_updateTime);
     return stmt->execute();
 }
 
@@ -250,7 +268,7 @@ int UserInfoDao::DeleteByName( const std::string& name, chen::IDB::ptr conn) {
 }
 
 int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time from user";
+    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time from user";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -274,17 +292,19 @@ int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, chen::IDB::ptr co
         v->m_bio = rt->getString(8);
         v->m_website = rt->getString(9);
         v->m_location = rt->getString(10);
-        v->m_loginTime = rt->getTime(11);
-        v->m_isDeleted = rt->getInt32(12);
-        v->m_createTime = rt->getTime(13);
-        v->m_updateTime = rt->getTime(14);
+        v->m_token = rt->getString(11);
+        v->m_tokenTime = rt->getInt64(12);
+        v->m_loginTime = rt->getTime(13);
+        v->m_isDeleted = rt->getInt32(14);
+        v->m_createTime = rt->getTime(15);
+        v->m_updateTime = rt->getTime(16);
         results.push_back(v);
     }
     return 0;
 }
 
 UserInfo::ptr UserInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time from user where id = ?";
+    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time from user where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -311,15 +331,17 @@ UserInfo::ptr UserInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     v->m_bio = rt->getString(8);
     v->m_website = rt->getString(9);
     v->m_location = rt->getString(10);
-    v->m_loginTime = rt->getTime(11);
-    v->m_isDeleted = rt->getInt32(12);
-    v->m_createTime = rt->getTime(13);
-    v->m_updateTime = rt->getTime(14);
+    v->m_token = rt->getString(11);
+    v->m_tokenTime = rt->getInt64(12);
+    v->m_loginTime = rt->getTime(13);
+    v->m_isDeleted = rt->getInt32(14);
+    v->m_createTime = rt->getTime(15);
+    v->m_updateTime = rt->getTime(16);
     return v;
 }
 
 UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, chen::IDB::ptr conn) {
-    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time from user where account = ?";
+    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time from user where account = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -346,15 +368,17 @@ UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, chen::IDB
     v->m_bio = rt->getString(8);
     v->m_website = rt->getString(9);
     v->m_location = rt->getString(10);
-    v->m_loginTime = rt->getTime(11);
-    v->m_isDeleted = rt->getInt32(12);
-    v->m_createTime = rt->getTime(13);
-    v->m_updateTime = rt->getTime(14);
+    v->m_token = rt->getString(11);
+    v->m_tokenTime = rt->getInt64(12);
+    v->m_loginTime = rt->getTime(13);
+    v->m_isDeleted = rt->getInt32(14);
+    v->m_createTime = rt->getTime(15);
+    v->m_updateTime = rt->getTime(16);
     return v;
 }
 
 UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, chen::IDB::ptr conn) {
-    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time from user where email = ?";
+    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time from user where email = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -381,15 +405,17 @@ UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, chen::IDB::pt
     v->m_bio = rt->getString(8);
     v->m_website = rt->getString(9);
     v->m_location = rt->getString(10);
-    v->m_loginTime = rt->getTime(11);
-    v->m_isDeleted = rt->getInt32(12);
-    v->m_createTime = rt->getTime(13);
-    v->m_updateTime = rt->getTime(14);
+    v->m_token = rt->getString(11);
+    v->m_tokenTime = rt->getInt64(12);
+    v->m_loginTime = rt->getTime(13);
+    v->m_isDeleted = rt->getInt32(14);
+    v->m_createTime = rt->getTime(15);
+    v->m_updateTime = rt->getTime(16);
     return v;
 }
 
 UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr conn) {
-    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, login_time, is_deleted, create_time, update_time from user where name = ?";
+    std::string sql = "select id, name, account, avatar, email, role, passwd, state, bio, website, location, token, token_time, login_time, is_deleted, create_time, update_time from user where name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -416,10 +442,12 @@ UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr 
     v->m_bio = rt->getString(8);
     v->m_website = rt->getString(9);
     v->m_location = rt->getString(10);
-    v->m_loginTime = rt->getTime(11);
-    v->m_isDeleted = rt->getInt32(12);
-    v->m_createTime = rt->getTime(13);
-    v->m_updateTime = rt->getTime(14);
+    v->m_token = rt->getString(11);
+    v->m_tokenTime = rt->getInt64(12);
+    v->m_loginTime = rt->getTime(13);
+    v->m_isDeleted = rt->getInt32(14);
+    v->m_createTime = rt->getTime(15);
+    v->m_updateTime = rt->getTime(16);
     return v;
 }
 
@@ -436,6 +464,8 @@ int UserInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "bio TEXT NOT NULL DEFAULT '',"
             "website TEXT NOT NULL DEFAULT '',"
             "location TEXT NOT NULL DEFAULT '',"
+            "token TEXT NOT NULL DEFAULT '',"
+            "token_time INTEGER NOT NULL DEFAULT 0,"
             "login_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
@@ -459,6 +489,8 @@ int UserInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`bio` varchar(128) NOT NULL DEFAULT '' COMMENT '用户简介',"
             "`website` varchar(128) NOT NULL DEFAULT '' COMMENT '个人网站',"
             "`location` varchar(128) NOT NULL DEFAULT '' COMMENT '用户所在地',"
+            "`token` varchar(64) NOT NULL DEFAULT '' COMMENT '登录凭证',"
+            "`token_time` bigint NOT NULL DEFAULT 0 COMMENT '凭证过期时间',"
             "`login_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '上次登录时间',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '账号是否已经删除',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '账号创建时间',"
