@@ -42,6 +42,7 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
             item["id"] = user->getId();
             item["name"] = user->getName();
             item["email"] = user->getEmail();
+			item["avatar"] = user->getAvatar();
             item["role"] = user->getRole();
             item["state"] = user->getState();
             item["create_time"] = user->getCreateTime();

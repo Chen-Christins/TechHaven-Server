@@ -1,6 +1,7 @@
 #include "category_query_servlet.h"
 #include "../../manager/category_manager.h"
-#include "../../manager/user_manager.h"
+#include "../../manager/article_manager.h"
+#include "../../manager/article_category_rel_manager.h"
 #include <chen/log/log.h>
 
 
@@ -15,13 +16,13 @@ CategoryQueryServlet::CategoryQueryServlet()
 
 int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
+    do {
         int64_t uid = getUserId(request);
         if (!uid) {
             result->setResult(500, "not login");
             break;
         }
-        
+
         std::vector<blog::data::CategoryInfo::ptr> infos;
         CategoryMgr::GetInstance()->listAll(infos, true);
 
@@ -37,10 +38,27 @@ int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen:
             item["description"] = cat->getDescription();
             item["parent_id"] = cat->getParentId();
             item["status"] = cat->getStatus();
+            item["create_time"] = (Json::Int64)cat->getCreateTime();
+            item["update_time"] = (Json::Int64)cat->getUpdateTime();
+
+            int64_t articleCount = 0;
+            int64_t viewCount = 0;
+            std::vector<blog::data::ArticleCategoryRelInfo::ptr> rels;
+            ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, cat->getId(), true);
+            for (const auto& rel : rels) {
+                auto article = ArticleMgr::GetInstance()->get(rel->getArticleId());
+                if (article) {
+                    ++articleCount;
+                    viewCount += article->getViews();
+                }
+            }
+            item["article_count"] = (Json::Int64)articleCount;
+            item["view_count"] = (Json::Int64)viewCount;
+
             list.append(item);
         }
-	} while (0);
-	response->setBody(result->toJsonString());
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

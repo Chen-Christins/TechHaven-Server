@@ -217,6 +217,11 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/admin/comment/spam", XX(AdminCommentSpamServlet));
         dp->addServlet("/admin/comment/delete", XX(AdminCommentDeleteServlet));
         dp->addServlet("/admin/comment/stats", XX(AdminCommentStatsServlet));
+        // 仪表盘相关
+        dp->addServlet("/admin/dashboard/stats", XX(DashboardStatsServlet));
+        dp->addServlet("/admin/dashboard/trend", XX(DashboardTrendServlet));
+        dp->addServlet("/admin/dashboard/activities", XX(DashboardActivitiesServlet));
+        dp->addServlet("/admin/dashboard/recent-users", XX(DashboardRecentUsersServlet));
         // 文章分类相关
         dp->addServlet("/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/category/admin/delete", XX(CategoryDeleteServlet));
