@@ -2,6 +2,8 @@
 #include <chen/log/log.h>
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
+#include "../../manager/article_category_rel_manager.h"
+#include "../../manager/category_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -38,6 +40,22 @@ int32_t ArticleQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::
             item["praise"] = i->getPraise();
             item["favorites"] = i->getFavorites();
             item["publish_time"] = i->getPublishTime();
+            // 查询文章分类
+            {
+                std::vector<data::ArticleCategoryRelInfo::ptr> rels;
+                ArticleCategoryRelMgr::GetInstance()->listByArticleId(rels, i->getId(), true);
+                Json::Value categories(Json::arrayValue);
+                for (auto& rel : rels) {
+                    auto cat = CategoryMgr::GetInstance()->get(rel->getCategoryId());
+                    if (cat && !cat->getIsDeleted()) {
+                        Json::Value c;
+                        c["id"] = cat->getId();
+                        c["name"] = cat->getName();
+                        categories.append(c);
+                    }
+                }
+                item["categories"] = categories;
+            }
             list.append(item);
         }
     } while (0);

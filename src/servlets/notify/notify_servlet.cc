@@ -48,10 +48,18 @@ int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header
 		return -1;
 	}
 
-	auto expected_token = UserManager::GetToken(uinfo, token_time);
-	if (expected_token != token) {
-		INFO(logger) << "[WS] onConnect FAIL: token mismatch, expected="
-			<< expected_token << " got=" << token;
+	// 优先用数据库存储的随机 token（单设备登录），
+	// 若为空则回退到旧的 MD5 计算方式（兼容旧账号）
+	bool token_valid = false;
+	const std::string& stored_token = uinfo->getToken();
+	if (!stored_token.empty()) {
+		token_valid = (stored_token == token);
+	} else {
+		token_valid = (UserManager::GetToken(uinfo, token_time) == token);
+	}
+	if (!token_valid) {
+		INFO(logger) << "[WS] onConnect FAIL: token mismatch, stored="
+			<< (stored_token.empty() ? "(empty)" : "***") << " got=" << token;
 		return -1;
 	}
 
