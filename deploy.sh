@@ -115,6 +115,8 @@ EOF
         send "rm -f $PACKAGE_NAME\r"
 		send "cd $TEMP_DIR\r" 
 		send "export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH\r" 
+		send "rm ../logs/*.log\r"
+		send "cp ../system.yml.bak conf/system.yml\r"
 		send "nohup ./$APP_NAME -d > $PROJECT_NAME.log 2>&1 &\r" 
 		expect eof
         catch wait result
