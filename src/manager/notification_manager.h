@@ -15,6 +15,7 @@ public:
     // WS connection management
     void addConnection(int64_t user_id, chen::http::WSSession::ptr session);
     void removeConnection(int64_t user_id);
+    void closeAllConnections();
     int32_t sendToUser(int64_t user_id, const std::string& message);
     void broadcast(const std::string& message);
     bool isConnected(int64_t user_id);
