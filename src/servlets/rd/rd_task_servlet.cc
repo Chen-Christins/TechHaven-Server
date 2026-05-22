@@ -1,5 +1,6 @@
 #include "rd_task_servlet.h"
 #include "rd_helper.h"
+#include "rd_macros.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/task_manager.h"
@@ -168,38 +169,22 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
                 is_new = true;
             }
 
-            auto getParam = [&](const std::string& key) -> std::string {
-                if (!body.isNull() && body.isMember(key)) {
-                    if (body[key].isString()) {
-                        return body[key].asString();
-                    }
-                    return std::to_string(rd::getJsonInt64(body, key));
-                }
-                return request->getParam(key);
-            };
-            auto getParamInt = [&](const std::string& key) -> int64_t {
-                if (!body.isNull() && body.isMember(key)) {
-                    return rd::getJsonInt64(body, key);
-                }
-                return request->getParamAs<int64_t>(key, 0);
-            };
-
-            std::string title = getParam("title");
+            RD_PARAM_STR(title, "title");
             if (!title.empty()) {
                 info->setTitle(title);
             }
-            std::string desc = getParam("description");
+            RD_PARAM_STR(desc, "description");
             if (!desc.empty()) {
                 info->setDescription(desc);
             }
-            std::string priorityStr = getParam("priority");
+            RD_PARAM_STR(priorityStr, "priority");
             if (!priorityStr.empty()) {
                 int32_t p = rd::stringToPriority(priorityStr);
                 if (p >= 0) {
                     info->setPriority(p);
                 }
             }
-            std::string statusStr = getParam("status");
+            RD_PARAM_STR(statusStr, "status");
             if (!statusStr.empty()) {
                 int32_t s = rd::stringToTaskStatus(statusStr);
                 if (s >= 0) {
@@ -207,23 +192,23 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
                 }
             }
 
-            int64_t assignee_id = getParamInt("assignee_id");
+            RD_PARAM_INT(assignee_id, "assignee_id");
             if (assignee_id) {
                 info->setAssigneeId(assignee_id);
             }
-            int64_t requirement_id = getParamInt("requirement_id");
+            RD_PARAM_INT(requirement_id, "requirement_id");
             if (requirement_id) {
                 info->setRequirementId(requirement_id);
             }
-            int64_t bug_id = getParamInt("bug_id");
+            RD_PARAM_INT(bug_id, "bug_id");
             if (bug_id) {
                 info->setBugId(bug_id);
             }
-            int64_t deadline = getParamInt("deadline");
+            RD_PARAM_INT(deadline, "deadline");
             if (deadline) {
                 info->setDeadline(deadline);
             }
-            int64_t estimated_hours = getParamInt("estimated_hours");
+            RD_PARAM_INT(estimated_hours, "estimated_hours");
             if (estimated_hours) {
                 info->setEstimatedHours(estimated_hours);
             }

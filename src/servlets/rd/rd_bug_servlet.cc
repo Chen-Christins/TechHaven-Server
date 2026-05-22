@@ -1,5 +1,6 @@
 #include "rd_bug_servlet.h"
 #include "rd_helper.h"
+#include "rd_macros.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"
@@ -167,45 +168,29 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
                 is_new = true;
             }
 
-            auto getParam = [&](const std::string& key) -> std::string {
-                if (!body.isNull() && body.isMember(key)) {
-                    if (body[key].isString()) {
-                        return body[key].asString();
-                    }
-                    return std::to_string(rd::getJsonInt64(body, key));
-                }
-                return request->getParam(key);
-            };
-            auto getParamInt = [&](const std::string& key) -> int64_t {
-                if (!body.isNull() && body.isMember(key)) {
-                    return rd::getJsonInt64(body, key);
-                }
-                return request->getParamAs<int64_t>(key, 0);
-            };
-
-            std::string title = getParam("title");
+            RD_PARAM_STR(title, "title");
             if (!title.empty()) {
                 info->setTitle(title);
             }
-            std::string desc = getParam("description");
+            RD_PARAM_STR(desc, "description");
             if (!desc.empty()) {
                 info->setDescription(desc);
             }
-            std::string severityStr = getParam("severity");
+            RD_PARAM_STR(severityStr, "severity");
             if (!severityStr.empty()) {
                 int32_t s = rd::stringToSeverity(severityStr);
                 if (s >= 0) {
                     info->setSeverity(s);
                 }
             }
-            std::string priorityStr = getParam("priority");
+            RD_PARAM_STR(priorityStr, "priority");
             if (!priorityStr.empty()) {
                 int32_t p = rd::stringToPriority(priorityStr);
                 if (p >= 0) {
                     info->setPriority(p);
                 }
             }
-            std::string statusStr = getParam("status");
+            RD_PARAM_STR(statusStr, "status");
             if (!statusStr.empty()) {
                 int32_t s = rd::stringToBugStatus(statusStr);
                 if (s >= 0) {
@@ -213,24 +198,24 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
                 }
             }
 
-            int64_t assignee_id = getParamInt("assignee_id");
+            RD_PARAM_INT(assignee_id, "assignee_id");
             if (assignee_id) {
                 info->setAssigneeId(assignee_id);
             }
-            int64_t requirement_id = getParamInt("related_requirement_id");
+            RD_PARAM_INT(requirement_id, "related_requirement_id");
             if (requirement_id) {
                 info->setRequirementId(requirement_id);
             }
 
-            std::string module = getParam("module");
+            RD_PARAM_STR(module, "module");
             if (!module.empty()) {
                 info->setModule(module);
             }
-            std::string steps = getParam("steps_to_reproduce");
+            RD_PARAM_STR(steps, "steps_to_reproduce");
             if (!steps.empty()) {
                 info->setStepsToReproduce(steps);
             }
-            std::string env = getParam("environment");
+            RD_PARAM_STR(env, "environment");
             if (!env.empty()) {
                 info->setEnvironment(env);
             }

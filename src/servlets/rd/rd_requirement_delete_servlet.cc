@@ -1,12 +1,16 @@
 #include "rd_requirement_delete_servlet.h"
-#include "rd_helper.h"
+#include "rd_macros.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
 #include "../../permission.h"
 
+#include <chen/log/log.h>
+
 namespace blog {
 namespace servlet {
+
+static chen::Logger::ptr logger = LOG_ROOT();
 
 RdRequirementDeleteServlet::RdRequirementDeleteServlet()
     : BlogLoginedServlet("RdRequirementDeleteServlet") {
@@ -15,6 +19,8 @@ RdRequirementDeleteServlet::RdRequirementDeleteServlet()
 int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
+        INFO(logger) << "req->body: " << request->getBody();
+        
         std::string reqBody = request->getBody();
         Json::Value body;
         if (!reqBody.empty()) {
@@ -22,18 +28,9 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
             reader.parse(reqBody, body);
         }
 
-        int64_t id = rd::getJsonInt64(body, "id");
-        if (!id) {
-            id = request->getParamAs<int64_t>("id", 0);
-        }
-        std::string idsStr = body.get("ids", "").asString();
-        if (idsStr.empty()) {
-            idsStr = request->getParam("ids");
-        }
-        int64_t org_id = rd::getJsonInt64(body, "org_id");
-        if (!org_id) {
-            org_id = request->getParamAs<int64_t>("org_id", 0);
-        }
+        RD_PARAM_INT(id, "id");
+        RD_PARAM_STR(idsStr, "ids");
+        RD_PARAM_INT(org_id, "org_id");
 
         std::set<int64_t> delIds;
         if (id) {
