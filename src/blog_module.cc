@@ -295,8 +295,14 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/task/assign", XX(TaskAssignServlet));
         // R&D 平台相关（新版统一 API）
         dp->addServlet("/api/v1/rd/requirements", XX(RdRequirementServlet));
+        dp->addServlet("/api/v1/rd/requirements/detail", XX(RdRequirementServlet));
+        dp->addServlet("/api/v1/rd/requirements/delete", XX(RdRequirementServlet));
         dp->addServlet("/api/v1/rd/bugs", XX(RdBugServlet));
+        dp->addServlet("/api/v1/rd/bugs/detail", XX(RdBugServlet));
+        dp->addServlet("/api/v1/rd/bugs/delete", XX(RdBugServlet));
         dp->addServlet("/api/v1/rd/tasks", XX(RdTaskServlet));
+        dp->addServlet("/api/v1/rd/tasks/detail", XX(RdTaskServlet));
+        dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskServlet));
         dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));
         dp->addServlet("/api/v1/rd/my-tickets", XX(RdMyTicketsServlet));
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));

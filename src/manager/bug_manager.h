@@ -1,7 +1,6 @@
 #ifndef __BLOG_MANAGER_BUG_MANAGER_H__
 #define __BLOG_MANAGER_BUG_MANAGER_H__
 
-#include <memory>
 #include <unordered_map>
 #include <vector>
 #include "blog/data/bug_info.h"

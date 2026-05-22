@@ -14,6 +14,29 @@ namespace servlet {
 namespace rd {
 
 // ============================================================================
+// 安全 JSON 取值: 从 JSON body 或 query params 中获取 int64
+// ============================================================================
+inline int64_t getJsonInt64(const Json::Value& body, const std::string& key, int64_t def = 0) {
+    if (body.isNull() || !body.isMember(key)) return def;
+    const auto& v = body[key];
+    if (v.isInt() || v.isUInt()) return v.asInt64();
+    if (v.isString()) {
+        std::string s = v.asString();
+        if (s.empty()) return def;
+        try { return std::stoll(s); } catch (...) { return def; }
+    }
+    return def;
+}
+
+inline std::string getJsonString(const Json::Value& body, const std::string& key, const std::string& def = "") {
+    if (body.isNull() || !body.isMember(key)) return def;
+    const auto& v = body[key];
+    if (v.isString()) return v.asString();
+    if (v.isInt() || v.isUInt()) return std::to_string(v.asInt64());
+    return def;
+}
+
+// ============================================================================
 // 分页: page/page_size → offset/size
 // ============================================================================
 inline void parsePagination(uint64_t page, uint64_t page_size, uint64_t& offset, uint64_t& size) {
@@ -61,7 +84,6 @@ inline const char* bugStatusToString(int32_t status) {
 
 inline int32_t stringToBugStatus(const std::string& s) {
     if (s == "new")        return BugManager::STATUS_PENDING;
-    if (s == "accepted")   return BugManager::STATUS_PENDING;
     if (s == "processing") return BugManager::STATUS_INPROGRESS;
     if (s == "verified")   return BugManager::STATUS_FIXED;
     if (s == "closed")     return BugManager::STATUS_CLOSED;

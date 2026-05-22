@@ -1,10 +1,8 @@
 #include "rd_requirement_servlet.h"
 #include "rd_helper.h"
 #include <chen/log/log.h>
-#include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/organization_manager.h"
 #include "../../manager/requirement_manager.h"
 #include "../../permission.h"
 
@@ -26,10 +24,12 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
     auto method = request->getMethod();
     if (method == chen::http::HttpMethod::GET) {
         return handleList(request, response, session, result);
-    } else if (method == chen::http::HttpMethod::POST || method == chen::http::HttpMethod::PUT) {
+    } else if (method == chen::http::HttpMethod::POST) {
+        std::string path = request->getPath();
+        if (path.find("/delete") != std::string::npos) {
+            return handleDelete(request, response, session, result);
+        }
         return handleCreate(request, response, session, result);
-    } else if (method == chen::http::HttpMethod::DELETE) {
-        return handleDelete(request, response, session, result);
     }
     result->setResult(405, "Method Not Allowed");
     response->setBody(result->toJsonString());
@@ -161,12 +161,12 @@ int32_t RdRequirementServlet::handleCreate(chen::http::HttpRequest::ptr request,
         if (!reqBody.empty()) {
             Json::Reader reader;
             if (reader.parse(reqBody, body)) {
-                if (!id) id = body.get("id", 0).asInt64();
+                if (!id) id = rd::getJsonInt64(body, "id");
             }
         }
 
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
-        if (!org_id && !body.isNull()) org_id = body.get("org_id", 0).asInt64();
+        if (!org_id && !body.isNull()) org_id = rd::getJsonInt64(body, "org_id");
 
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -210,12 +210,12 @@ int32_t RdRequirementServlet::handleCreate(chen::http::HttpRequest::ptr request,
         auto getParam = [&](const std::string& key) -> std::string {
             if (!body.isNull() && body.isMember(key)) {
                 if (body[key].isString()) return body[key].asString();
-                return std::to_string(body[key].asInt64());
+                return std::to_string(rd::getJsonInt64(body, key));
             }
             return request->getParam(key);
         };
         auto getParamInt = [&](const std::string& key) -> int64_t {
-            if (!body.isNull() && body.isMember(key)) return body[key].asInt64();
+            if (!body.isNull() && body.isMember(key)) return rd::getJsonInt64(body, key);
             return request->getParamAs<int64_t>(key, 0);
         };
 
@@ -273,9 +273,16 @@ int32_t RdRequirementServlet::handleCreate(chen::http::HttpRequest::ptr request,
 int32_t RdRequirementServlet::handleDelete(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        int64_t id = request->getParamAs<int64_t>("id", 0);
-        std::string idsStr = request->getParam("ids");
-        int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
+        std::string reqBody = request->getBody();
+        Json::Value body;
+        if (!reqBody.empty()) { Json::Reader reader; reader.parse(reqBody, body); }
+
+        int64_t id = rd::getJsonInt64(body, "id");
+        if (!id) id = request->getParamAs<int64_t>("id", 0);
+        std::string idsStr = body.get("ids", "").asString();
+        if (idsStr.empty()) idsStr = request->getParam("ids");
+        int64_t org_id = rd::getJsonInt64(body, "org_id");
+        if (!org_id) org_id = request->getParamAs<int64_t>("org_id", 0);
 
         std::set<int64_t> delIds;
         if (id) delIds.insert(id);
@@ -344,10 +351,12 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
     auto method = request->getMethod();
     if (method == chen::http::HttpMethod::GET) {
         return handleList(request, response, session, result);
-    } else if (method == chen::http::HttpMethod::POST || method == chen::http::HttpMethod::PUT) {
+    } else if (method == chen::http::HttpMethod::POST) {
+        std::string path = request->getPath();
+        if (path.find("/delete") != std::string::npos) {
+            return handleDelete(request, response, session, result);
+        }
         return handleCreate(request, response, session, result);
-    } else if (method == chen::http::HttpMethod::DELETE) {
-        return handleDelete(request, response, session, result);
     }
     result->setResult(405, "Method Not Allowed");
     response->setBody(result->toJsonString());
@@ -466,9 +475,9 @@ int32_t RdBugServlet::handleCreate(chen::http::HttpRequest::ptr request, chen::h
         if (!reqBody.empty()) { Json::Reader reader; reader.parse(reqBody, body); }
 
         int64_t id = request->getParamAs<int64_t>("id", 0);
-        if (!id && !body.isNull()) id = body.get("id", 0).asInt64();
+        if (!id && !body.isNull()) id = rd::getJsonInt64(body, "id");
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
-        if (!org_id && !body.isNull()) org_id = body.get("org_id", 0).asInt64();
+        if (!org_id && !body.isNull()) org_id = rd::getJsonInt64(body, "org_id");
 
         int64_t uid = getUserId(request);
         if (!uid) { result->setResult(500, "not login"); break; }
@@ -499,12 +508,12 @@ int32_t RdBugServlet::handleCreate(chen::http::HttpRequest::ptr request, chen::h
         auto getParam = [&](const std::string& key) -> std::string {
             if (!body.isNull() && body.isMember(key)) {
                 if (body[key].isString()) return body[key].asString();
-                return std::to_string(body[key].asInt64());
+                return std::to_string(rd::getJsonInt64(body, key));
             }
             return request->getParam(key);
         };
         auto getParamInt = [&](const std::string& key) -> int64_t {
-            if (!body.isNull() && body.isMember(key)) return body[key].asInt64();
+            if (!body.isNull() && body.isMember(key)) return rd::getJsonInt64(body, key);
             return request->getParamAs<int64_t>(key, 0);
         };
 
@@ -550,9 +559,16 @@ int32_t RdBugServlet::handleCreate(chen::http::HttpRequest::ptr request, chen::h
 int32_t RdBugServlet::handleDelete(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        int64_t id = request->getParamAs<int64_t>("id", 0);
-        std::string idsStr = request->getParam("ids");
-        int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
+        std::string reqBody = request->getBody();
+        Json::Value body;
+        if (!reqBody.empty()) { Json::Reader reader; reader.parse(reqBody, body); }
+
+        int64_t id = rd::getJsonInt64(body, "id");
+        if (!id) id = request->getParamAs<int64_t>("id", 0);
+        std::string idsStr = body.get("ids", "").asString();
+        if (idsStr.empty()) idsStr = request->getParam("ids");
+        int64_t org_id = rd::getJsonInt64(body, "org_id");
+        if (!org_id) org_id = request->getParamAs<int64_t>("org_id", 0);
 
         std::set<int64_t> delIds;
         if (id) delIds.insert(id);
@@ -598,8 +614,13 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     auto method = request->getMethod();
     if (method == chen::http::HttpMethod::GET) return handleList(request, response, session, result);
-    else if (method == chen::http::HttpMethod::POST || method == chen::http::HttpMethod::PUT) return handleCreate(request, response, session, result);
-    else if (method == chen::http::HttpMethod::DELETE) return handleDelete(request, response, session, result);
+    else if (method == chen::http::HttpMethod::POST) {
+        std::string path = request->getPath();
+        if (path.find("/delete") != std::string::npos) {
+            return handleDelete(request, response, session, result);
+        }
+        return handleCreate(request, response, session, result);
+    }
     result->setResult(405, "Method Not Allowed");
     response->setBody(result->toJsonString());
     return 0;
@@ -715,9 +736,9 @@ int32_t RdTaskServlet::handleCreate(chen::http::HttpRequest::ptr request, chen::
         if (!reqBody.empty()) { Json::Reader reader; reader.parse(reqBody, body); }
 
         int64_t id = request->getParamAs<int64_t>("id", 0);
-        if (!id && !body.isNull()) id = body.get("id", 0).asInt64();
+        if (!id && !body.isNull()) id = rd::getJsonInt64(body, "id");
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
-        if (!org_id && !body.isNull()) org_id = body.get("org_id", 0).asInt64();
+        if (!org_id && !body.isNull()) org_id = rd::getJsonInt64(body, "org_id");
 
         int64_t uid = getUserId(request);
         if (!uid) { result->setResult(500, "not login"); break; }
@@ -748,12 +769,12 @@ int32_t RdTaskServlet::handleCreate(chen::http::HttpRequest::ptr request, chen::
         auto getParam = [&](const std::string& key) -> std::string {
             if (!body.isNull() && body.isMember(key)) {
                 if (body[key].isString()) return body[key].asString();
-                return std::to_string(body[key].asInt64());
+                return std::to_string(rd::getJsonInt64(body, key));
             }
             return request->getParam(key);
         };
         auto getParamInt = [&](const std::string& key) -> int64_t {
-            if (!body.isNull() && body.isMember(key)) return body[key].asInt64();
+            if (!body.isNull() && body.isMember(key)) return rd::getJsonInt64(body, key);
             return request->getParamAs<int64_t>(key, 0);
         };
 
@@ -795,9 +816,16 @@ int32_t RdTaskServlet::handleCreate(chen::http::HttpRequest::ptr request, chen::
 int32_t RdTaskServlet::handleDelete(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        int64_t id = request->getParamAs<int64_t>("id", 0);
-        std::string idsStr = request->getParam("ids");
-        int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
+        std::string reqBody = request->getBody();
+        Json::Value body;
+        if (!reqBody.empty()) { Json::Reader reader; reader.parse(reqBody, body); }
+
+        int64_t id = rd::getJsonInt64(body, "id");
+        if (!id) id = request->getParamAs<int64_t>("id", 0);
+        std::string idsStr = body.get("ids", "").asString();
+        if (idsStr.empty()) idsStr = request->getParam("ids");
+        int64_t org_id = rd::getJsonInt64(body, "org_id");
+        if (!org_id) org_id = request->getParamAs<int64_t>("org_id", 0);
 
         std::set<int64_t> delIds;
         if (id) delIds.insert(id);
