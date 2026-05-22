@@ -87,7 +87,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             auto rel = std::make_shared<data::OrganizationUserRelInfo>();
             rel->setOrgId(info->getId());
             rel->setUserId(user_id);
-            rel->setRole(OrganizationManager::Role::OWNER);
+            rel->setRole(OrganizationManager::Role::ORG_ADMIN);
             rel->setStatus(OrganizationUserRelManager::Status::APPROVED);
             rel->setCreateTime(time(0));
             rel->setUpdateTime(time(0));

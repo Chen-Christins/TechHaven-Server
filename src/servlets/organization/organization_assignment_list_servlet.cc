@@ -4,8 +4,8 @@
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"
 #include "../../manager/assignment_manager.h"
-#include "../../manager/organization_manager.h"
 #include "../../util.h"
+#include "../../permission.h"
 
 namespace blog {
 namespace servlet {
@@ -30,7 +30,7 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
         int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
         int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
 
-        if (!checkPermission(system_role, org_role)) {
+        if (!permission::canManageMembers(system_role, org_role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -67,19 +67,6 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
-}
-
-bool OrganizationAssignmentListServlet::checkPermission(int32_t system_role, int32_t org_role) {
-    if (system_role == UserManager::Role::ADMIN) {
-        return true;
-    }
-    if (org_role == OrganizationManager::Role::OWNER) {
-        return true;
-    }
-    if (org_role == OrganizationManager::Role::ADMIN) {
-        return true;
-    }
-    return false;
 }
 
 }

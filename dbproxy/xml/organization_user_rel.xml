@@ -3,7 +3,7 @@
         <column name="id" type="int64" auto_increment="true" desc="主键ID"/>
         <column name="org_id" type="int64" desc="组织ID"/>
         <column name="user_id" type="int64" desc="用户ID"/>
-        <column name="role" type="int32" default="1" desc="角色: 1成员 2管理员 3拥有者"/>
+        <column name="role" type="int32" default="1" desc="角色: 1普通成员 2报告者 3开发者 4研发主管 5组织管理员"/>
         <column name="status" type="int32" default="1" desc="状态: 0申请中 1已加入 2已拒绝 3已退出"/>
         <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="加入时间"/>

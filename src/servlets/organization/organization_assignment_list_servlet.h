@@ -14,7 +14,6 @@ public:
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result) override;
-    bool checkPermission(int32_t system_role, int32_t org_role);
 };
 
 }

@@ -6,6 +6,7 @@
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/notification_manager.h"
+#include "../../permission.h"
 
 namespace blog {
 namespace servlet {
@@ -39,13 +40,11 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         // check operater permission
         int64_t uid = getUserId(request);
         int32_t system_role = blog::UserMgr::GetInstance()->get(uid)->getRole();
-        
+
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
-        
-        if (system_role != UserManager::Role::ADMIN
-                && org_role != OrganizationManager::Role::ADMIN
-                && org_role != OrganizationManager::Role::OWNER) {
+
+        if (!permission::canManageMembers(system_role, org_role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -106,8 +105,7 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
             std::vector<data::OrganizationUserRelInfo::ptr> members;
             OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
             for (auto& m : members) {
-                if (m->getRole() == OrganizationManager::Role::ADMIN
-                        || m->getRole() == OrganizationManager::Role::OWNER) {
+                if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
                     NotificationMgr::GetInstance()->markReadByType(
                         m->getUserId(), "org_join_request");
                 }

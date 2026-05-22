@@ -12,9 +12,11 @@ namespace blog {
 class OrganizationManager {
 public:
     enum Role {
-        MEMBER = 1,
-        ADMIN = 2,
-        OWNER = 3
+        MEMBER    = 1,  // 普通成员
+        REPORTER  = 2,  // 报告者
+        DEVELOPER = 3,  // 开发者
+        DEV_LEAD  = 4,  // 研发主管
+        ORG_ADMIN = 5   // 组织管理员
     };
     enum Status {
         INACTIVE = 0,

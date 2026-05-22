@@ -15,3 +15,6 @@
 #include "blog/data/notification_info.h"                // IWYU pragma: keep
 #include "blog/data/resource_info.h"                    // IWYU pragma: keep
 #include "blog/data/user_follow_rel_info.h"            // IWYU pragma: keep
+#include "blog/data/requirement_info.h"                // IWYU pragma: keep
+#include "blog/data/bug_info.h"                        // IWYU pragma: keep
+#include "blog/data/task_info.h"                       // IWYU pragma: keep
