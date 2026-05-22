@@ -3,6 +3,9 @@
 
 #include <string>
 #include <json/json.h>
+#include "blog/data/requirement_info.h"
+#include "blog/data/bug_info.h"
+#include "blog/data/task_info.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/requirement_manager.h"
@@ -187,6 +190,70 @@ inline std::string getOrgName(int64_t orgId) {
 inline std::string getUserName(int64_t userId) {
     auto user = UserMgr::GetInstance()->get(userId);
     return user ? user->getName() : "";
+}
+
+// ============================================================================
+// 构建 JSON 响应对象
+// ============================================================================
+inline void buildRequirementJson(Json::Value& item, data::RequirementInfo::ptr info) {
+    item["id"] = info->getId();
+    item["title"] = info->getTitle();
+    item["description"] = info->getDescription();
+    item["priority"] = priorityToString(info->getPriority());
+    item["status"] = requirementStatusToString(info->getStatus());
+    item["creator"] = getUserName(info->getCreatorId());
+    item["creator_id"] = info->getCreatorId();
+    item["assignee"] = getUserName(info->getAssigneeId());
+    item["assignee_id"] = info->getAssigneeId();
+    item["org_id"] = info->getOrgId();
+    item["org_name"] = getOrgName(info->getOrgId());
+    item["iteration"] = info->getIteration();
+    item["category"] = info->getCategory();
+    item["source"] = info->getSource();
+    item["deadline"] = info->getDeadline();
+    item["created_at"] = info->getCreateTime();
+    item["updated_at"] = info->getUpdateTime();
+}
+
+inline void buildBugJson(Json::Value& item, data::BugInfo::ptr info) {
+    item["id"] = info->getId();
+    item["title"] = info->getTitle();
+    item["description"] = info->getDescription();
+    item["severity"] = severityToString(info->getSeverity());
+    item["priority"] = priorityToString(info->getPriority());
+    item["status"] = bugStatusToString(info->getStatus());
+    item["creator"] = getUserName(info->getCreatorId());
+    item["creator_id"] = info->getCreatorId();
+    item["assignee"] = getUserName(info->getAssigneeId());
+    item["assignee_id"] = info->getAssigneeId();
+    item["org_id"] = info->getOrgId();
+    item["org_name"] = getOrgName(info->getOrgId());
+    item["related_requirement_id"] = info->getRequirementId();
+    item["module"] = info->getModule();
+    item["steps_to_reproduce"] = info->getStepsToReproduce();
+    item["environment"] = info->getEnvironment();
+    item["created_at"] = info->getCreateTime();
+    item["updated_at"] = info->getUpdateTime();
+}
+
+inline void buildTaskJson(Json::Value& item, data::TaskInfo::ptr info) {
+    item["id"] = info->getId();
+    item["title"] = info->getTitle();
+    item["description"] = info->getDescription();
+    item["status"] = taskStatusToString(info->getStatus());
+    item["priority"] = priorityToString(info->getPriority());
+    item["creator"] = getUserName(info->getCreatorId());
+    item["creator_id"] = info->getCreatorId();
+    item["assignee"] = getUserName(info->getAssigneeId());
+    item["assignee_id"] = info->getAssigneeId();
+    item["org_id"] = info->getOrgId();
+    item["org_name"] = getOrgName(info->getOrgId());
+    item["requirement_id"] = info->getRequirementId();
+    item["bug_id"] = info->getBugId();
+    item["deadline"] = info->getDeadline();
+    item["estimated_hours"] = info->getEstimatedHours();
+    item["created_at"] = info->getCreateTime();
+    item["updated_at"] = info->getUpdateTime();
 }
 
 } // namespace rd

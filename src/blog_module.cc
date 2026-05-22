@@ -275,38 +275,19 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/organization/user_kick", XX(OrganizationUserKickServlet));
         dp->addServlet("/api/v1/organization/assignment_create", XX(AssignmentOrganizationCreateServlet));
         dp->addServlet("/api/v1/organization/assignment_list", XX(OrganizationAssignmentListServlet));
-        // 需求相关
-        dp->addServlet("/api/v1/requirement/create", XX(RequirementCreateServlet));
-        dp->addServlet("/api/v1/requirement/detail", XX(RequirementDetailServlet));
-        dp->addServlet("/api/v1/requirement/list", XX(RequirementListServlet));
-        dp->addServlet("/api/v1/requirement/delete", XX(RequirementDeleteServlet));
-        dp->addServlet("/api/v1/requirement/assign", XX(RequirementAssignServlet));
-        // 缺陷相关
-        dp->addServlet("/api/v1/bug/create", XX(BugCreateServlet));
-        dp->addServlet("/api/v1/bug/detail", XX(BugDetailServlet));
-        dp->addServlet("/api/v1/bug/list", XX(BugListServlet));
-        dp->addServlet("/api/v1/bug/delete", XX(BugDeleteServlet));
-        dp->addServlet("/api/v1/bug/assign", XX(BugAssignServlet));
-        // 任务相关
-        dp->addServlet("/api/v1/task/create", XX(TaskCreateServlet));
-        dp->addServlet("/api/v1/task/detail", XX(TaskDetailServlet));
-        dp->addServlet("/api/v1/task/list", XX(TaskListServlet));
-        dp->addServlet("/api/v1/task/delete", XX(TaskDeleteServlet));
-        dp->addServlet("/api/v1/task/assign", XX(TaskAssignServlet));
         // R&D 平台相关（新版统一 API）
         dp->addServlet("/api/v1/rd/requirements", XX(RdRequirementServlet));
-        dp->addServlet("/api/v1/rd/requirements/detail", XX(RdRequirementServlet));
-        dp->addServlet("/api/v1/rd/requirements/delete", XX(RdRequirementServlet));
+        dp->addServlet("/api/v1/rd/requirements/detail", XX(RdRequirementDetailServlet));
+        dp->addServlet("/api/v1/rd/requirements/delete", XX(RdRequirementDeleteServlet));
         dp->addServlet("/api/v1/rd/bugs", XX(RdBugServlet));
-        dp->addServlet("/api/v1/rd/bugs/detail", XX(RdBugServlet));
-        dp->addServlet("/api/v1/rd/bugs/delete", XX(RdBugServlet));
+        dp->addServlet("/api/v1/rd/bugs/detail", XX(RdBugDetailServlet));
+        dp->addServlet("/api/v1/rd/bugs/delete", XX(RdBugDeleteServlet));
         dp->addServlet("/api/v1/rd/tasks", XX(RdTaskServlet));
-        dp->addServlet("/api/v1/rd/tasks/detail", XX(RdTaskServlet));
-        dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskServlet));
+        dp->addServlet("/api/v1/rd/tasks/detail", XX(RdTaskDetailServlet));
+        dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskDeleteServlet));
         dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));
         dp->addServlet("/api/v1/rd/my-tickets", XX(RdMyTicketsServlet));
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
-        dp->addServlet("/api/v1/rd/enums", XX(RdEnumsServlet));
 #undef XX
     }
 
