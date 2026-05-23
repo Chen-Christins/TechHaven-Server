@@ -66,12 +66,15 @@
 #include "../servlets/organization/organization_user_list_servlet.h"        // IWYU pragma: keep
 #include "../servlets/organization/organization_user_switch_role_servlet.h" // IWYU pragma: keep
 #include "../servlets/rd/rd_requirement_servlet.h"                          // IWYU pragma: keep
+#include "../servlets/rd/rd_requirement_edit_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/rd/rd_requirement_detail_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/rd/rd_requirement_delete_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/rd/rd_bug_servlet.h"                                  // IWYU pragma: keep
+#include "../servlets/rd/rd_bug_edit_servlet.h"                             // IWYU pragma: keep
 #include "../servlets/rd/rd_bug_detail_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/rd/rd_bug_delete_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/rd/rd_task_servlet.h"                                 // IWYU pragma: keep
+#include "../servlets/rd/rd_task_edit_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/rd/rd_task_detail_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/rd/rd_task_delete_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/rd/rd_stats_servlet.h"                                // IWYU pragma: keep

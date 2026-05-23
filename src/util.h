@@ -61,6 +61,9 @@ inline void SendWX(const std::string& group, const std::string& msg) {
         break;                                              \
     }
 
+#define DEFINE_AND_CHECK_STRING_WITH_DEFAULT(result, var, param, default_val) \
+    std::string var = request->getParam(param, default_val);
+
 #define DEFINE_AND_CHECK_TYPE(result, type, var, param)    \
     type var;                                              \
     if (!request->checkGetParamAs(param, var)) {           \

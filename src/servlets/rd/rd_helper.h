@@ -22,57 +22,6 @@ namespace servlet {
 namespace rd {
 
 // ============================================================================
-// 安全 JSON 取值
-// ============================================================================
-inline int64_t getJsonInt64(const Json::Value& body, const std::string& key, int64_t def = 0) {
-    if (body.isNull() || !body.isMember(key)) return def;
-    const auto& v = body[key];
-    if (v.isInt() || v.isUInt()) return v.asInt64();
-    if (v.isString()) {
-        std::string s = v.asString();
-        if (s.empty()) return def;
-        try { return std::stoll(s); } catch (...) { return def; }
-    }
-    return def;
-}
-
-inline std::string getJsonString(const Json::Value& body, const std::string& key, const std::string& def = "") {
-    if (body.isNull() || !body.isMember(key)) return def;
-    const auto& v = body[key];
-    if (v.isString()) return v.asString();
-    if (v.isInt() || v.isUInt()) return std::to_string(v.asInt64());
-    return def;
-}
-
-// ============================================================================
-// 参数获取: body 优先，query params 回退（供宏和直接调用使用）
-// body 取值若为 0/空，继续回退到 query params
-// ============================================================================
-inline std::string getParamString(const Json::Value& body, std::shared_ptr<chen::http::HttpRequest> req, const std::string& key) {
-    std::string val;
-    if (!body.isNull() && body.isMember(key)) {
-        const auto& v = body[key];
-        if (v.isString()) val = v.asString();
-        else val = std::to_string(getJsonInt64(body, key));
-    }
-    if (val.empty()) {
-        val = req->getParam(key);
-    }
-    return val;
-}
-
-inline int64_t getParamInt64(const Json::Value& body, std::shared_ptr<chen::http::HttpRequest> req, const std::string& key) {
-    int64_t val = 0;
-    if (!body.isNull() && body.isMember(key)) {
-        val = getJsonInt64(body, key);
-    }
-    if (!val) {
-        val = req->getParamAs<int64_t>(key, 0);
-    }
-    return val;
-}
-
-// ============================================================================
 // 分页: page/page_size → offset/size
 // ============================================================================
 inline void parsePagination(uint64_t page, uint64_t page_size, uint64_t& offset, uint64_t& size) {

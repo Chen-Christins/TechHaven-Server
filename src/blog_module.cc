@@ -277,12 +277,15 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/organization/assignment_list", XX(OrganizationAssignmentListServlet));
         // R&D 平台相关（新版统一 API）
         dp->addServlet("/api/v1/rd/requirements", XX(RdRequirementServlet));
+        dp->addServlet("/api/v1/rd/requirements/edit", XX(RdRequirementEditServlet));
         dp->addServlet("/api/v1/rd/requirements/detail", XX(RdRequirementDetailServlet));
         dp->addServlet("/api/v1/rd/requirements/delete", XX(RdRequirementDeleteServlet));
         dp->addServlet("/api/v1/rd/bugs", XX(RdBugServlet));
+        dp->addServlet("/api/v1/rd/bugs/edit", XX(RdBugEditServlet));
         dp->addServlet("/api/v1/rd/bugs/detail", XX(RdBugDetailServlet));
         dp->addServlet("/api/v1/rd/bugs/delete", XX(RdBugDeleteServlet));
         dp->addServlet("/api/v1/rd/tasks", XX(RdTaskServlet));
+        dp->addServlet("/api/v1/rd/tasks/edit", XX(RdTaskEditServlet));
         dp->addServlet("/api/v1/rd/tasks/detail", XX(RdTaskDetailServlet));
         dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskDeleteServlet));
         dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));

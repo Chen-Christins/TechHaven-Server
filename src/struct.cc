@@ -225,11 +225,6 @@ bool BlogLoginedServlet::handlePre(chen::http::HttpRequest::ptr request
         result->setResult(410, "not login");
         return false;
     }
-    if (request->getMethod() != chen::http::HttpMethod::GET 
-            && request->getMethod() != chen::http::HttpMethod::POST) {
-        result->setResult(300, "invalid method");
-        return false;
-    }
     return true;
 }
 

@@ -1,9 +1,9 @@
 #include "rd_requirement_delete_servlet.h"
-#include "rd_macros.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
 #include "../../permission.h"
+#include "../../util.h"
 
 #include <chen/log/log.h>
 
@@ -28,9 +28,9 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
             reader.parse(reqBody, body);
         }
 
-        RD_PARAM_INT(id, "id");
-        RD_PARAM_STR(idsStr, "ids");
-        RD_PARAM_INT(org_id, "org_id");
+        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
+        DEFINE_AND_CHECK_STRING(result, idsStr, "ids");
+        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
 
         std::set<int64_t> delIds;
         if (id) {

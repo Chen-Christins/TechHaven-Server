@@ -1,9 +1,9 @@
 #include "rd_task_delete_servlet.h"
-#include "rd_macros.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/task_manager.h"
 #include "../../permission.h"
+#include "../../util.h"
 
 namespace blog {
 namespace servlet {
@@ -15,16 +15,9 @@ RdTaskDeleteServlet::RdTaskDeleteServlet()
 int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        std::string reqBody = request->getBody();
-        Json::Value body;
-        if (!reqBody.empty()) {
-            Json::Reader reader;
-            reader.parse(reqBody, body);
-        }
-
-        RD_PARAM_INT(id, "id");
-        RD_PARAM_STR(idsStr, "ids");
-        RD_PARAM_INT(org_id, "org_id");
+        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
+        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
+        std::string idsStr = request->getParam("ids");
 
         std::set<int64_t> delIds;
         if (id) {
