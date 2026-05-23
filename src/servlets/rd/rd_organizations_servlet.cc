@@ -1,0 +1,41 @@
+#include "rd_organizations_servlet.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/organization_manager.h"
+
+namespace blog {
+namespace servlet {
+
+RdOrganizationsServlet::RdOrganizationsServlet()
+    : BlogLoginedServlet("RdOrganizationsServlet") {
+}
+
+int32_t RdOrganizationsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int64_t uid = getUserId(request);
+
+        std::vector<data::OrganizationUserRelInfo::ptr> userOrgs;
+        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(userOrgs, uid, -1, true);
+
+        Json::Value arr(Json::arrayValue);
+        for (auto& rel : userOrgs) {
+            auto org = OrganizationMgr::GetInstance()->get(rel->getOrgId());
+            if (!org) {
+                continue;
+            }
+
+            Json::Value item;
+            item["org_id"] = org->getId();
+            item["org_name"] = org->getName();
+            item["role"] = rel->getRole();
+            arr.append(item);
+        }
+
+        result->set("list", arr);
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}

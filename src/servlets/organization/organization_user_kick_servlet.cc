@@ -6,6 +6,7 @@
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/notification_manager.h"
+#include "../../permission.h"
 
 
 namespace blog {
@@ -31,7 +32,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
 
-        if (!checkPermission(system_role, org_role)) {
+        if (!permission::canManageMembers(system_role, org_role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -75,8 +76,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
             std::vector<data::OrganizationUserRelInfo::ptr> members;
             OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
             for (auto& m : members) {
-                if (m->getRole() == OrganizationManager::Role::ADMIN
-                        || m->getRole() == OrganizationManager::Role::OWNER) {
+                if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
                     auto notifInfo = NotificationMgr::GetInstance()->addNotification(
                         m->getUserId(), title, content, "org_member_kicked", uid);
                     if (notifInfo) {
@@ -117,20 +117,6 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
-}
-
-bool OrganizationUserKickServlet::checkPermission(int32_t system_role, int32_t org_role) {
-    // 系统管理员或组织所有者、管理员有权限踢出用户
-    if (system_role == UserManager::Role::ADMIN) {
-        return true;
-    }
-    if (org_role == OrganizationManager::Role::OWNER) {
-        return true;
-    }
-    if (org_role == OrganizationManager::Role::ADMIN) {
-        return true;
-    }
-    return false;
 }
 
 }

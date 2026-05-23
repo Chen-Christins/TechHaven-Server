@@ -25,8 +25,8 @@ int32_t OrganizationUserListServlet::handle(chen::http::HttpRequest::ptr request
         if (status == OrganizationUserRelManager::Status::PENDING) {
             int64_t uid = getUserId(request);
             auto info = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(id, uid);
-            if (info->getRole() != OrganizationManager::Role::ADMIN
-                    && info->getRole() != OrganizationManager::Role::OWNER
+            if (info->getRole() != OrganizationManager::Role::ORG_ADMIN
+					&& info->getRole() != OrganizationManager::Role::DEV_LEAD
                     && UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
                 result->setResult(403, "Access Denied");
                 break;

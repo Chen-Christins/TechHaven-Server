@@ -6,6 +6,7 @@
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/notification_manager.h"
+#include "../../permission.h"
 
 namespace blog {
 namespace servlet {
@@ -31,7 +32,7 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
         
-        if (!checkPermission(system_role, org_role, role)) {
+        if (!permission::canSwitchRole(system_role, org_role, role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -44,8 +45,10 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
         }
 
         if (role != OrganizationManager::Role::MEMBER
-                && role != OrganizationManager::Role::ADMIN
-                && role != OrganizationManager::Role::OWNER) {
+                && role != OrganizationManager::Role::REPORTER
+                && role != OrganizationManager::Role::DEVELOPER
+                && role != OrganizationManager::Role::DEV_LEAD
+                && role != OrganizationManager::Role::ORG_ADMIN) {
             result->setResult(400, "invalid role");
             break;
         }
@@ -70,9 +73,11 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
         {
             auto org = OrganizationMgr::GetInstance()->get(org_id);
             std::string org_name = org ? org->getName() : std::to_string(org_id);
-            const char* role_name = "成员";
-            if (role == OrganizationManager::Role::ADMIN) role_name = "管理员";
-            else if (role == OrganizationManager::Role::OWNER) role_name = "拥有者";
+            const char* role_name = "普通成员";
+            if (role == OrganizationManager::Role::REPORTER) role_name = "报告者";
+            else if (role == OrganizationManager::Role::DEVELOPER) role_name = "开发者";
+            else if (role == OrganizationManager::Role::DEV_LEAD) role_name = "研发主管";
+            else if (role == OrganizationManager::Role::ORG_ADMIN) role_name = "组织管理员";
 
             std::string title = "组织角色变更";
             std::string content = "您在组织「" + org_name + "」中的角色已被更新为" + role_name;
@@ -105,24 +110,6 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
-}
-
-bool OrganizationUserSwitchRoleServlet::checkPermission(int32_t system_role, int32_t org_role, int32_t new_role) {
-    // 系统管理员可以操作一切
-    if (system_role == UserManager::Role::ADMIN) {
-        return true;
-    }
-    // 组织拥有者可以操作一切
-    if (org_role == OrganizationManager::Role::OWNER) {
-        return true;
-    }
-    // 组织管理员只能操作普通成员
-    if (org_role == OrganizationManager::Role::ADMIN 
-            && (new_role == OrganizationManager::Role::MEMBER
-            || new_role == OrganizationManager::Role::ADMIN)) {
-        return true;
-    }
-    return false;
 }
 
 }

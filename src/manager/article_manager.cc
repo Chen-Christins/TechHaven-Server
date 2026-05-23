@@ -164,11 +164,12 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
 
     std::shared_lock<std::shared_mutex> lock(m_mutex);
 
-    // 收集有效文章并按 id 降序排列
     std::vector<data::ArticleInfo::ptr> matched;
     for (auto& rel : rels) {
         auto it = m_datas.find(rel->getArticleId());
-        if (it != m_datas.end() && (!valid || !it->second->getIsDeleted())) {
+        if (it != m_datas.end()
+                && (!valid || !it->second->getIsDeleted())
+                && it->second->getState() == Status::PUBLISHED) {
             matched.push_back(it->second);
         }
     }
@@ -193,11 +194,12 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
 
     std::shared_lock<std::shared_mutex> lock(m_mutex);
 
-    // 收集有效文章并按 id 降序排列
     std::vector<data::ArticleInfo::ptr> matched;
     for (auto& rel : rels) {
         auto it = m_datas.find(rel->getArticleId());
-        if (it != m_datas.end() && (!valid || !it->second->getIsDeleted())) {
+        if (it != m_datas.end()
+                && (!valid || !it->second->getIsDeleted())
+                && it->second->getState() == Status::PUBLISHED) {
             matched.push_back(it->second);
         }
     }

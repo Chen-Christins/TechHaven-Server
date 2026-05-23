@@ -13,7 +13,14 @@ SOURCE_DIR="bin"
 PROJECT_NAME='blog'  # 项目名称
 APP_NAME='blog_server'  # 可执行文件名
 TEMP_DIR="deploy_package_$(date +%Y%m%d%H%M%S)"  # 临时目录名含时间戳防冲突
-SDK_DIR="chen-sdk-1.1.0"
+
+# 动态查找最新的 chen-sdk-x.y.z 目录
+SDK_DIR=$(ls -d chen-sdk-* 2>/dev/null | sort -V | tail -1)
+if [ -z "$SDK_DIR" ]; then
+    echo "[错误] 未找到 chen-sdk-* 目录！"
+    exit 1
+fi
+echo "检测到 SDK 目录: $SDK_DIR"
 
 # 检查源目录是否存在
 if [ ! -d "$SOURCE_DIR" ]; then

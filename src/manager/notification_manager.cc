@@ -20,6 +20,16 @@ void NotificationManager::removeConnection(int64_t user_id) {
     INFO(logger) << "Notification WS disconnected: user_id=" << user_id;
 }
 
+void NotificationManager::closeAllConnections() {
+    std::unique_lock<std::shared_mutex> lock(m_connMutex);
+    for (auto& [user_id, session] : m_connections) {
+        session->close();
+        INFO(logger) << "Notification WS closed: user_id=" << user_id;
+    }
+    m_connections.clear();
+    INFO(logger) << "All Notification WS connections closed";
+}
+
 int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& message) {
     std::shared_lock<std::shared_mutex> lock(m_connMutex);
     auto it = m_connections.find(user_id);

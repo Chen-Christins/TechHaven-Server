@@ -9,6 +9,7 @@ set(LIB_SRC
     blog/data/assignment_info.cc
     blog/data/assignment_organization_rel_info.cc
     blog/data/assignment_user_rel_info.cc
+    blog/data/bug_info.cc
     blog/data/category_info.cc
     blog/data/chunk_upload_info.cc
     blog/data/comment_info.cc
@@ -18,7 +19,9 @@ set(LIB_SRC
     blog/data/notification_info.cc
     blog/data/organization_info.cc
     blog/data/organization_user_rel_info.cc
+    blog/data/requirement_info.cc
     blog/data/resource_info.cc
+    blog/data/task_info.cc
     blog/data/user_info.cc
     blog/data/user_follow_rel_info.cc
 )

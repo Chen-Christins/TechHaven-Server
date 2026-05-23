@@ -1,0 +1,140 @@
+#include "rd_bug_edit_servlet.h"
+#include "rd_helper.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/bug_manager.h"
+#include "../../permission.h"
+#include "../../util.h"
+
+namespace blog {
+namespace servlet {
+
+RdBugEditServlet::RdBugEditServlet()
+    : BlogLoginedServlet("RdBugEditServlet") {
+}
+
+int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int64_t id = request->getParamAs<int64_t>("id", 0);
+        DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
+
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
+
+        auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+        if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
+            result->setResult(403, "not a member of this organization");
+            break;
+        }
+        int32_t orgRole = rel->getRole();
+
+        bool is_new = false;
+        data::BugInfo::ptr info;
+        if (id) {
+            info = BugMgr::GetInstance()->get(id);
+            if (!info || info->getOrgId() != org_id) {
+                result->setResult(404, "bug not exist");
+                break;
+            }
+            if (!permission::canEditBug(orgRole, uid, info->getCreatorId())) {
+                result->setResult(403, "Access Denied");
+                break;
+            }
+        } else {
+            if (!permission::canCreateBug(orgRole)) {
+                result->setResult(403, "Access Denied");
+                break;
+            }
+            info.reset(new data::BugInfo);
+            info->setOrgId(org_id);
+            info->setCreatorId(uid);
+            info->setCreateTime(time(0));
+            is_new = true;
+        }
+
+        DEFINE_AND_CHECK_STRING(result, title, "title");
+        if (!title.empty()) {
+            info->setTitle(title);
+        }
+
+        std::string desc = request->getParam("description");
+        if (!desc.empty()) {
+            info->setDescription(desc);
+        }
+
+        std::string severityStr = request->getParam("severity");
+        if (!severityStr.empty()) {
+            int32_t s = rd::stringToSeverity(severityStr);
+            if (s >= 0) {
+                info->setSeverity(s);
+            }
+        }
+
+        std::string priorityStr = request->getParam("priority");
+        if (!priorityStr.empty()) {
+            int32_t p = rd::stringToPriority(priorityStr);
+            if (p >= 0) {
+                info->setPriority(p);
+            }
+        }
+
+        std::string statusStr = request->getParam("status");
+        if (!statusStr.empty()) {
+            int32_t s = rd::stringToBugStatus(statusStr);
+            if (s >= 0) {
+                info->setStatus(s);
+            }
+        }
+
+        int64_t assignee_id = request->getParamAs<int64_t>("assignee_id", 0);
+        if (assignee_id) {
+            info->setAssigneeId(assignee_id);
+        }
+
+        int64_t requirement_id = request->getParamAs<int64_t>("related_requirement_id", 0);
+        if (requirement_id) {
+            info->setRequirementId(requirement_id);
+        }
+
+        std::string module = request->getParam("module");
+        if (!module.empty()) {
+            info->setModule(module);
+        }
+
+        std::string steps = request->getParam("steps_to_reproduce");
+        if (!steps.empty()) {
+            info->setStepsToReproduce(steps);
+        }
+
+        std::string env = request->getParam("environment");
+        if (!env.empty()) {
+            info->setEnvironment(env);
+        }
+
+        info->setIsDeleted(0);
+        info->setUpdateTime(time(0));
+
+        auto db = getDB();
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
+        if (data::BugInfoDao::InsertOrUpdate(info, db)) {
+            result->setResult(500, "insert or update bug fail");
+            break;
+        }
+        if (is_new) {
+            BugMgr::GetInstance()->add(info);
+        }
+        rd::buildBugJson(result->jsondata, info);
+    } while (0);
+    
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}

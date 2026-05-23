@@ -307,7 +307,7 @@ int OrganizationUserRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '主键ID',"
             "`org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID',"
-            "`role` int NOT NULL DEFAULT 1 COMMENT '角色: 1成员 2管理员 3拥有者',"
+            "`role` int NOT NULL DEFAULT 1 COMMENT '角色: 1普通成员 2报告者 3开发者 4研发主管 5组织管理员',"
             "`status` int NOT NULL DEFAULT 1 COMMENT '状态: 0申请中 1已加入 2已拒绝 3已退出',"
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '加入时间',"

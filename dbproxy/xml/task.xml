@@ -1,0 +1,25 @@
+<table name="task" namespace="blog.data" desc="任务表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="任务ID"/>
+        <column name="org_id" type="int64" desc="组织ID"/>
+        <column name="title" type="string" length="256" desc="任务标题"/>
+        <column name="description" type="string" length="2048" desc="任务描述"/>
+        <column name="priority" type="int32" default="1" desc="优先级: 1低 2中 3高 4紧急"/>
+        <column name="status" type="int32" default="0" desc="状态: 0待办 1进行中 2已完成 3已关闭"/>
+        <column name="creator_id" type="int64" desc="创建者ID"/>
+        <column name="assignee_id" type="int64" desc="负责人ID"/>
+        <column name="requirement_id" type="int64" desc="关联需求ID"/>
+        <column name="bug_id" type="int64" desc="关联缺陷ID"/>
+        <column name="deadline" type="datetime" desc="截止时间"/>
+        <column name="estimated_hours" type="int32" desc="预估工时(小时)"/>
+        <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
+        <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="idx_org_id" cols="org_id" type="index"/>
+        <index name="idx_creator_id" cols="creator_id" type="index"/>
+        <index name="idx_assignee_id" cols="assignee_id" type="index"/>
+    </indexs>
+</table>

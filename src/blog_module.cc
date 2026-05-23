@@ -31,6 +31,7 @@ bool BlogModule::onLoad() {
 bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
     ArticleMgr::GetInstance()->stop();
+    NotificationMgr::GetInstance()->closeAllConnections();
     return true;
 }
 
@@ -111,23 +112,17 @@ bool BlogModule::initDB() {
     XX(ArticlePraiseRelInfoDao, "article_praise_rel")
     XX(CommentInfoDao, "comment")
     XX(CommentPraiseRelInfoDao, "comment_praise_rel")
+    XX(RequirementInfoDao, "requirement")
+    XX(BugInfoDao, "bug")
+    XX(TaskInfoDao, "task")
 #undef XX
         INFO(logger) << "init database end";
     }
 
     // 数据库迁移：为已有表补充新增列
     {
-        const char* migrations[] = {
-            "ALTER TABLE notification ADD COLUMN article_id INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE notification ADD COLUMN comment_id INTEGER NOT NULL DEFAULT 0",
-            "ALTER TABLE user ADD COLUMN token TEXT NOT NULL DEFAULT ''",
-            "ALTER TABLE user ADD COLUMN token_time INTEGER NOT NULL DEFAULT 0",
-        };
-        for (auto& sql : migrations) {
-            if (db->execute(sql)) {
-                INFO(logger) << "migration: " << sql << " (column may already exist)";
-            }
-        }
+		INFO(logger) << "migrate database begin";
+		INFO(logger) << "migrate database end";
     }
 
 	return true;
@@ -158,6 +153,9 @@ void BlogModule::loadAllData() {
     XX(ArticlePraiseRelMgr)
     XX(CommentMgr)
     XX(CommentPraiseRelMgr)
+    XX(RequirementMgr)
+    XX(BugMgr)
+    XX(TaskMgr)
 #undef XX
 
 }
@@ -277,6 +275,23 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/organization/user_kick", XX(OrganizationUserKickServlet));
         dp->addServlet("/api/v1/organization/assignment_create", XX(AssignmentOrganizationCreateServlet));
         dp->addServlet("/api/v1/organization/assignment_list", XX(OrganizationAssignmentListServlet));
+        // R&D 平台相关（新版统一 API）
+        dp->addServlet("/api/v1/rd/requirements", XX(RdRequirementServlet));
+        dp->addServlet("/api/v1/rd/requirements/edit", XX(RdRequirementEditServlet));
+        dp->addServlet("/api/v1/rd/requirements/detail", XX(RdRequirementDetailServlet));
+        dp->addServlet("/api/v1/rd/requirements/delete", XX(RdRequirementDeleteServlet));
+        dp->addServlet("/api/v1/rd/bugs", XX(RdBugServlet));
+        dp->addServlet("/api/v1/rd/bugs/edit", XX(RdBugEditServlet));
+        dp->addServlet("/api/v1/rd/bugs/detail", XX(RdBugDetailServlet));
+        dp->addServlet("/api/v1/rd/bugs/delete", XX(RdBugDeleteServlet));
+        dp->addServlet("/api/v1/rd/tasks", XX(RdTaskServlet));
+        dp->addServlet("/api/v1/rd/tasks/edit", XX(RdTaskEditServlet));
+        dp->addServlet("/api/v1/rd/tasks/detail", XX(RdTaskDetailServlet));
+        dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskDeleteServlet));
+        dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));
+        dp->addServlet("/api/v1/rd/my-tickets", XX(RdMyTicketsServlet));
+        dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
+        dp->addServlet("/api/v1/rd/organizations/members", XX(RdOrganizationMembersServlet));
 #undef XX
     }
 
