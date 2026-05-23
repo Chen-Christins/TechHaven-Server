@@ -1,5 +1,6 @@
 #include "requirement_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -468,5 +469,313 @@ int RequirementInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `requirement_creator_id` (`creator_id`),"
             "KEY `requirement_assignee_id` (`assignee_id`)) COMMENT='需求表'");
 }
+
+int RequirementInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(requirement)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(requirement) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("title");
+    expected_cols.insert("description");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("creator_id");
+    expected_cols.insert("assignee_id");
+    expected_cols.insert("iteration");
+    expected_cols.insert("category");
+    expected_cols.insert("source");
+    expected_cols.insert("deadline");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.org_id";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN org_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.title";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN title TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.description";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.priority";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN priority INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.status";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN status INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("creator_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.creator_id";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN creator_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("assignee_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.assignee_id";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN assignee_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("iteration") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.iteration";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN iteration TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN iteration failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("category") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.category";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN category TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN category failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("source") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.source";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN source TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN source failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("deadline") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.deadline";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN deadline TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.is_deleted";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.create_time";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.update_time";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column requirement." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE requirement DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE requirement DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int RequirementInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM requirement");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM requirement errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("title");
+    expected_cols.insert("description");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("creator_id");
+    expected_cols.insert("assignee_id");
+    expected_cols.insert("iteration");
+    expected_cols.insert("category");
+    expected_cols.insert("source");
+    expected_cols.insert("deadline");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.org_id";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.title";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `title` varchar(256) NOT NULL DEFAULT '' COMMENT '需求标题'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.description";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `description` varchar(2048) NOT NULL DEFAULT '' COMMENT '需求描述'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.priority";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '优先级: 1低 2中 3高 4紧急'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.status";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '状态: 0草稿 1待处理 2进行中 3已完成 4已关闭'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("creator_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.creator_id";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `creator_id` bigint NOT NULL DEFAULT 0 COMMENT '创建者ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("assignee_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.assignee_id";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `assignee_id` bigint NOT NULL DEFAULT 0 COMMENT '负责人ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("iteration") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.iteration";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `iteration` varchar(128) NOT NULL DEFAULT '' COMMENT '迭代'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN iteration failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("category") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.category";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `category` varchar(128) NOT NULL DEFAULT '' COMMENT '分类'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN category failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("source") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.source";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `source` varchar(128) NOT NULL DEFAULT '' COMMENT '需求来源'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN source failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("deadline") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.deadline";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `deadline` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '截止时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.is_deleted";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.create_time";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column requirement.update_time";
+        int rt = conn->execute("ALTER TABLE requirement ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE requirement ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column requirement." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE requirement DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE requirement DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

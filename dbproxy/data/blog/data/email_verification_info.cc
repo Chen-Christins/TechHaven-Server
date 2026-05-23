@@ -1,5 +1,6 @@
 #include "email_verification_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -419,5 +420,205 @@ int EmailVerificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `email_verification_expires_time` (`expires_time`),"
             "KEY `email_verification_create_time` (`create_time`))");
 }
+
+int EmailVerificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(email_verification)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(email_verification) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("email");
+    expected_cols.insert("code");
+    expected_cols.insert("type");
+    expected_cols.insert("state");
+    expected_cols.insert("create_time");
+    expected_cols.insert("expires_time");
+    expected_cols.insert("client_ip");
+    expected_cols.insert("user_agent");
+
+    if (existing_cols.find("email") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.email";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN email TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("code") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.code";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN code TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN code failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.type";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN type INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("state") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.state";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN state INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.create_time";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("expires_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.expires_time";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN expires_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN expires_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("client_ip") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.client_ip";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN client_ip TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN client_ip failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_agent") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.user_agent";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column email_verification." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE email_verification DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE email_verification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int EmailVerificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM email_verification");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM email_verification errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("email");
+    expected_cols.insert("code");
+    expected_cols.insert("type");
+    expected_cols.insert("state");
+    expected_cols.insert("create_time");
+    expected_cols.insert("expires_time");
+    expected_cols.insert("client_ip");
+    expected_cols.insert("user_agent");
+
+    if (existing_cols.find("email") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.email";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `email` varchar(128) NOT NULL DEFAULT '' COMMENT '用户邮箱地址'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("code") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.code";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `code` varchar(128) NOT NULL DEFAULT '' COMMENT '验证码'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN code failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.type";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `type` int NOT NULL DEFAULT 0 COMMENT '验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("state") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.state";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `state` int NOT NULL DEFAULT 0 COMMENT '是否已使用'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.create_time";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("expires_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.expires_time";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `expires_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '过期时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN expires_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("client_ip") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.client_ip";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `client_ip` varchar(128) NOT NULL DEFAULT '' COMMENT '请求IP地址'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN client_ip failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_agent") == existing_cols.end()) {
+        INFO(logger) << "Adding column email_verification.user_agent";
+        int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `user_agent` varchar(128) NOT NULL DEFAULT '' COMMENT '用户代理信息'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column email_verification." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE email_verification DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE email_verification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

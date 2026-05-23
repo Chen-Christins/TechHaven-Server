@@ -1,5 +1,6 @@
 #include "user_follow_rel_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -326,5 +327,151 @@ int UserFollowRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `user_follow_rel_follower_id` (`follower_id`),"
             "KEY `user_follow_rel_following_id` (`following_id`)) COMMENT='用户关注关联表'");
 }
+
+int UserFollowRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(user_follow_rel)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(user_follow_rel) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("follower_id");
+    expected_cols.insert("following_id");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("follower_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.follower_id";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN follower_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN follower_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("following_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.following_id";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN following_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN following_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.create_time";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.update_time";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column user_follow_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE user_follow_rel DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE user_follow_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int UserFollowRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM user_follow_rel");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM user_follow_rel errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("follower_id");
+    expected_cols.insert("following_id");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("follower_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.follower_id";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN `follower_id` bigint NOT NULL DEFAULT 0 COMMENT '关注者用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN follower_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("following_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.following_id";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN `following_id` bigint NOT NULL DEFAULT 0 COMMENT '被关注者用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN following_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.create_time";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '关注时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_follow_rel.update_time";
+        int rt = conn->execute("ALTER TABLE user_follow_rel ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_follow_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column user_follow_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE user_follow_rel DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE user_follow_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

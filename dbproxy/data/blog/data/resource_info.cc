@@ -1,5 +1,6 @@
 #include "resource_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -438,5 +439,277 @@ int ResourceInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `resource_biz_type_biz_id` (`biz_type`,`biz_id`),"
             "KEY `resource_hash` (`hash`)) COMMENT='文件资源元数据表'");
 }
+
+int ResourceInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(resource)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(resource) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("name");
+    expected_cols.insert("path");
+    expected_cols.insert("type");
+    expected_cols.insert("size");
+    expected_cols.insert("hash");
+    expected_cols.insert("owner_id");
+    expected_cols.insert("biz_type");
+    expected_cols.insert("biz_id");
+    expected_cols.insert("status");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.name";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("path") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.path";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN path TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN path failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.type";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN type INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("size") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.size";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN size INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("hash") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.hash";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN hash TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN hash failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("owner_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.owner_id";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN owner_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN owner_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("biz_type") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.biz_type";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN biz_type TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN biz_type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("biz_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.biz_id";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN biz_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN biz_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.status";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN status INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.is_deleted";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.create_time";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.update_time";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column resource." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE resource DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE resource DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int ResourceInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM resource");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM resource errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("name");
+    expected_cols.insert("path");
+    expected_cols.insert("type");
+    expected_cols.insert("size");
+    expected_cols.insert("hash");
+    expected_cols.insert("owner_id");
+    expected_cols.insert("biz_type");
+    expected_cols.insert("biz_id");
+    expected_cols.insert("status");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.name";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `name` varchar(256) NOT NULL DEFAULT '' COMMENT '原始文件名'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("path") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.path";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `path` varchar(512) NOT NULL DEFAULT '' COMMENT '存储路径（相对或绝对）'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN path failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.type";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `type` int NOT NULL DEFAULT 0 COMMENT '文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("size") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.size";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `size` bigint NOT NULL DEFAULT 0 COMMENT '文件大小（字节）'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("hash") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.hash";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `hash` varchar(64) NOT NULL DEFAULT '' COMMENT '文件哈希（去重/校验）'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN hash failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("owner_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.owner_id";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `owner_id` bigint NOT NULL DEFAULT 0 COMMENT '上传者用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN owner_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("biz_type") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.biz_type";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `biz_type` varchar(32) NOT NULL DEFAULT '' COMMENT '业务类型 如assignment、article等'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN biz_type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("biz_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.biz_id";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `biz_id` bigint NOT NULL DEFAULT 0 COMMENT '业务ID 如作业ID、文章ID等'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN biz_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.status";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态: 1正常 2删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.is_deleted";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.create_time";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '上传时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column resource.update_time";
+        int rt = conn->execute("ALTER TABLE resource ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE resource ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column resource." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE resource DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE resource DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

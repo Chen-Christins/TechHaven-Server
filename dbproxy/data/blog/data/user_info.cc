@@ -1,5 +1,6 @@
 #include "user_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -500,5 +501,349 @@ int UserInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "UNIQUE KEY `user_email` (`email`),"
             "UNIQUE KEY `user_name` (`name`))");
 }
+
+int UserInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(user)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(user) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("name");
+    expected_cols.insert("account");
+    expected_cols.insert("avatar");
+    expected_cols.insert("email");
+    expected_cols.insert("role");
+    expected_cols.insert("passwd");
+    expected_cols.insert("state");
+    expected_cols.insert("bio");
+    expected_cols.insert("website");
+    expected_cols.insert("location");
+    expected_cols.insert("token");
+    expected_cols.insert("token_time");
+    expected_cols.insert("login_time");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.name";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("account") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.account";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN account TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN account failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("avatar") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.avatar";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN avatar TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN avatar failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("email") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.email";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN email TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("role") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.role";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN role INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN role failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("passwd") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.passwd";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN passwd TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN passwd failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("state") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.state";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN state INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("bio") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.bio";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN bio TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN bio failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("website") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.website";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN website TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN website failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("location") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.location";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN location TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN location failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("token") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.token";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN token TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN token failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("token_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.token_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN token_time INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN token_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("login_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.login_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN login_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN login_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.is_deleted";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.create_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.update_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column user." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE user DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE user DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int UserInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM user");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM user errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("name");
+    expected_cols.insert("account");
+    expected_cols.insert("avatar");
+    expected_cols.insert("email");
+    expected_cols.insert("role");
+    expected_cols.insert("passwd");
+    expected_cols.insert("state");
+    expected_cols.insert("bio");
+    expected_cols.insert("website");
+    expected_cols.insert("location");
+    expected_cols.insert("token");
+    expected_cols.insert("token_time");
+    expected_cols.insert("login_time");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.name";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `name` varchar(128) NOT NULL DEFAULT '' COMMENT '用户名'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("account") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.account";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `account` varchar(128) NOT NULL DEFAULT '' COMMENT '账户名称'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN account failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("avatar") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.avatar";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `avatar` varchar(128) NOT NULL DEFAULT '' COMMENT '头像地址'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN avatar failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("email") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.email";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `email` varchar(128) NOT NULL DEFAULT '' COMMENT '邮箱地址'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("role") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.role";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `role` int NOT NULL DEFAULT 1 COMMENT '角色: 1用户, 2管理员, 3编辑, 4审核员'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN role failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("passwd") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.passwd";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `passwd` varchar(128) NOT NULL DEFAULT '' COMMENT '用户密码'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN passwd failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("state") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.state";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `state` int NOT NULL DEFAULT 0 COMMENT '账号状态'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("bio") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.bio";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `bio` varchar(128) NOT NULL DEFAULT '' COMMENT '用户简介'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN bio failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("website") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.website";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `website` varchar(128) NOT NULL DEFAULT '' COMMENT '个人网站'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN website failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("location") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.location";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `location` varchar(128) NOT NULL DEFAULT '' COMMENT '用户所在地'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN location failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("token") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.token";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `token` varchar(64) NOT NULL DEFAULT '' COMMENT '登录凭证'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN token failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("token_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.token_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `token_time` bigint NOT NULL DEFAULT 0 COMMENT '凭证过期时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN token_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("login_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.login_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `login_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '上次登录时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN login_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.is_deleted";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '账号是否已经删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.create_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '账号创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user.update_time";
+        int rt = conn->execute("ALTER TABLE user ADD COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '账号信息上一次更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column user." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE user DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE user DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

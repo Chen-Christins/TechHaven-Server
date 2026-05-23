@@ -81,6 +81,8 @@ public:
     static int QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
+    static int MigrateTableSQLite3(chen::IDB::ptr info);
+    static int MigrateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

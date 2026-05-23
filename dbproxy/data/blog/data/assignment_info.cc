@@ -1,5 +1,6 @@
 #include "assignment_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -376,5 +377,259 @@ int AssignmentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `assignment_subject_name` (`subject_name`),"
             "KEY `assignment_subject_name_name` (`subject_name`,`name`)) COMMENT='作业'");
 }
+
+int AssignmentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(assignment)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(assignment) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("name");
+    expected_cols.insert("subject_name");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("description");
+    expected_cols.insert("max_size");
+    expected_cols.insert("file_type");
+    expected_cols.insert("deadline");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.name";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("subject_name") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.subject_name";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN subject_name TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN subject_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.priority";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN priority INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.status";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN status INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.description";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("max_size") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.max_size";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN max_size INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN max_size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("file_type") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.file_type";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN file_type TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN file_type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("deadline") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.deadline";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN deadline TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.is_deleted";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.create_time";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.update_time";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column assignment." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE assignment DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE assignment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int AssignmentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM assignment");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM assignment errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("name");
+    expected_cols.insert("subject_name");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("description");
+    expected_cols.insert("max_size");
+    expected_cols.insert("file_type");
+    expected_cols.insert("deadline");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.name";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `name` varchar(256) NOT NULL DEFAULT '' COMMENT '作业名称'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("subject_name") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.subject_name";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `subject_name` varchar(256) NOT NULL DEFAULT '' COMMENT '科目名称'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN subject_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.priority";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '作业优先级 1低 2中 3高 4紧急'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.status";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '作业状态'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.description";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `description` varchar(512) NOT NULL DEFAULT '' COMMENT '作业描述'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("max_size") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.max_size";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `max_size` int NOT NULL DEFAULT 0 COMMENT '最大提交大小'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN max_size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("file_type") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.file_type";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `file_type` varchar(128) NOT NULL DEFAULT '' COMMENT '允许提交的文件类型'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN file_type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("deadline") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.deadline";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `deadline` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '截止时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.is_deleted";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.create_time";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column assignment.update_time";
+        int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE assignment ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column assignment." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE assignment DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE assignment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

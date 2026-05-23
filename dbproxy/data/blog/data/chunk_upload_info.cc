@@ -1,5 +1,6 @@
 #include "chunk_upload_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -359,5 +360,241 @@ int ChunkUploadInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "UNIQUE KEY `chunk_upload_upload_id` (`upload_id`),"
             "KEY `chunk_upload_owner_id` (`owner_id`)) COMMENT='分片上传任务表'");
 }
+
+int ChunkUploadInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(chunk_upload)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(chunk_upload) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("upload_id");
+    expected_cols.insert("filename");
+    expected_cols.insert("total_chunks");
+    expected_cols.insert("uploaded_chunks");
+    expected_cols.insert("size");
+    expected_cols.insert("owner_id");
+    expected_cols.insert("status");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("upload_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.upload_id";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN upload_id TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN upload_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("filename") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.filename";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN filename TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN filename failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("total_chunks") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.total_chunks";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN total_chunks INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN total_chunks failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("uploaded_chunks") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.uploaded_chunks";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN uploaded_chunks INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN uploaded_chunks failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("size") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.size";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN size INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("owner_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.owner_id";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN owner_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN owner_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.status";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN status INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.is_deleted";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.create_time";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.update_time";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column chunk_upload." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE chunk_upload DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE chunk_upload DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int ChunkUploadInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM chunk_upload");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM chunk_upload errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("upload_id");
+    expected_cols.insert("filename");
+    expected_cols.insert("total_chunks");
+    expected_cols.insert("uploaded_chunks");
+    expected_cols.insert("size");
+    expected_cols.insert("owner_id");
+    expected_cols.insert("status");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("upload_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.upload_id";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `upload_id` varchar(64) NOT NULL DEFAULT '' COMMENT '上传任务唯一ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN upload_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("filename") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.filename";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `filename` varchar(256) NOT NULL DEFAULT '' COMMENT '原始文件名'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN filename failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("total_chunks") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.total_chunks";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `total_chunks` int NOT NULL DEFAULT 0 COMMENT '总分片数'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN total_chunks failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("uploaded_chunks") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.uploaded_chunks";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `uploaded_chunks` int NOT NULL DEFAULT 0 COMMENT '已上传分片数'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN uploaded_chunks failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("size") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.size";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `size` bigint NOT NULL DEFAULT 0 COMMENT '文件总大小（字节）'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("owner_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.owner_id";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `owner_id` bigint NOT NULL DEFAULT 0 COMMENT '上传者用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN owner_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.status";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态: 1上传中 2已完成 3失败'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.is_deleted";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.create_time";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column chunk_upload.update_time";
+        int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column chunk_upload." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE chunk_upload DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE chunk_upload DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

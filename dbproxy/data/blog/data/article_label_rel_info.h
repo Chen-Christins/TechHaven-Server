@@ -65,6 +65,8 @@ public:
     static ArticleLabelRelInfo::ptr QueryByArticleIdLabelId( const int64_t& article_id,  const int64_t& label_id, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
+    static int MigrateTableSQLite3(chen::IDB::ptr info);
+    static int MigrateTableMySQL(chen::IDB::ptr info);
 };
 
 } //namespace data

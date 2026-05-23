@@ -1,5 +1,6 @@
 #include "article_category_rel_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -301,5 +302,169 @@ int ArticleCategoryRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `article_category_rel_article_id` (`article_id`),"
             "UNIQUE KEY `article_category_rel_article_id_category_id` (`article_id`,`category_id`))");
 }
+
+int ArticleCategoryRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(article_category_rel)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(article_category_rel) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("category_id");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("publish_time");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.article_id";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN article_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("category_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.category_id";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN category_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN category_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("publish_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.publish_time";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN publish_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN publish_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.create_time";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.update_time";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column article_category_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE article_category_rel DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE article_category_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int ArticleCategoryRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM article_category_rel");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM article_category_rel errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("category_id");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("publish_time");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.article_id";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN `article_id` bigint NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("category_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.category_id";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN `category_id` bigint NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN category_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("publish_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.publish_time";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN `publish_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN publish_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.create_time";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_category_rel.update_time";
+        int rt = conn->execute("ALTER TABLE article_category_rel ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_category_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column article_category_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE article_category_rel DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE article_category_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog
