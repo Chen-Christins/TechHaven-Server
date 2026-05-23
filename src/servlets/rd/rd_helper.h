@@ -157,12 +157,6 @@ inline int32_t orgRoleToFrontend(int32_t role) {
 // ============================================================================
 // 构建公共响应字段
 // ============================================================================
-inline void setUserFields(Json::Value& item, data::UserInfo::ptr user) {
-    if (user) {
-        item["creator"] = user->getName();
-        item["assignee"] = user->getName();
-    }
-}
 
 inline std::string getOrgName(int64_t orgId) {
     auto org = OrganizationMgr::GetInstance()->get(orgId);
@@ -172,6 +166,11 @@ inline std::string getOrgName(int64_t orgId) {
 inline std::string getUserName(int64_t userId) {
     auto user = UserMgr::GetInstance()->get(userId);
     return user ? user->getName() : "";
+}
+
+inline std::string getUserAvatar(int64_t userId) {
+    auto user = UserMgr::GetInstance()->get(userId);
+    return user ? user->getAvatar() : "";
 }
 
 // ============================================================================
@@ -186,6 +185,7 @@ inline void buildRequirementJson(Json::Value& item, data::RequirementInfo::ptr i
     item["creator"] = getUserName(info->getCreatorId());
     item["creator_id"] = info->getCreatorId();
     item["assignee"] = getUserName(info->getAssigneeId());
+    item["assignee_avatar"] = getUserAvatar(info->getAssigneeId());
     item["assignee_id"] = info->getAssigneeId();
     item["org_id"] = info->getOrgId();
     item["org_name"] = getOrgName(info->getOrgId());
@@ -207,6 +207,7 @@ inline void buildBugJson(Json::Value& item, data::BugInfo::ptr info) {
     item["creator"] = getUserName(info->getCreatorId());
     item["creator_id"] = info->getCreatorId();
     item["assignee"] = getUserName(info->getAssigneeId());
+    item["assignee_avatar"] = getUserAvatar(info->getAssigneeId());
     item["assignee_id"] = info->getAssigneeId();
     item["org_id"] = info->getOrgId();
     item["org_name"] = getOrgName(info->getOrgId());
@@ -227,6 +228,7 @@ inline void buildTaskJson(Json::Value& item, data::TaskInfo::ptr info) {
     item["creator"] = getUserName(info->getCreatorId());
     item["creator_id"] = info->getCreatorId();
     item["assignee"] = getUserName(info->getAssigneeId());
+    item["assignee_avatar"] = getUserAvatar(info->getAssigneeId());
     item["assignee_id"] = info->getAssigneeId();
     item["org_id"] = info->getOrgId();
     item["org_name"] = getOrgName(info->getOrgId());

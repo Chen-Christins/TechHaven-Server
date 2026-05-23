@@ -69,6 +69,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 item["creator"] = rd::getUserName(info->getCreatorId());
                 item["creator_id"] = info->getCreatorId();
                 item["assignee"] = rd::getUserName(info->getAssigneeId());
+                item["assignee_avatar"] = rd::getUserAvatar(info->getAssigneeId());
                 item["assignee_id"] = info->getAssigneeId();
                 item["org_id"] = info->getOrgId();
                 item["org_name"] = rd::getOrgName(info->getOrgId());
@@ -113,6 +114,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 item["creator"] = rd::getUserName(info->getCreatorId());
                 item["creator_id"] = info->getCreatorId();
                 item["assignee"] = rd::getUserName(info->getAssigneeId());
+                item["assignee_avatar"] = rd::getUserAvatar(info->getAssigneeId());
                 item["assignee_id"] = info->getAssigneeId();
                 item["org_id"] = info->getOrgId();
                 item["org_name"] = rd::getOrgName(info->getOrgId());
@@ -154,6 +156,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 item["creator"] = rd::getUserName(info->getCreatorId());
                 item["creator_id"] = info->getCreatorId();
                 item["assignee"] = rd::getUserName(info->getAssigneeId());
+                item["assignee_avatar"] = rd::getUserAvatar(info->getAssigneeId());
                 item["assignee_id"] = info->getAssigneeId();
                 item["org_id"] = info->getOrgId();
                 item["org_name"] = rd::getOrgName(info->getOrgId());

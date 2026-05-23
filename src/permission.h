@@ -56,9 +56,9 @@ inline bool canCreateRequirement(int32_t orgRole) {
     return orgRole >= OrgRole::REPORTER;
 }
 
-/// 编辑需求: 研发主管及以上
+/// 编辑需求: 报告者及以上
 inline bool canEditRequirement(int32_t orgRole) {
-    return orgRole >= OrgRole::DEV_LEAD;
+    return orgRole >= OrgRole::REPORTER;
 }
 
 /// 删除需求: 研发主管及以上
@@ -68,7 +68,7 @@ inline bool canDeleteRequirement(int32_t orgRole) {
 
 /// 分配需求负责人: 研发主管及以上
 inline bool canAssignRequirement(int32_t orgRole) {
-    return orgRole >= OrgRole::DEV_LEAD;
+    return orgRole >= OrgRole::REPORTER;
 }
 
 // ============================================================================
@@ -85,13 +85,10 @@ inline bool canCreateBug(int32_t orgRole) {
     return orgRole >= OrgRole::REPORTER;
 }
 
-/// 编辑缺陷: 开发者只能编辑自己创建的，研发主管及以上编辑全部
+/// 编辑缺陷: 开发者只能编辑自己创建的，报告者及以上编辑全部
 inline bool canEditBug(int32_t orgRole, int64_t userId, int64_t creatorId) {
-    if (orgRole >= OrgRole::DEV_LEAD) {
+    if (orgRole >= OrgRole::REPORTER) {
         return true;
-    }
-    if (orgRole == OrgRole::DEVELOPER || orgRole == OrgRole::REPORTER) {
-        return userId == creatorId;
     }
     return false;
 }
@@ -103,7 +100,7 @@ inline bool canDeleteBug(int32_t orgRole) {
 
 /// 分配缺陷负责人: 研发主管及以上
 inline bool canAssignBug(int32_t orgRole) {
-    return orgRole >= OrgRole::DEV_LEAD;
+    return orgRole >= OrgRole::REPORTER;
 }
 
 // ============================================================================
@@ -120,16 +117,13 @@ inline bool canViewTask(int32_t orgRole, bool isRelated) {
 
 /// 创建任务: 研发主管及以上
 inline bool canCreateTask(int32_t orgRole) {
-    return orgRole >= OrgRole::DEV_LEAD;
+    return orgRole >= OrgRole::REPORTER;
 }
 
 /// 编辑任务: 开发者编辑自己负责的，研发主管及以上编辑全部
 inline bool canEditTask(int32_t orgRole, int64_t userId, int64_t assigneeId) {
-    if (orgRole >= OrgRole::DEV_LEAD) {
+    if (orgRole >= OrgRole::REPORTER) {
         return true;
-    }
-    if (orgRole == OrgRole::DEVELOPER || orgRole == OrgRole::REPORTER) {
-        return userId == assigneeId;
     }
     return false;
 }
@@ -141,7 +135,7 @@ inline bool canDeleteTask(int32_t orgRole) {
 
 /// 分配任务负责人: 研发主管及以上
 inline bool canAssignTask(int32_t orgRole) {
-    return orgRole >= OrgRole::DEV_LEAD;
+    return orgRole >= OrgRole::REPORTER;
 }
 
 } // namespace permission
