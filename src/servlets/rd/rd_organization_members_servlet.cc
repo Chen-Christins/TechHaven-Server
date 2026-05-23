@@ -27,6 +27,9 @@ int32_t RdOrganizationMembersServlet::handle(chen::http::HttpRequest::ptr reques
 
         Json::Value arr(Json::arrayValue);
         for (auto& m : members) {
+            if (m->getRole() < OrganizationManager::Role::REPORTER) {
+                continue;
+            }
             Json::Value item;
             item["user_id"] = m->getUserId();
             item["name"] = rd::getUserName(m->getUserId());

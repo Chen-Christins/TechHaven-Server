@@ -75,6 +75,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 item["org_name"] = rd::getOrgName(info->getOrgId());
                 item["deadline"] = info->getDeadline();
                 item["created_at"] = info->getCreateTime();
+                item["updated_at"] = info->getUpdateTime();
                 arr.append(item);
             }
         } else if (type == "bug") {
@@ -120,6 +121,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 item["org_name"] = rd::getOrgName(info->getOrgId());
                 item["module"] = info->getModule();
                 item["created_at"] = info->getCreateTime();
+                item["updated_at"] = info->getUpdateTime();
                 arr.append(item);
             }
         } else if (type == "task") {
@@ -162,6 +164,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 item["org_name"] = rd::getOrgName(info->getOrgId());
                 item["deadline"] = info->getDeadline();
                 item["created_at"] = info->getCreateTime();
+                item["updated_at"] = info->getUpdateTime();
                 arr.append(item);
             }
         } else {
