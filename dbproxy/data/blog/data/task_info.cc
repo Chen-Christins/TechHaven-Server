@@ -1,5 +1,6 @@
 #include "task_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -468,5 +469,313 @@ int TaskInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `task_creator_id` (`creator_id`),"
             "KEY `task_assignee_id` (`assignee_id`)) COMMENT='任务表'");
 }
+
+int TaskInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(task)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(task) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("title");
+    expected_cols.insert("description");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("creator_id");
+    expected_cols.insert("assignee_id");
+    expected_cols.insert("requirement_id");
+    expected_cols.insert("bug_id");
+    expected_cols.insert("deadline");
+    expected_cols.insert("estimated_hours");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.org_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN org_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.title";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN title TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.description";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.priority";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN priority INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.status";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN status INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("creator_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.creator_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN creator_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("assignee_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.assignee_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN assignee_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("requirement_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.requirement_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN requirement_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN requirement_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("bug_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.bug_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN bug_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN bug_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("deadline") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.deadline";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN deadline TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("estimated_hours") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.estimated_hours";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN estimated_hours INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN estimated_hours failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.is_deleted";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.create_time";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.update_time";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column task." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE task DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE task DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int TaskInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM task");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM task errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("title");
+    expected_cols.insert("description");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("creator_id");
+    expected_cols.insert("assignee_id");
+    expected_cols.insert("requirement_id");
+    expected_cols.insert("bug_id");
+    expected_cols.insert("deadline");
+    expected_cols.insert("estimated_hours");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.org_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.title";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `title` varchar(256) NOT NULL DEFAULT '' COMMENT '任务标题'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.description";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `description` varchar(2048) NOT NULL DEFAULT '' COMMENT '任务描述'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.priority";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '优先级: 1低 2中 3高 4紧急'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.status";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '状态: 0待办 1进行中 2已完成 3已关闭'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("creator_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.creator_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `creator_id` bigint NOT NULL DEFAULT 0 COMMENT '创建者ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("assignee_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.assignee_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `assignee_id` bigint NOT NULL DEFAULT 0 COMMENT '负责人ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("requirement_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.requirement_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `requirement_id` bigint NOT NULL DEFAULT 0 COMMENT '关联需求ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN requirement_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("bug_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.bug_id";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `bug_id` bigint NOT NULL DEFAULT 0 COMMENT '关联缺陷ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN bug_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("deadline") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.deadline";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `deadline` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '截止时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("estimated_hours") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.estimated_hours";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `estimated_hours` int NOT NULL DEFAULT 0 COMMENT '预估工时(小时)'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN estimated_hours failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.is_deleted";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.create_time";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column task.update_time";
+        int rt = conn->execute("ALTER TABLE task ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE task ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column task." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE task DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE task DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

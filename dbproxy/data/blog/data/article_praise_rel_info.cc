@@ -1,5 +1,6 @@
 #include "article_praise_rel_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -326,5 +327,151 @@ int ArticlePraiseRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `article_praise_rel_user_id` (`user_id`),"
             "KEY `article_praise_rel_article_id` (`article_id`)) COMMENT='文章点赞关联表'");
 }
+
+int ArticlePraiseRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(article_praise_rel)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(article_praise_rel) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.user_id";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.article_id";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN article_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.create_time";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.update_time";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column article_praise_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE article_praise_rel DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE article_praise_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int ArticlePraiseRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM article_praise_rel");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM article_praise_rel errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.user_id";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '点赞用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.article_id";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN `article_id` bigint NOT NULL DEFAULT 0 COMMENT '文章ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.create_time";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN `create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column article_praise_rel.update_time";
+        int rt = conn->execute("ALTER TABLE article_praise_rel ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE article_praise_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column article_praise_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE article_praise_rel DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE article_praise_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

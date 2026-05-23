@@ -1,5 +1,6 @@
 #include "bug_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -484,5 +485,331 @@ int BugInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `bug_creator_id` (`creator_id`),"
             "KEY `bug_assignee_id` (`assignee_id`)) COMMENT='缺陷表'");
 }
+
+int BugInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(bug)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(bug) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("title");
+    expected_cols.insert("description");
+    expected_cols.insert("severity");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("creator_id");
+    expected_cols.insert("assignee_id");
+    expected_cols.insert("requirement_id");
+    expected_cols.insert("module");
+    expected_cols.insert("steps_to_reproduce");
+    expected_cols.insert("environment");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.org_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN org_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.title";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN title TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.description";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("severity") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.severity";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN severity INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN severity failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.priority";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN priority INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.status";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN status INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("creator_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.creator_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN creator_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("assignee_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.assignee_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN assignee_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("requirement_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.requirement_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN requirement_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN requirement_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("module") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.module";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN module TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN module failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("steps_to_reproduce") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.steps_to_reproduce";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN steps_to_reproduce TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN steps_to_reproduce failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("environment") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.environment";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN environment TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN environment failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.is_deleted";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.create_time";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.update_time";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column bug." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE bug DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE bug DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int BugInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM bug");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM bug errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("title");
+    expected_cols.insert("description");
+    expected_cols.insert("severity");
+    expected_cols.insert("priority");
+    expected_cols.insert("status");
+    expected_cols.insert("creator_id");
+    expected_cols.insert("assignee_id");
+    expected_cols.insert("requirement_id");
+    expected_cols.insert("module");
+    expected_cols.insert("steps_to_reproduce");
+    expected_cols.insert("environment");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.org_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.title";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `title` varchar(256) NOT NULL DEFAULT '' COMMENT '缺陷标题'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.description";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `description` varchar(2048) NOT NULL DEFAULT '' COMMENT '缺陷描述'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("severity") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.severity";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `severity` int NOT NULL DEFAULT 1 COMMENT '严重程度: 1轻微 2一般 3严重 4致命'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN severity failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("priority") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.priority";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '优先级: 1低 2中 3高 4紧急'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.status";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '状态: 0待处理 1进行中 2已修复 3已关闭 4重新打开'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("creator_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.creator_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `creator_id` bigint NOT NULL DEFAULT 0 COMMENT '创建者ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("assignee_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.assignee_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `assignee_id` bigint NOT NULL DEFAULT 0 COMMENT '负责人ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("requirement_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.requirement_id";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `requirement_id` bigint NOT NULL DEFAULT 0 COMMENT '关联需求ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN requirement_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("module") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.module";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `module` varchar(128) NOT NULL DEFAULT '' COMMENT '所属模块'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN module failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("steps_to_reproduce") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.steps_to_reproduce";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `steps_to_reproduce` varchar(2048) NOT NULL DEFAULT '' COMMENT '复现步骤'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN steps_to_reproduce failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("environment") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.environment";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `environment` varchar(256) NOT NULL DEFAULT '' COMMENT '环境信息'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN environment failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.is_deleted";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.create_time";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column bug.update_time";
+        int rt = conn->execute("ALTER TABLE bug ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE bug ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column bug." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE bug DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE bug DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

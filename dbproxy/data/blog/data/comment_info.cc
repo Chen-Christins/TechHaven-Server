@@ -1,5 +1,6 @@
 #include "comment_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -483,5 +484,277 @@ int CommentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `comment_parent_id` (`parent_id`),"
             "KEY `comment_status` (`status`)) COMMENT='文章评论'");
 }
+
+int CommentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(comment)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(comment) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("parent_id");
+    expected_cols.insert("content");
+    expected_cols.insert("ip");
+    expected_cols.insert("user_agent");
+    expected_cols.insert("status");
+    expected_cols.insert("is_reported");
+    expected_cols.insert("report_count");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.article_id";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN article_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.user_id";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("parent_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.parent_id";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN parent_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN parent_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("content") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.content";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN content TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("ip") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.ip";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN ip TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN ip failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_agent") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.user_agent";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.status";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN status INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_reported") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.is_reported";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN is_reported INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN is_reported failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("report_count") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.report_count";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN report_count INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN report_count failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.is_deleted";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.create_time";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.update_time";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column comment." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE comment DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE comment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM comment");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM comment errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("parent_id");
+    expected_cols.insert("content");
+    expected_cols.insert("ip");
+    expected_cols.insert("user_agent");
+    expected_cols.insert("status");
+    expected_cols.insert("is_reported");
+    expected_cols.insert("report_count");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.article_id";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `article_id` bigint NOT NULL DEFAULT 0 COMMENT '文章ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.user_id";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '评论用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("parent_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.parent_id";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父评论ID(0=顶级评论)'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN parent_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("content") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.content";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '评论内容'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("ip") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.ip";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `ip` varchar(64) NOT NULL DEFAULT '' COMMENT '客户端IP'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN ip failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_agent") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.user_agent";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `user_agent` varchar(512) NOT NULL DEFAULT '' COMMENT '客户端UserAgent'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.status";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态 1:待审核 2:已通过 3:已拒绝 4:垃圾'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_reported") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.is_reported";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `is_reported` int NOT NULL DEFAULT 0 COMMENT '是否被举报'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN is_reported failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("report_count") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.report_count";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `report_count` int NOT NULL DEFAULT 0 COMMENT '举报次数'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN report_count failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.is_deleted";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.create_time";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column comment.update_time";
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE comment ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column comment." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE comment DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE comment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

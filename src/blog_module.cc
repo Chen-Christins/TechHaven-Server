@@ -91,7 +91,6 @@ bool BlogModule::initDB() {
 #define XX(clazz, t)                                   \
     if (blog::data::clazz::CreateTableSQLite3(db)) {   \
         ERROR(logger) << "create table " t " failed";  \
-        return false;                                  \
     }
     XX(EmailVerificationInfoDao, "email_verification")
     XX(UserInfoDao, "user")
@@ -121,8 +120,32 @@ bool BlogModule::initDB() {
 
     // 数据库迁移：为已有表补充新增列
     {
-		INFO(logger) << "migrate database begin";
-		INFO(logger) << "migrate database end";
+        INFO(logger) << "migrate database begin";
+#define XX(clazz) blog::data::clazz::MigrateTableSQLite3(db);
+        XX(EmailVerificationInfoDao)
+        XX(UserInfoDao)
+        XX(ArticleInfoDao)
+        XX(CategoryInfoDao)
+        XX(LabelInfoDao)
+        XX(ArticleCategoryRelInfoDao)
+        XX(ArticleLabelRelInfoDao)
+        XX(AssignmentInfoDao)
+        XX(OrganizationInfoDao)
+        XX(OrganizationUserRelInfoDao)
+        XX(AssignmentOrganizationRelInfoDao)
+        XX(AssignmentUserRelInfoDao)
+        XX(ResourceInfoDao)
+        XX(ChunkUploadInfoDao)
+        XX(NotificationInfoDao)
+        XX(UserFollowRelInfoDao)
+        XX(ArticlePraiseRelInfoDao)
+        XX(CommentInfoDao)
+        XX(CommentPraiseRelInfoDao)
+        XX(RequirementInfoDao)
+        XX(BugInfoDao)
+        XX(TaskInfoDao)
+#undef XX
+        INFO(logger) << "migrate database end";
     }
 
 	return true;

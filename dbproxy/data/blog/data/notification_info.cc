@@ -1,5 +1,6 @@
 #include "notification_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -391,5 +392,277 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `notification_user_id` (`user_id`),"
             "KEY `notification_user_id_is_read` (`user_id`,`is_read`)) COMMENT='用户通知'");
 }
+
+int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(notification)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(notification) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("title");
+    expected_cols.insert("content");
+    expected_cols.insert("type");
+    expected_cols.insert("sender_id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("comment_id");
+    expected_cols.insert("is_read");
+    expected_cols.insert("read_time");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.user_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.title";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN title TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("content") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.content";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN content TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.type";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN type TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("sender_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.sender_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN sender_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN sender_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.article_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN article_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("comment_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.comment_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN comment_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN comment_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_read") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.is_read";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN is_read INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_read failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("read_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.read_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN read_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN read_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.is_deleted";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.create_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.update_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column notification." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE notification DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE notification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM notification");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM notification errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("title");
+    expected_cols.insert("content");
+    expected_cols.insert("type");
+    expected_cols.insert("sender_id");
+    expected_cols.insert("article_id");
+    expected_cols.insert("comment_id");
+    expected_cols.insert("is_read");
+    expected_cols.insert("read_time");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.user_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '接收用户id'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("title") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.title";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `title` varchar(128) NOT NULL DEFAULT '' COMMENT '通知标题'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("content") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.content";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '通知内容'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.type";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `type` varchar(32) NOT NULL DEFAULT '' COMMENT '通知类型: system/announcement/article'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("sender_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.sender_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `sender_id` bigint NOT NULL DEFAULT 0 COMMENT '发送者id(0=系统)'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN sender_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("article_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.article_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `article_id` bigint NOT NULL DEFAULT 0 COMMENT '关联文章ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("comment_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.comment_id";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `comment_id` bigint NOT NULL DEFAULT 0 COMMENT '关联评论ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN comment_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_read") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.is_read";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `is_read` int NOT NULL DEFAULT 0 COMMENT '是否已读: 0未读 1已读'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_read failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("read_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.read_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `read_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '阅读时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN read_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.is_deleted";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.create_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.update_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column notification." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE notification DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE notification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog

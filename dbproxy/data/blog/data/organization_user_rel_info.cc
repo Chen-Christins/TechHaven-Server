@@ -1,5 +1,6 @@
 #include "organization_user_rel_info.h"
 #include "chen/log/log.h"
+#include <set>
 
 namespace blog {
 namespace data {
@@ -316,5 +317,187 @@ int OrganizationUserRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "UNIQUE KEY `organization_user_rel_org_id_user_id` (`org_id`,`user_id`),"
             "KEY `organization_user_rel_user_id` (`user_id`)) COMMENT='组织用户关联表'");
 }
+
+int OrganizationUserRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(organization_user_rel)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(organization_user_rel) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(1));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("role");
+    expected_cols.insert("status");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.org_id";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN org_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.user_id";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("role") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.role";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN role INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN role failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.status";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN status INTEGER NOT NULL DEFAULT 1");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.create_time";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.update_time";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column organization_user_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE organization_user_rel DROP COLUMN " + col);
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE organization_user_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+int OrganizationUserRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM organization_user_rel");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM organization_user_rel errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::set<std::string> existing_cols;
+    while (data->next()) {
+        existing_cols.insert(data->getString(0));
+    }
+
+    std::set<std::string> expected_cols;
+    expected_cols.insert("id");
+    expected_cols.insert("org_id");
+    expected_cols.insert("user_id");
+    expected_cols.insert("role");
+    expected_cols.insert("status");
+    expected_cols.insert("is_deleted");
+    expected_cols.insert("create_time");
+    expected_cols.insert("update_time");
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.org_id";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.user_id";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("role") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.role";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `role` int NOT NULL DEFAULT 1 COMMENT '角色: 1普通成员 2报告者 3开发者 4研发主管 5组织管理员'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN role failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("status") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.status";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态: 0申请中 1已加入 2已拒绝 3已退出'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_deleted") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.is_deleted";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.create_time";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '加入时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_user_rel.update_time";
+        int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    for (auto& col : existing_cols) {
+        if (expected_cols.find(col) == expected_cols.end()) {
+            WARN(logger) << "Dropping column organization_user_rel." << col << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE organization_user_rel DROP COLUMN `" + col + "`");
+            if (rt) {
+                ERROR(logger) << "ALTER TABLE organization_user_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    return 0;
+}
+
+
 } //namespace data
 } //namespace blog
