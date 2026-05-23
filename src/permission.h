@@ -43,6 +43,18 @@ inline bool canSwitchRole(int32_t systemRole, int32_t orgRole, int32_t targetRol
 }
 
 // ============================================================================
+// 平台访问权限
+// ============================================================================
+
+/// 是否可以进入研发平台: 系统管理员, 或在任一已批准组织中角色为报告者及以上
+inline bool canAccessPlatform(int32_t systemRole, int32_t highestOrgRole) {
+    if (systemRole == UserManager::Role::ADMIN) {
+        return true;
+    }
+    return highestOrgRole >= OrgRole::REPORTER;
+}
+
+// ============================================================================
 // 需求 (Requirement) 权限
 // ============================================================================
 

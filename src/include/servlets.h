@@ -79,6 +79,7 @@
 #include "../servlets/rd/rd_task_delete_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/rd/rd_stats_servlet.h"                                // IWYU pragma: keep
 #include "../servlets/rd/rd_my_tickets_servlet.h"                           // IWYU pragma: keep
+#include "../servlets/rd/rd_check_access_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/rd/rd_organizations_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/rd/rd_organization_members_servlet.h"                 // IWYU pragma: keep
 #include "../servlets/stats/stats_servlet.h"                                // IWYU pragma: keep
