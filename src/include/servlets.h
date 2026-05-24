@@ -82,6 +82,9 @@
 #include "../servlets/rd/rd_check_access_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/rd/rd_organizations_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/rd/rd_organization_members_servlet.h"                 // IWYU pragma: keep
+#include "../servlets/settings/site_status_servlet.h"                       // IWYU pragma: keep
+#include "../servlets/settings/system_settings_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/settings/system_settings_upload_servlet.h"            // IWYU pragma: keep
 #include "../servlets/stats/stats_servlet.h"                                // IWYU pragma: keep
 #include "../servlets/user/user_admin_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_delete_servlet.h"                     // IWYU pragma: keep

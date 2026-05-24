@@ -78,7 +78,7 @@ bool BlogModule::initDB() {
     auto db_path = work_path->getValue() + "/" + sqlite3_db_name->getValue();
 
     chen::SQLite3::ptr db;
-    db = chen::SQLite3::Create(db_path, chen::SQLite3::READWRITE);
+    db = chen::SQLite3::Create(db_path);
     if (!db) {
         INFO(logger) << "init database begin";
         db = chen::SQLite3::Create(db_path);
@@ -87,10 +87,15 @@ bool BlogModule::initDB() {
                 << " failed";
             return false;
         }
+        INFO(logger) << "init database end";
+    }
 
+    // 确保所有表存在（CREATE TABLE IF NOT EXISTS 幂等，新旧数据库均可安全执行）
+    {
 #define XX(clazz, t)                                   \
     if (blog::data::clazz::CreateTableSQLite3(db)) {   \
         ERROR(logger) << "create table " t " failed";  \
+        return false;                                  \
     }
     XX(EmailVerificationInfoDao, "email_verification")
     XX(UserInfoDao, "user")
@@ -99,7 +104,7 @@ bool BlogModule::initDB() {
     XX(LabelInfoDao, "label")
     XX(ArticleCategoryRelInfoDao, "article_category_rel")
     XX(ArticleLabelRelInfoDao, "article_label_rel")
-	XX(AssignmentInfoDao, "assignment")
+    XX(AssignmentInfoDao, "assignment")
     XX(OrganizationInfoDao, "organization")
     XX(OrganizationUserRelInfoDao, "organization_user_rel")
     XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
@@ -114,8 +119,8 @@ bool BlogModule::initDB() {
     XX(RequirementInfoDao, "requirement")
     XX(BugInfoDao, "bug")
     XX(TaskInfoDao, "task")
+    XX(SystemSettingsInfoDao, "system_settings")
 #undef XX
-        INFO(logger) << "init database end";
     }
 
     // 数据库迁移：为已有表补充新增列
@@ -179,6 +184,7 @@ void BlogModule::loadAllData() {
     XX(RequirementMgr)
     XX(BugMgr)
     XX(TaskMgr)
+    XX(SystemSettingsMgr)
 #undef XX
 
 }
@@ -262,6 +268,11 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/api/v1/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/api/v1/category/admin/query", XX(CategoryQueryServlet));
+        // 站点公开状态
+        dp->addServlet("/api/v1/site/status", XX(SiteStatusServlet));
+        // 系统设置相关
+        dp->addServlet("/api/v1/admin/settings", XX(SystemSettingsServlet));
+        dp->addServlet("/api/v1/admin/settings/upload", XX(SystemSettingsUploadServlet));
         // 首页统计（公开接口）
         dp->addServlet("/api/v1/stats", XX(StatsServlet));
 		// 文章标签相关

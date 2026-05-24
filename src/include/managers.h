@@ -16,6 +16,7 @@
 #include "../manager/organization_user_rel_manager.h"       // IWYU pragma: keep
 #include "../manager/requirement_manager.h"                 // IWYU pragma: keep
 #include "../manager/resource_manager.h"                    // IWYU pragma: keep
+#include "../manager/system_settings_manager.h"             // IWYU pragma: keep
 #include "../manager/task_manager.h"                        // IWYU pragma: keep
 #include "../manager/user_follow_rel_manager.h"             // IWYU pragma: keep
 #include "../manager/user_manager.h"                        // IWYU pragma: keep
