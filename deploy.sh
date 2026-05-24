@@ -85,6 +85,7 @@ if [ $# -eq 4 ]; then
     expect << EOF
         set timeout 30
         spawn scp "$PACKAGE_NAME" $REMOTE_USER@$REMOTE_IP:$REMOTE_PATH
+        log_user 0
         expect {
             "yes/no" { send "yes\r"; exp_continue }
             "password:" { send "$REMOTE_PASSWORD\r" }
@@ -107,25 +108,23 @@ EOF
 	expect << EOF
         set timeout 30
         spawn ssh $REMOTE_USER@$REMOTE_IP
+        log_user 0
         expect {
             "yes/no" { send "yes\r"; exp_continue }
             "password:" { send "$REMOTE_PASSWORD\r" }
         }
-        expect "#*" 
-		send "cd $REMOTE_PATH\r" 
-
-		# 首先尝试查找旧进程并终止
-		send "cd $REMOTE_PATH\r"
-		send "pkill -9 $APP_NAME\r"
-
-		send "tar -xzf $PACKAGE_NAME\r" 
+        expect "#*"
+        send "cd $REMOTE_PATH\r"
+        send "pkill -9 $APP_NAME\r"
+        send "tar -xzf $PACKAGE_NAME\r"
         send "rm -f $PACKAGE_NAME\r"
-		send "cd $TEMP_DIR\r" 
-		send "export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH\r" 
-		send "rm ../logs/*.log\r"
-		send "cp ../system.yml.bak conf/system.yml\r"
-		send "nohup ./$APP_NAME -d > $PROJECT_NAME.log 2>&1 &\r" 
-		expect eof
+        send "cd $TEMP_DIR\r"
+        send "export LD_LIBRARY_PATH=./lib\r"
+        send "rm ../logs/*.log\r"
+        send "cp ../system.yml.bak conf/system.yml\r"
+        send "nohup ./$APP_NAME -d > $PROJECT_NAME.log 2>&1 &\r"
+        send "exit\r"
+        expect eof
         catch wait result
         exit [lindex \$result 3]
 EOF
