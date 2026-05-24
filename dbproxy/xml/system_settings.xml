@@ -1,0 +1,44 @@
+<table name="system_settings" namespace="blog.data">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键id"/>
+
+        <!-- 站点设置 -->
+        <column name="site_name" type="string" length="100" default="TechBlog" desc="站点名称"/>
+        <column name="site_description" type="string" length="500" default="" desc="站点描述"/>
+        <column name="site_keywords" type="string" length="500" default="" desc="站点关键词"/>
+        <column name="site_icon" type="string" length="1024" default="" desc="站点图标URL"/>
+        <column name="site_logo" type="string" length="1024" default="" desc="站点Logo URL"/>
+        <column name="favicon" type="string" length="1024" default="" desc="Favicon URL"/>
+        <column name="admin_email" type="string" length="255" default="" desc="管理员邮箱"/>
+        <column name="timezone" type="string" length="50" default="Asia/Shanghai" desc="时区"/>
+        <column name="language" type="string" length="10" default="zh-CN" desc="语言"/>
+
+        <!-- 邮件设置 -->
+        <column name="smtp_host" type="string" length="255" default="" desc="SMTP主机"/>
+        <column name="smtp_port" type="int32" default="587" desc="SMTP端口"/>
+        <column name="smtp_username" type="string" length="255" default="" desc="SMTP用户名"/>
+        <column name="smtp_password" type="string" length="255" default="" desc="SMTP密码"/>
+        <column name="smtp_encryption" type="string" length="10" default="tls" desc="SMTP加密方式: none/ssl/tls"/>
+        <column name="from_email" type="string" length="255" default="" desc="发件人邮箱"/>
+        <column name="from_name" type="string" length="100" default="" desc="发件人名称"/>
+        <column name="reply_to" type="string" length="255" default="" desc="回复邮箱"/>
+
+        <!-- 系统设置 -->
+        <column name="enable_registration" type="int32" default="1" desc="是否允许注册"/>
+        <column name="require_email_verification" type="int32" default="1" desc="是否需要邮箱验证"/>
+        <column name="allow_comments" type="int32" default="1" desc="是否允许评论"/>
+        <column name="moderate_comments" type="int32" default="0" desc="评论是否需要审核"/>
+        <column name="max_file_size" type="int32" default="10" desc="最大上传文件大小(MB)"/>
+        <column name="allowed_file_types" type="string" length="500" default="jpg,jpeg,png,gif,pdf,doc,docx" desc="允许上传的文件类型"/>
+        <column name="session_timeout" type="int32" default="24" desc="会话超时时间(小时)"/>
+        <column name="maintenance_mode" type="int32" default="0" desc="是否维护模式"/>
+        <column name="backup_schedule" type="string" length="20" default="daily" desc="备份计划: disabled/daily/weekly/monthly"/>
+
+        <!-- 元数据 -->
+        <column name="created_at" type="datetime" default="current_timestamp" desc="创建时间"/>
+        <column name="updated_at" type="datetime" default="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+    </indexs>
+</table>

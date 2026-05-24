@@ -1,28 +1,16 @@
 #include "user_send_code_servlet.h"
 #include <chen/log/log.h>
-#include <chen/config/config.h>
 #include "blog/data/email_verification_info.h"
 #include <chen/email/email.h>
 #include <chen/email/smtp.h>
 #include "../../manager/user_manager.h"
+#include "../../manager/system_settings_manager.h"
 #include "../../util.h"
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static chen::ConfigVar<std::string>::ptr email_host = 
-    chen::Config::Lookup("server.email_service.host", std::string(), "the token of email service");
-
-static chen::ConfigVar<uint32_t>::ptr email_port = 
-    chen::Config::Lookup("server.email_service.port", uint32_t(25), "the port of email service");
-
-static chen::ConfigVar<std::string>::ptr email_addr = 
-    chen::Config::Lookup("server.email_service.address", std::string(), "the address of email service");
-
-static chen::ConfigVar<std::string>::ptr email_token = 
-    chen::Config::Lookup("server.email_service.token", std::string(), "the token of email service");
-
 
 UserSendCodeServlet::UserSendCodeServlet()
     :BlogServlet("UserSendCodeServlet") {
@@ -76,14 +64,21 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             result->setResult(500, "insert email fail");
             break;
         }
-        // 发送邮件
+
+        // 发送邮件 - 从系统设置获取SMTP配置
+        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
+        if (!sysSettings || sysSettings->getSmtpHost().empty()) {
+            result->setResult(501, "SMTP server not configured");
+            break;
+        }
+
         std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");
-        auto mail = chen::EMail::Create(email_addr->getValue(), email_token->getValue()
+        auto mail = chen::EMail::Create(sysSettings->getSmtpUsername(), sysSettings->getSmtpPassword()
                 , title
                 , "验证码[" + code +"]"
-                , {email}, {}, {email_addr->getValue()});
+                , {email}, {}, {sysSettings->getFromEmail()});
 
-        auto client = chen::SmtpClient::Create(email_host->getValue(), email_port->getValue(), true);
+        auto client = chen::SmtpClient::Create(sysSettings->getSmtpHost(), sysSettings->getSmtpPort(), true);
         if (!client) {
             ERROR(logger) << "connect email server fail";
             result->setResult(501, "connect email server fail");

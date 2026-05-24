@@ -21,6 +21,7 @@ set(LIB_SRC
     blog/data/organization_user_rel_info.cc
     blog/data/requirement_info.cc
     blog/data/resource_info.cc
+    blog/data/system_settings_info.cc
     blog/data/task_info.cc
     blog/data/user_info.cc
     blog/data/user_follow_rel_info.cc

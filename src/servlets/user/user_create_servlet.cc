@@ -2,6 +2,7 @@
 #include <chen/log/log.h>
 #include "../../util.h"
 #include "../../manager/user_manager.h"
+#include "../../manager/system_settings_manager.h"
 #include <chen/db/sqlite3.h>
 
 namespace blog {
@@ -49,9 +50,17 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             break;
         }
 
-        if (!verificationEmailCode(db, email, auth_code)) {
-            result->setResult(403, "invalid auth_code");
-            break;
+        // 根据系统设置决定是否需要校验邮箱验证码
+        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
+        bool requireVerification = true;
+        if (sysSettings) {
+            requireVerification = sysSettings->getRequireEmailVerification() != 0;
+        }
+        if (requireVerification) {
+            if (!verificationEmailCode(db, email, auth_code)) {
+                result->setResult(403, "invalid auth_code");
+                break;
+            }
         }
 
         // 开启事务

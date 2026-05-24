@@ -2,6 +2,7 @@
 #include <chen/log/log.h>
 #include "../../util.h"
 #include "../../manager/user_manager.h"
+#include "../../manager/system_settings_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -55,7 +56,12 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         }
         
         int64_t now = time(0);
-        int64_t token_time = now + 3600 * 24;
+        int32_t sessionTimeout = 24;
+        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
+        if (sysSettings && sysSettings->getSessionTimeout() > 0) {
+            sessionTimeout = sysSettings->getSessionTimeout();
+        }
+        int64_t token_time = now + 3600 * sessionTimeout;
         std::string token = UserManager::generateToken();
 
         info->setToken(token);
