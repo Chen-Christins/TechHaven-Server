@@ -268,7 +268,8 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/api/v1/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/api/v1/category/admin/query", XX(CategoryQueryServlet));
-        // 站点公开状态
+        // 站点公开配置
+        dp->addServlet("/api/v1/site/settings", XX(SiteSettingsServlet));
         dp->addServlet("/api/v1/site/status", XX(SiteStatusServlet));
         // 系统设置相关
         dp->addServlet("/api/v1/admin/settings", XX(SystemSettingsServlet));
