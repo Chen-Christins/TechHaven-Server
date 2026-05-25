@@ -28,6 +28,8 @@ int32_t SiteSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen::
         result->set("language", settings->getLanguage());
         result->set("enableRegistration", settings->getEnableRegistration() ? true : false);
         result->set("maintenanceMode", settings->getMaintenanceMode() ? true : false);
+        result->set("allowComments", settings->getAllowComments() ? true : false);
+        result->set("moderateComments", settings->getModerateComments() ? true : false);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
