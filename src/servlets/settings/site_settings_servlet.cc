@@ -1,0 +1,36 @@
+#include "site_settings_servlet.h"
+#include "../../manager/system_settings_manager.h"
+#include <chen/log/log.h>
+
+namespace blog::servlet {
+
+static chen::Logger::ptr logger = LOG_ROOT();
+
+SiteSettingsServlet::SiteSettingsServlet()
+    :BlogServlet("SiteSettingsServlet") {
+}
+
+int32_t SiteSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        auto settings = SystemSettingsMgr::GetInstance()->get();
+        if (!settings) {
+            result->setResult(500, "system settings not loaded");
+            break;
+        }
+        result->set("siteName", settings->getSiteName());
+        result->set("siteDescription", settings->getSiteDescription());
+        result->set("siteKeywords", settings->getSiteKeywords());
+        result->set("siteIcon", settings->getSiteIcon());
+        result->set("siteLogo", settings->getSiteLogo());
+        result->set("favicon", settings->getFavicon());
+        result->set("timezone", settings->getTimezone());
+        result->set("language", settings->getLanguage());
+        result->set("enableRegistration", settings->getEnableRegistration() ? true : false);
+        result->set("maintenanceMode", settings->getMaintenanceMode() ? true : false);
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+} // namespace blog::servlet

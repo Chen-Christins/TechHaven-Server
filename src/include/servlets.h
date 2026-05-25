@@ -82,6 +82,7 @@
 #include "../servlets/rd/rd_task_detail_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/rd/rd_task_edit_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/rd/rd_task_servlet.h"                                 // IWYU pragma: keep
+#include "../servlets/settings/site_settings_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/settings/site_status_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/settings/system_settings_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/settings/system_settings_upload_servlet.h"            // IWYU pragma: keep
