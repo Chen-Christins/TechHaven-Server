@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../manager/user_manager.h"
 #include "../../util.h"
-#include <set>
 
 namespace blog {
 namespace servlet {
@@ -15,65 +14,54 @@ UserAdminDeleteServlet::UserAdminDeleteServlet()
 
 int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_STRING(result, ids, "ids");
+    do {
+        DEFINE_AND_CHECK_TYPE(result, int64_t, user_id, "user_id");
 
-		std::set<int64_t> user_ids;
-        auto tmp = chen::split(ids, ',');
-        for (auto& i : tmp) {
-            user_ids.insert(chen::TypeUtil::Atoi(i));
-        }
-
-		int64_t uid = getUserId(request);
+        int64_t uid = getUserId(request);
         if (!uid) {
             result->setResult(500, "not login");
             break;
         }
-		int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
-		if (role != UserManager::Role::ADMIN) {
-			result->setResult(403, "Access Denied");
-			break;
-		}
+        if (role != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
 
-		std::vector<data::UserInfo::ptr> infos;
-		for (const int64_t& id : user_ids) {
-			auto info = UserMgr::GetInstance()->get(id);
-			if (info->getIsDeleted()) {
-				continue;
-			}
-			infos.emplace_back(info);
-		}
+        auto info = UserMgr::GetInstance()->get(user_id);
+        if (!info) {
+            result->setResult(404, "user not found");
+            break;
+        }
+        if (info->getIsDeleted()) {
+            result->setResult(400, "user already deleted");
+            break;
+        }
 
-		auto db = getDB();
+        auto db = getDB();
         auto trans = db->openTransaction();
         if (!trans) {
             result->setResult(500, "open transaction fail");
             break;
         }
-		time_t now = time(0);
-        for (auto& i : infos) {
-            i->setIsDeleted(1);
-            i->setUpdateTime(now);
-            data::UserInfoDao::Update(i, db);
+        time_t now = time(0);
+        info->setIsDeleted(1);
+        info->setUpdateTime(now);
+        if (data::UserInfoDao::Update(info, db)) {
+            ERROR(logger) << "update user fail";
+            result->setResult(500, "delete user fail");
+            break;
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
+            info->setIsDeleted(0);
             result->setResult(500, "commit fail");
-
-            for (auto& i : infos) {
-                i->setIsDeleted(0);
-            }
             break;
         }
-        if (!infos.empty()) {
-            auto& jids = result->jsondata["ids"];
-            for (auto& i : infos) {
-                jids.append(i->getId());
-            }
-        }
-	}while (0);
-	response->setBody(result->toJsonString());
+        result->set("user_id", user_id);
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

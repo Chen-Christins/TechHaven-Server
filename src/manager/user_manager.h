@@ -23,6 +23,7 @@ public:
     };
     bool loadAll();
     void add(blog::data::UserInfo::ptr info);
+    void update(blog::data::UserInfo::ptr info, int32_t old_role, const std::string& old_account, const std::string& old_email);
     void getAllIds(std::vector<int64_t>& ids, bool isValid);
 	
     uint64_t listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
