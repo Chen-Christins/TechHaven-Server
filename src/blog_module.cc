@@ -214,6 +214,9 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/user/admin/recover", XX(UserAdminRecoverServlet));
         dp->addServlet("/api/v1/user/admin/reset_passwd", XX(UserAdminResetPasswdServlet));
         dp->addServlet("/api/v1/user/admin/lists", XX(UserAdminListsServlet));
+        dp->addServlet("/api/v1/user/admin/stats", XX(UserAdminStatsServlet));
+        dp->addServlet("/api/v1/user/admin/update", XX(UserAdminUpdateServlet));
+        dp->addServlet("/api/v1/user/admin/detail", XX(UserAdminDetailServlet));
         dp->addServlet("/api/v1/user/organization/list", XX(UserOrganizationListServlet));
         dp->addServlet("/api/v1/user/assignment/list", XX(UserAssignmentListServlet));
         dp->addServlet("/api/v1/user/is_following", XX(UserIsFollowingServlet));

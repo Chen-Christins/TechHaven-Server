@@ -116,6 +116,31 @@ void UserManager::add(blog::data::UserInfo::ptr info) {
     m_role_id_users[info->getRole()][info->getId()] = info;
 }
 
+void UserManager::update(blog::data::UserInfo::ptr info, int32_t old_role, const std::string& old_account, const std::string& old_email) {
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    int64_t id = info->getId();
+    m_datas[id] = info;
+    if (info->getAccount() != old_account) {
+        m_accounts.erase(old_account);
+        m_accounts[info->getAccount()] = info;
+    }
+    if (info->getEmail() != old_email) {
+        m_emails.erase(old_email);
+        m_emails[info->getEmail()] = info;
+    }
+    m_names[info->getName()] = info;
+    if (info->getRole() != old_role) {
+        auto it = m_role_id_users.find(old_role);
+        if (it != m_role_id_users.end()) {
+            it->second.erase(id);
+            if (it->second.empty()) {
+                m_role_id_users.erase(it);
+            }
+        }
+        m_role_id_users[info->getRole()][id] = info;
+    }
+}
+
 std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us) {
     std::stringstream ss;
     ss << info->getId()

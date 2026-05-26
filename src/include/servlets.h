@@ -89,9 +89,12 @@
 #include "../servlets/stats/stats_servlet.h"                                // IWYU pragma: keep
 #include "../servlets/user/user_admin_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_delete_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/user/user_admin_detail_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_lists_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_admin_recover_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/user/user_admin_reset_passwd_servlet.h"               // IWYU pragma: keep
+#include "../servlets/user/user_admin_stats_servlet.h"                      // IWYU pragma: keep
+#include "../servlets/user/user_admin_update_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_exists_servlet.h"                           // IWYU pragma: keep
