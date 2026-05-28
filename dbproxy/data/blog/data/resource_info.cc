@@ -1,6 +1,6 @@
 #include "resource_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -446,25 +446,192 @@ int ResourceInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(resource) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("name");
-    expected_cols.insert("path");
-    expected_cols.insert("type");
-    expected_cols.insert("size");
-    expected_cols.insert("hash");
-    expected_cols.insert("owner_id");
-    expected_cols.insert("biz_type");
-    expected_cols.insert("biz_id");
-    expected_cols.insert("status");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: resource.name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("path");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: resource.path " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.type " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("size");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.size " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("hash");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: resource.hash " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("owner_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.owner_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("biz_type");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: resource.biz_type " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("biz_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.biz_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: resource.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: resource.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: resource.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "name") found = true;
+            if (name == "path") found = true;
+            if (name == "type") found = true;
+            if (name == "size") found = true;
+            if (name == "hash") found = true;
+            if (name == "owner_id") found = true;
+            if (name == "biz_type") found = true;
+            if (name == "biz_id") found = true;
+            if (name == "status") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column resource." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table resource";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("name") != existing_cols.end()) {
+            common_cols.push_back("name");
+        }
+        if (existing_cols.find("path") != existing_cols.end()) {
+            common_cols.push_back("path");
+        }
+        if (existing_cols.find("type") != existing_cols.end()) {
+            common_cols.push_back("type");
+        }
+        if (existing_cols.find("size") != existing_cols.end()) {
+            common_cols.push_back("size");
+        }
+        if (existing_cols.find("hash") != existing_cols.end()) {
+            common_cols.push_back("hash");
+        }
+        if (existing_cols.find("owner_id") != existing_cols.end()) {
+            common_cols.push_back("owner_id");
+        }
+        if (existing_cols.find("biz_type") != existing_cols.end()) {
+            common_cols.push_back("biz_type");
+        }
+        if (existing_cols.find("biz_id") != existing_cols.end()) {
+            common_cols.push_back("biz_id");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE resource RENAME TO resource_tmp")) {
+            ERROR(logger) << "RENAME TABLE resource failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO resource (" + cols + ") SELECT " + cols + " FROM resource_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from resource_tmp to resource failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE resource_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("name") == existing_cols.end()) {
         INFO(logger) << "Adding column resource.name";
@@ -562,16 +729,6 @@ int ResourceInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column resource." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE resource DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE resource DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -581,25 +738,166 @@ int ResourceInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM resource errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("name");
-    expected_cols.insert("path");
-    expected_cols.insert("type");
-    expected_cols.insert("size");
-    expected_cols.insert("hash");
-    expected_cols.insert("owner_id");
-    expected_cols.insert("biz_type");
-    expected_cols.insert("biz_id");
-    expected_cols.insert("status");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column resource.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column resource.name " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `name` varchar(256) NOT NULL DEFAULT '' COMMENT '原始文件名'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("path");
+        if (it != existing_cols.end() && it->second != "varchar(512)") {
+            INFO(logger) << "Modifying column resource.path " << it->second << " -> varchar(512)";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `path` varchar(512) NOT NULL DEFAULT '' COMMENT '存储路径（相对或绝对）'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.path failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column resource.type " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `type` int NOT NULL DEFAULT 0 COMMENT '文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("size");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column resource.size " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `size` bigint NOT NULL DEFAULT 0 COMMENT '文件大小（字节）'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("hash");
+        if (it != existing_cols.end() && it->second != "varchar(64)") {
+            INFO(logger) << "Modifying column resource.hash " << it->second << " -> varchar(64)";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `hash` varchar(64) NOT NULL DEFAULT '' COMMENT '文件哈希（去重/校验）'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.hash failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("owner_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column resource.owner_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `owner_id` bigint NOT NULL DEFAULT 0 COMMENT '上传者用户ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.owner_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("biz_type");
+        if (it != existing_cols.end() && it->second != "varchar(32)") {
+            INFO(logger) << "Modifying column resource.biz_type " << it->second << " -> varchar(32)";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `biz_type` varchar(32) NOT NULL DEFAULT '' COMMENT '业务类型 如assignment、article等'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.biz_type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("biz_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column resource.biz_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `biz_id` bigint NOT NULL DEFAULT 0 COMMENT '业务ID 如作业ID、文章ID等'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.biz_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column resource.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态: 1正常 2删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column resource.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column resource.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '上传时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column resource.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE resource MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN resource.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "name") found = true;
+        if (name == "path") found = true;
+        if (name == "type") found = true;
+        if (name == "size") found = true;
+        if (name == "hash") found = true;
+        if (name == "owner_id") found = true;
+        if (name == "biz_type") found = true;
+        if (name == "biz_id") found = true;
+        if (name == "status") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column resource." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE resource DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN resource." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("name") == existing_cols.end()) {
         INFO(logger) << "Adding column resource.name";
@@ -694,16 +992,6 @@ int ResourceInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE resource ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE resource ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column resource." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE resource DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE resource DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

@@ -1,6 +1,6 @@
 #include "assignment_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -384,24 +384,181 @@ int AssignmentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(assignment) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("name");
-    expected_cols.insert("subject_name");
-    expected_cols.insert("priority");
-    expected_cols.insert("status");
-    expected_cols.insert("description");
-    expected_cols.insert("max_size");
-    expected_cols.insert("file_type");
-    expected_cols.insert("deadline");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: assignment.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: assignment.name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("subject_name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: assignment.subject_name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("priority");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: assignment.priority " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: assignment.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: assignment.description " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("max_size");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: assignment.max_size " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("file_type");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: assignment.file_type " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("deadline");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: assignment.deadline " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: assignment.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: assignment.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: assignment.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "name") found = true;
+            if (name == "subject_name") found = true;
+            if (name == "priority") found = true;
+            if (name == "status") found = true;
+            if (name == "description") found = true;
+            if (name == "max_size") found = true;
+            if (name == "file_type") found = true;
+            if (name == "deadline") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column assignment." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table assignment";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("name") != existing_cols.end()) {
+            common_cols.push_back("name");
+        }
+        if (existing_cols.find("subject_name") != existing_cols.end()) {
+            common_cols.push_back("subject_name");
+        }
+        if (existing_cols.find("priority") != existing_cols.end()) {
+            common_cols.push_back("priority");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("description") != existing_cols.end()) {
+            common_cols.push_back("description");
+        }
+        if (existing_cols.find("max_size") != existing_cols.end()) {
+            common_cols.push_back("max_size");
+        }
+        if (existing_cols.find("file_type") != existing_cols.end()) {
+            common_cols.push_back("file_type");
+        }
+        if (existing_cols.find("deadline") != existing_cols.end()) {
+            common_cols.push_back("deadline");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE assignment RENAME TO assignment_tmp")) {
+            ERROR(logger) << "RENAME TABLE assignment failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO assignment (" + cols + ") SELECT " + cols + " FROM assignment_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from assignment_tmp to assignment failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE assignment_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("name") == existing_cols.end()) {
         INFO(logger) << "Adding column assignment.name";
@@ -491,16 +648,6 @@ int AssignmentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column assignment." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE assignment DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE assignment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -510,24 +657,155 @@ int AssignmentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM assignment errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("name");
-    expected_cols.insert("subject_name");
-    expected_cols.insert("priority");
-    expected_cols.insert("status");
-    expected_cols.insert("description");
-    expected_cols.insert("max_size");
-    expected_cols.insert("file_type");
-    expected_cols.insert("deadline");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column assignment.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '作业id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column assignment.name " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `name` varchar(256) NOT NULL DEFAULT '' COMMENT '作业名称'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("subject_name");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column assignment.subject_name " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `subject_name` varchar(256) NOT NULL DEFAULT '' COMMENT '科目名称'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.subject_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("priority");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column assignment.priority " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '作业优先级 1低 2中 3高 4紧急'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column assignment.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '作业状态'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "varchar(512)") {
+            INFO(logger) << "Modifying column assignment.description " << it->second << " -> varchar(512)";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `description` varchar(512) NOT NULL DEFAULT '' COMMENT '作业描述'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("max_size");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column assignment.max_size " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `max_size` int NOT NULL DEFAULT 0 COMMENT '最大提交大小'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.max_size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("file_type");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column assignment.file_type " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `file_type` varchar(128) NOT NULL DEFAULT '' COMMENT '允许提交的文件类型'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.file_type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("deadline");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column assignment.deadline " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `deadline` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '截止时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column assignment.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column assignment.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column assignment.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE assignment MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN assignment.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "name") found = true;
+        if (name == "subject_name") found = true;
+        if (name == "priority") found = true;
+        if (name == "status") found = true;
+        if (name == "description") found = true;
+        if (name == "max_size") found = true;
+        if (name == "file_type") found = true;
+        if (name == "deadline") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column assignment." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE assignment DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN assignment." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("name") == existing_cols.end()) {
         INFO(logger) << "Adding column assignment.name";
@@ -614,16 +892,6 @@ int AssignmentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE assignment ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE assignment ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column assignment." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE assignment DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE assignment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

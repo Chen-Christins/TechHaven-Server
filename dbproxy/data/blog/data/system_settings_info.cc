@@ -1,6 +1,6 @@
 #include "system_settings_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -511,41 +511,368 @@ int SystemSettingsInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(system_settings) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("site_name");
-    expected_cols.insert("site_description");
-    expected_cols.insert("site_keywords");
-    expected_cols.insert("site_icon");
-    expected_cols.insert("site_logo");
-    expected_cols.insert("favicon");
-    expected_cols.insert("admin_email");
-    expected_cols.insert("timezone");
-    expected_cols.insert("language");
-    expected_cols.insert("smtp_host");
-    expected_cols.insert("smtp_port");
-    expected_cols.insert("smtp_username");
-    expected_cols.insert("smtp_password");
-    expected_cols.insert("smtp_encryption");
-    expected_cols.insert("from_email");
-    expected_cols.insert("from_name");
-    expected_cols.insert("reply_to");
-    expected_cols.insert("enable_registration");
-    expected_cols.insert("require_email_verification");
-    expected_cols.insert("allow_comments");
-    expected_cols.insert("moderate_comments");
-    expected_cols.insert("max_file_size");
-    expected_cols.insert("allowed_file_types");
-    expected_cols.insert("session_timeout");
-    expected_cols.insert("maintenance_mode");
-    expected_cols.insert("backup_schedule");
-    expected_cols.insert("created_at");
-    expected_cols.insert("updated_at");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("site_name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.site_name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("site_description");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.site_description " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("site_keywords");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.site_keywords " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("site_icon");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.site_icon " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("site_logo");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.site_logo " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("favicon");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.favicon " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("admin_email");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.admin_email " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("timezone");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.timezone " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("language");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.language " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_host");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.smtp_host " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_port");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.smtp_port " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_username");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.smtp_username " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_password");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.smtp_password " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_encryption");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.smtp_encryption " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("from_email");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.from_email " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("from_name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.from_name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("reply_to");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.reply_to " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("enable_registration");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.enable_registration " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("require_email_verification");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.require_email_verification " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("allow_comments");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.allow_comments " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("moderate_comments");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.moderate_comments " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("max_file_size");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.max_file_size " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("allowed_file_types");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.allowed_file_types " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("session_timeout");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.session_timeout " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("maintenance_mode");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: system_settings.maintenance_mode " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("backup_schedule");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: system_settings.backup_schedule " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("created_at");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: system_settings.created_at " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("updated_at");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: system_settings.updated_at " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "site_name") found = true;
+            if (name == "site_description") found = true;
+            if (name == "site_keywords") found = true;
+            if (name == "site_icon") found = true;
+            if (name == "site_logo") found = true;
+            if (name == "favicon") found = true;
+            if (name == "admin_email") found = true;
+            if (name == "timezone") found = true;
+            if (name == "language") found = true;
+            if (name == "smtp_host") found = true;
+            if (name == "smtp_port") found = true;
+            if (name == "smtp_username") found = true;
+            if (name == "smtp_password") found = true;
+            if (name == "smtp_encryption") found = true;
+            if (name == "from_email") found = true;
+            if (name == "from_name") found = true;
+            if (name == "reply_to") found = true;
+            if (name == "enable_registration") found = true;
+            if (name == "require_email_verification") found = true;
+            if (name == "allow_comments") found = true;
+            if (name == "moderate_comments") found = true;
+            if (name == "max_file_size") found = true;
+            if (name == "allowed_file_types") found = true;
+            if (name == "session_timeout") found = true;
+            if (name == "maintenance_mode") found = true;
+            if (name == "backup_schedule") found = true;
+            if (name == "created_at") found = true;
+            if (name == "updated_at") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column system_settings." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table system_settings";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("site_name") != existing_cols.end()) {
+            common_cols.push_back("site_name");
+        }
+        if (existing_cols.find("site_description") != existing_cols.end()) {
+            common_cols.push_back("site_description");
+        }
+        if (existing_cols.find("site_keywords") != existing_cols.end()) {
+            common_cols.push_back("site_keywords");
+        }
+        if (existing_cols.find("site_icon") != existing_cols.end()) {
+            common_cols.push_back("site_icon");
+        }
+        if (existing_cols.find("site_logo") != existing_cols.end()) {
+            common_cols.push_back("site_logo");
+        }
+        if (existing_cols.find("favicon") != existing_cols.end()) {
+            common_cols.push_back("favicon");
+        }
+        if (existing_cols.find("admin_email") != existing_cols.end()) {
+            common_cols.push_back("admin_email");
+        }
+        if (existing_cols.find("timezone") != existing_cols.end()) {
+            common_cols.push_back("timezone");
+        }
+        if (existing_cols.find("language") != existing_cols.end()) {
+            common_cols.push_back("language");
+        }
+        if (existing_cols.find("smtp_host") != existing_cols.end()) {
+            common_cols.push_back("smtp_host");
+        }
+        if (existing_cols.find("smtp_port") != existing_cols.end()) {
+            common_cols.push_back("smtp_port");
+        }
+        if (existing_cols.find("smtp_username") != existing_cols.end()) {
+            common_cols.push_back("smtp_username");
+        }
+        if (existing_cols.find("smtp_password") != existing_cols.end()) {
+            common_cols.push_back("smtp_password");
+        }
+        if (existing_cols.find("smtp_encryption") != existing_cols.end()) {
+            common_cols.push_back("smtp_encryption");
+        }
+        if (existing_cols.find("from_email") != existing_cols.end()) {
+            common_cols.push_back("from_email");
+        }
+        if (existing_cols.find("from_name") != existing_cols.end()) {
+            common_cols.push_back("from_name");
+        }
+        if (existing_cols.find("reply_to") != existing_cols.end()) {
+            common_cols.push_back("reply_to");
+        }
+        if (existing_cols.find("enable_registration") != existing_cols.end()) {
+            common_cols.push_back("enable_registration");
+        }
+        if (existing_cols.find("require_email_verification") != existing_cols.end()) {
+            common_cols.push_back("require_email_verification");
+        }
+        if (existing_cols.find("allow_comments") != existing_cols.end()) {
+            common_cols.push_back("allow_comments");
+        }
+        if (existing_cols.find("moderate_comments") != existing_cols.end()) {
+            common_cols.push_back("moderate_comments");
+        }
+        if (existing_cols.find("max_file_size") != existing_cols.end()) {
+            common_cols.push_back("max_file_size");
+        }
+        if (existing_cols.find("allowed_file_types") != existing_cols.end()) {
+            common_cols.push_back("allowed_file_types");
+        }
+        if (existing_cols.find("session_timeout") != existing_cols.end()) {
+            common_cols.push_back("session_timeout");
+        }
+        if (existing_cols.find("maintenance_mode") != existing_cols.end()) {
+            common_cols.push_back("maintenance_mode");
+        }
+        if (existing_cols.find("backup_schedule") != existing_cols.end()) {
+            common_cols.push_back("backup_schedule");
+        }
+        if (existing_cols.find("created_at") != existing_cols.end()) {
+            common_cols.push_back("created_at");
+        }
+        if (existing_cols.find("updated_at") != existing_cols.end()) {
+            common_cols.push_back("updated_at");
+        }
+
+        if (conn->execute("ALTER TABLE system_settings RENAME TO system_settings_tmp")) {
+            ERROR(logger) << "RENAME TABLE system_settings failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO system_settings (" + cols + ") SELECT " + cols + " FROM system_settings_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from system_settings_tmp to system_settings failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE system_settings_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("site_name") == existing_cols.end()) {
         INFO(logger) << "Adding column system_settings.site_name";
@@ -771,16 +1098,6 @@ int SystemSettingsInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column system_settings." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE system_settings DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE system_settings DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -790,41 +1107,342 @@ int SystemSettingsInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM system_settings errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("site_name");
-    expected_cols.insert("site_description");
-    expected_cols.insert("site_keywords");
-    expected_cols.insert("site_icon");
-    expected_cols.insert("site_logo");
-    expected_cols.insert("favicon");
-    expected_cols.insert("admin_email");
-    expected_cols.insert("timezone");
-    expected_cols.insert("language");
-    expected_cols.insert("smtp_host");
-    expected_cols.insert("smtp_port");
-    expected_cols.insert("smtp_username");
-    expected_cols.insert("smtp_password");
-    expected_cols.insert("smtp_encryption");
-    expected_cols.insert("from_email");
-    expected_cols.insert("from_name");
-    expected_cols.insert("reply_to");
-    expected_cols.insert("enable_registration");
-    expected_cols.insert("require_email_verification");
-    expected_cols.insert("allow_comments");
-    expected_cols.insert("moderate_comments");
-    expected_cols.insert("max_file_size");
-    expected_cols.insert("allowed_file_types");
-    expected_cols.insert("session_timeout");
-    expected_cols.insert("maintenance_mode");
-    expected_cols.insert("backup_schedule");
-    expected_cols.insert("created_at");
-    expected_cols.insert("updated_at");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column system_settings.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("site_name");
+        if (it != existing_cols.end() && it->second != "varchar(100)") {
+            INFO(logger) << "Modifying column system_settings.site_name " << it->second << " -> varchar(100)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `site_name` varchar(100) NOT NULL DEFAULT 'TechBlog' COMMENT '站点名称'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.site_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("site_description");
+        if (it != existing_cols.end() && it->second != "varchar(500)") {
+            INFO(logger) << "Modifying column system_settings.site_description " << it->second << " -> varchar(500)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `site_description` varchar(500) NOT NULL DEFAULT '' COMMENT '站点描述'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.site_description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("site_keywords");
+        if (it != existing_cols.end() && it->second != "varchar(500)") {
+            INFO(logger) << "Modifying column system_settings.site_keywords " << it->second << " -> varchar(500)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `site_keywords` varchar(500) NOT NULL DEFAULT '' COMMENT '站点关键词'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.site_keywords failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("site_icon");
+        if (it != existing_cols.end() && it->second != "varchar(1024)") {
+            INFO(logger) << "Modifying column system_settings.site_icon " << it->second << " -> varchar(1024)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `site_icon` varchar(1024) NOT NULL DEFAULT '' COMMENT '站点图标URL'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.site_icon failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("site_logo");
+        if (it != existing_cols.end() && it->second != "varchar(1024)") {
+            INFO(logger) << "Modifying column system_settings.site_logo " << it->second << " -> varchar(1024)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `site_logo` varchar(1024) NOT NULL DEFAULT '' COMMENT '站点Logo URL'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.site_logo failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("favicon");
+        if (it != existing_cols.end() && it->second != "varchar(1024)") {
+            INFO(logger) << "Modifying column system_settings.favicon " << it->second << " -> varchar(1024)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `favicon` varchar(1024) NOT NULL DEFAULT '' COMMENT 'Favicon URL'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.favicon failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("admin_email");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column system_settings.admin_email " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `admin_email` varchar(255) NOT NULL DEFAULT '' COMMENT '管理员邮箱'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.admin_email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("timezone");
+        if (it != existing_cols.end() && it->second != "varchar(50)") {
+            INFO(logger) << "Modifying column system_settings.timezone " << it->second << " -> varchar(50)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `timezone` varchar(50) NOT NULL DEFAULT 'Asia/Shanghai' COMMENT '时区'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.timezone failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("language");
+        if (it != existing_cols.end() && it->second != "varchar(10)") {
+            INFO(logger) << "Modifying column system_settings.language " << it->second << " -> varchar(10)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `language` varchar(10) NOT NULL DEFAULT 'zh-CN' COMMENT '语言'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.language failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_host");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column system_settings.smtp_host " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `smtp_host` varchar(255) NOT NULL DEFAULT '' COMMENT 'SMTP主机'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.smtp_host failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_port");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.smtp_port " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `smtp_port` int NOT NULL DEFAULT 587 COMMENT 'SMTP端口'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.smtp_port failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_username");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column system_settings.smtp_username " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `smtp_username` varchar(255) NOT NULL DEFAULT '' COMMENT 'SMTP用户名'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.smtp_username failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_password");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column system_settings.smtp_password " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `smtp_password` varchar(255) NOT NULL DEFAULT '' COMMENT 'SMTP密码'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.smtp_password failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("smtp_encryption");
+        if (it != existing_cols.end() && it->second != "varchar(10)") {
+            INFO(logger) << "Modifying column system_settings.smtp_encryption " << it->second << " -> varchar(10)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `smtp_encryption` varchar(10) NOT NULL DEFAULT 'tls' COMMENT 'SMTP加密方式: none/ssl/tls'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.smtp_encryption failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("from_email");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column system_settings.from_email " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `from_email` varchar(255) NOT NULL DEFAULT '' COMMENT '发件人邮箱'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.from_email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("from_name");
+        if (it != existing_cols.end() && it->second != "varchar(100)") {
+            INFO(logger) << "Modifying column system_settings.from_name " << it->second << " -> varchar(100)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `from_name` varchar(100) NOT NULL DEFAULT '' COMMENT '发件人名称'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.from_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("reply_to");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column system_settings.reply_to " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `reply_to` varchar(255) NOT NULL DEFAULT '' COMMENT '回复邮箱'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.reply_to failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("enable_registration");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.enable_registration " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `enable_registration` int NOT NULL DEFAULT 1 COMMENT '是否允许注册'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.enable_registration failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("require_email_verification");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.require_email_verification " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `require_email_verification` int NOT NULL DEFAULT 1 COMMENT '是否需要邮箱验证'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.require_email_verification failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("allow_comments");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.allow_comments " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `allow_comments` int NOT NULL DEFAULT 1 COMMENT '是否允许评论'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.allow_comments failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("moderate_comments");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.moderate_comments " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `moderate_comments` int NOT NULL DEFAULT 0 COMMENT '评论是否需要审核'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.moderate_comments failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("max_file_size");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.max_file_size " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `max_file_size` int NOT NULL DEFAULT 10 COMMENT '最大上传文件大小(MB)'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.max_file_size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("allowed_file_types");
+        if (it != existing_cols.end() && it->second != "varchar(500)") {
+            INFO(logger) << "Modifying column system_settings.allowed_file_types " << it->second << " -> varchar(500)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `allowed_file_types` varchar(500) NOT NULL DEFAULT 'jpg,jpeg,png,gif,pdf,doc,docx' COMMENT '允许上传的文件类型'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.allowed_file_types failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("session_timeout");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.session_timeout " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `session_timeout` int NOT NULL DEFAULT 24 COMMENT '会话超时时间(小时)'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.session_timeout failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("maintenance_mode");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column system_settings.maintenance_mode " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `maintenance_mode` int NOT NULL DEFAULT 0 COMMENT '是否维护模式'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.maintenance_mode failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("backup_schedule");
+        if (it != existing_cols.end() && it->second != "varchar(20)") {
+            INFO(logger) << "Modifying column system_settings.backup_schedule " << it->second << " -> varchar(20)";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `backup_schedule` varchar(20) NOT NULL DEFAULT 'daily' COMMENT '备份计划: disabled/daily/weekly/monthly'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.backup_schedule failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("created_at");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column system_settings.created_at " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `created_at` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.created_at failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("updated_at");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column system_settings.updated_at " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE system_settings MODIFY COLUMN `updated_at` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN system_settings.updated_at failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "site_name") found = true;
+        if (name == "site_description") found = true;
+        if (name == "site_keywords") found = true;
+        if (name == "site_icon") found = true;
+        if (name == "site_logo") found = true;
+        if (name == "favicon") found = true;
+        if (name == "admin_email") found = true;
+        if (name == "timezone") found = true;
+        if (name == "language") found = true;
+        if (name == "smtp_host") found = true;
+        if (name == "smtp_port") found = true;
+        if (name == "smtp_username") found = true;
+        if (name == "smtp_password") found = true;
+        if (name == "smtp_encryption") found = true;
+        if (name == "from_email") found = true;
+        if (name == "from_name") found = true;
+        if (name == "reply_to") found = true;
+        if (name == "enable_registration") found = true;
+        if (name == "require_email_verification") found = true;
+        if (name == "allow_comments") found = true;
+        if (name == "moderate_comments") found = true;
+        if (name == "max_file_size") found = true;
+        if (name == "allowed_file_types") found = true;
+        if (name == "session_timeout") found = true;
+        if (name == "maintenance_mode") found = true;
+        if (name == "backup_schedule") found = true;
+        if (name == "created_at") found = true;
+        if (name == "updated_at") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column system_settings." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE system_settings DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN system_settings." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("site_name") == existing_cols.end()) {
         INFO(logger) << "Adding column system_settings.site_name";
@@ -1047,16 +1665,6 @@ int SystemSettingsInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE system_settings ADD COLUMN `updated_at` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE system_settings ADD COLUMN updated_at failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column system_settings." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE system_settings DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE system_settings DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

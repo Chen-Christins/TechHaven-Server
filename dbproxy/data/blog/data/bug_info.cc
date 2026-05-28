@@ -1,6 +1,6 @@
 #include "bug_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -492,28 +492,225 @@ int BugInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(bug) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("org_id");
-    expected_cols.insert("title");
-    expected_cols.insert("description");
-    expected_cols.insert("severity");
-    expected_cols.insert("priority");
-    expected_cols.insert("status");
-    expected_cols.insert("creator_id");
-    expected_cols.insert("assignee_id");
-    expected_cols.insert("requirement_id");
-    expected_cols.insert("module");
-    expected_cols.insert("steps_to_reproduce");
-    expected_cols.insert("environment");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.org_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: bug.title " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: bug.description " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("severity");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.severity " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("priority");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.priority " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("creator_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.creator_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("assignee_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.assignee_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("requirement_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.requirement_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("module");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: bug.module " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("steps_to_reproduce");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: bug.steps_to_reproduce " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("environment");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: bug.environment " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: bug.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: bug.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: bug.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "org_id") found = true;
+            if (name == "title") found = true;
+            if (name == "description") found = true;
+            if (name == "severity") found = true;
+            if (name == "priority") found = true;
+            if (name == "status") found = true;
+            if (name == "creator_id") found = true;
+            if (name == "assignee_id") found = true;
+            if (name == "requirement_id") found = true;
+            if (name == "module") found = true;
+            if (name == "steps_to_reproduce") found = true;
+            if (name == "environment") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column bug." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table bug";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("org_id") != existing_cols.end()) {
+            common_cols.push_back("org_id");
+        }
+        if (existing_cols.find("title") != existing_cols.end()) {
+            common_cols.push_back("title");
+        }
+        if (existing_cols.find("description") != existing_cols.end()) {
+            common_cols.push_back("description");
+        }
+        if (existing_cols.find("severity") != existing_cols.end()) {
+            common_cols.push_back("severity");
+        }
+        if (existing_cols.find("priority") != existing_cols.end()) {
+            common_cols.push_back("priority");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("creator_id") != existing_cols.end()) {
+            common_cols.push_back("creator_id");
+        }
+        if (existing_cols.find("assignee_id") != existing_cols.end()) {
+            common_cols.push_back("assignee_id");
+        }
+        if (existing_cols.find("requirement_id") != existing_cols.end()) {
+            common_cols.push_back("requirement_id");
+        }
+        if (existing_cols.find("module") != existing_cols.end()) {
+            common_cols.push_back("module");
+        }
+        if (existing_cols.find("steps_to_reproduce") != existing_cols.end()) {
+            common_cols.push_back("steps_to_reproduce");
+        }
+        if (existing_cols.find("environment") != existing_cols.end()) {
+            common_cols.push_back("environment");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE bug RENAME TO bug_tmp")) {
+            ERROR(logger) << "RENAME TABLE bug failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO bug (" + cols + ") SELECT " + cols + " FROM bug_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from bug_tmp to bug failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE bug_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("org_id") == existing_cols.end()) {
         INFO(logger) << "Adding column bug.org_id";
@@ -635,16 +832,6 @@ int BugInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column bug." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE bug DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE bug DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -654,28 +841,199 @@ int BugInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM bug errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("org_id");
-    expected_cols.insert("title");
-    expected_cols.insert("description");
-    expected_cols.insert("severity");
-    expected_cols.insert("priority");
-    expected_cols.insert("status");
-    expected_cols.insert("creator_id");
-    expected_cols.insert("assignee_id");
-    expected_cols.insert("requirement_id");
-    expected_cols.insert("module");
-    expected_cols.insert("steps_to_reproduce");
-    expected_cols.insert("environment");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column bug.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '缺陷ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column bug.org_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column bug.title " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `title` varchar(256) NOT NULL DEFAULT '' COMMENT '缺陷标题'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "varchar(2048)") {
+            INFO(logger) << "Modifying column bug.description " << it->second << " -> varchar(2048)";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `description` varchar(2048) NOT NULL DEFAULT '' COMMENT '缺陷描述'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("severity");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column bug.severity " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `severity` int NOT NULL DEFAULT 1 COMMENT '严重程度: 1轻微 2一般 3严重 4致命'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.severity failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("priority");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column bug.priority " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '优先级: 1低 2中 3高 4紧急'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column bug.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '状态: 0待处理 1进行中 2已修复 3已关闭 4重新打开'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("creator_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column bug.creator_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `creator_id` bigint NOT NULL DEFAULT 0 COMMENT '创建者ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("assignee_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column bug.assignee_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `assignee_id` bigint NOT NULL DEFAULT 0 COMMENT '负责人ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("requirement_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column bug.requirement_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `requirement_id` bigint NOT NULL DEFAULT 0 COMMENT '关联需求ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.requirement_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("module");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column bug.module " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `module` varchar(128) NOT NULL DEFAULT '' COMMENT '所属模块'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.module failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("steps_to_reproduce");
+        if (it != existing_cols.end() && it->second != "varchar(2048)") {
+            INFO(logger) << "Modifying column bug.steps_to_reproduce " << it->second << " -> varchar(2048)";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `steps_to_reproduce` varchar(2048) NOT NULL DEFAULT '' COMMENT '复现步骤'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.steps_to_reproduce failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("environment");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column bug.environment " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `environment` varchar(256) NOT NULL DEFAULT '' COMMENT '环境信息'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.environment failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column bug.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column bug.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column bug.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE bug MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN bug.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "org_id") found = true;
+        if (name == "title") found = true;
+        if (name == "description") found = true;
+        if (name == "severity") found = true;
+        if (name == "priority") found = true;
+        if (name == "status") found = true;
+        if (name == "creator_id") found = true;
+        if (name == "assignee_id") found = true;
+        if (name == "requirement_id") found = true;
+        if (name == "module") found = true;
+        if (name == "steps_to_reproduce") found = true;
+        if (name == "environment") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column bug." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE bug DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN bug." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("org_id") == existing_cols.end()) {
         INFO(logger) << "Adding column bug.org_id";
@@ -794,16 +1152,6 @@ int BugInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE bug ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE bug ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column bug." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE bug DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE bug DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

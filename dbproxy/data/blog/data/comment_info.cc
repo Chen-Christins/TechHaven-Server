@@ -1,6 +1,6 @@
 #include "comment_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -491,25 +491,192 @@ int CommentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(comment) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("article_id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("parent_id");
-    expected_cols.insert("content");
-    expected_cols.insert("ip");
-    expected_cols.insert("user_agent");
-    expected_cols.insert("status");
-    expected_cols.insert("is_reported");
-    expected_cols.insert("report_count");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("article_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.article_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.user_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("parent_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.parent_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("content");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: comment.content " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("ip");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: comment.ip " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_agent");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: comment.user_agent " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_reported");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.is_reported " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("report_count");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.report_count " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: comment.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: comment.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: comment.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "article_id") found = true;
+            if (name == "user_id") found = true;
+            if (name == "parent_id") found = true;
+            if (name == "content") found = true;
+            if (name == "ip") found = true;
+            if (name == "user_agent") found = true;
+            if (name == "status") found = true;
+            if (name == "is_reported") found = true;
+            if (name == "report_count") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column comment." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table comment";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("article_id") != existing_cols.end()) {
+            common_cols.push_back("article_id");
+        }
+        if (existing_cols.find("user_id") != existing_cols.end()) {
+            common_cols.push_back("user_id");
+        }
+        if (existing_cols.find("parent_id") != existing_cols.end()) {
+            common_cols.push_back("parent_id");
+        }
+        if (existing_cols.find("content") != existing_cols.end()) {
+            common_cols.push_back("content");
+        }
+        if (existing_cols.find("ip") != existing_cols.end()) {
+            common_cols.push_back("ip");
+        }
+        if (existing_cols.find("user_agent") != existing_cols.end()) {
+            common_cols.push_back("user_agent");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("is_reported") != existing_cols.end()) {
+            common_cols.push_back("is_reported");
+        }
+        if (existing_cols.find("report_count") != existing_cols.end()) {
+            common_cols.push_back("report_count");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE comment RENAME TO comment_tmp")) {
+            ERROR(logger) << "RENAME TABLE comment failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO comment (" + cols + ") SELECT " + cols + " FROM comment_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from comment_tmp to comment failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE comment_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("article_id") == existing_cols.end()) {
         INFO(logger) << "Adding column comment.article_id";
@@ -607,16 +774,6 @@ int CommentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column comment." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE comment DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE comment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -626,25 +783,166 @@ int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM comment errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("article_id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("parent_id");
-    expected_cols.insert("content");
-    expected_cols.insert("ip");
-    expected_cols.insert("user_agent");
-    expected_cols.insert("status");
-    expected_cols.insert("is_reported");
-    expected_cols.insert("report_count");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column comment.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '评论ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("article_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column comment.article_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `article_id` bigint NOT NULL DEFAULT 0 COMMENT '文章ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column comment.user_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '评论用户ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("parent_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column comment.parent_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父评论ID(0=顶级评论)'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.parent_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("content");
+        if (it != existing_cols.end() && it->second != "text") {
+            INFO(logger) << "Modifying column comment.content " << it->second << " -> text";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '评论内容'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("ip");
+        if (it != existing_cols.end() && it->second != "varchar(64)") {
+            INFO(logger) << "Modifying column comment.ip " << it->second << " -> varchar(64)";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `ip` varchar(64) NOT NULL DEFAULT '' COMMENT '客户端IP'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.ip failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_agent");
+        if (it != existing_cols.end() && it->second != "varchar(512)") {
+            INFO(logger) << "Modifying column comment.user_agent " << it->second << " -> varchar(512)";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `user_agent` varchar(512) NOT NULL DEFAULT '' COMMENT '客户端UserAgent'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column comment.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态 1:待审核 2:已通过 3:已拒绝 4:垃圾'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_reported");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column comment.is_reported " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `is_reported` int NOT NULL DEFAULT 0 COMMENT '是否被举报'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.is_reported failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("report_count");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column comment.report_count " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `report_count` int NOT NULL DEFAULT 0 COMMENT '举报次数'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.report_count failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column comment.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column comment.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column comment.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN comment.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "article_id") found = true;
+        if (name == "user_id") found = true;
+        if (name == "parent_id") found = true;
+        if (name == "content") found = true;
+        if (name == "ip") found = true;
+        if (name == "user_agent") found = true;
+        if (name == "status") found = true;
+        if (name == "is_reported") found = true;
+        if (name == "report_count") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column comment." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE comment DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN comment." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("article_id") == existing_cols.end()) {
         INFO(logger) << "Adding column comment.article_id";
@@ -739,16 +1037,6 @@ int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE comment ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE comment ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column comment." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE comment DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE comment DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

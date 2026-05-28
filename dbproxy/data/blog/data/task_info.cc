@@ -1,6 +1,6 @@
 #include "task_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -476,27 +476,214 @@ int TaskInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(task) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("org_id");
-    expected_cols.insert("title");
-    expected_cols.insert("description");
-    expected_cols.insert("priority");
-    expected_cols.insert("status");
-    expected_cols.insert("creator_id");
-    expected_cols.insert("assignee_id");
-    expected_cols.insert("requirement_id");
-    expected_cols.insert("bug_id");
-    expected_cols.insert("deadline");
-    expected_cols.insert("estimated_hours");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.org_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: task.title " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: task.description " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("priority");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.priority " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("creator_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.creator_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("assignee_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.assignee_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("requirement_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.requirement_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("bug_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.bug_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("deadline");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: task.deadline " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("estimated_hours");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.estimated_hours " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: task.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: task.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: task.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "org_id") found = true;
+            if (name == "title") found = true;
+            if (name == "description") found = true;
+            if (name == "priority") found = true;
+            if (name == "status") found = true;
+            if (name == "creator_id") found = true;
+            if (name == "assignee_id") found = true;
+            if (name == "requirement_id") found = true;
+            if (name == "bug_id") found = true;
+            if (name == "deadline") found = true;
+            if (name == "estimated_hours") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column task." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table task";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("org_id") != existing_cols.end()) {
+            common_cols.push_back("org_id");
+        }
+        if (existing_cols.find("title") != existing_cols.end()) {
+            common_cols.push_back("title");
+        }
+        if (existing_cols.find("description") != existing_cols.end()) {
+            common_cols.push_back("description");
+        }
+        if (existing_cols.find("priority") != existing_cols.end()) {
+            common_cols.push_back("priority");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("creator_id") != existing_cols.end()) {
+            common_cols.push_back("creator_id");
+        }
+        if (existing_cols.find("assignee_id") != existing_cols.end()) {
+            common_cols.push_back("assignee_id");
+        }
+        if (existing_cols.find("requirement_id") != existing_cols.end()) {
+            common_cols.push_back("requirement_id");
+        }
+        if (existing_cols.find("bug_id") != existing_cols.end()) {
+            common_cols.push_back("bug_id");
+        }
+        if (existing_cols.find("deadline") != existing_cols.end()) {
+            common_cols.push_back("deadline");
+        }
+        if (existing_cols.find("estimated_hours") != existing_cols.end()) {
+            common_cols.push_back("estimated_hours");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE task RENAME TO task_tmp")) {
+            ERROR(logger) << "RENAME TABLE task failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO task (" + cols + ") SELECT " + cols + " FROM task_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from task_tmp to task failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE task_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("org_id") == existing_cols.end()) {
         INFO(logger) << "Adding column task.org_id";
@@ -610,16 +797,6 @@ int TaskInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column task." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE task DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE task DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -629,27 +806,188 @@ int TaskInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM task errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("org_id");
-    expected_cols.insert("title");
-    expected_cols.insert("description");
-    expected_cols.insert("priority");
-    expected_cols.insert("status");
-    expected_cols.insert("creator_id");
-    expected_cols.insert("assignee_id");
-    expected_cols.insert("requirement_id");
-    expected_cols.insert("bug_id");
-    expected_cols.insert("deadline");
-    expected_cols.insert("estimated_hours");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column task.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '任务ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column task.org_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column task.title " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `title` varchar(256) NOT NULL DEFAULT '' COMMENT '任务标题'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "varchar(2048)") {
+            INFO(logger) << "Modifying column task.description " << it->second << " -> varchar(2048)";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `description` varchar(2048) NOT NULL DEFAULT '' COMMENT '任务描述'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("priority");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column task.priority " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `priority` int NOT NULL DEFAULT 1 COMMENT '优先级: 1低 2中 3高 4紧急'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.priority failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column task.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `status` int NOT NULL DEFAULT 0 COMMENT '状态: 0待办 1进行中 2已完成 3已关闭'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("creator_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column task.creator_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `creator_id` bigint NOT NULL DEFAULT 0 COMMENT '创建者ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.creator_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("assignee_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column task.assignee_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `assignee_id` bigint NOT NULL DEFAULT 0 COMMENT '负责人ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.assignee_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("requirement_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column task.requirement_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `requirement_id` bigint NOT NULL DEFAULT 0 COMMENT '关联需求ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.requirement_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("bug_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column task.bug_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `bug_id` bigint NOT NULL DEFAULT 0 COMMENT '关联缺陷ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.bug_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("deadline");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column task.deadline " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `deadline` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '截止时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.deadline failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("estimated_hours");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column task.estimated_hours " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `estimated_hours` int NOT NULL DEFAULT 0 COMMENT '预估工时(小时)'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.estimated_hours failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column task.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column task.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column task.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE task MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN task.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "org_id") found = true;
+        if (name == "title") found = true;
+        if (name == "description") found = true;
+        if (name == "priority") found = true;
+        if (name == "status") found = true;
+        if (name == "creator_id") found = true;
+        if (name == "assignee_id") found = true;
+        if (name == "requirement_id") found = true;
+        if (name == "bug_id") found = true;
+        if (name == "deadline") found = true;
+        if (name == "estimated_hours") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column task." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE task DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN task." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("org_id") == existing_cols.end()) {
         INFO(logger) << "Adding column task.org_id";
@@ -760,16 +1098,6 @@ int TaskInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE task ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE task ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column task." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE task DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE task DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

@@ -1,6 +1,6 @@
 #include "label_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -324,20 +324,137 @@ int LabelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(label) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("name");
-    expected_cols.insert("color");
-    expected_cols.insert("description");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: label.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: label.user_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: label.name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("color");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: label.color " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: label.description " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: label.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: label.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: label.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "user_id") found = true;
+            if (name == "name") found = true;
+            if (name == "color") found = true;
+            if (name == "description") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column label." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table label";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("user_id") != existing_cols.end()) {
+            common_cols.push_back("user_id");
+        }
+        if (existing_cols.find("name") != existing_cols.end()) {
+            common_cols.push_back("name");
+        }
+        if (existing_cols.find("color") != existing_cols.end()) {
+            common_cols.push_back("color");
+        }
+        if (existing_cols.find("description") != existing_cols.end()) {
+            common_cols.push_back("description");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE label RENAME TO label_tmp")) {
+            ERROR(logger) << "RENAME TABLE label failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO label (" + cols + ") SELECT " + cols + " FROM label_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from label_tmp to label failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE label_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("user_id") == existing_cols.end()) {
         INFO(logger) << "Adding column label.user_id";
@@ -395,16 +512,6 @@ int LabelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column label." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE label DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE label DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -414,20 +521,111 @@ int LabelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM label errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("name");
-    expected_cols.insert("color");
-    expected_cols.insert("description");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column label.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column label.user_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `user_id` bigint NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "varchar(20)") {
+            INFO(logger) << "Modifying column label.name " << it->second << " -> varchar(20)";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `name` varchar(20) NOT NULL DEFAULT ''");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("color");
+        if (it != existing_cols.end() && it->second != "varchar(10)") {
+            INFO(logger) << "Modifying column label.color " << it->second << " -> varchar(10)";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `color` varchar(10) NOT NULL DEFAULT ''");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.color failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "varchar(255)") {
+            INFO(logger) << "Modifying column label.description " << it->second << " -> varchar(255)";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `description` varchar(255) NOT NULL DEFAULT ''");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column label.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column label.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column label.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE label MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN label.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "user_id") found = true;
+        if (name == "name") found = true;
+        if (name == "color") found = true;
+        if (name == "description") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column label." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE label DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN label." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("user_id") == existing_cols.end()) {
         INFO(logger) << "Adding column label.user_id";
@@ -482,16 +680,6 @@ int LabelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE label ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE label ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column label." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE label DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE label DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 
