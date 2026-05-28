@@ -1,6 +1,6 @@
 #include "article_label_rel_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -294,18 +294,115 @@ int ArticleLabelRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(article_label_rel) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("article_id");
-    expected_cols.insert("label_id");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article_label_rel.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("article_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article_label_rel.article_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("label_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article_label_rel.label_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article_label_rel.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: article_label_rel.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: article_label_rel.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "article_id") found = true;
+            if (name == "label_id") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column article_label_rel." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table article_label_rel";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("article_id") != existing_cols.end()) {
+            common_cols.push_back("article_id");
+        }
+        if (existing_cols.find("label_id") != existing_cols.end()) {
+            common_cols.push_back("label_id");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE article_label_rel RENAME TO article_label_rel_tmp")) {
+            ERROR(logger) << "RENAME TABLE article_label_rel failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO article_label_rel (" + cols + ") SELECT " + cols + " FROM article_label_rel_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from article_label_rel_tmp to article_label_rel failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE article_label_rel_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("article_id") == existing_cols.end()) {
         INFO(logger) << "Adding column article_label_rel.article_id";
@@ -347,16 +444,6 @@ int ArticleLabelRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column article_label_rel." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE article_label_rel DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE article_label_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -366,18 +453,89 @@ int ArticleLabelRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM article_label_rel errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("article_id");
-    expected_cols.insert("label_id");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article_label_rel.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article_label_rel MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article_label_rel.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("article_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article_label_rel.article_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article_label_rel MODIFY COLUMN `article_id` bigint NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article_label_rel.article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("label_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article_label_rel.label_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article_label_rel MODIFY COLUMN `label_id` bigint NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article_label_rel.label_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column article_label_rel.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE article_label_rel MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article_label_rel.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column article_label_rel.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE article_label_rel MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article_label_rel.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column article_label_rel.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE article_label_rel MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article_label_rel.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "article_id") found = true;
+        if (name == "label_id") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column article_label_rel." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE article_label_rel DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN article_label_rel." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("article_id") == existing_cols.end()) {
         INFO(logger) << "Adding column article_label_rel.article_id";
@@ -416,16 +574,6 @@ int ArticleLabelRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE article_label_rel ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE article_label_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column article_label_rel." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE article_label_rel DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE article_label_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

@@ -1,6 +1,6 @@
 #include "notification_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -399,25 +399,192 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(notification) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("title");
-    expected_cols.insert("content");
-    expected_cols.insert("type");
-    expected_cols.insert("sender_id");
-    expected_cols.insert("article_id");
-    expected_cols.insert("comment_id");
-    expected_cols.insert("is_read");
-    expected_cols.insert("read_time");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.user_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: notification.title " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("content");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: notification.content " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: notification.type " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("sender_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.sender_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("article_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.article_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("comment_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.comment_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_read");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.is_read " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("read_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: notification.read_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: notification.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: notification.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "user_id") found = true;
+            if (name == "title") found = true;
+            if (name == "content") found = true;
+            if (name == "type") found = true;
+            if (name == "sender_id") found = true;
+            if (name == "article_id") found = true;
+            if (name == "comment_id") found = true;
+            if (name == "is_read") found = true;
+            if (name == "read_time") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column notification." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table notification";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("user_id") != existing_cols.end()) {
+            common_cols.push_back("user_id");
+        }
+        if (existing_cols.find("title") != existing_cols.end()) {
+            common_cols.push_back("title");
+        }
+        if (existing_cols.find("content") != existing_cols.end()) {
+            common_cols.push_back("content");
+        }
+        if (existing_cols.find("type") != existing_cols.end()) {
+            common_cols.push_back("type");
+        }
+        if (existing_cols.find("sender_id") != existing_cols.end()) {
+            common_cols.push_back("sender_id");
+        }
+        if (existing_cols.find("article_id") != existing_cols.end()) {
+            common_cols.push_back("article_id");
+        }
+        if (existing_cols.find("comment_id") != existing_cols.end()) {
+            common_cols.push_back("comment_id");
+        }
+        if (existing_cols.find("is_read") != existing_cols.end()) {
+            common_cols.push_back("is_read");
+        }
+        if (existing_cols.find("read_time") != existing_cols.end()) {
+            common_cols.push_back("read_time");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE notification RENAME TO notification_tmp")) {
+            ERROR(logger) << "RENAME TABLE notification failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO notification (" + cols + ") SELECT " + cols + " FROM notification_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from notification_tmp to notification failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE notification_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("user_id") == existing_cols.end()) {
         INFO(logger) << "Adding column notification.user_id";
@@ -515,16 +682,6 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column notification." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE notification DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE notification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -534,25 +691,166 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM notification errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("title");
-    expected_cols.insert("content");
-    expected_cols.insert("type");
-    expected_cols.insert("sender_id");
-    expected_cols.insert("article_id");
-    expected_cols.insert("comment_id");
-    expected_cols.insert("is_read");
-    expected_cols.insert("read_time");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.user_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '接收用户id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column notification.title " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `title` varchar(128) NOT NULL DEFAULT '' COMMENT '通知标题'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("content");
+        if (it != existing_cols.end() && it->second != "text") {
+            INFO(logger) << "Modifying column notification.content " << it->second << " -> text";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '通知内容'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "varchar(32)") {
+            INFO(logger) << "Modifying column notification.type " << it->second << " -> varchar(32)";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `type` varchar(32) NOT NULL DEFAULT '' COMMENT '通知类型: system/announcement/article'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("sender_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.sender_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `sender_id` bigint NOT NULL DEFAULT 0 COMMENT '发送者id(0=系统)'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.sender_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("article_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.article_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `article_id` bigint NOT NULL DEFAULT 0 COMMENT '关联文章ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.article_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("comment_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.comment_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `comment_id` bigint NOT NULL DEFAULT 0 COMMENT '关联评论ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.comment_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_read");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column notification.is_read " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `is_read` int NOT NULL DEFAULT 0 COMMENT '是否已读: 0未读 1已读'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.is_read failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("read_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column notification.read_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `read_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '阅读时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.read_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column notification.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column notification.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column notification.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "user_id") found = true;
+        if (name == "title") found = true;
+        if (name == "content") found = true;
+        if (name == "type") found = true;
+        if (name == "sender_id") found = true;
+        if (name == "article_id") found = true;
+        if (name == "comment_id") found = true;
+        if (name == "is_read") found = true;
+        if (name == "read_time") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column notification." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE notification DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN notification." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("user_id") == existing_cols.end()) {
         INFO(logger) << "Adding column notification.user_id";
@@ -647,16 +945,6 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE notification ADD COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column notification." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE notification DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE notification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

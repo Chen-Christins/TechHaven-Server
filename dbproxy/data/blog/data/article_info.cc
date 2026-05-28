@@ -1,6 +1,6 @@
 #include "article_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -378,27 +378,214 @@ int ArticleInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(article) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("title");
-    expected_cols.insert("content");
-    expected_cols.insert("type");
-    expected_cols.insert("state");
-    expected_cols.insert("channel");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("publish_time");
-    expected_cols.insert("weight");
-    expected_cols.insert("views");
-    expected_cols.insert("praise");
-    expected_cols.insert("favorites");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.user_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: article.title " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("content");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: article.content " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.type " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("state");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.state " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("channel");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.channel " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("publish_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: article.publish_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("weight");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.weight " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("views");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.views " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("praise");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.praise " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("favorites");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: article.favorites " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: article.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: article.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "user_id") found = true;
+            if (name == "title") found = true;
+            if (name == "content") found = true;
+            if (name == "type") found = true;
+            if (name == "state") found = true;
+            if (name == "channel") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "publish_time") found = true;
+            if (name == "weight") found = true;
+            if (name == "views") found = true;
+            if (name == "praise") found = true;
+            if (name == "favorites") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column article." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table article";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("user_id") != existing_cols.end()) {
+            common_cols.push_back("user_id");
+        }
+        if (existing_cols.find("title") != existing_cols.end()) {
+            common_cols.push_back("title");
+        }
+        if (existing_cols.find("content") != existing_cols.end()) {
+            common_cols.push_back("content");
+        }
+        if (existing_cols.find("type") != existing_cols.end()) {
+            common_cols.push_back("type");
+        }
+        if (existing_cols.find("state") != existing_cols.end()) {
+            common_cols.push_back("state");
+        }
+        if (existing_cols.find("channel") != existing_cols.end()) {
+            common_cols.push_back("channel");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("publish_time") != existing_cols.end()) {
+            common_cols.push_back("publish_time");
+        }
+        if (existing_cols.find("weight") != existing_cols.end()) {
+            common_cols.push_back("weight");
+        }
+        if (existing_cols.find("views") != existing_cols.end()) {
+            common_cols.push_back("views");
+        }
+        if (existing_cols.find("praise") != existing_cols.end()) {
+            common_cols.push_back("praise");
+        }
+        if (existing_cols.find("favorites") != existing_cols.end()) {
+            common_cols.push_back("favorites");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE article RENAME TO article_tmp")) {
+            ERROR(logger) << "RENAME TABLE article failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO article (" + cols + ") SELECT " + cols + " FROM article_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from article_tmp to article failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE article_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("user_id") == existing_cols.end()) {
         INFO(logger) << "Adding column article.user_id";
@@ -512,16 +699,6 @@ int ArticleInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column article." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE article DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE article DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -531,27 +708,188 @@ int ArticleInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM article errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("title");
-    expected_cols.insert("content");
-    expected_cols.insert("type");
-    expected_cols.insert("state");
-    expected_cols.insert("channel");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("publish_time");
-    expected_cols.insert("weight");
-    expected_cols.insert("views");
-    expected_cols.insert("praise");
-    expected_cols.insert("favorites");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '文章id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.user_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("title");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column article.title " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `title` varchar(256) NOT NULL DEFAULT '' COMMENT '文章标题'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.title failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("content");
+        if (it != existing_cols.end() && it->second != "text") {
+            INFO(logger) << "Modifying column article.content " << it->second << " -> text";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '文章内容'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column article.type " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `type` int NOT NULL DEFAULT 0 COMMENT '类型 1:原创,2:转发'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("state");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column article.state " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `state` int NOT NULL DEFAULT 0 COMMENT '状态: 0全部 1审核中 2已发布 3未通过 4私密'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("channel");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.channel " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `channel` bigint NOT NULL DEFAULT 0 COMMENT '频道id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.channel failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column article.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("publish_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column article.publish_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `publish_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '发布时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.publish_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("weight");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.weight " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `weight` bigint NOT NULL DEFAULT 0 COMMENT '权重'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.weight failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("views");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.views " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `views` bigint NOT NULL DEFAULT 0 COMMENT '流量数'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.views failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("praise");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.praise " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `praise` bigint NOT NULL DEFAULT 0 COMMENT '点赞数'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.praise failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("favorites");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column article.favorites " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `favorites` bigint NOT NULL DEFAULT 0 COMMENT '收藏数'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.favorites failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column article.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column article.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN article.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "user_id") found = true;
+        if (name == "title") found = true;
+        if (name == "content") found = true;
+        if (name == "type") found = true;
+        if (name == "state") found = true;
+        if (name == "channel") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "publish_time") found = true;
+        if (name == "weight") found = true;
+        if (name == "views") found = true;
+        if (name == "praise") found = true;
+        if (name == "favorites") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column article." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE article DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN article." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("user_id") == existing_cols.end()) {
         INFO(logger) << "Adding column article.user_id";
@@ -662,16 +1000,6 @@ int ArticleInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE article ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE article ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column article." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE article DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE article DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

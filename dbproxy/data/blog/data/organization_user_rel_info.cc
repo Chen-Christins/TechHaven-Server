@@ -1,6 +1,6 @@
 #include "organization_user_rel_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -324,20 +324,137 @@ int OrganizationUserRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(organization_user_rel) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("org_id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("role");
-    expected_cols.insert("status");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_user_rel.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_user_rel.org_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_user_rel.user_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("role");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_user_rel.role " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_user_rel.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_user_rel.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: organization_user_rel.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: organization_user_rel.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "org_id") found = true;
+            if (name == "user_id") found = true;
+            if (name == "role") found = true;
+            if (name == "status") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column organization_user_rel." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table organization_user_rel";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("org_id") != existing_cols.end()) {
+            common_cols.push_back("org_id");
+        }
+        if (existing_cols.find("user_id") != existing_cols.end()) {
+            common_cols.push_back("user_id");
+        }
+        if (existing_cols.find("role") != existing_cols.end()) {
+            common_cols.push_back("role");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE organization_user_rel RENAME TO organization_user_rel_tmp")) {
+            ERROR(logger) << "RENAME TABLE organization_user_rel failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO organization_user_rel (" + cols + ") SELECT " + cols + " FROM organization_user_rel_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from organization_user_rel_tmp to organization_user_rel failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE organization_user_rel_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("org_id") == existing_cols.end()) {
         INFO(logger) << "Adding column organization_user_rel.org_id";
@@ -395,16 +512,6 @@ int OrganizationUserRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column organization_user_rel." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE organization_user_rel DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE organization_user_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -414,20 +521,111 @@ int OrganizationUserRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM organization_user_rel errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("org_id");
-    expected_cols.insert("user_id");
-    expected_cols.insert("role");
-    expected_cols.insert("status");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column organization_user_rel.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column organization_user_rel.org_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column organization_user_rel.user_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("role");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column organization_user_rel.role " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `role` int NOT NULL DEFAULT 1 COMMENT '角色: 1普通成员 2报告者 3开发者 4研发主管 5组织管理员'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.role failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column organization_user_rel.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态: 0申请中 1已加入 2已拒绝 3已退出'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column organization_user_rel.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column organization_user_rel.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '加入时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column organization_user_rel.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE organization_user_rel MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_user_rel.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "org_id") found = true;
+        if (name == "user_id") found = true;
+        if (name == "role") found = true;
+        if (name == "status") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column organization_user_rel." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE organization_user_rel DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN organization_user_rel." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("org_id") == existing_cols.end()) {
         INFO(logger) << "Adding column organization_user_rel.org_id";
@@ -482,16 +680,6 @@ int OrganizationUserRelInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE organization_user_rel ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE organization_user_rel ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column organization_user_rel." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE organization_user_rel DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE organization_user_rel DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

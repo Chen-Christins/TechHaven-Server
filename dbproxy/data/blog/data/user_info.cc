@@ -1,6 +1,6 @@
 #include "user_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -508,29 +508,236 @@ int UserInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(user) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("name");
-    expected_cols.insert("account");
-    expected_cols.insert("avatar");
-    expected_cols.insert("email");
-    expected_cols.insert("role");
-    expected_cols.insert("passwd");
-    expected_cols.insert("state");
-    expected_cols.insert("bio");
-    expected_cols.insert("website");
-    expected_cols.insert("location");
-    expected_cols.insert("token");
-    expected_cols.insert("token_time");
-    expected_cols.insert("login_time");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("account");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.account " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("avatar");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.avatar " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("email");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.email " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("role");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user.role " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("passwd");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.passwd " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("state");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user.state " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("bio");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.bio " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("website");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.website " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("location");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.location " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("token");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user.token " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("token_time");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user.token_time " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("login_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: user.login_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: user.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: user.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "name") found = true;
+            if (name == "account") found = true;
+            if (name == "avatar") found = true;
+            if (name == "email") found = true;
+            if (name == "role") found = true;
+            if (name == "passwd") found = true;
+            if (name == "state") found = true;
+            if (name == "bio") found = true;
+            if (name == "website") found = true;
+            if (name == "location") found = true;
+            if (name == "token") found = true;
+            if (name == "token_time") found = true;
+            if (name == "login_time") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column user." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table user";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("name") != existing_cols.end()) {
+            common_cols.push_back("name");
+        }
+        if (existing_cols.find("account") != existing_cols.end()) {
+            common_cols.push_back("account");
+        }
+        if (existing_cols.find("avatar") != existing_cols.end()) {
+            common_cols.push_back("avatar");
+        }
+        if (existing_cols.find("email") != existing_cols.end()) {
+            common_cols.push_back("email");
+        }
+        if (existing_cols.find("role") != existing_cols.end()) {
+            common_cols.push_back("role");
+        }
+        if (existing_cols.find("passwd") != existing_cols.end()) {
+            common_cols.push_back("passwd");
+        }
+        if (existing_cols.find("state") != existing_cols.end()) {
+            common_cols.push_back("state");
+        }
+        if (existing_cols.find("bio") != existing_cols.end()) {
+            common_cols.push_back("bio");
+        }
+        if (existing_cols.find("website") != existing_cols.end()) {
+            common_cols.push_back("website");
+        }
+        if (existing_cols.find("location") != existing_cols.end()) {
+            common_cols.push_back("location");
+        }
+        if (existing_cols.find("token") != existing_cols.end()) {
+            common_cols.push_back("token");
+        }
+        if (existing_cols.find("token_time") != existing_cols.end()) {
+            common_cols.push_back("token_time");
+        }
+        if (existing_cols.find("login_time") != existing_cols.end()) {
+            common_cols.push_back("login_time");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE user RENAME TO user_tmp")) {
+            ERROR(logger) << "RENAME TABLE user failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO user (" + cols + ") SELECT " + cols + " FROM user_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from user_tmp to user failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE user_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("name") == existing_cols.end()) {
         INFO(logger) << "Adding column user.name";
@@ -660,16 +867,6 @@ int UserInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column user." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE user DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE user DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -679,29 +876,210 @@ int UserInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM user errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("name");
-    expected_cols.insert("account");
-    expected_cols.insert("avatar");
-    expected_cols.insert("email");
-    expected_cols.insert("role");
-    expected_cols.insert("passwd");
-    expected_cols.insert("state");
-    expected_cols.insert("bio");
-    expected_cols.insert("website");
-    expected_cols.insert("location");
-    expected_cols.insert("token");
-    expected_cols.insert("token_time");
-    expected_cols.insert("login_time");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column user.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.name " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `name` varchar(128) NOT NULL DEFAULT '' COMMENT '用户名'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("account");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.account " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `account` varchar(128) NOT NULL DEFAULT '' COMMENT '账户名称'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.account failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("avatar");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.avatar " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `avatar` varchar(128) NOT NULL DEFAULT '' COMMENT '头像地址'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.avatar failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("email");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.email " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `email` varchar(128) NOT NULL DEFAULT '' COMMENT '邮箱地址'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("role");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column user.role " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `role` int NOT NULL DEFAULT 1 COMMENT '角色: 1用户, 2管理员, 3编辑, 4审核员'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.role failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("passwd");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.passwd " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `passwd` varchar(128) NOT NULL DEFAULT '' COMMENT '用户密码'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.passwd failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("state");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column user.state " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `state` int NOT NULL DEFAULT 0 COMMENT '账号状态'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("bio");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.bio " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `bio` varchar(128) NOT NULL DEFAULT '' COMMENT '用户简介'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.bio failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("website");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.website " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `website` varchar(128) NOT NULL DEFAULT '' COMMENT '个人网站'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.website failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("location");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column user.location " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `location` varchar(128) NOT NULL DEFAULT '' COMMENT '用户所在地'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.location failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("token");
+        if (it != existing_cols.end() && it->second != "varchar(64)") {
+            INFO(logger) << "Modifying column user.token " << it->second << " -> varchar(64)";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `token` varchar(64) NOT NULL DEFAULT '' COMMENT '登录凭证'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.token failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("token_time");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column user.token_time " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `token_time` bigint NOT NULL DEFAULT 0 COMMENT '凭证过期时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.token_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("login_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column user.login_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `login_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '上次登录时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.login_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column user.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '账号是否已经删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column user.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '账号创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column user.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE user MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '账号信息上一次更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "name") found = true;
+        if (name == "account") found = true;
+        if (name == "avatar") found = true;
+        if (name == "email") found = true;
+        if (name == "role") found = true;
+        if (name == "passwd") found = true;
+        if (name == "state") found = true;
+        if (name == "bio") found = true;
+        if (name == "website") found = true;
+        if (name == "location") found = true;
+        if (name == "token") found = true;
+        if (name == "token_time") found = true;
+        if (name == "login_time") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column user." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE user DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN user." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("name") == existing_cols.end()) {
         INFO(logger) << "Adding column user.name";
@@ -828,16 +1206,6 @@ int UserInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE user ADD COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '账号信息上一次更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE user ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column user." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE user DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE user DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

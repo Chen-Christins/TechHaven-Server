@@ -1,6 +1,6 @@
 #include "email_verification_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -427,21 +427,148 @@ int EmailVerificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(email_verification) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("email");
-    expected_cols.insert("code");
-    expected_cols.insert("type");
-    expected_cols.insert("state");
-    expected_cols.insert("create_time");
-    expected_cols.insert("expires_time");
-    expected_cols.insert("client_ip");
-    expected_cols.insert("user_agent");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: email_verification.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("email");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: email_verification.email " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("code");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: email_verification.code " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: email_verification.type " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("state");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: email_verification.state " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: email_verification.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("expires_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: email_verification.expires_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("client_ip");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: email_verification.client_ip " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_agent");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: email_verification.user_agent " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "email") found = true;
+            if (name == "code") found = true;
+            if (name == "type") found = true;
+            if (name == "state") found = true;
+            if (name == "create_time") found = true;
+            if (name == "expires_time") found = true;
+            if (name == "client_ip") found = true;
+            if (name == "user_agent") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column email_verification." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table email_verification";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("email") != existing_cols.end()) {
+            common_cols.push_back("email");
+        }
+        if (existing_cols.find("code") != existing_cols.end()) {
+            common_cols.push_back("code");
+        }
+        if (existing_cols.find("type") != existing_cols.end()) {
+            common_cols.push_back("type");
+        }
+        if (existing_cols.find("state") != existing_cols.end()) {
+            common_cols.push_back("state");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("expires_time") != existing_cols.end()) {
+            common_cols.push_back("expires_time");
+        }
+        if (existing_cols.find("client_ip") != existing_cols.end()) {
+            common_cols.push_back("client_ip");
+        }
+        if (existing_cols.find("user_agent") != existing_cols.end()) {
+            common_cols.push_back("user_agent");
+        }
+
+        if (conn->execute("ALTER TABLE email_verification RENAME TO email_verification_tmp")) {
+            ERROR(logger) << "RENAME TABLE email_verification failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO email_verification (" + cols + ") SELECT " + cols + " FROM email_verification_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from email_verification_tmp to email_verification failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE email_verification_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("email") == existing_cols.end()) {
         INFO(logger) << "Adding column email_verification.email";
@@ -507,16 +634,6 @@ int EmailVerificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column email_verification." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE email_verification DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE email_verification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -526,21 +643,122 @@ int EmailVerificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM email_verification errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("email");
-    expected_cols.insert("code");
-    expected_cols.insert("type");
-    expected_cols.insert("state");
-    expected_cols.insert("create_time");
-    expected_cols.insert("expires_time");
-    expected_cols.insert("client_ip");
-    expected_cols.insert("user_agent");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column email_verification.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("email");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column email_verification.email " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `email` varchar(128) NOT NULL DEFAULT '' COMMENT '用户邮箱地址'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.email failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("code");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column email_verification.code " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `code` varchar(128) NOT NULL DEFAULT '' COMMENT '验证码'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.code failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column email_verification.type " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `type` int NOT NULL DEFAULT 0 COMMENT '验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("state");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column email_verification.state " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `state` int NOT NULL DEFAULT 0 COMMENT '是否已使用'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.state failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column email_verification.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("expires_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column email_verification.expires_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `expires_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '过期时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.expires_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("client_ip");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column email_verification.client_ip " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `client_ip` varchar(128) NOT NULL DEFAULT '' COMMENT '请求IP地址'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.client_ip failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_agent");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column email_verification.user_agent " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE email_verification MODIFY COLUMN `user_agent` varchar(128) NOT NULL DEFAULT '' COMMENT '用户代理信息'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN email_verification.user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "email") found = true;
+        if (name == "code") found = true;
+        if (name == "type") found = true;
+        if (name == "state") found = true;
+        if (name == "create_time") found = true;
+        if (name == "expires_time") found = true;
+        if (name == "client_ip") found = true;
+        if (name == "user_agent") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column email_verification." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE email_verification DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN email_verification." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("email") == existing_cols.end()) {
         INFO(logger) << "Adding column email_verification.email";
@@ -603,16 +821,6 @@ int EmailVerificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE email_verification ADD COLUMN `user_agent` varchar(128) NOT NULL DEFAULT '' COMMENT '用户代理信息'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE email_verification ADD COLUMN user_agent failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column email_verification." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE email_verification DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE email_verification DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 

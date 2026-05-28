@@ -1,6 +1,6 @@
 #include "chunk_upload_info.h"
 #include "chen/log/log.h"
-#include <set>
+#include <map>
 
 namespace blog {
 namespace data {
@@ -367,23 +367,170 @@ int ChunkUploadInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         ERROR(logger) << "PRAGMA table_info(chunk_upload) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(1));
+        existing_cols[data->getString(1)] = data->getString(2);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("upload_id");
-    expected_cols.insert("filename");
-    expected_cols.insert("total_chunks");
-    expected_cols.insert("uploaded_chunks");
-    expected_cols.insert("size");
-    expected_cols.insert("owner_id");
-    expected_cols.insert("status");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("upload_id");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: chunk_upload.upload_id " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("filename");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: chunk_upload.filename " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("total_chunks");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.total_chunks " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("uploaded_chunks");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.uploaded_chunks " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("size");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.size " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("owner_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.owner_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.status " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: chunk_upload.is_deleted " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: chunk_upload.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: chunk_upload.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "upload_id") found = true;
+            if (name == "filename") found = true;
+            if (name == "total_chunks") found = true;
+            if (name == "uploaded_chunks") found = true;
+            if (name == "size") found = true;
+            if (name == "owner_id") found = true;
+            if (name == "status") found = true;
+            if (name == "is_deleted") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column chunk_upload." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table chunk_upload";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("upload_id") != existing_cols.end()) {
+            common_cols.push_back("upload_id");
+        }
+        if (existing_cols.find("filename") != existing_cols.end()) {
+            common_cols.push_back("filename");
+        }
+        if (existing_cols.find("total_chunks") != existing_cols.end()) {
+            common_cols.push_back("total_chunks");
+        }
+        if (existing_cols.find("uploaded_chunks") != existing_cols.end()) {
+            common_cols.push_back("uploaded_chunks");
+        }
+        if (existing_cols.find("size") != existing_cols.end()) {
+            common_cols.push_back("size");
+        }
+        if (existing_cols.find("owner_id") != existing_cols.end()) {
+            common_cols.push_back("owner_id");
+        }
+        if (existing_cols.find("status") != existing_cols.end()) {
+            common_cols.push_back("status");
+        }
+        if (existing_cols.find("is_deleted") != existing_cols.end()) {
+            common_cols.push_back("is_deleted");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE chunk_upload RENAME TO chunk_upload_tmp")) {
+            ERROR(logger) << "RENAME TABLE chunk_upload failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO chunk_upload (" + cols + ") SELECT " + cols + " FROM chunk_upload_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from chunk_upload_tmp to chunk_upload failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE chunk_upload_tmp");
+        return 0;
+    }
 
     if (existing_cols.find("upload_id") == existing_cols.end()) {
         INFO(logger) << "Adding column chunk_upload.upload_id";
@@ -465,16 +612,6 @@ int ChunkUploadInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
 
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column chunk_upload." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE chunk_upload DROP COLUMN " + col);
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE chunk_upload DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
-        }
-    }
-
     return 0;
 }
 
@@ -484,23 +621,144 @@ int ChunkUploadInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         ERROR(logger) << "SHOW COLUMNS FROM chunk_upload errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    std::set<std::string> existing_cols;
+    std::map<std::string, std::string> existing_cols;  // name -> type
     while (data->next()) {
-        existing_cols.insert(data->getString(0));
+        existing_cols[data->getString(0)] = data->getString(1);
     }
 
-    std::set<std::string> expected_cols;
-    expected_cols.insert("id");
-    expected_cols.insert("upload_id");
-    expected_cols.insert("filename");
-    expected_cols.insert("total_chunks");
-    expected_cols.insert("uploaded_chunks");
-    expected_cols.insert("size");
-    expected_cols.insert("owner_id");
-    expected_cols.insert("status");
-    expected_cols.insert("is_deleted");
-    expected_cols.insert("create_time");
-    expected_cols.insert("update_time");
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column chunk_upload.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("upload_id");
+        if (it != existing_cols.end() && it->second != "varchar(64)") {
+            INFO(logger) << "Modifying column chunk_upload.upload_id " << it->second << " -> varchar(64)";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `upload_id` varchar(64) NOT NULL DEFAULT '' COMMENT '上传任务唯一ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.upload_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("filename");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column chunk_upload.filename " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `filename` varchar(256) NOT NULL DEFAULT '' COMMENT '原始文件名'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.filename failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("total_chunks");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column chunk_upload.total_chunks " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `total_chunks` int NOT NULL DEFAULT 0 COMMENT '总分片数'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.total_chunks failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("uploaded_chunks");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column chunk_upload.uploaded_chunks " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `uploaded_chunks` int NOT NULL DEFAULT 0 COMMENT '已上传分片数'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.uploaded_chunks failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("size");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column chunk_upload.size " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `size` bigint NOT NULL DEFAULT 0 COMMENT '文件总大小（字节）'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.size failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("owner_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column chunk_upload.owner_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `owner_id` bigint NOT NULL DEFAULT 0 COMMENT '上传者用户ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.owner_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("status");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column chunk_upload.status " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `status` int NOT NULL DEFAULT 1 COMMENT '状态: 1上传中 2已完成 3失败'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("is_deleted");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column chunk_upload.is_deleted " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.is_deleted failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column chunk_upload.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column chunk_upload.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE chunk_upload MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN chunk_upload.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "upload_id") found = true;
+        if (name == "filename") found = true;
+        if (name == "total_chunks") found = true;
+        if (name == "uploaded_chunks") found = true;
+        if (name == "size") found = true;
+        if (name == "owner_id") found = true;
+        if (name == "status") found = true;
+        if (name == "is_deleted") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column chunk_upload." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE chunk_upload DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN chunk_upload." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     if (existing_cols.find("upload_id") == existing_cols.end()) {
         INFO(logger) << "Adding column chunk_upload.upload_id";
@@ -579,16 +837,6 @@ int ChunkUploadInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE chunk_upload ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE chunk_upload ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-        }
-    }
-
-    for (auto& col : existing_cols) {
-        if (expected_cols.find(col) == expected_cols.end()) {
-            WARN(logger) << "Dropping column chunk_upload." << col << " (not in schema, data will be lost)";
-            int rt = conn->execute("ALTER TABLE chunk_upload DROP COLUMN `" + col + "`");
-            if (rt) {
-                ERROR(logger) << "ALTER TABLE chunk_upload DROP COLUMN " << col << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
-            }
         }
     }
 
