@@ -106,6 +106,7 @@ bool BlogModule::initDB() {
     XX(ArticleCategoryRelInfoDao, "article_category_rel")
     XX(ArticleLabelRelInfoDao, "article_label_rel")
     XX(AssignmentInfoDao, "assignment")
+    XX(OrganizationApplyInfoDao, "organization_apply")
     XX(OrganizationInfoDao, "organization")
     XX(OrganizationUserRelInfoDao, "organization_user_rel")
     XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
@@ -136,6 +137,7 @@ bool BlogModule::initDB() {
         XX(ArticleCategoryRelInfoDao)
         XX(ArticleLabelRelInfoDao)
         XX(AssignmentInfoDao)
+        XX(OrganizationApplyInfoDao)
         XX(OrganizationInfoDao)
         XX(OrganizationUserRelInfoDao)
         XX(AssignmentOrganizationRelInfoDao)
@@ -176,6 +178,7 @@ void BlogModule::loadAllData() {
 	XX(ArticleLabelRelMgr)
 	XX(AssignmentMgr)
 	XX(OrganizationMgr)
+	XX(OrganizationApplyMgr)
 	XX(OrganizationUserRelMgr)
 	XX(AssignmentOrganizationRelMgr)
 	XX(AssignmentUserRelMgr)
@@ -319,6 +322,10 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/organization/user_kick", XX(OrganizationUserKickServlet));
         dp->addServlet("/api/v1/organization/assignment_create", XX(AssignmentOrganizationCreateServlet));
         dp->addServlet("/api/v1/organization/assignment_list", XX(OrganizationAssignmentListServlet));
+        dp->addServlet("/api/v1/organization/apply-create", XX(OrganizationApplyCreateServlet));
+        dp->addServlet("/api/v1/organization/apply-list", XX(OrganizationApplyListServlet));
+        dp->addServlet("/api/v1/organization/apply-review", XX(OrganizationApplyReviewServlet));
+        dp->addServlet("/api/v1/organization/my-applies", XX(OrganizationMyAppliesServlet));
         // R&D 平台相关（新版统一 API）
         dp->addServlet("/api/v1/rd/check_access", XX(RdCheckAccessServlet));
         dp->addServlet("/api/v1/rd/requirements", XX(RdRequirementServlet));

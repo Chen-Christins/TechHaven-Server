@@ -12,6 +12,7 @@
 #include "blog/data/comment_praise_rel_info.h"          // IWYU pragma: keep
 #include "blog/data/email_verification_info.h"          // IWYU pragma: keep
 #include "blog/data/notification_info.h"                // IWYU pragma: keep
+#include "blog/data/organization_apply_info.h"          // IWYU pragma: keep
 #include "blog/data/organization_info.h"                // IWYU pragma: keep
 #include "blog/data/organization_user_rel_info.h"       // IWYU pragma: keep
 #include "blog/data/requirement_info.h"                 // IWYU pragma: keep

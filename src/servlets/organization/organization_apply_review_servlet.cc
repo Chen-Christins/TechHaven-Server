@@ -1,0 +1,142 @@
+#include "organization_apply_review_servlet.h"
+#include <chen/log/log.h>
+#include "../../util.h"
+#include "../../manager/user_manager.h"
+#include "../../manager/organization_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/organization_apply_manager.h"
+
+namespace blog {
+namespace servlet {
+
+static chen::Logger::ptr logger = LOG_ROOT();
+
+OrganizationApplyReviewServlet::OrganizationApplyReviewServlet()
+    : BlogLoginedServlet("OrganizationApplyReviewServlet") {
+}
+
+int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        DEFINE_AND_CHECK_STRING(result, apply_id_str, "apply_id");
+        DEFINE_AND_CHECK_STRING(result, action, "action");
+        std::string reason = request->getParamAs<std::string>("reason");
+
+        int64_t apply_id = 0;
+        try {
+            apply_id = std::stoll(apply_id_str);
+        } catch (...) {
+            result->setResult(400, "invalid apply_id");
+            break;
+        }
+
+        if (action != "approve" && action != "reject") {
+            result->setResult(400, "action must be approve or reject");
+            break;
+        }
+
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(410, "not login");
+            break;
+        }
+
+        auto uinfo = UserMgr::GetInstance()->get(uid);
+        if (!uinfo || uinfo->getRole() != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
+
+        auto apply = OrganizationApplyMgr::GetInstance()->get(apply_id);
+        if (!apply) {
+            result->setResult(404, "apply not exist");
+            break;
+        }
+
+        if (apply->getStatus() != OrganizationApplyManager::Status::PENDING) {
+            result->setResult(400, "apply has already been reviewed");
+            break;
+        }
+
+        auto db = getDB();
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
+
+        if (action == "approve") {
+            // Create the organization
+            auto org = std::make_shared<data::OrganizationInfo>();
+            org->setName(apply->getOrgName());
+            org->setType(apply->getOrgType());
+            org->setDescription(apply->getOrgDescription());
+            org->setOwnerId(apply->getUserId());
+            org->setStatus(OrganizationManager::Status::ACTIVE);
+            org->setIsDeleted(0);
+            org->setCreateTime(time(0));
+            org->setUpdateTime(time(0));
+
+            if (data::OrganizationInfoDao::Insert(org, db)) {
+                result->setResult(500, "insert organization fail");
+                ERROR(logger) << "db error, errno=" << db->getErrno()
+                    << " errstr=" << db->getErrStr();
+                break;
+            }
+
+            OrganizationMgr::GetInstance()->add(org);
+
+            // Add applicant as org admin (role=5)
+            auto rel = std::make_shared<data::OrganizationUserRelInfo>();
+            rel->setOrgId(org->getId());
+            rel->setUserId(apply->getUserId());
+            rel->setRole(OrganizationManager::Role::ORG_ADMIN);
+            rel->setStatus(OrganizationUserRelManager::Status::APPROVED);
+            rel->setCreateTime(time(0));
+            rel->setUpdateTime(time(0));
+
+            if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
+                result->setResult(500, "insert organization user rel fail");
+                ERROR(logger) << "db error, errno=" << db->getErrno()
+                    << " errstr=" << db->getErrStr();
+                break;
+            }
+
+            OrganizationUserRelMgr::GetInstance()->add(rel);
+
+            // Update apply record
+            apply->setStatus(OrganizationApplyManager::Status::APPROVED);
+            apply->setReviewReason(reason);
+            apply->setReviewedAt(time(0));
+
+            if (data::OrganizationApplyInfoDao::Update(apply, db)) {
+                result->setResult(500, "update apply fail");
+                ERROR(logger) << "db error, errno=" << db->getErrno()
+                    << " errstr=" << db->getErrStr();
+                break;
+            }
+
+            OrganizationApplyMgr::GetInstance()->update(apply);
+
+            result->set("org_id", org->getId());
+        } else {
+            // Reject
+            apply->setStatus(OrganizationApplyManager::Status::REJECTED);
+            apply->setReviewReason(reason);
+            apply->setReviewedAt(time(0));
+
+            if (data::OrganizationApplyInfoDao::Update(apply, db)) {
+                result->setResult(500, "update apply fail");
+                ERROR(logger) << "db error, errno=" << db->getErrno()
+                    << " errstr=" << db->getErrStr();
+                break;
+            }
+
+            OrganizationApplyMgr::GetInstance()->update(apply);
+        }
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}
