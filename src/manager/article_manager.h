@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <vector>
 
 namespace blog {
 
@@ -86,6 +87,8 @@ private:
     std::shared_mutex m_viewsMutex;
     /// 文章数据内容
     std::map<int64_t, blog::data::ArticleInfo::ptr> m_datas;
+    /// 按id降序排列的文章id索引，用于O(1)分页（只包含未删除文章）
+    std::vector<int64_t> m_sortedIds;
     /// 用户i 对应 -> 文章
     std::unordered_map<int64_t, std::map<int64_t, blog::data::ArticleInfo::ptr>> m_users;
     /// 文章发布的状态

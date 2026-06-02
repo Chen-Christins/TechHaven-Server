@@ -26,6 +26,7 @@ bool ArticleManager::loadAll() {
     std::map<int64_t, blog::data::ArticleInfo::ptr> datas;
     std::unordered_map<int64_t, std::map<int64_t, blog::data::ArticleInfo::ptr>> users;
     std::map<int64_t, blog::data::ArticleInfo::ptr> verifys;
+    std::vector<int64_t> sortedIds;
 
     for (auto& i : results) {
         datas[i->getId()] = i;
@@ -33,11 +34,18 @@ bool ArticleManager::loadAll() {
         if (i->getState() == 1) {
             verifys[i->getId()] = i;
         }
+        if (!i->getIsDeleted()) {
+            sortedIds.push_back(i->getId());
+        }
     }
+    // 按 id 降序（新文章在前）
+    std::sort(sortedIds.begin(), sortedIds.end(), std::greater<int64_t>());
+
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
     m_users.swap(users);
     m_verifys.swap(verifys);
+    m_sortedIds.swap(sortedIds);
     return true;
 }
 
@@ -47,6 +55,12 @@ void ArticleManager::add(blog::data::ArticleInfo::ptr info) {
     m_users[info->getUserId()][info->getId()] = info;
     if (info->getState() == 1 && info->getIsDeleted() == 0) {
         m_verifys[info->getId()] = info;
+    }
+    if (!info->getIsDeleted()) {
+        // 按降序插入到 m_sortedIds
+        auto it = std::lower_bound(m_sortedIds.begin(), m_sortedIds.end(),
+                                   info->getId(), std::greater<int64_t>());
+        m_sortedIds.insert(it, info->getId());
     }
 }
 
@@ -79,81 +93,48 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         ,int32_t offset, int32_t size, bool valid, int state) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
     if (id == 0) {
-        if (offset >= (int32_t)m_datas.size()) {
-            return m_datas.size();
-        }
-
-		int64_t sum = 0;
-		for (auto i : m_datas) {
-			if (!i.second->getIsDeleted()) {
-				if (!state) {
-                    ++sum;
-                } else if (i.second->getState() == state) {
-                    ++sum;
-                }
-			}
-		}
-
-        auto it = m_datas.rbegin();
-		int oft = 0;
-		while (it != m_datas.rend() && oft < offset) {
-			if (!it->second->getIsDeleted()) {
-				if (!state) {
-                    ++oft;
-                } else if (it->second->getState() == state) {
-                    ++oft;
-                }
-			}
-			++it;
-		}
-        for (; (int32_t)infos.size() < size && it != m_datas.rend(); ++it) {
-            if (!valid || !it->second->getIsDeleted()) {
-                if (!state || it->second->getState() == state) {
-                    infos.push_back(it->second);
+        if (!state && valid) {
+            // 快速路径：无筛选条件，O(1) count + O(size) 直接索引
+            int64_t total = m_sortedIds.size();
+            if (offset < total) {
+                for (size_t i = offset; i < m_sortedIds.size() && infos.size() < (size_t)size; ++i) {
+                    auto it = m_datas.find(m_sortedIds[i]);
+                    if (it != m_datas.end()) {
+                        infos.push_back(it->second);
+                    }
                 }
             }
+            return total;
         }
-        return sum;
+        // 带状态筛选：单次遍历 m_sortedIds，计数+分页合并
+        int64_t total = 0;
+        for (auto& articleId : m_sortedIds) {
+            auto it = m_datas.find(articleId);
+            if (it == m_datas.end()) continue;
+            auto& info = it->second;
+            if (state && info->getState() != state) continue;
+            if (total >= offset && infos.size() < (size_t)size) {
+                infos.push_back(info);
+            }
+            total++;
+        }
+        return total;
     } else {
         auto uit = m_users.find(id);
         if (uit == m_users.end()) {
             return 0;
         }
-        if (offset >= (int32_t)uit->second.size()) {
-            return uit->second.size();
-        }
-
-		int64_t sum = 0;
-		for (auto i : uit->second) {
-            if (!i.second->getIsDeleted()) {
-                if (!state) {
-                    ++sum;
-                } else if (i.second->getState() == state) {
-                    ++sum;
-                }
+        // 单次遍历：计数+分页合并
+        int64_t total = 0;
+        for (auto it = uit->second.rbegin(); it != uit->second.rend(); ++it) {
+            if (valid && it->second->getIsDeleted()) continue;
+            if (state && it->second->getState() != state) continue;
+            if (total >= offset && infos.size() < (size_t)size) {
+                infos.push_back(it->second);
             }
-		}
-
-        auto it = uit->second.rbegin();
-		int oft = 0;
-		while (it != uit->second.rend() && oft < offset) {
-			if (!it->second->getIsDeleted()) {
-				if (!state) {
-                    ++oft;
-                } else if (it->second->getState() == state) {
-                    ++oft;
-                }
-			}
-			++it;
-		}
-        for (; (int32_t)infos.size() < size && it != uit->second.rend(); ++it) {
-            if (!valid || !it->second->getIsDeleted()) {
-                if (!state || it->second->getState() == state) {
-                    infos.push_back(it->second);
-                }
-            }
+            total++;
         }
-        return sum;
+        return total;
     }
 }
 
