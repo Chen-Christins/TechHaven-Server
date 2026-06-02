@@ -122,6 +122,7 @@ EOF
         send "export LD_LIBRARY_PATH=./lib\r"
         send "rm ../logs/*.log\r"
         send "cp ../system.yml.bak conf/system.yml\r"
+        send "cp ../libbot.so module\r"
         send "nohup ./$APP_NAME -d > $PROJECT_NAME.log 2>&1 &\r"
         send "exit\r"
         expect eof

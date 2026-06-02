@@ -19,6 +19,10 @@ int32_t RdOrganizationsServlet::handle(chen::http::HttpRequest::ptr request, che
 
         Json::Value arr(Json::arrayValue);
         for (auto& rel : userOrgs) {
+            if (rel->getRole() < OrganizationManager::Role::REPORTER) {
+                continue;
+            }
+
             auto org = OrganizationMgr::GetInstance()->get(rel->getOrgId());
             if (!org) {
                 continue;
