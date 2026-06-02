@@ -4,6 +4,7 @@
 #include "../../util.h"
 
 #include <chen/log/log.h>
+#include <chen/iomanager/iomanager.h>
 #include <json/json.h>
 
 #include <vector>
@@ -61,14 +62,20 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
         auto& notifMgr = *NotificationMgr::GetInstance();
 
         if (target == "all") {
-            // 广播: 为所有在线用户各插一条通知记录
+            // 异步广播：收集用户列表后立即返回，后台完成 DB 写入和 WS 推送
             std::vector<int64_t> user_ids;
             UserMgr::GetInstance()->getAllIds(user_ids, true);
-            for (auto uid : user_ids) {
-                notifMgr.addNotification(uid, title, content, type, uid, article_id, comment_id);
-            }
-            notifMgr.broadcast(msg);
-            INFO(logger) << "[NOTIFY] broadcast: type=" << type
+
+            chen::IOManager::GetThis()->schedule(
+                [user_ids, title, content, type, sender_id = uid, article_id, comment_id, msg]() {
+                    for (auto target_uid : user_ids) {
+                        NotificationMgr::GetInstance()->addNotification(
+                            target_uid, title, content, type, sender_id, article_id, comment_id);
+                    }
+                    NotificationMgr::GetInstance()->broadcast(msg);
+                });
+
+            INFO(logger) << "[NOTIFY] broadcast scheduled: type=" << type
                 << " title=" << title << " count=" << user_ids.size();
         } else if (target == "users") {
             std::string user_ids_str = request->getParam("user_ids");

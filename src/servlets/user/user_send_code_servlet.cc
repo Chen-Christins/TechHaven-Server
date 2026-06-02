@@ -38,23 +38,26 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             break;
         }
 
+        // 检查 SMTP 配置（在写 DB 之前校验，避免产生无效验证码）
+        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
+        if (!sysSettings || sysSettings->getSmtpHost().empty()) {
+            result->setResult(501, "SMTP server not configured");
+            break;
+        }
+
         auto db = getDB();
         if (!db) {
             result->setResult(500, "get db connection error");
             break;
         }
 
-        // 开启事务
-        chen::ITransaction::ptr trans = db->openTransaction();
-        // 生成验证码和连接端(对端)ip
+        // 生成验证码并立即持久化（不再等待邮件发送结果）
         std::string code = chen::random_string(8);
         std::string ipaddr = session->getRemoteAddressString();
-        // 设置插入信息
         data::EmailVerificationInfo::ptr info(new data::EmailVerificationInfo);
         info->setEmail(email);
         info->setCode(code);
         info->setType(std::stoi(type));
-        // 状态0-未使用 1-已使用
         info->setState(0);
         info->setExpiresTime(time(0) + 10 * 60);
         info->setClientIp(ipaddr);
@@ -65,33 +68,30 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             break;
         }
 
-        // 发送邮件 - 从系统设置获取SMTP配置
-        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
-        if (!sysSettings || sysSettings->getSmtpHost().empty()) {
-            result->setResult(501, "SMTP server not configured");
-            break;
-        }
+        INFO(logger) << info->toJsonString();
 
+        // 异步发送邮件，不阻塞请求响应
         std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");
         auto mail = chen::EMail::Create(sysSettings->getSmtpUsername(), sysSettings->getSmtpPassword()
                 , title
                 , "验证码[" + code +"]"
                 , {email}, {}, {sysSettings->getFromEmail()});
+        std::string smtpHost = sysSettings->getSmtpHost();
+        int32_t smtpPort = sysSettings->getSmtpPort();
 
-        auto client = chen::SmtpClient::Create(sysSettings->getSmtpHost(), sysSettings->getSmtpPort(), true);
-        if (!client) {
-            ERROR(logger) << "connect email server fail";
-            result->setResult(501, "connect email server fail");
-            break;
-        }
-        auto r = client->send(mail, 5000);
-        if (r->result != 0) {
-            result->setResult(501, std::to_string(r->result) + " " + r->msg);
-            break;
-        }
-        // 提交事务，将验证码存入数据库
-        trans->commit();
-        INFO(logger) << info->toJsonString();
+        chen::IOManager::GetThis()->schedule([mail, smtpHost, smtpPort]() {
+            auto client = chen::SmtpClient::Create(smtpHost, smtpPort, true);
+            if (!client) {
+                ERROR(logger) << "connect email server fail";
+                return;
+            }
+            auto r = client->send(mail, 5000);
+            if (r->result != 0) {
+                ERROR(logger) << "send email fail: " << r->result << " " << r->msg;
+            }
+        });
+
+        result->setResult(200, "ok");
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

@@ -4,6 +4,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include <chen/iomanager/iomanager.h>
 #include <json/json.h>
 
 namespace blog {
@@ -52,28 +53,32 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
             ArticleMgr::GetInstance()->incPraiseCount(article_id);
             result->set("is_praising", true);
 
-            // notify the article author (only if not self-liking)
+            // 异步通知文章作者（非自赞时）
             int64_t authorId = article->getUserId();
             if (authorId != uid) {
-                auto likerInfo = UserMgr::GetInstance()->get(uid);
-                std::string likerName = likerInfo ? likerInfo->getName() : "someone";
-                std::string notifyTitle = "文章点赞";
-                std::string notifyContent = likerName + " 赞了你的文章《" + article->getTitle() + "》";
+                std::string articleTitle = article->getTitle();
+                chen::IOManager::GetThis()->schedule(
+                    [authorId, liker_id=uid, article_id, articleTitle]() {
+                        auto likerInfo = UserMgr::GetInstance()->get(liker_id);
+                        std::string likerName = likerInfo ? likerInfo->getName() : "someone";
+                        std::string notifyTitle = "文章点赞";
+                        std::string notifyContent = likerName + " 赞了你的文章《" + articleTitle + "》";
 
-                auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                    authorId, notifyTitle, notifyContent, "praise", uid, article_id);
-                if (notifInfo) {
-                    Json::Value wsMsg;
-                    wsMsg["id"] = notifInfo->getId();
-                    wsMsg["title"] = notifyTitle;
-                    wsMsg["content"] = notifyContent;
-                    wsMsg["type"] = "praise";
-                    wsMsg["article_id"] = article_id;
-                    wsMsg["is_read"] = false;
-                    wsMsg["create_time"] = notifInfo->getCreateTime();
-                    NotificationMgr::GetInstance()->sendToUser(authorId,
-                        chen::JsonUtil::ToString(wsMsg));
-                }
+                        auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                            authorId, notifyTitle, notifyContent, "praise", liker_id, article_id);
+                        if (notifInfo) {
+                            Json::Value wsMsg;
+                            wsMsg["id"] = notifInfo->getId();
+                            wsMsg["title"] = notifyTitle;
+                            wsMsg["content"] = notifyContent;
+                            wsMsg["type"] = "praise";
+                            wsMsg["article_id"] = article_id;
+                            wsMsg["is_read"] = false;
+                            wsMsg["create_time"] = notifInfo->getCreateTime();
+                            NotificationMgr::GetInstance()->sendToUser(authorId,
+                                chen::JsonUtil::ToString(wsMsg));
+                        }
+                    });
             }
         }
 
