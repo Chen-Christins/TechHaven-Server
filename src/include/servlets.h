@@ -54,6 +54,10 @@
 #include "../servlets/notify/notification_unread_count_servlet.h"           // IWYU pragma: keep
 #include "../servlets/notify/notify_servlet.h"                              // IWYU pragma: keep
 #include "../servlets/organization/organization_admin_lists_servlet.h"      // IWYU pragma: keep
+#include "../servlets/organization/organization_apply_create_servlet.h"     // IWYU pragma: keep
+#include "../servlets/organization/organization_apply_list_servlet.h"       // IWYU pragma: keep
+#include "../servlets/organization/organization_apply_review_servlet.h"     // IWYU pragma: keep
+#include "../servlets/organization/organization_my_applies_servlet.h"       // IWYU pragma: keep
 #include "../servlets/organization/organization_admin_stats_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_assignment_list_servlet.h"  // IWYU pragma: keep
 #include "../servlets/organization/organization_create_servlet.h"           // IWYU pragma: keep
