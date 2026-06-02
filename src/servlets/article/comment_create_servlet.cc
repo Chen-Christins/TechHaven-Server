@@ -4,6 +4,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include <chen/iomanager/iomanager.h>
 #include <chen/util/util.h>
 #include <json/json.h>
 
@@ -78,41 +79,50 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         result->jsondata = item;
         result->setResult(200, "ok");
 
-        auto commenterInfo = UserMgr::GetInstance()->get(uid);
-        std::string commenterName = commenterInfo ? commenterInfo->getName() : "someone";
-
-        auto sendNotify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
-            if (targetUid == uid) return;
-            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                targetUid, title, content, "comment", uid, article_id, info->getId());
-            if (notifInfo) {
-                Json::Value wsMsg;
-                wsMsg["id"] = notifInfo->getId();
-                wsMsg["title"] = title;
-                wsMsg["content"] = content;
-                wsMsg["type"] = "comment";
-                wsMsg["article_id"] = article_id;
-                wsMsg["comment_id"] = info->getId();
-                wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notifInfo->getCreateTime();
-                NotificationMgr::GetInstance()->sendToUser(targetUid,
-                    chen::JsonUtil::ToString(wsMsg));
-            }
-        };
-
-        // notify article author
+        // 异步通知扇出：评论者信息 + 通知目标用户
+        int64_t commenterId = uid;
+        int64_t commentId = info->getId();
         int64_t authorId = article->getUserId();
-        sendNotify(authorId, "文章评论",
-            commenterName + " 评论了你的文章《" + article->getTitle() + "》");
+        std::string articleTitle = article->getTitle();
+        int64_t replyToParentId = parent_id;
 
-        // notify parent comment author on reply
-        if (parent_id > 0) {
-            auto parent = CommentMgr::GetInstance()->get(parent_id);
-            if (parent && parent->getUserId() != authorId) {
-                sendNotify(parent->getUserId(), "评论回复",
-                    commenterName + " 回复了你的评论");
-            }
-        }
+        chen::IOManager::GetThis()->schedule(
+            [commenterId, commentId, authorId, articleTitle, article_id, replyToParentId]() {
+                auto commenterInfo = UserMgr::GetInstance()->get(commenterId);
+                std::string commenterName = commenterInfo ? commenterInfo->getName() : "someone";
+
+                auto sendNotify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
+                    if (targetUid == commenterId) return;
+                    auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                        targetUid, title, content, "comment", commenterId, article_id, commentId);
+                    if (notifInfo) {
+                        Json::Value wsMsg;
+                        wsMsg["id"] = notifInfo->getId();
+                        wsMsg["title"] = title;
+                        wsMsg["content"] = content;
+                        wsMsg["type"] = "comment";
+                        wsMsg["article_id"] = article_id;
+                        wsMsg["comment_id"] = commentId;
+                        wsMsg["is_read"] = false;
+                        wsMsg["create_time"] = notifInfo->getCreateTime();
+                        NotificationMgr::GetInstance()->sendToUser(targetUid,
+                            chen::JsonUtil::ToString(wsMsg));
+                    }
+                };
+
+                // notify article author
+                sendNotify(authorId, "文章评论",
+                    commenterName + " 评论了你的文章《" + articleTitle + "》");
+
+                // notify parent comment author on reply
+                if (replyToParentId > 0) {
+                    auto parent = CommentMgr::GetInstance()->get(replyToParentId);
+                    if (parent && parent->getUserId() != authorId) {
+                        sendNotify(parent->getUserId(), "评论回复",
+                            commenterName + " 回复了你的评论");
+                    }
+                }
+            });
     } while (0);
 
     response->setBody(result->toJsonString());

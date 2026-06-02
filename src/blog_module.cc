@@ -8,6 +8,7 @@
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
 #include <chen/env.h>
+#include <chen/worker.h>
 
 #include "./include/tables.h"
 #include "./include/managers.h"
@@ -159,34 +160,39 @@ bool BlogModule::initDB() {
 void BlogModule::loadAllData() {
 	INFO(logger) << "loadAllData";
 
-#define XX(clazz)                                 \
-    if (!clazz::GetInstance()->loadAll()) {       \
-        ERROR(logger) << #clazz " load all fail"; \
-    }
-    XX(UserMgr)
-    XX(ArticleMgr)
-    XX(CategoryMgr)
-    XX(LabelMgr)
-    XX(ArticleCategoryRelMgr)
-    XX(ArticleLabelRelMgr)
+	auto wg = chen::WorkerGroup::Create(4);
+
+#define XX(clazz) \
+	wg->schedule([]() { \
+		if (!clazz::GetInstance()->loadAll()) { \
+			ERROR(logger) << #clazz " load all fail"; \
+		} \
+	});
+	XX(UserMgr)
+	XX(ArticleMgr)
+	XX(CategoryMgr)
+	XX(LabelMgr)
+	XX(ArticleCategoryRelMgr)
+	XX(ArticleLabelRelMgr)
 	XX(AssignmentMgr)
-    XX(OrganizationMgr)
-    XX(OrganizationUserRelMgr)
-    XX(AssignmentOrganizationRelMgr)
-    XX(AssignmentUserRelMgr)
-    XX(ResourceMgr)
-    XX(ChunkUploadMgr)
-    XX(NotificationMgr)
-    XX(UserFollowRelMgr)
-    XX(ArticlePraiseRelMgr)
-    XX(CommentMgr)
-    XX(CommentPraiseRelMgr)
-    XX(RequirementMgr)
-    XX(BugMgr)
-    XX(TaskMgr)
-    XX(SystemSettingsMgr)
+	XX(OrganizationMgr)
+	XX(OrganizationUserRelMgr)
+	XX(AssignmentOrganizationRelMgr)
+	XX(AssignmentUserRelMgr)
+	XX(ResourceMgr)
+	XX(ChunkUploadMgr)
+	XX(NotificationMgr)
+	XX(UserFollowRelMgr)
+	XX(ArticlePraiseRelMgr)
+	XX(CommentMgr)
+	XX(CommentPraiseRelMgr)
+	XX(RequirementMgr)
+	XX(BugMgr)
+	XX(TaskMgr)
+	XX(SystemSettingsMgr)
 #undef XX
 
+	wg->waitAll();
 }
 
 void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {

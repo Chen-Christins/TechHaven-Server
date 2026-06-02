@@ -455,17 +455,17 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
     if (v) {
         info->setViews(info->getViews() + 1);
         addUpdate(id);
-        // Redis: cumulative PV (never expires)
-        chen::RedisUtil::Cmd("blog", "incr blog:total_visits");
-        // Redis: today PV (expires at midnight)
-        auto rpy = chen::RedisUtil::Cmd("blog", "incr blog:today_visits");
-        if (rpy && rpy->integer == 1) {
-            int64_t now = time(0);
-            int64_t tomorrow_midnight = now - (now % 86400) + 86400;
-            chen::RedisUtil::Cmd("blog", "expireat blog:today_visits %lld", tomorrow_midnight);
-        }
-        // Redis: unique visitor tracking via HyperLogLog
-        chen::RedisUtil::Cmd("blog", "pfadd blog:visitors %lld", user_id);
+        // Redis 异步更新（best-effort，不阻塞请求）
+        chen::IOManager::GetThis()->schedule([user_id]() {
+            chen::RedisUtil::Cmd("blog", "incr blog:total_visits");
+            auto rpy = chen::RedisUtil::Cmd("blog", "incr blog:today_visits");
+            if (rpy && rpy->integer == 1) {
+                int64_t now = time(0);
+                int64_t tomorrow_midnight = now - (now % 86400) + 86400;
+                chen::RedisUtil::Cmd("blog", "expireat blog:today_visits %lld", tomorrow_midnight);
+            }
+            chen::RedisUtil::Cmd("blog", "pfadd blog:visitors %lld", user_id);
+        });
     }
     return true;
 }
@@ -488,11 +488,10 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
         ERROR(logger) << "hset fail";
         return false;
     }
-    rpy = chen::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
-    if (!rpy) {
-        ERROR(logger) << "hset fail";
-        return false;
-    }
+    // 双向映射的 hset 异步写入（best-effort）
+    chen::IOManager::GetThis()->schedule([id, user_id]() {
+        chen::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
+    });
     info->setPraise(info->getPraise() + 1);
     addUpdate(id);
 
@@ -517,11 +516,10 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
         ERROR(logger) << "hset fail";
         return false;
     }
-    rpy = chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
-    if (!rpy) {
-        ERROR(logger) << "hset fail";
-        return false;
-    }
+    // 双向映射的 hset 异步写入（best-effort）
+    chen::IOManager::GetThis()->schedule([id, user_id]() {
+        chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
+    });
     info->setFavorites(info->getFavorites() + 1);
     addUpdate(id);
     
@@ -641,6 +639,7 @@ void ArticleManager::onTimer() {
         ERROR(logger) << "getDB error";
         return;
     }
+    auto trans = db->openTransaction();
     for (auto& i : infos) {
         if (data::ArticleInfoDao::Update(i, db)) {
             ERROR(logger) << "Update error errno=" << errno
@@ -648,6 +647,7 @@ void ArticleManager::onTimer() {
                 << " data=" << i->toJsonString();
         }
     }
+    trans->commit();
 }
 
 void ArticleManager::onUpdateTimer() {
@@ -670,6 +670,7 @@ void ArticleManager::onUpdateTimer() {
         }
         return;
     }
+    auto trans = conn->openTransaction();
     for (auto& i : updates) {
         auto info = get(i);
         if (info) {
@@ -678,6 +679,7 @@ void ArticleManager::onUpdateTimer() {
             }
         }
     }
+    trans->commit();
 }
 
 bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
