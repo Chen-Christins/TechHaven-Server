@@ -11,7 +11,7 @@ namespace blog {
 namespace servlet {
 
 ArticlePraiseServlet::ArticlePraiseServlet()
-    :BlogLoginedServlet("ArticlePraiseServlet") {
+    : BlogLoginedServlet("ArticlePraiseServlet") {
 }
 
 int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
@@ -33,9 +33,9 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
-        bool alreadyPraising = ArticlePraiseRelMgr::GetInstance()->isPraising(uid, article_id);
+        bool already_praising = ArticlePraiseRelMgr::GetInstance()->isPraising(uid, article_id);
 
-        if (alreadyPraising) {
+        if (already_praising) {
             // unlike
             if (!ArticlePraiseRelMgr::GetInstance()->unpraise(uid, article_id)) {
                 result->setResult(500, "unpraise failed");
@@ -54,28 +54,28 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
             result->set("is_praising", true);
 
             // 异步通知文章作者（非自赞时）
-            int64_t authorId = article->getUserId();
-            if (authorId != uid) {
-                std::string articleTitle = article->getTitle();
+            int64_t author_id = article->getUserId();
+            if (author_id != uid) {
+                std::string article_title = article->getTitle();
                 chen::IOManager::GetThis()->schedule(
-                    [authorId, liker_id=uid, article_id, articleTitle]() {
-                        auto likerInfo = UserMgr::GetInstance()->get(liker_id);
-                        std::string likerName = likerInfo ? likerInfo->getName() : "someone";
-                        std::string notifyTitle = "文章点赞";
-                        std::string notifyContent = likerName + " 赞了你的文章《" + articleTitle + "》";
+                    [author_id, liker_id=uid, article_id, article_title]() {
+                        auto liker_info = UserMgr::GetInstance()->get(liker_id);
+                        std::string liker_name = liker_info ? liker_info->getName() : "someone";
+                        std::string notify_title = "文章点赞";
+                        std::string notify_content = liker_name + " 赞了你的文章《" + article_title + "》";
 
-                        auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                            authorId, notifyTitle, notifyContent, "praise", liker_id, article_id);
-                        if (notifInfo) {
+                        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                            author_id, notify_title, notify_content, "praise", liker_id, article_id);
+                        if (notif_info) {
                             Json::Value wsMsg;
-                            wsMsg["id"] = notifInfo->getId();
-                            wsMsg["title"] = notifyTitle;
-                            wsMsg["content"] = notifyContent;
+                            wsMsg["id"] = notif_info->getId();
+                            wsMsg["title"] = notify_title;
+                            wsMsg["content"] = notify_content;
                             wsMsg["type"] = "praise";
                             wsMsg["article_id"] = article_id;
                             wsMsg["is_read"] = false;
-                            wsMsg["create_time"] = notifInfo->getCreateTime();
-                            NotificationMgr::GetInstance()->sendToUser(authorId,
+                            wsMsg["create_time"] = notif_info->getCreateTime();
+                            NotificationMgr::GetInstance()->sendToUser(author_id,
                                 chen::JsonUtil::ToString(wsMsg));
                         }
                     });

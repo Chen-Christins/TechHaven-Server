@@ -9,7 +9,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminDeleteServlet::UserAdminDeleteServlet()
-    :BlogLoginedServlet("UserAdminDeleteServlet") {
+    : BlogLoginedServlet("UserAdminDeleteServlet") {
 }
 
 int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response

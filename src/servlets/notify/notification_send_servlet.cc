@@ -15,11 +15,11 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 NotificationSendServlet::NotificationSendServlet()
-    :BlogLoginedServlet("NotificationSendServlet") {
+    : BlogLoginedServlet("NotificationSendServlet") {
 }
 
 int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		,chen::http::HttpSession::ptr session, Result::ptr result) {
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         // 权限检查: 仅管理员可发送通知
         int64_t uid = getUserId(request);

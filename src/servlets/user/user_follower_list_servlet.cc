@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 UserFollowerListServlet::UserFollowerListServlet()
-    :BlogLoginedServlet("UserFollowerListServlet") {
+    : BlogLoginedServlet("UserFollowerListServlet") {
 }
 
 int32_t UserFollowerListServlet::handle(chen::http::HttpRequest::ptr request,

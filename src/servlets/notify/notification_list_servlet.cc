@@ -5,11 +5,11 @@ namespace blog {
 namespace servlet {
 
 NotificationListServlet::NotificationListServlet()
-    :BlogLoginedServlet("NotificationListServlet") {
+    : BlogLoginedServlet("NotificationListServlet") {
 }
 
 int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		,chen::http::HttpSession::ptr session, Result::ptr result) {
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {

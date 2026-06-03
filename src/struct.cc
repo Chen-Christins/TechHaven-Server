@@ -146,7 +146,7 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
     }
     bool is_login = false;
     do {
-        int64_t uid = decryptUserId(request->getCookie(CookieKey::USER_ID));
+        int64_t uid = DecryptUserId(request->getCookie(CookieKey::USER_ID));
         if (!uid) {
             break;
         }
@@ -197,7 +197,7 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
             << 200 << "\t"
             << "ok" << "\tauto_login " << request->getPath()
             << "\t" << (!request->getQuery().empty() ? request->getQuery() : "-");
-        
+
         uinfo->setLoginTime(time(0));
         is_login = true;
     } while (0);
@@ -209,7 +209,7 @@ chen::IDB::ptr BlogServlet::getDB() {
     return GetDB();
 }
 
-BlogLoginedServlet::BlogLoginedServlet(const std::string& name)
+BlogLoginedServlet:: BlogLoginedServlet(const std::string& name)
     :BlogServlet(name) {
 }
 

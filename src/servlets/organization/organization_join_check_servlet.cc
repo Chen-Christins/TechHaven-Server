@@ -44,7 +44,7 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
 
-        if (!permission::canManageMembers(system_role, org_role)) {
+        if (!permission::CanManageMembers(system_role, org_role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -85,16 +85,16 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
                 ? "您申请加入组织「" + org->getName() + "」的请求已通过"
                 : "您申请加入组织「" + org->getName() + "」的请求已被拒绝";
 
-            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+            auto notif_info = NotificationMgr::GetInstance()->addNotification(
                 user_id, title, content, notif_type, uid);
-            if (notifInfo) {
+            if (notif_info) {
                 Json::Value wsMsg;
-                wsMsg["id"] = notifInfo->getId();
+                wsMsg["id"] = notif_info->getId();
                 wsMsg["title"] = title;
                 wsMsg["content"] = content;
                 wsMsg["type"] = notif_type;
                 wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notifInfo->getCreateTime();
+                wsMsg["create_time"] = notif_info->getCreateTime();
                 NotificationMgr::GetInstance()->sendToUser(
                     user_id, chen::JsonUtil::ToString(wsMsg));
             }

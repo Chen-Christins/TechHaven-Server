@@ -6,11 +6,11 @@ namespace blog {
 namespace servlet {
 
 UserStatsServlet::UserStatsServlet()
-    :BlogLoginedServlet("UserStatsServlet") {
+    : BlogLoginedServlet("UserStatsServlet") {
 }
 
 int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		,chen::http::HttpSession::ptr session, Result::ptr result) {
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = request->getParamAs<int64_t>("user_id", 0);
         if (!uid) {

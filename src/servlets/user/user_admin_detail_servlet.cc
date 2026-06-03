@@ -8,7 +8,7 @@ namespace blog {
 namespace servlet {
 
 UserAdminDetailServlet::UserAdminDetailServlet()
-    :BlogLoginedServlet("UserAdminDetailServlet") {
+    : BlogLoginedServlet("UserAdminDetailServlet") {
 }
 
 int32_t UserAdminDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response

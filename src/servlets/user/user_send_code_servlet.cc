@@ -28,7 +28,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             break;
         }
 
-        if (!is_email(email)) {
+        if (!IsEmail(email)) {
             result->setResult(402, "invalid email format");
             break;
         }
@@ -39,8 +39,8 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         // 检查 SMTP 配置（在写 DB 之前校验，避免产生无效验证码）
-        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
-        if (!sysSettings || sysSettings->getSmtpHost().empty()) {
+        auto sys_settings = SystemSettingsMgr::GetInstance()->get();
+        if (!sys_settings || sys_settings->getSmtpHost().empty()) {
             result->setResult(501, "SMTP server not configured");
             break;
         }
@@ -72,15 +72,15 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
 
         // 异步发送邮件，不阻塞请求响应
         std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");
-        auto mail = chen::EMail::Create(sysSettings->getSmtpUsername(), sysSettings->getSmtpPassword()
+        auto mail = chen::EMail::Create(sys_settings->getSmtpUsername(), sys_settings->getSmtpPassword()
                 , title
                 , "验证码[" + code +"]"
-                , {email}, {}, {sysSettings->getFromEmail()});
-        std::string smtpHost = sysSettings->getSmtpHost();
-        int32_t smtpPort = sysSettings->getSmtpPort();
+                , {email}, {}, {sys_settings->getFromEmail()});
+        std::string smtp_host = sys_settings->getSmtpHost();
+        int32_t smtp_port = sys_settings->getSmtpPort();
 
-        chen::IOManager::GetThis()->schedule([mail, smtpHost, smtpPort]() {
-            auto client = chen::SmtpClient::Create(smtpHost, smtpPort, true);
+        chen::IOManager::GetThis()->schedule([mail, smtp_host, smtp_port]() {
+            auto client = chen::SmtpClient::Create(smtp_host, smtp_port, true);
             if (!client) {
                 ERROR(logger) << "connect email server fail";
                 return;

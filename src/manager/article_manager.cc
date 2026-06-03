@@ -503,7 +503,7 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
     });
     info->setFavorites(info->getFavorites() + 1);
     addUpdate(id);
-    
+
     return true;
 }
 
@@ -579,7 +579,7 @@ bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& article
             = chen::TypeUtil::Atoi(rpy->element[i + 1]->str); \
     }                                                          \
     return true;
-    
+
     PROC(id, "hgetall fav_u2a:%lld", articles);
 }
 

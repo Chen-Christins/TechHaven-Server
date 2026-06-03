@@ -7,33 +7,33 @@ namespace blog {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 bool AssignmentManager::loadAll() {
-	auto db = GetDB();
-	if (!db) {
+    auto db = GetDB();
+    if (!db) {
         ERROR(logger) << "Get SQLite3 connection fail";
         return false;
     }
-	std::vector<data::AssignmentInfo::ptr> results;
-	if (blog::data::AssignmentInfoDao::QueryAll(results, db)) {
+    std::vector<data::AssignmentInfo::ptr> results;
+    if (blog::data::AssignmentInfoDao::QueryAll(results, db)) {
         ERROR(logger) << "AssignmentManager loadAll fail";
         return false;
     }
-	
-	std::unordered_map<int64_t, data::AssignmentInfo::ptr> datas;
-    std::unordered_map<std::string, std::unordered_map<std::string, data::AssignmentInfo::ptr>> subject_name_datas;
-	for (auto& i : results) {
-		datas[i->getId()] = i;
-        subject_name_datas[i->getSubjectName()][i->getName()] = i;
-	}
 
-	std::unique_lock<std::shared_mutex> lock(m_mutex);
-	m_datas.swap(datas);
-	m_subject_name_datas.swap(subject_name_datas);
-	return true;
+    std::unordered_map<int64_t, data::AssignmentInfo::ptr> datas;
+    std::unordered_map<std::string, std::unordered_map<std::string, data::AssignmentInfo::ptr>> subject_name_datas;
+    for (auto& i : results) {
+        datas[i->getId()] = i;
+        subject_name_datas[i->getSubjectName()][i->getName()] = i;
+    }
+
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_datas.swap(datas);
+    m_subject_name_datas.swap(subject_name_datas);
+    return true;
 }
 
 uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& infos
         , uint64_t offset, uint64_t size, int32_t status, bool isValid) {
-	std::shared_lock<std::shared_mutex> lock(m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
 
     auto check = [&](auto info) -> bool {
         if (isValid && info->getIsDeleted()) {
@@ -46,7 +46,7 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
     };
 
     std::vector<data::AssignmentInfo::ptr> temp;
-	for (auto& i : m_datas) {
+    for (auto& i : m_datas) {
         if (check(i.second)) {
             temp.emplace_back(i.second);
         }
@@ -64,13 +64,13 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
 }
 
 void AssignmentManager::add(data::AssignmentInfo::ptr info) {
-	std::unique_lock<std::shared_mutex> lock(m_mutex);
-	m_datas[info->getId()] = info;
+    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    m_datas[info->getId()] = info;
     m_subject_name_datas[info->getSubjectName()][info->getName()] = info;
 }
 
 data::AssignmentInfo::ptr AssignmentManager::get(int64_t id) {
-	std::shared_lock<std::shared_mutex> lock(m_mutex);
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
     auto it = m_datas.find(id);
     return it == m_datas.end() ? nullptr : it->second;
 }

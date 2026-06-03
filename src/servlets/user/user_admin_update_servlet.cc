@@ -9,7 +9,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminUpdateServlet::UserAdminUpdateServlet()
-    :BlogLoginedServlet("UserAdminUpdateServlet") {
+    : BlogLoginedServlet("UserAdminUpdateServlet") {
 }
 
 int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -22,9 +22,9 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
             result->setResult(500, "not login");
             break;
         }
-        int32_t userRole = UserMgr::GetInstance()->get(uid)->getRole();
+        int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
 
-        if (userRole != UserManager::Role::ADMIN) {
+        if (user_role != UserManager::Role::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -53,7 +53,7 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
         }
 
         if (!account.empty()) {
-            if (!is_vaild_account(account)) {
+            if (!IsValidAccount(account)) {
                 result->setResult(402, "invalid account");
                 break;
             }
@@ -65,7 +65,7 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
             info->setAccount(account);
         }
         if (!email.empty()) {
-            if (!is_email(email)) {
+            if (!IsEmail(email)) {
                 result->setResult(402, "invalid email format");
                 break;
             }

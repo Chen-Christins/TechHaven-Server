@@ -24,12 +24,12 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         auto type = request->getParamAs<uint32_t>("type");
 
-		int64_t cur_uid = getUserId(request);
+        int64_t cur_uid = getUserId(request);
         if (!cur_uid) {
             result->setResult(500, "not login");
             break;
         }
-		data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
+        data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
         if (!info) {
             result->setResult(404, "invalid id");
             break;
@@ -49,28 +49,28 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
         int64_t uid = info->getUserId();
-		if (type == 1 && cur_uid != uid) {
-			result->setResult(403, "Access Denied");
-			break;
-		}
-        auto authorInfo = UserMgr::GetInstance()->get(uid);
+        if (type == 1 && cur_uid != uid) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
+        auto author_info = UserMgr::GetInstance()->get(uid);
         result->set("id", info->getId());
-        result->set("author", authorInfo->getName());
-        result->set("author_avatar", authorInfo->getAvatar());
+        result->set("author", author_info->getName());
+        result->set("author_avatar", author_info->getAvatar());
 
         // author stats
         std::vector<data::ArticleInfo::ptr> authorArticles;
         ArticleMgr::GetInstance()->listByUserId(authorArticles, uid, true);
-        int64_t authorPraiseTotal = 0;
-        int64_t authorArticleCount = 0;
+        int64_t author_praise_total = 0;
+        int64_t author_article_count = 0;
         for (auto& a : authorArticles) {
             if (a->getState() == ArticleManager::Status::PUBLISHED) {
-                authorArticleCount++;
-                authorPraiseTotal += a->getPraise();
+                author_article_count++;
+                author_praise_total += a->getPraise();
             }
         }
-        result->set("author_article_count", authorArticleCount);
-        result->set("author_praise_count", authorPraiseTotal);
+        result->set("author_article_count", author_article_count);
+        result->set("author_praise_count", author_praise_total);
         result->set("author_follower_count",
             UserFollowRelMgr::GetInstance()->countFollowers(uid));
         result->set("title", info->getTitle());

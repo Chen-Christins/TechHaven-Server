@@ -22,8 +22,8 @@ int32_t ArticleAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, c
             result->setResult(401, "not login");
             break;
         }
-        int32_t userRole = UserMgr::GetInstance()->get(uid)->getRole();
-        if (userRole != UserManager::Role::ADMIN) {
+        int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
+        if (user_role != UserManager::Role::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }

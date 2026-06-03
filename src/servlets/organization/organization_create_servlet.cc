@@ -69,17 +69,17 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
         info->setUpdateTime(time(0));
 
         auto db = getDB();
-		if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
 
         if (data::OrganizationInfoDao::InsertOrUpdate(info, db)) {
-			result->setResult(500, "insert or update organization fail");
-			ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
-			break;
-		}
+            result->setResult(500, "insert or update organization fail");
+            ERROR(logger) << "db error, errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr();
+            break;
+        }
 
         if (new_org) {
             OrganizationMgr::GetInstance()->add(info);
@@ -91,7 +91,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             rel->setStatus(OrganizationUserRelManager::Status::APPROVED);
             rel->setCreateTime(time(0));
             rel->setUpdateTime(time(0));
-        
+
             if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
                 result->setResult(500, "insert or update organization user rel fail");
                 ERROR(logger) << "db error, errno=" << db->getErrno()

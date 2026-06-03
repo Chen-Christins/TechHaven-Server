@@ -1,13 +1,22 @@
-#ifndef __BLOG_CHUNK_UPLOAD_H__
-#define __BLOG_CHUNK_UPLOAD_H__
+/**
+ * @file chunk_upload.h
+ * @brief 分块上传会话管理
+ * @author Christins
+ * @date 2026-06-03
+ * @copyright Apache 2.0
+ */
 
+#pragma once
+
+#include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <mutex>
-#include <shared_mutex>
-#include <memory>
+
 #include <chen/singleton.h>
+#include <chen/timer/timer.h>
 
 /**
  * @brief 管理每个上传会话的状态
@@ -15,31 +24,33 @@
 struct ChunkUploadSession {
     typedef std::shared_ptr<ChunkUploadSession> ptr;
     // 会话唯一标识
-    std::string uploadId;
+    std::string upload_id;
     // 文件名
-    std::string fileName;
+    std::string file_name;
     // 文件总大小
-    size_t totalSize = 0;
+    size_t total_size = 0;
     // 每个分块大小
-    size_t chunkSize = 0;
+    size_t chunk_size = 0;
     // 总分块数
-    size_t totalChunks = 0;
+    size_t total_chunks = 0;
     // 已接收的分块状态
-    std::vector<bool> receivedChunks;
+    std::vector<bool> received_chunks;
     // 可选：已接收的分块数据
-    std::vector<std::string> chunkData;
+    std::vector<std::string> chunk_data;
     // 已接收分块数量
-    size_t receivedCount = 0;
+    size_t received_count = 0;
     // 是否完成上传
     bool completed = false;
     // 业务类型
-    std::string bizType;
+    std::string biz_type;
     // 业务ID
-    int64_t bizId = 0;
+    int64_t biz_id = 0;
     // 存储目录
-    std::string dirName;
+    std::string dir_name;
+    // 会话创建时间（用于 TTL 过期清理）
+    time_t created_at = time(0);
     // 互斥锁，保护会话数据
-    std::mutex mtx;
+    mutable std::mutex m_mtx;
 };
 
 /**
@@ -49,36 +60,49 @@ class ChunkUploadManager {
 public:
     /**
      * @brief 创建一个新的上传会话
-     * @param uploadId 会话唯一标识
-     * @param fileName 文件名
-     * @param totalSize 文件总大小
-     * @param chunkSize 每个分块大小
-     * @param totalChunks 总分块数
-     * @return ChunkUploadSession::ptr 
+     * @param upload_id 会话唯一标识
+     * @param file_name 文件名
+     * @param total_size 文件总大小
+     * @param chunk_size 每个分块大小
+     * @param total_chunks 总分块数
+     * @return ChunkUploadSession::ptr
      */
-    ChunkUploadSession::ptr createSession(const std::string& uploadId
-        , const std::string& fileName, size_t totalSize, size_t chunkSize, size_t totalChunks
-        , const std::string& bizType, int64_t bizId, const std::string& dirName);
+    ChunkUploadSession::ptr createSession(const std::string& upload_id
+        , const std::string& file_name, size_t total_size, size_t chunk_size, size_t total_chunks
+        , const std::string& biz_type, int64_t biz_id, const std::string& dir_name);
 
     /**
      * @brief 获取上传会话
-     * @param uploadId 会话唯一标识
-     * @return ChunkUploadSession::ptr 
+     * @param upload_id 会话唯一标识
+     * @return ChunkUploadSession::ptr
      */
-    ChunkUploadSession::ptr getSession(const std::string& uploadId);
+    ChunkUploadSession::ptr getSession(const std::string& upload_id);
 
     /**
      * @brief 移除上传会话
-     * @param uploadId 会话唯一标识
+     * @param upload_id 会话唯一标识
      */
-    void removeSession(const std::string& uploadId);
+    void removeSession(const std::string& upload_id);
+
+    /**
+     * @brief 启动过期会话清理定时器（首次 createSession 时自动调用）
+     */
+    void startCleanupTimer();
+
+    /**
+     * @brief 清理所有过期会话及其临时文件
+     */
+    void cleanupExpiredSessions();
 private:
     // 存储所有上传会话
-    std::unordered_map<std::string, ChunkUploadSession::ptr> sessions_;
-    // 保护 sessions_ 的读写锁
-    std::shared_mutex mtx_;
+    std::unordered_map<std::string, ChunkUploadSession::ptr> m_sessions;
+    // 保护 m_sessions 的读写锁
+    std::shared_mutex m_mtx;
+    // 过期清理定时器
+    chen::Timer::ptr m_cleanup_timer;
+    // 会话 TTL（秒），默认 30 分钟
+    static constexpr time_t k_session_ttl = 30 * 60;
 };
 
 typedef chen::Singleton<ChunkUploadManager> ChunkUploadMgr;
 
-#endif // __BLOG_CHUNK_UPLOAD_H__

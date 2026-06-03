@@ -13,7 +13,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleVerifyServlet::ArticleVerifyServlet()
-    :BlogLoginedServlet("ArticleVerifyServlet") {
+    : BlogLoginedServlet("ArticleVerifyServlet") {
 }
 
 int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -21,7 +21,7 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         DEFINE_AND_CHECK_TYPE(result, int64_t, state, "state");
-        
+
         // 传入参数state，决定文章的去留
         if (state != ArticleManager::Status::PUBLISHED
                 && state != ArticleManager::Status::REJECTED) {
@@ -75,29 +75,29 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // 异步通知作者审核结果 + 标记其他管理员通知已读
         {
             int64_t author_id = info->getUserId();
-            std::string articleTitle = info->getTitle();
+            std::string article_title = info->getTitle();
             bool approved = (state == ArticleManager::Status::PUBLISHED
                 || info->getState() == ArticleManager::Status::PUBLISHED);
 
             chen::IOManager::GetThis()->schedule(
-                [author_id, reviewer_id=uid, article_id=id, articleTitle, approved]() {
+                [author_id, reviewer_id=uid, article_id=id, article_title, approved]() {
                     const char* notif_type = approved
                         ? "article_review_approved" : "article_review_rejected";
                     std::string title = approved ? "文章审核通过" : "文章审核未通过";
-                    std::string content = "您的文章「" + articleTitle + "」"
+                    std::string content = "您的文章「" + article_title + "」"
                         + (approved ? "已通过审核" : "未通过审核");
 
-                    auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                    auto notif_info = NotificationMgr::GetInstance()->addNotification(
                         author_id, title, content, notif_type, reviewer_id, article_id);
-                    if (notifInfo) {
+                    if (notif_info) {
                         Json::Value wsMsg;
-                        wsMsg["id"] = notifInfo->getId();
+                        wsMsg["id"] = notif_info->getId();
                         wsMsg["title"] = title;
                         wsMsg["content"] = content;
                         wsMsg["type"] = notif_type;
                         wsMsg["article_id"] = article_id;
                         wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notifInfo->getCreateTime();
+                        wsMsg["create_time"] = notif_info->getCreateTime();
                         NotificationMgr::GetInstance()->sendToUser(
                             author_id, chen::JsonUtil::ToString(wsMsg));
                     }

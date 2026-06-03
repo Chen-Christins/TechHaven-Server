@@ -30,17 +30,17 @@ int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         int64_t uid = getUserId(request);
-        int32_t systemRole = UserMgr::GetInstance()->get(uid)->getRole();
-        bool isPlatformAdmin = (systemRole == UserManager::Role::ADMIN);
+        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        bool is_platform_admin = (system_role == UserManager::Role::ADMIN);
 
-        int32_t orgRole = 0;
-        if (!isPlatformAdmin) {
+        int32_t org_role = 0;
+        if (!is_platform_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
                 result->setResult(403, "Access Denied");
                 break;
             }
-            orgRole = rel->getRole();
+            org_role = rel->getRole();
         }
 
         std::vector<data::TaskInfo::ptr> all;
@@ -50,8 +50,8 @@ int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::
             if (!delIds.count(i->getId())) {
                 continue;
             }
-            if (!isPlatformAdmin && uid != i->getCreatorId()
-                    && !permission::canDeleteTask(orgRole)) {
+            if (!is_platform_admin && uid != i->getCreatorId()
+                    && !permission::CanDeleteTask(org_role)) {
                 continue;
             }
             delItems.push_back(i);

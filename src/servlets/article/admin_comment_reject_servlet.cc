@@ -9,11 +9,11 @@ namespace blog {
 namespace servlet {
 
 AdminCommentRejectServlet::AdminCommentRejectServlet()
-    :BlogLoginedServlet("AdminCommentRejectServlet") {
+    : BlogLoginedServlet("AdminCommentRejectServlet") {
 }
 
 int32_t AdminCommentRejectServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-    	, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {

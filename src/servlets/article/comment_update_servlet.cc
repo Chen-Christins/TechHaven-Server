@@ -10,7 +10,7 @@ namespace blog {
 namespace servlet {
 
 CommentUpdateServlet::CommentUpdateServlet()
-    :BlogLoginedServlet("CommentUpdateServlet") {
+    : BlogLoginedServlet("CommentUpdateServlet") {
 }
 
 int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,

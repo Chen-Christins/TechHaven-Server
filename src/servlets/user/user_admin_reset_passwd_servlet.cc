@@ -9,7 +9,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminResetPasswdServlet::UserAdminResetPasswdServlet()
-    :BlogLoginedServlet("UserAdminResetPasswdServlet") {
+    : BlogLoginedServlet("UserAdminResetPasswdServlet") {
 }
 
 int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -24,12 +24,12 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
             result->setResult(500, "not login");
             break;
         }
-		int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
-		if (role != UserManager::Role::ADMIN) {
-			result->setResult(403, "Access Denied");
-			break;
-		}
+        if (role != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
 
         if (passwd_f.empty() || passwd_s.empty()) {
             result->setResult(400, "param passwd empty");
@@ -37,9 +37,9 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
         }
 
         if (passwd_f != passwd_s) {
-			result->setResult(400, "the passwords is different");
+            result->setResult(400, "the passwords is different");
             break;
-		}
+        }
 
         auto db = getDB();
         if (!db) {

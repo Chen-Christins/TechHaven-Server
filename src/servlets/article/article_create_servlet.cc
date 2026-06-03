@@ -13,7 +13,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleCreateServlet::ArticleCreateServlet()
-    :BlogLoginedServlet("ArticleCreateServlet") {
+    : BlogLoginedServlet("ArticleCreateServlet") {
 }
 
 int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response

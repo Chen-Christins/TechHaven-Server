@@ -24,7 +24,7 @@ bool LabelManager::loadAll() {
         datas[i->getId()] = i;
         users[i->getUserId()][i->getName()] = i;
     }
-    
+
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
     m_users.swap(users);
@@ -73,6 +73,5 @@ bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_
     }
     return true;
 }
-
 
 }

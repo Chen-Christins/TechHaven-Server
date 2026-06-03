@@ -12,7 +12,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 AssignmentAdminListsServlet::AssignmentAdminListsServlet()
-    :BlogLoginedServlet("AssignmentAdminListsServlet") {
+    : BlogLoginedServlet("AssignmentAdminListsServlet") {
 }
 
 int32_t AssignmentAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response

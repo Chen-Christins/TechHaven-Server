@@ -10,7 +10,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleDeleteServlet::ArticleDeleteServlet()
-    :BlogLoginedServlet("ArticleDeleteServlet") {
+    : BlogLoginedServlet("ArticleDeleteServlet") {
 }
 
 int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -22,7 +22,7 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
         for (auto& i : tmp) {
             art_ids.insert(chen::TypeUtil::Atoi(i));
         }
-        
+
         int64_t uid = getUserId(request);
         std::vector<data::ArticleInfo::ptr> infos;
         for (auto& id : art_ids) {

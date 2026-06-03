@@ -60,7 +60,7 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(info, db)) {
             result->setResult(500, "insert or update organization fail");
             ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
+                << " errstr=" << db->getErrStr();
             break;
         }
 
@@ -77,16 +77,16 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
             OrganizationUserRelMgr::GetInstance()->getByPages(members, id, 0, 10000, -1, true);
             for (auto& m : members) {
                 if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                    auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                    auto notif_info = NotificationMgr::GetInstance()->addNotification(
                         m->getUserId(), title, content, "org_join_request", uid);
-                    if (notifInfo) {
+                    if (notif_info) {
                         Json::Value wsMsg;
-                        wsMsg["id"] = notifInfo->getId();
+                        wsMsg["id"] = notif_info->getId();
                         wsMsg["title"] = title;
                         wsMsg["content"] = content;
                         wsMsg["type"] = "org_join_request";
                         wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notifInfo->getCreateTime();
+                        wsMsg["create_time"] = notif_info->getCreateTime();
                         NotificationMgr::GetInstance()->sendToUser(
                             m->getUserId(), chen::JsonUtil::ToString(wsMsg));
                     }

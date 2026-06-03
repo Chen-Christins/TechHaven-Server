@@ -5,7 +5,7 @@ namespace blog {
 namespace servlet {
 
 NotificationReadAllServlet::NotificationReadAllServlet()
-    :BlogLoginedServlet("NotificationReadAllServlet") {
+    : BlogLoginedServlet("NotificationReadAllServlet") {
 }
 
 int32_t NotificationReadAllServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response

@@ -9,7 +9,7 @@ namespace blog {
 namespace servlet {
 
 UserFollowServlet::UserFollowServlet()
-    :BlogLoginedServlet("UserFollowServlet") {
+    : BlogLoginedServlet("UserFollowServlet") {
 }
 
 int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
@@ -36,7 +36,7 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
-        bool alreadyFollowing = UserFollowRelMgr::GetInstance()->isFollowing(uid, following_id);
+        bool already_following = UserFollowRelMgr::GetInstance()->isFollowing(uid, following_id);
 
         auto info = UserFollowRelMgr::GetInstance()->follow(uid, following_id);
         if (!info) {
@@ -45,22 +45,22 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         // notify the followed user (only for new follows, not re-follows)
-        if (!alreadyFollowing) {
-            auto followerInfo = UserMgr::GetInstance()->get(uid);
-            std::string followerName = followerInfo ? followerInfo->getName() : "someone";
-            std::string notifyTitle = "新关注";
-            std::string notifyContent = followerName + " 关注了你";
+        if (!already_following) {
+            auto follower_info = UserMgr::GetInstance()->get(uid);
+            std::string follower_name = follower_info ? follower_info->getName() : "someone";
+            std::string notify_title = "新关注";
+            std::string notify_content = follower_name + " 关注了你";
 
-            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                following_id, notifyTitle, notifyContent, "follow", uid);
-            if (notifInfo) {
+            auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                following_id, notify_title, notify_content, "follow", uid);
+            if (notif_info) {
                 Json::Value wsMsg;
-                wsMsg["id"] = notifInfo->getId();
-                wsMsg["title"] = notifyTitle;
-                wsMsg["content"] = notifyContent;
+                wsMsg["id"] = notif_info->getId();
+                wsMsg["title"] = notify_title;
+                wsMsg["content"] = notify_content;
                 wsMsg["type"] = "follow";
                 wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notifInfo->getCreateTime();
+                wsMsg["create_time"] = notif_info->getCreateTime();
                 NotificationMgr::GetInstance()->sendToUser(following_id,
                     chen::JsonUtil::ToString(wsMsg));
             }

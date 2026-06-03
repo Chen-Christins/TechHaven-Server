@@ -1,9 +1,9 @@
 #include "rd_bug_edit_servlet.h"
-#include "rd_helper.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
+#include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
@@ -29,7 +29,7 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             result->setResult(403, "not a member of this organization");
             break;
         }
-        int32_t orgRole = rel->getRole();
+        int32_t org_role = rel->getRole();
 
         bool is_new = false;
         data::BugInfo::ptr info;
@@ -39,12 +39,12 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
                 result->setResult(404, "bug not exist");
                 break;
             }
-            if (!permission::canEditBug(orgRole, uid, info->getCreatorId())) {
+            if (!permission::CanEditBug(org_role, uid, info->getCreatorId())) {
                 result->setResult(403, "Access Denied");
                 break;
             }
         } else {
-            if (!permission::canCreateBug(orgRole)) {
+            if (!permission::CanCreateBug(org_role)) {
                 result->setResult(403, "Access Denied");
                 break;
             }
@@ -65,25 +65,25 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             info->setDescription(desc);
         }
 
-        std::string severityStr = request->getParam("severity");
-        if (!severityStr.empty()) {
-            int32_t s = rd::stringToSeverity(severityStr);
+        std::string severity_str = request->getParam("severity");
+        if (!severity_str.empty()) {
+            int32_t s = rd::StringToSeverity(severity_str);
             if (s >= 0) {
                 info->setSeverity(s);
             }
         }
 
-        std::string priorityStr = request->getParam("priority");
-        if (!priorityStr.empty()) {
-            int32_t p = rd::stringToPriority(priorityStr);
+        std::string priority_str = request->getParam("priority");
+        if (!priority_str.empty()) {
+            int32_t p = rd::StringToPriority(priority_str);
             if (p >= 0) {
                 info->setPriority(p);
             }
         }
 
-        std::string statusStr = request->getParam("status");
-        if (!statusStr.empty()) {
-            int32_t s = rd::stringToBugStatus(statusStr);
+        std::string status_str = request->getParam("status");
+        if (!status_str.empty()) {
+            int32_t s = rd::StringToBugStatus(status_str);
             if (s >= 0) {
                 info->setStatus(s);
             }
@@ -129,9 +129,9 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         if (is_new) {
             BugMgr::GetInstance()->add(info);
         }
-        rd::buildBugJson(result->jsondata, info);
+        rd::BuildBugJson(result->jsondata, info);
     } while (0);
-    
+
     response->setBody(result->toJsonString());
     return 0;
 }

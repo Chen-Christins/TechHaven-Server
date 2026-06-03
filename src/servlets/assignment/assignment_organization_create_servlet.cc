@@ -37,7 +37,7 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
         int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
         int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
 
-        if (!permission::canManageMembers(system_role, org_role)) {
+        if (!permission::CanManageMembers(system_role, org_role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -81,19 +81,19 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
         auto db = getDB();
         if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+            result->setResult(500, "get db error");
+            break;
+        }
 
         if (data::AssignmentInfoDao::InsertOrUpdate(assign_info, db)) {
-			result->setResult(500, "insert or update assignment fail");
-			ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
-			break;
-		}
+            result->setResult(500, "insert or update assignment fail");
+            ERROR(logger) << "db error, errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr();
+            break;
+        }
 
-		if (new_assignment) {
-			AssignmentMgr::GetInstance()->add(assign_info);
+        if (new_assignment) {
+            AssignmentMgr::GetInstance()->add(assign_info);
 
             // create organization assignment relation
             auto org_assign_rel = AssignmentOrganizationRelMgr::GetInstance()->getByOrgAndAssign(org_id, assign_info->getId());
@@ -118,7 +118,7 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
             result->set("assign_id", assign_info->getId());
             result->set("assigned_by", org_assign_rel->getAssignedBy());
-		}
+        }
         result->set("id", assign_info->getId());
         result->set("name", assign_info->getName());
         result->set("subject_name", assign_info->getSubjectName());

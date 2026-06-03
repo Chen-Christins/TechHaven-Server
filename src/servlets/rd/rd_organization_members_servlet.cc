@@ -1,7 +1,7 @@
 #include "rd_organization_members_servlet.h"
-#include "rd_helper.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../util.h"
+#include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
@@ -32,9 +32,9 @@ int32_t RdOrganizationMembersServlet::handle(chen::http::HttpRequest::ptr reques
             }
             Json::Value item;
             item["user_id"] = m->getUserId();
-            item["name"] = rd::getUserName(m->getUserId());
-            item["role"] = rd::orgRoleToFrontend(m->getRole());
-            item["avatar"] = rd::getUserAvatar(m->getUserId());
+            item["name"] = rd::GetUserName(m->getUserId());
+            item["role"] = rd::OrgRoleToFrontend(m->getRole());
+            item["avatar"] = rd::GetUserAvatar(m->getUserId());
             arr.append(item);
         }
 

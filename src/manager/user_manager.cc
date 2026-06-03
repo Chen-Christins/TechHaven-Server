@@ -17,7 +17,7 @@ bool UserManager::loadAll() {
         ERROR(logger) << "UserManager loadAll fail";
         return false;
     }
-    
+
     std::unordered_map<int64_t, blog::data::UserInfo::ptr> datas;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> accounts;
     std::unordered_map<std::string, blog::data::UserInfo::ptr> emails;
@@ -31,7 +31,7 @@ bool UserManager::loadAll() {
         names[i->getName()] = i;
         role_id_users[i->getRole()][i->getId()] = i;
     }
-    
+
     std::unique_lock<std::shared_mutex> lock(m_mutex);
     m_datas.swap(datas);
     m_accounts.swap(accounts);
@@ -42,21 +42,21 @@ bool UserManager::loadAll() {
 }
 
 void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
-	std::shared_lock<std::shared_mutex> lock(m_mutex);
-	for (auto [id, user] : m_datas) {
-		if (isValid && user->getIsDeleted()) {
-			continue;
-		}
-		ids.emplace_back(id);
-	}
+    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    for (auto [id, user] : m_datas) {
+        if (isValid && user->getIsDeleted()) {
+            continue;
+        }
+        ids.emplace_back(id);
+    }
 }
 
 uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
         , int32_t role, int32_t state, int32_t days, bool isValid) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
-    
+
     std::vector<blog::data::UserInfo::ptr> temp;
-    
+
     int64_t start_time = 0;
     if (days > 0) {
         start_time = time(0) - days * 24 * 3600;

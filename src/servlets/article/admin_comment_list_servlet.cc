@@ -10,11 +10,11 @@ namespace blog {
 namespace servlet {
 
 AdminCommentListServlet::AdminCommentListServlet()
-    :BlogLoginedServlet("AdminCommentListServlet") {
+    : BlogLoginedServlet("AdminCommentListServlet") {
 }
 
 int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -33,10 +33,15 @@ int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, ch
         std::string status_str = request->getParam("status");
         int32_t status = 0;
         if (!status_str.empty()) {
-            if (status_str == "approved") status = CommentManager::APPROVED;
-            else if (status_str == "pending") status = CommentManager::PENDING;
-            else if (status_str == "rejected") status = CommentManager::REJECTED;
-            else if (status_str == "spam") status = CommentManager::SPAM;
+            if (status_str == "approved") {
+                status = CommentManager::APPROVED;
+            } else if (status_str == "pending") {
+                status = CommentManager::PENDING;
+            } else if (status_str == "rejected") {
+                status = CommentManager::REJECTED;
+            } else if (status_str == "spam") {
+                status = CommentManager::SPAM;
+            }
         }
         std::string keyword = request->getParam("keyword");
         int64_t article_id = request->getParamAs<int64_t>("article_id", 0);
@@ -54,11 +59,16 @@ int32_t AdminCommentListServlet::handle(chen::http::HttpRequest::ptr request, ch
             item["parent_id"] = c->getParentId() > 0 ? std::to_string(c->getParentId()) : "";
             item["status"] = [](int32_t s) -> const char* {
                 switch (s) {
-                    case CommentManager::PENDING: return "pending";
-                    case CommentManager::APPROVED: return "approved";
-                    case CommentManager::REJECTED: return "rejected";
-                    case CommentManager::SPAM: return "spam";
-                    default: return "unknown";
+                case CommentManager::PENDING:
+                    return "pending";
+                case CommentManager::APPROVED:
+                    return "approved";
+                case CommentManager::REJECTED:
+                    return "rejected";
+                case CommentManager::SPAM:
+                    return "spam";
+                default:
+                    return "unknown";
                 }
             }(c->getStatus());
             item["created_at"] = c->getCreateTime();

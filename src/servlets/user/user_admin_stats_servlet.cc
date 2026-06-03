@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 UserAdminStatsServlet::UserAdminStatsServlet()
-    :BlogLoginedServlet("UserAdminStatsServlet") {
+    : BlogLoginedServlet("UserAdminStatsServlet") {
 }
 
 int32_t UserAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response

@@ -15,23 +15,23 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup<std::string>("server.work_path");
 
-FileUploadServlet::FileUploadServlet() 
-	: BlogLoginedServlet("FileUploadServlet") {
+FileUploadServlet::FileUploadServlet()
+    : BlogLoginedServlet("FileUploadServlet") {
 }
 
 int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		std::string content_type = request->getHeader("content-type");
-		chen::MultipartParser::ptr parser = std::make_shared<chen::MultipartParser>(content_type);
-		
-		auto data = parser->parseToMemory(request->getBody());
-		
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        std::string content_type = request->getHeader("content-type");
+        chen::MultipartParser::ptr parser = std::make_shared<chen::MultipartParser>(content_type);
+
+        auto data = parser->parseToMemory(request->getBody());
+
         // [0]:dir_name  [1]:biz_type|biz_id  [2...]:files
-		if (data.size() < 3) {
-			result->setResult(400, "protocol error");
-			break;
-		}
+        if (data.size() < 3) {
+            result->setResult(400, "protocol error");
+            break;
+        }
 
         auto biz_info = chen::split(data[1].content, "|");
         if (biz_info.size() != 2) {
@@ -46,23 +46,23 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
         int64_t uid = getUserId(request);
         std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
-		std::string dir_name = biz_type + "/" + subject_name + "/" + data[0].content + "/" + user_name;
-		std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
+        std::string dir_name = biz_type + "/" + subject_name + "/" + data[0].content + "/" + user_name;
+        std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
 
         INFO(logger) << "File upload save dir: " << save_dir;
 
-		for (size_t i = 2; i < data.size(); ++i) {
-			std::string filename = save_dir + "/" + data[i].filename;
-			std::ofstream ofs;
-			bool rt = chen::FSUtil::OpenForWrite(ofs, filename, std::ios::binary);
-			if (rt) {
-				ofs.write(data[i].content.c_str(), data[i].content.size());
-			}
-			ofs.close();
-			INFO(logger) << "File saved: " << filename << " (Size: " << data[i].content.size()
-					<< " bytes -- " << (1.0 * data[i].content.size() / 1024)
-					<< " kb -- " << (1.0 * data[i].content.size() / (1024 * 1024)) << " mb)";
-            
+        for (size_t i = 2; i < data.size(); ++i) {
+            std::string filename = save_dir + "/" + data[i].filename;
+            std::ofstream ofs;
+            bool rt = chen::FSUtil::OpenForWrite(ofs, filename, std::ios::binary);
+            if (rt) {
+                ofs.write(data[i].content.c_str(), data[i].content.size());
+            }
+            ofs.close();
+            INFO(logger) << "File saved: " << filename << " (Size: " << data[i].content.size()
+                    << " bytes -- " << (1.0 * data[i].content.size() / 1024)
+                    << " kb -- " << (1.0 * data[i].content.size() / (1024 * 1024)) << " mb)";
+
             // generate hash key
             std::string hash_key = chen::md5(data[i].content);
             size_t size = data[i].content.size();
@@ -72,8 +72,8 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 result->setResult(500, "Dump to resource fail");
                 break;
             }
-		}
-        
+        }
+
         time_t now = time(0);
         auto db = getDB();
         if (!db) {
@@ -105,8 +105,8 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             }
         }
         AssignmentUserRelMgr::GetInstance()->add(info);
-	} while (0);
-	response->setBody(result->toJsonString());
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

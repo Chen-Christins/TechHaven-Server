@@ -19,27 +19,27 @@ public:
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result);
-    
+
     int32_t handleComplete(chen::http::HttpRequest::ptr request
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result);
-    
+
     int32_t handleCancel(chen::http::HttpRequest::ptr request
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result);
-    
+
     int32_t handleUpload(chen::http::HttpRequest::ptr request
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result);
-    
+
     int32_t handleStatus(chen::http::HttpRequest::ptr request
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result);
-    
+
     void parseBizInfo(const std::string& biz_info
             , std::string& biz_type,  std::string& biz_id);
 

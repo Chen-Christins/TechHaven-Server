@@ -10,48 +10,48 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminRecoverServlet::UserAdminRecoverServlet()
-    :BlogLoginedServlet("UserAdminRecoverServlet") {
+    : BlogLoginedServlet("UserAdminRecoverServlet") {
 }
 
 int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_STRING(result, ids, "ids");
+    do {
+        DEFINE_AND_CHECK_STRING(result, ids, "ids");
 
-		std::set<int64_t> user_ids;
+        std::set<int64_t> user_ids;
         auto tmp = chen::split(ids, ',');
         for (auto& i : tmp) {
             user_ids.insert(chen::TypeUtil::Atoi(i));
         }
 
-		int64_t uid = getUserId(request);
+        int64_t uid = getUserId(request);
         if (!uid) {
             result->setResult(500, "not login");
             break;
         }
-		int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
-		if (role != UserManager::Role::ADMIN) {
-			result->setResult(403, "Access Denied");
-			break;
-		}
+        if (role != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
 
-		std::vector<data::UserInfo::ptr> infos;
-		for (const int64_t& id : user_ids) {
-			auto info = UserMgr::GetInstance()->get(id);
-			if (!info->getIsDeleted()) {
-				continue;
-			}
-			infos.emplace_back(info);
-		}
+        std::vector<data::UserInfo::ptr> infos;
+        for (const int64_t& id : user_ids) {
+            auto info = UserMgr::GetInstance()->get(id);
+            if (!info->getIsDeleted()) {
+                continue;
+            }
+            infos.emplace_back(info);
+        }
 
-		auto db = getDB();
+        auto db = getDB();
         auto trans = db->openTransaction();
         if (!trans) {
             result->setResult(500, "open transaction fail");
             break;
         }
-		time_t now = time(0);
+        time_t now = time(0);
         for (auto& i : infos) {
             i->setIsDeleted(0);
             i->setUpdateTime(now);
@@ -72,8 +72,8 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
                 jids.append(i->getId());
             }
         }
-	}while (0);
-	response->setBody(result->toJsonString());
+    }while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

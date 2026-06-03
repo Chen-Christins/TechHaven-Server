@@ -13,7 +13,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticlePublishServlet::ArticlePublishServlet()
-    :BlogLoginedServlet("ArticlePublishServlet") {
+    : BlogLoginedServlet("ArticlePublishServlet") {
 }
 
 int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -50,7 +50,7 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
             info->setPublishTime(now);
         }
         info->setUpdateTime(now);
-        
+
         auto db = getDB();
         if (!db) {
             result->setResult(500, "get db connection fail");
@@ -64,13 +64,13 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         // 异步通知管理员和审核员有新文章待审核
         {
-            std::string articleTitle = info->getTitle();
+            std::string article_title = info->getTitle();
             chen::IOManager::GetThis()->schedule(
-                [author_id=uid, article_id=id, articleTitle]() {
+                [author_id=uid, article_id=id, article_title]() {
                     auto author = UserMgr::GetInstance()->get(author_id);
                     std::string author_name = author ? author->getName() : std::to_string(author_id);
                     std::string title = "新的文章待审核";
-                    std::string content = "「" + author_name + "」提交了文章「" + articleTitle + "」等待审核";
+                    std::string content = "「" + author_name + "」提交了文章「" + article_title + "」等待审核";
 
                     std::vector<int64_t> userIds;
                     UserMgr::GetInstance()->getAllIds(userIds, true);
@@ -78,17 +78,17 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
                         auto u = UserMgr::GetInstance()->get(targetId);
                         if (u && (u->getRole() == UserManager::Role::ADMIN
                                 || u->getRole() == UserManager::Role::CHECKER)) {
-                            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+                            auto notif_info = NotificationMgr::GetInstance()->addNotification(
                                 targetId, title, content, "article_review_request", author_id, article_id);
-                            if (notifInfo) {
+                            if (notif_info) {
                                 Json::Value wsMsg;
-                                wsMsg["id"] = notifInfo->getId();
+                                wsMsg["id"] = notif_info->getId();
                                 wsMsg["title"] = title;
                                 wsMsg["content"] = content;
                                 wsMsg["type"] = "article_review_request";
                                 wsMsg["article_id"] = article_id;
                                 wsMsg["is_read"] = false;
-                                wsMsg["create_time"] = notifInfo->getCreateTime();
+                                wsMsg["create_time"] = notif_info->getCreateTime();
                                 NotificationMgr::GetInstance()->sendToUser(
                                     targetId, chen::JsonUtil::ToString(wsMsg));
                             }

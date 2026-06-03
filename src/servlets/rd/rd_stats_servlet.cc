@@ -17,15 +17,15 @@ int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
     do {
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
         int64_t uid = getUserId(request);
-        int32_t systemRole = UserMgr::GetInstance()->get(uid)->getRole();
-        bool isPlatformAdmin = (systemRole == UserManager::Role::ADMIN);
+        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        bool is_platform_admin = (system_role == UserManager::Role::ADMIN);
         time_t now = time(0);
 
         std::vector<data::RequirementInfo::ptr> reqs;
         std::vector<data::BugInfo::ptr> bugs;
         std::vector<data::TaskInfo::ptr> tasks;
 
-        if (isPlatformAdmin) {
+        if (is_platform_admin) {
             if (org_id) {
                 RequirementMgr::GetInstance()->listByOrg(reqs, org_id, 0, UINT64_MAX, -1, true);
                 BugMgr::GetInstance()->listByOrg(bugs, org_id, 0, UINT64_MAX, -1, true);
@@ -36,9 +36,9 @@ int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
                 TaskMgr::GetInstance()->listByPages(tasks, 0, UINT64_MAX, -1, true);
             }
         } else {
-            std::vector<data::OrganizationUserRelInfo::ptr> userOrgs;
-            OrganizationUserRelMgr::GetInstance()->getOrgByUserId(userOrgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
-            for (auto& rel : userOrgs) {
+            std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
+            OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
+            for (auto& rel : user_orgs) {
                 if (org_id && rel->getOrgId() != org_id) {
                     continue;
                 }

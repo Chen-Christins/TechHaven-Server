@@ -11,146 +11,146 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleUpdateCategoryServlet::ArticleUpdateCategoryServlet()
-    :BlogLoginedServlet("ArticleUpdateCategoryServlet") {
+    : BlogLoginedServlet("ArticleUpdateCategoryServlet") {
 }
 
 int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
-		std::string adds = request->getParam("add_category_ids");
-		std::string dels = request->getParam("del_category_ids");
+    do {
+        DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
+        std::string adds = request->getParam("add_category_ids");
+        std::string dels = request->getParam("del_category_ids");
 
-		if (adds.empty() && dels.empty()) {
-			result->setResult(400, "add_category_ids and del_category_ids is null");
-			break;
-		}
+        if (adds.empty() && dels.empty()) {
+            result->setResult(400, "add_category_ids and del_category_ids is null");
+            break;
+        }
 
-		auto ainfo = ArticleMgr::GetInstance()->get(id);
-		if (!ainfo) {
-			result->setResult(401, "invalid id");
-			break;
-		}
-		int64_t uid = getUserId(request);
+        auto ainfo = ArticleMgr::GetInstance()->get(id);
+        if (!ainfo) {
+            result->setResult(401, "invalid id");
+            break;
+        }
+        int64_t uid = getUserId(request);
         if (!uid) {
             result->setResult(500, "not login");
             break;
         }
-		if (ainfo->getUserId() != uid) {
-			result->setResult(401, "invalid article");
-			break;
-		}
+        if (ainfo->getUserId() != uid) {
+            result->setResult(401, "invalid article");
+            break;
+        }
 
-		std::vector<std::string> tmps;
-		if (!adds.empty()) {
-			tmps = chen::split(adds, ',');
-		}
-		
-		auto db = getDB();
-		if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+        std::vector<std::string> tmps;
+        if (!adds.empty()) {
+            tmps = chen::split(adds, ',');
+        }
 
-		auto trans = db->openTransaction();
-		if (!trans) {
-			result->setResult(500, "open transaction fail");
-			break;
-		}
+        auto db = getDB();
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
 
-		time_t now = time(0);
-		std::vector<data::ArticleCategoryRelInfo::ptr> new_infos;
-		std::vector<data::ArticleCategoryRelInfo::ptr> update_add_infos;
-		std::vector<data::ArticleCategoryRelInfo::ptr> update_del_infos;
+        auto trans = db->openTransaction();
+        if (!trans) {
+            result->setResult(500, "open transaction fail");
+            break;
+        }
 
-		for (auto& i : tmps) {
-			int64_t cid = chen::TypeUtil::Atoi(i);
-			auto cinfo = CategoryMgr::GetInstance()->get(cid);
-			if (!cinfo) {
-				continue;
-			}
-			auto acinfo = ArticleCategoryRelMgr::GetInstance()->getByArticleIdCategoryId(id, cid);
-			if (acinfo) {
-				if (acinfo->getIsDeleted()) {
-					acinfo->setIsDeleted(0);
-					acinfo->setUpdateTime(now);
-					update_add_infos.push_back(acinfo);
-					if (data::ArticleCategoryRelInfoDao::Update(acinfo, db)) {
-						ERROR(logger) << "db error errno=" << db->getErrno()
-							<< ", errstr=" << db->getErrStr();
-					}
-				}
-			} else {
-				acinfo.reset(new data::ArticleCategoryRelInfo);
-				acinfo->setArticleId(id);
-				acinfo->setCategoryId(cid);
-				acinfo->setUpdateTime(now);
-				new_infos.push_back(acinfo);
-				if (data::ArticleCategoryRelInfoDao::Insert(acinfo, db)) {
-					ERROR(logger) << "db error errno=" << db->getErrno()
-						<< ", errstr=" << db->getErrStr();
-				}
-			}
-		}
-		tmps.clear();
-		if (!dels.empty()) {
-			tmps = chen::split(dels, ',');
-		}
-		for (auto& i : tmps) {
-			int64_t cid = chen::TypeUtil::Atoi(i);
-			auto cinfo = CategoryMgr::GetInstance()->get(cid);
-			if (!cinfo) {
-				continue;
-			}
-			auto acinfo = ArticleCategoryRelMgr::GetInstance()->getByArticleIdCategoryId(id, cid);
-			if (acinfo) {
-				if (acinfo->getIsDeleted() == 0) {
-					acinfo->setIsDeleted(1);
-					acinfo->setUpdateTime(now);
-					new_infos.push_back(acinfo);
-					update_del_infos.push_back(acinfo);
-					if (data::ArticleCategoryRelInfoDao::Update(acinfo, db)) {
-						ERROR(logger) << "db error errno=" << db->getErrno()
-							<< ", errstr=" << db->getErrStr();
-					}
-				}
-			}
-		}
+        time_t now = time(0);
+        std::vector<data::ArticleCategoryRelInfo::ptr> new_infos;
+        std::vector<data::ArticleCategoryRelInfo::ptr> update_add_infos;
+        std::vector<data::ArticleCategoryRelInfo::ptr> update_del_infos;
 
-		if (!trans->commit()) {
-			for (auto& i : update_add_infos) {
-				i->setIsDeleted(1);
-			}
-			for (auto& i : update_del_infos) {
-				i->setIsDeleted(0);
-			}
-			result->setResult(500, "commit fail");
-			break;
-		}
+        for (auto& i : tmps) {
+            int64_t cid = chen::TypeUtil::Atoi(i);
+            auto cinfo = CategoryMgr::GetInstance()->get(cid);
+            if (!cinfo) {
+                continue;
+            }
+            auto acinfo = ArticleCategoryRelMgr::GetInstance()->getByArticleIdCategoryId(id, cid);
+            if (acinfo) {
+                if (acinfo->getIsDeleted()) {
+                    acinfo->setIsDeleted(0);
+                    acinfo->setUpdateTime(now);
+                    update_add_infos.push_back(acinfo);
+                    if (data::ArticleCategoryRelInfoDao::Update(acinfo, db)) {
+                        ERROR(logger) << "db error errno=" << db->getErrno()
+                            << ", errstr=" << db->getErrStr();
+                    }
+                }
+            } else {
+                acinfo.reset(new data::ArticleCategoryRelInfo);
+                acinfo->setArticleId(id);
+                acinfo->setCategoryId(cid);
+                acinfo->setUpdateTime(now);
+                new_infos.push_back(acinfo);
+                if (data::ArticleCategoryRelInfoDao::Insert(acinfo, db)) {
+                    ERROR(logger) << "db error errno=" << db->getErrno()
+                        << ", errstr=" << db->getErrStr();
+                }
+            }
+        }
+        tmps.clear();
+        if (!dels.empty()) {
+            tmps = chen::split(dels, ',');
+        }
+        for (auto& i : tmps) {
+            int64_t cid = chen::TypeUtil::Atoi(i);
+            auto cinfo = CategoryMgr::GetInstance()->get(cid);
+            if (!cinfo) {
+                continue;
+            }
+            auto acinfo = ArticleCategoryRelMgr::GetInstance()->getByArticleIdCategoryId(id, cid);
+            if (acinfo) {
+                if (acinfo->getIsDeleted() == 0) {
+                    acinfo->setIsDeleted(1);
+                    acinfo->setUpdateTime(now);
+                    new_infos.push_back(acinfo);
+                    update_del_infos.push_back(acinfo);
+                    if (data::ArticleCategoryRelInfoDao::Update(acinfo, db)) {
+                        ERROR(logger) << "db error errno=" << db->getErrno()
+                            << ", errstr=" << db->getErrStr();
+                    }
+                }
+            }
+        }
 
-		for (auto& i : new_infos) {
-			ArticleCategoryRelMgr::GetInstance()->add(i);
-		}
-		if (!update_add_infos.empty()) {
-			auto& v = result->jsondata["add_category_ids"];
-			for (auto& i : update_add_infos) {
-				v.append(i->getId());
-			}
-		}
-		if (!new_infos.empty()) {
-			auto& v = result->jsondata["add_category_ids"];
-			for (auto& i : new_infos) {
-				v.append(i->getId());
-			}
-		}
-		if (!update_del_infos.empty()) {
-			auto& v = result->jsondata["del_category_ids"];
-			for (auto& i : update_del_infos) {
-				v.append(i->getId());
-			}
-		}
-	} while (0);
-	response->setBody(result->toJsonString());
+        if (!trans->commit()) {
+            for (auto& i : update_add_infos) {
+                i->setIsDeleted(1);
+            }
+            for (auto& i : update_del_infos) {
+                i->setIsDeleted(0);
+            }
+            result->setResult(500, "commit fail");
+            break;
+        }
+
+        for (auto& i : new_infos) {
+            ArticleCategoryRelMgr::GetInstance()->add(i);
+        }
+        if (!update_add_infos.empty()) {
+            auto& v = result->jsondata["add_category_ids"];
+            for (auto& i : update_add_infos) {
+                v.append(i->getId());
+            }
+        }
+        if (!new_infos.empty()) {
+            auto& v = result->jsondata["add_category_ids"];
+            for (auto& i : new_infos) {
+                v.append(i->getId());
+            }
+        }
+        if (!update_del_infos.empty()) {
+            auto& v = result->jsondata["del_category_ids"];
+            for (auto& i : update_del_infos) {
+                v.append(i->getId());
+            }
+        }
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

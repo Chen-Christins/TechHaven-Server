@@ -13,7 +13,7 @@ SystemSettingsServlet::SystemSettingsServlet()
     : BlogLoginedServlet("SystemSettingsServlet") {
 }
 
-static void buildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr info) {
+static void BuildSettingsJson(Json::Value& json, data::SystemSettingsInfo::ptr info) {
     json["id"] = (Json::Int64)info->getId();
     json["siteName"] = info->getSiteName();
     json["siteDescription"] = info->getSiteDescription();
@@ -73,7 +73,7 @@ int32_t SystemSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen
                 result->setResult(500, "system settings not loaded");
                 break;
             }
-            buildSettingsJson(result->jsondata, settings);
+            BuildSettingsJson(result->jsondata, settings);
         } else if (method == chen::http::HttpMethod::PUT) {
             INFO(logger) << "req: \n" << request->toString();
             auto info = SystemSettingsMgr::GetInstance()->get();
@@ -198,7 +198,7 @@ int32_t SystemSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen
                 break;
             }
 
-            buildSettingsJson(result->jsondata, info);
+            BuildSettingsJson(result->jsondata, info);
         } else {
             result->setResult(405, "method not allowed");
         }

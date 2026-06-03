@@ -17,7 +17,7 @@ int32_t ResourceListServlet::handle(chen::http::HttpRequest::ptr request, chen::
     do {
         DEFINE_AND_CHECK_STRING(result, type, "type");
         DEFINE_AND_CHECK_STRING(result, folder, "folder");
-        
+
         int64_t uid = getUserId(request);
         int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
         if (!checkPermession(system_role)) {

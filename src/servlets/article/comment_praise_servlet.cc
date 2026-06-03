@@ -10,11 +10,11 @@ namespace blog {
 namespace servlet {
 
 CommentPraiseServlet::CommentPraiseServlet()
-    :BlogLoginedServlet("CommentPraiseServlet") {
+    : BlogLoginedServlet("CommentPraiseServlet") {
 }
 
 int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -31,9 +31,9 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
 
-        bool alreadyPraising = CommentPraiseRelMgr::GetInstance()->isPraising(uid, comment_id);
+        bool already_praising = CommentPraiseRelMgr::GetInstance()->isPraising(uid, comment_id);
 
-        if (alreadyPraising) {
+        if (already_praising) {
             // unlike
             if (!CommentPraiseRelMgr::GetInstance()->unpraise(uid, comment_id)) {
                 result->setResult(500, "unpraise failed");
@@ -50,34 +50,34 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
             result->set("is_praising", true);
 
             // notify the comment author (only if not self-liking)
-            int64_t authorId = comment->getUserId();
-            if (authorId != uid) {
-                auto likerInfo = UserMgr::GetInstance()->get(uid);
-                std::string likerName = likerInfo ? likerInfo->getName() : "someone";
-                std::string notifyTitle = "评论点赞";
-                std::string notifyContent = likerName + " 赞了你的评论";
+            int64_t author_id = comment->getUserId();
+            if (author_id != uid) {
+                auto liker_info = UserMgr::GetInstance()->get(uid);
+                std::string liker_name = liker_info ? liker_info->getName() : "someone";
+                std::string notify_title = "评论点赞";
+                std::string notify_content = liker_name + " 赞了你的评论";
 
-                auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                    authorId, notifyTitle, notifyContent, "comment_praise", uid,
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                    author_id, notify_title, notify_content, "comment_praise", uid,
                     comment->getArticleId(), comment_id);
-                if (notifInfo) {
+                if (notif_info) {
                     Json::Value wsMsg;
-                    wsMsg["id"] = notifInfo->getId();
-                    wsMsg["title"] = notifyTitle;
-                    wsMsg["content"] = notifyContent;
+                    wsMsg["id"] = notif_info->getId();
+                    wsMsg["title"] = notify_title;
+                    wsMsg["content"] = notify_content;
                     wsMsg["type"] = "comment_praise";
                     wsMsg["article_id"] = comment->getArticleId();
                     wsMsg["comment_id"] = comment_id;
                     wsMsg["is_read"] = false;
-                    wsMsg["create_time"] = notifInfo->getCreateTime();
-                    NotificationMgr::GetInstance()->sendToUser(authorId,
+                    wsMsg["create_time"] = notif_info->getCreateTime();
+                    NotificationMgr::GetInstance()->sendToUser(author_id,
                         chen::JsonUtil::ToString(wsMsg));
                 }
             }
         }
 
-        int64_t praiseCount = CommentPraiseRelMgr::GetInstance()->countByComment(comment_id);
-        result->set("praise_count", praiseCount);
+        int64_t praise_count = CommentPraiseRelMgr::GetInstance()->countByComment(comment_id);
+        result->set("praise_count", praise_count);
         result->setResult(200, "ok");
     } while (0);
 

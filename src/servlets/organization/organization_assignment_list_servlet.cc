@@ -30,7 +30,7 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
         int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
         int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
 
-        if (!permission::canManageMembers(system_role, org_role)) {
+        if (!permission::CanManageMembers(system_role, org_role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -41,7 +41,7 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
         std::vector<data::AssignmentOrganizationRelInfo::ptr> assign_rels;
         int64_t total = AssignmentOrganizationRelMgr::GetInstance()->getByPages(assign_rels
                 , org_id, offset, page_size, status, true);
-        
+
         auto& list = result->jsondata["list"];
         for (auto& i : assign_rels) {
             Json::Value item;

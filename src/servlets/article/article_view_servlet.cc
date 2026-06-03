@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 ArticleViewServlet::ArticleViewServlet()
-    :BlogLoginedServlet("ArticleViewServlet") {
+    : BlogLoginedServlet("ArticleViewServlet") {
 }
 
 int32_t ArticleViewServlet::handle(chen::http::HttpRequest::ptr request,

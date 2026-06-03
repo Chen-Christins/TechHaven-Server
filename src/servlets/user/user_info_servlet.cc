@@ -22,10 +22,10 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
             break;
         }
 
-		int64_t id = request->getParamAs<int64_t>("user_id", -1);
-		if (id != -1) {
-			uid = id;
-		}
+        int64_t id = request->getParamAs<int64_t>("user_id", -1);
+        if (id != -1) {
+            uid = id;
+        }
 
         data::UserInfo::ptr info = UserMgr::GetInstance()->get(uid);
         if (!info) {
@@ -40,7 +40,7 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         result->set("email", info->getEmail());
         result->set("role", info->getRole());
         result->set("bio", info->getBio());
-		result->set("website", info->getWebsite());
+        result->set("website", info->getWebsite());
         result->set("location", info->getLocation());
         result->set("status", info->getIsDeleted());
         result->set("login_time", info->getLoginTime());
