@@ -4,8 +4,8 @@
 #include <chen/util/util.h>
 #include <fstream>
 #include <vector>
-#include <cstdio>
-#include <sstream>
+#include <openssl/md5.h>
+
 #include "../../chunk_upload.h"
 #include "../../manager/resource_manager.h"
 #include "../../manager/user_manager.h"
@@ -102,9 +102,11 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
 
 int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
+    std::string upload_id;
+    bool assembly_ok = false;
     do {
         std::string type = request->getHeader("X-Upload-Type");
-        std::string upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
+        upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
             result->setResult(400, "Invalid upload type");
@@ -142,56 +144,74 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
 
         std::string filename = save_dir + "/" + upload_session->file_name;
         std::ofstream ofs;
-        bool rt = chen::FSUtil::OpenForWrite(ofs, filename, std::ios::binary);
-
-        if (rt) {
-            for (size_t i = 0; i < upload_session->total_chunks; ++i) {
-                // 从临时文件读取并写入最终文件
-                std::ifstream temp_file(upload_session->chunk_data[i], std::ios::binary);
-                if (!temp_file.is_open()) {
-                    ERROR(logger) << "Failed to open temp file: " << upload_session->chunk_data[i];
-                    result->setResult(500, "Failed to assemble file");
-                    ofs.close();
-                    break;
-                }
-
-                // 使用缓冲区避免内存溢出
-                std::vector<char> buffer(8192);  // 8KB buffer
-                while (temp_file.read(buffer.data(), buffer.size())) {
-                    std::streamsize bytes_read = temp_file.gcount();
-                    ofs.write(buffer.data(), bytes_read);
-                }
-                // 处理最后剩余的数据
-                std::streamsize bytes_read = temp_file.gcount();
-                if (bytes_read > 0) {
-                    ofs.write(buffer.data(), bytes_read);
-                }
-
-                temp_file.close();
-
-                // 删除临时文件
-                std::remove(upload_session->chunk_data[i].c_str());
-            }
+        if (!chen::FSUtil::OpenForWrite(ofs, filename, std::ios::binary)) {
+            result->setResult(500, "Failed to create file");
+            break;
         }
+
+        // 流式组装分块，buffer 在循环外分配复用
+        std::vector<char> buffer(65536);  // 64KB
+        for (size_t i = 0; i < upload_session->total_chunks; ++i) {
+            std::ifstream temp_file(upload_session->chunk_data[i], std::ios::binary);
+            if (!temp_file.is_open()) {
+                ERROR(logger) << "Failed to open temp file: " << upload_session->chunk_data[i];
+                result->setResult(500, "Failed to assemble file");
+                goto assembly_done;
+            }
+            while (temp_file.read(buffer.data(), buffer.size())) {
+                ofs.write(buffer.data(), temp_file.gcount());
+            }
+            if (temp_file.gcount() > 0) {
+                ofs.write(buffer.data(), temp_file.gcount());
+            }
+            temp_file.close();
+            // 删除临时文件
+            chen::FSUtil::Unlink(upload_session->chunk_data[i], true);
+        }
+        assembly_ok = true;
+assembly_done:
         ofs.close();
+
+        if (!assembly_ok) {
+            // 组装失败，清理已删除的临时文件并移除会话
+            for (size_t i = 0; i < upload_session->total_chunks; ++i) {
+                if (!upload_session->chunk_data[i].empty()) {
+                    chen::FSUtil::Unlink(upload_session->chunk_data[i], true);
+                }
+            }
+            ChunkUploadMgr::GetInstance()->removeSession(upload_id);
+            break;
+        }
 
         INFO(logger) << "File saved: " << filename << " (Size: " << upload_session->total_size
                 << " bytes -- " << (1.0 * upload_session->total_size / 1024)
                 << " kb -- " << (1.0 * upload_session->total_size / (1024 * 1024)) << " mb)";
 
-        // 计算文件MD5，避免内存问题
-        std::ifstream final_file(filename, std::ios::binary);
+        // 流式 MD5 计算，避免全量读入内存
         std::string hash_key;
-        if (final_file.is_open()) {
-            std::stringstream file_content;
-            file_content << final_file.rdbuf();
-            hash_key = chen::md5(file_content.str());
+        {
+            std::ifstream final_file(filename, std::ios::binary);
+            if (!final_file.is_open()) {
+                ERROR(logger) << "Failed to open final file for hash calculation: " << filename;
+                result->setResult(500, "Failed to calculate file hash");
+                break;
+            }
+            MD5_CTX md5_ctx;
+            MD5_Init(&md5_ctx);
+            while (final_file.read(buffer.data(), buffer.size())) {
+                MD5_Update(&md5_ctx, buffer.data(), final_file.gcount());
+            }
+            if (final_file.gcount() > 0) {
+                MD5_Update(&md5_ctx, buffer.data(), final_file.gcount());
+            }
+            unsigned char digest[MD5_DIGEST_LENGTH];
+            MD5_Final(digest, &md5_ctx);
+            char hex_output[MD5_DIGEST_LENGTH * 2 + 1];
+            chen::hexstring_from_data(digest, MD5_DIGEST_LENGTH, hex_output);
+            hash_key.assign(hex_output, MD5_DIGEST_LENGTH * 2);
             final_file.close();
-        } else {
-            ERROR(logger) << "Failed to open final file for hash calculation: " << filename;
-            result->setResult(500, "Failed to calculate file hash");
-            break;
         }
+
         std::string path = "/uploads/" + dir_name + "/" + upload_session->file_name;
         if (!dumpToResource(upload_session->biz_type, upload_session->biz_id, path, hash_key, uid, upload_session->total_size)) {
             result->setResult(500, "Dump to resource fail");
@@ -231,6 +251,8 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         AssignmentUserRelMgr::GetInstance()->add(info);
 
         result->set("file_path", path);
+        // 成功后清理会话
+        ChunkUploadMgr::GetInstance()->removeSession(upload_id);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
@@ -257,11 +279,13 @@ int32_t ChunkUploadServlet::handleCancel(chen::http::HttpRequest::ptr request
             break;
         }
 
-        // 清理临时文件
-        std::lock_guard<std::mutex> lock(upload_session->m_mtx);
-        for (size_t i = 0; i < upload_session->total_chunks; ++i) {
-            if (upload_session->received_chunks[i] && !upload_session->chunk_data[i].empty()) {
-                std::remove(upload_session->chunk_data[i].c_str());
+        // 清理所有临时文件
+        {
+            std::lock_guard<std::mutex> lock(upload_session->m_mtx);
+            for (size_t i = 0; i < upload_session->total_chunks; ++i) {
+                if (!upload_session->chunk_data[i].empty()) {
+                    chen::FSUtil::Unlink(upload_session->chunk_data[i], true);
+                }
             }
         }
 
@@ -286,8 +310,12 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
             result->setResult(400, "Invalid upload type");
             break;
         }
-        if (upload_id.empty() || chunk_size == 0 || body.size() == 0) {
+        if (upload_id.empty() || chunk_size == 0 || body.empty()) {
             result->setResult(400, "Invalid params");
+            break;
+        }
+        if (body.size() > chunk_size) {
+            result->setResult(400, "Chunk size exceeds declared size");
             break;
         }
 

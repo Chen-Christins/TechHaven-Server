@@ -1,5 +1,11 @@
 #include "chunk_upload.h"
 
+#include <chen/iomanager/iomanager.h>
+#include <chen/log/log.h>
+#include <chen/util/util.h>
+
+static chen::Logger::ptr g_logger = LOG_ROOT();
+
 ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upload_id
         , const std::string& file_name, size_t total_size, size_t chunk_size, size_t total_chunks
         , const std::string& biz_type, int64_t biz_id, const std::string& dir_name) {
@@ -14,10 +20,17 @@ ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upl
     session->biz_type = biz_type;
     session->biz_id = biz_id;
     session->dir_name = dir_name;
+    session->created_at = time(0);
     session->received_chunks.resize(total_chunks, false);
     session->chunk_data.resize(total_chunks);
 
     m_sessions[upload_id] = session;
+
+    // 首次创建时启动过期清理定时器
+    if (!m_cleanup_timer) {
+        startCleanupTimer();
+    }
+
     return session;
 }
 
@@ -33,4 +46,46 @@ ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload
 void ChunkUploadManager::removeSession(const std::string& upload_id) {
     std::lock_guard<std::shared_mutex> lock(m_mtx);
     m_sessions.erase(upload_id);
+}
+
+void ChunkUploadManager::startCleanupTimer() {
+    m_cleanup_timer = chen::IOManager::GetThis()->addTimer(60 * 1000
+        , [this]() { cleanupExpiredSessions(); }, true);
+}
+
+void ChunkUploadManager::cleanupExpiredSessions() {
+    time_t now = time(0);
+    std::vector<std::string> expired_ids;
+    std::vector<std::string> temp_files_to_remove;
+
+    {
+        std::shared_lock<std::shared_mutex> lock(m_mtx);
+        for (auto& kv : m_sessions) {
+            auto& session = kv.second;
+            if (now - session->created_at > k_session_ttl) {
+                expired_ids.push_back(kv.first);
+                // 收集临时文件路径
+                std::lock_guard<std::mutex> slock(session->m_mtx);
+                for (size_t i = 0; i < session->total_chunks; ++i) {
+                    if (!session->chunk_data[i].empty()) {
+                        temp_files_to_remove.push_back(session->chunk_data[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    // 清理临时文件
+    for (auto& fp : temp_files_to_remove) {
+        chen::FSUtil::Unlink(fp, true);
+    }
+
+    // 移除过期会话
+    if (!expired_ids.empty()) {
+        std::lock_guard<std::shared_mutex> lock(m_mtx);
+        for (auto& id : expired_ids) {
+            m_sessions.erase(id);
+        }
+        INFO(g_logger) << "Cleaned up " << expired_ids.size() << " expired upload sessions";
+    }
 }
