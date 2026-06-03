@@ -14,11 +14,11 @@ int32_t RdOrganizationsServlet::handle(chen::http::HttpRequest::ptr request, che
     do {
         int64_t uid = getUserId(request);
 
-        std::vector<data::OrganizationUserRelInfo::ptr> userOrgs;
-        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(userOrgs, uid, -1, true);
+        std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
+        OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, -1, true);
 
         Json::Value arr(Json::arrayValue);
-        for (auto& rel : userOrgs) {
+        for (auto& rel : user_orgs) {
             if (rel->getRole() < OrganizationManager::Role::REPORTER) {
                 continue;
             }

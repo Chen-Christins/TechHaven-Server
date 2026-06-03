@@ -7,11 +7,11 @@ namespace blog {
 namespace servlet {
 
 UserAdminListsServlet::UserAdminListsServlet()
-    :BlogLoginedServlet("UserAdminListsServlet") {
+    : BlogLoginedServlet("UserAdminListsServlet") {
 }
 
 int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        , chen::http::HttpSession::ptr session, Result::ptr result) { 
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_size, "page_size");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, page_num, "page_num");
@@ -34,7 +34,7 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
         uint64_t offset = (page_num - 1) * page_size;
         std::vector<data::UserInfo::ptr> users;
         uint64_t total = UserMgr::GetInstance()->listByPages(users, offset, page_size, rrole, state, days, false);
-        
+
         result->set("total", total);
         auto& list = result->jsondata["list"];
         for (const auto& user : users) {
@@ -42,7 +42,7 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
             item["id"] = user->getId();
             item["name"] = user->getName();
             item["email"] = user->getEmail();
-			item["avatar"] = user->getAvatar();
+            item["avatar"] = user->getAvatar();
             item["role"] = user->getRole();
             item["state"] = user->getState();
             item["create_time"] = user->getCreateTime();

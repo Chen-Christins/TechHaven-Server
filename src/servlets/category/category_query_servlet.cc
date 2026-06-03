@@ -4,14 +4,13 @@
 #include "../../manager/article_category_rel_manager.h"
 #include <chen/log/log.h>
 
-
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryQueryServlet::CategoryQueryServlet()
-    :BlogLoginedServlet("CategoryQueryServlet") {
+    : BlogLoginedServlet("CategoryQueryServlet") {
 }
 
 int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -41,19 +40,19 @@ int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen:
             item["create_time"] = (Json::Int64)cat->getCreateTime();
             item["update_time"] = (Json::Int64)cat->getUpdateTime();
 
-            int64_t articleCount = 0;
-            int64_t viewCount = 0;
+            int64_t article_count = 0;
+            int64_t view_count = 0;
             std::vector<blog::data::ArticleCategoryRelInfo::ptr> rels;
             ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, cat->getId(), true);
             for (const auto& rel : rels) {
                 auto article = ArticleMgr::GetInstance()->get(rel->getArticleId());
                 if (article) {
-                    ++articleCount;
-                    viewCount += article->getViews();
+                    ++article_count;
+                    view_count += article->getViews();
                 }
             }
-            item["article_count"] = (Json::Int64)articleCount;
-            item["view_count"] = (Json::Int64)viewCount;
+            item["article_count"] = (Json::Int64)article_count;
+            item["view_count"] = (Json::Int64)view_count;
 
             list.append(item);
         }

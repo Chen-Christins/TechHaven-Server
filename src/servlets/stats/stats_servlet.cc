@@ -2,7 +2,6 @@
 #include "../../manager/article_manager.h"
 #include "../../manager/notification_manager.h"
 
-
 namespace blog {
 namespace servlet {
 

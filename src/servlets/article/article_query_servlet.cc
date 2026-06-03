@@ -20,9 +20,9 @@ int32_t ArticleQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::
         int64_t user_id = request->getParamAs<int64_t>("user_id");
         int64_t page_from = request->getParamAs<int64_t>("page_from");
         int64_t page_size = request->getParamAs<int64_t>("page_size", 6);
-		int64_t state = request->getParamAs<int64_t>("state", 0);
-        
-		int offset = (page_from - 1) * page_size;
+        int64_t state = request->getParamAs<int64_t>("state", 0);
+
+        int offset = (page_from - 1) * page_size;
         std::vector<data::ArticleInfo::ptr> infos;
         auto total = ArticleMgr::GetInstance()->listByUserIdPages(infos, user_id, offset, page_size, true, state);
         result->set("total", total);

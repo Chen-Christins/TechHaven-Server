@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 ArticleIsPraisingServlet::ArticleIsPraisingServlet()
-    :BlogLoginedServlet("ArticleIsPraisingServlet") {
+    : BlogLoginedServlet("ArticleIsPraisingServlet") {
 }
 
 int32_t ArticleIsPraisingServlet::handle(chen::http::HttpRequest::ptr request,

@@ -26,9 +26,9 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         }
 
         data::UserInfo::ptr info;
-        if (is_email(auth_id)) {
+        if (IsEmail(auth_id)) {
             info = UserMgr::GetInstance()->getByEmail(auth_id);
-        } else if (is_vaild_account(auth_id)) {
+        } else if (IsValidAccount(auth_id)) {
             info = UserMgr::GetInstance()->getByAccount(auth_id);
         } else {
             result->setResult(402, "invalid auth_id");
@@ -46,7 +46,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
 
         if (info->getState() != 1 || info->getIsDeleted()) {
             result->setResult(406, "account invalid state");
-			break;
+            break;
         }
 
         auto db = getDB();
@@ -54,14 +54,14 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             result->setResult(500, "get db error");
             break;
         }
-        
+
         int64_t now = time(0);
-        int32_t sessionTimeout = 24;
-        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
-        if (sysSettings && sysSettings->getSessionTimeout() > 0) {
-            sessionTimeout = sysSettings->getSessionTimeout();
+        int32_t session_timeout = 24;
+        auto sys_settings = SystemSettingsMgr::GetInstance()->get();
+        if (sys_settings && sys_settings->getSessionTimeout() > 0) {
+            session_timeout = sys_settings->getSessionTimeout();
         }
-        int64_t token_time = now + 3600 * sessionTimeout;
+        int64_t token_time = now + 3600 * session_timeout;
         std::string token = UserManager::generateToken();
 
         info->setToken(token);
@@ -71,7 +71,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         data::UserInfoDao::Update(info, db);
         INFO(logger) << "update used: " << (chen::GetCurrentUs() - ts1) / 1000.0 << " ms";
 
-        response->setCookie(CookieKey::USER_ID, encryptUserId(info->getId()), token_time, "/");
+        response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");
         response->setCookie(CookieKey::TOKEN, token, token_time, "/");
         response->setCookie(CookieKey::TOKEN_TIME, std::to_string(token_time), token_time, "/");
         sdata->setData(CookieKey::USER_ID, info->getId());

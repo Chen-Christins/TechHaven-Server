@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 UserIsFollowingServlet::UserIsFollowingServlet()
-    :BlogLoginedServlet("UserIsFollowingServlet") {
+    : BlogLoginedServlet("UserIsFollowingServlet") {
 }
 
 int32_t UserIsFollowingServlet::handle(chen::http::HttpRequest::ptr request,

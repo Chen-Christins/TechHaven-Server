@@ -17,9 +17,9 @@ int32_t UserExistsServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
     do {
         DEFINE_AND_CHECK_STRING(result, auth_id, "auth_id");
         data::UserInfo::ptr info;
-        if (is_email(auth_id)) {
+        if (IsEmail(auth_id)) {
             info = UserMgr::GetInstance()->getByEmail(auth_id);
-        } else if (is_vaild_account(auth_id)) {
+        } else if (IsValidAccount(auth_id)) {
             info = UserMgr::GetInstance()->getByAccount(auth_id);
         } else {
             result->setResult(402, "invalid auth_id");

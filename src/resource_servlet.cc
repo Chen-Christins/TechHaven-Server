@@ -11,7 +11,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 ResourceServlet::ResourceServlet(const std::string& path)
         : Servlet("ResourceServlet")
         , m_path(path) {
-	m_content = "<html><head><title>404 Not Found"
+    m_content = "<html><head><title>404 Not Found"
         "</title></head><body><center><h1>404 Not Found</h1></center>"
         "<hr><center>" + chen::EnvMgr::GetInstance()->getEnv("server") + "</center></body></html>";
 }
@@ -19,15 +19,15 @@ ResourceServlet::ResourceServlet(const std::string& path)
 int32_t ResourceServlet::handle(HttpRequest::ptr request, HttpResponse::ptr response
                     ,HttpSession::ptr session) {
     std::string rpath = request->getPath();
-	
-	auto path = m_path + rpath;
+
+    auto path = m_path + rpath;
     INFO(logger) << path;
     if (path.find("..") != std::string::npos) {
         response->setBody(m_content);
         response->setStatus(HttpStatus::NOT_FOUND);
         return 0;
     }
-	std::ifstream ifs(path);
+    std::ifstream ifs(path);
 
     std::string line;
     std::stringstream ss;

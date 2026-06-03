@@ -12,11 +12,11 @@ namespace blog {
 namespace servlet {
 
 CommentCreateServlet::CommentCreateServlet()
-    :BlogLoginedServlet("CommentCreateServlet") {
+    : BlogLoginedServlet("CommentCreateServlet") {
 }
 
 int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -80,46 +80,48 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         result->setResult(200, "ok");
 
         // 异步通知扇出：评论者信息 + 通知目标用户
-        int64_t commenterId = uid;
-        int64_t commentId = info->getId();
-        int64_t authorId = article->getUserId();
-        std::string articleTitle = article->getTitle();
-        int64_t replyToParentId = parent_id;
+        int64_t commenter_id = uid;
+        int64_t comment_id = info->getId();
+        int64_t author_id = article->getUserId();
+        std::string article_title = article->getTitle();
+        int64_t reply_to_parent_id = parent_id;
 
         chen::IOManager::GetThis()->schedule(
-            [commenterId, commentId, authorId, articleTitle, article_id, replyToParentId]() {
-                auto commenterInfo = UserMgr::GetInstance()->get(commenterId);
-                std::string commenterName = commenterInfo ? commenterInfo->getName() : "someone";
+            [commenter_id, comment_id, author_id, article_title, article_id, reply_to_parent_id]() {
+                auto commenter_info = UserMgr::GetInstance()->get(commenter_id);
+                std::string commenter_name = commenter_info ? commenter_info->getName() : "someone";
 
-                auto sendNotify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
-                    if (targetUid == commenterId) return;
-                    auto notifInfo = NotificationMgr::GetInstance()->addNotification(
-                        targetUid, title, content, "comment", commenterId, article_id, commentId);
-                    if (notifInfo) {
+                auto send_notify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
+                    if (targetUid == commenter_id) {
+                        return;
+                    }
+                    auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                        targetUid, title, content, "comment", commenter_id, article_id, comment_id);
+                    if (notif_info) {
                         Json::Value wsMsg;
-                        wsMsg["id"] = notifInfo->getId();
+                        wsMsg["id"] = notif_info->getId();
                         wsMsg["title"] = title;
                         wsMsg["content"] = content;
                         wsMsg["type"] = "comment";
                         wsMsg["article_id"] = article_id;
-                        wsMsg["comment_id"] = commentId;
+                        wsMsg["comment_id"] = comment_id;
                         wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notifInfo->getCreateTime();
+                        wsMsg["create_time"] = notif_info->getCreateTime();
                         NotificationMgr::GetInstance()->sendToUser(targetUid,
                             chen::JsonUtil::ToString(wsMsg));
                     }
                 };
 
                 // notify article author
-                sendNotify(authorId, "文章评论",
-                    commenterName + " 评论了你的文章《" + articleTitle + "》");
+                send_notify(author_id, "文章评论",
+                    commenter_name + " 评论了你的文章《" + article_title + "》");
 
                 // notify parent comment author on reply
-                if (replyToParentId > 0) {
-                    auto parent = CommentMgr::GetInstance()->get(replyToParentId);
-                    if (parent && parent->getUserId() != authorId) {
-                        sendNotify(parent->getUserId(), "评论回复",
-                            commenterName + " 回复了你的评论");
+                if (reply_to_parent_id > 0) {
+                    auto parent = CommentMgr::GetInstance()->get(reply_to_parent_id);
+                    if (parent && parent->getUserId() != author_id) {
+                        send_notify(parent->getUserId(), "评论回复",
+                            commenter_name + " 回复了你的评论");
                     }
                 }
             });

@@ -9,11 +9,11 @@ namespace blog {
 namespace servlet {
 
 AdminCommentDeleteServlet::AdminCommentDeleteServlet()
-    :BlogLoginedServlet("AdminCommentDeleteServlet") {
+    : BlogLoginedServlet("AdminCommentDeleteServlet") {
 }
 
 int32_t AdminCommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-    	, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {

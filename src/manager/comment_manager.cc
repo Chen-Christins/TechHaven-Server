@@ -269,7 +269,9 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
 
     int64_t total = filtered.size();
     int64_t start = (page_num - 1) * page_size;
-    if (start < 0) start = 0;
+    if (start < 0) {
+        start = 0;
+    }
 
     for (int64_t i = start; i < total && (int64_t)results.size() < page_size; i++) {
         results.push_back(filtered[i]);
@@ -331,9 +333,15 @@ CommentManager::CommentStats CommentManager::getStats() {
         }
         stats.total++;
         switch (info->getStatus()) {
-            case PENDING: stats.pending++; break;
-            case APPROVED: stats.approved++; break;
-            case SPAM: stats.spam++; break;
+        case PENDING:
+            stats.pending++;
+            break;
+        case APPROVED:
+            stats.approved++;
+            break;
+        case SPAM:
+            stats.spam++;
+            break;
         }
         if (info->getIsReported()) {
             stats.reported++;

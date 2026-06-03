@@ -35,7 +35,7 @@ public:
                              ,int32_t offset, int32_t size, bool valid);
     int64_t listByCategoryPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t category_id
                                 ,int32_t offset, int32_t size, bool valid);
-    
+
     void delVerify(int64_t id);
     void addVerify(data::ArticleInfo::ptr info);
 
@@ -95,7 +95,7 @@ private:
     std::map<int64_t, blog::data::ArticleInfo::ptr> m_verifys;
     /// 文章浏览数
     std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
-    /// 
+    ///
     std::set<int64_t> m_updates;
     chen::Timer::ptr m_timer;
     chen::Timer::ptr m_updateTimer;

@@ -91,7 +91,7 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
         if (!passwd.empty()) {
             int64_t token_time = time(0) + 3600 * 24;
-            response->setCookie(CookieKey::USER_ID, encryptUserId(info->getId()), token_time, "/");
+            response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");
             auto token = UserMgr::GetInstance()->GetToken(info, token_time);
             response->setCookie(CookieKey::TOKEN, token, token_time, "/");
             response->setCookie(CookieKey::TOKEN_TIME, std::to_string(token_time), token_time, "/");

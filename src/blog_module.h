@@ -19,53 +19,53 @@ public:
     /**
      * @brief 构造函数
      */
-	BlogModule();
+    BlogModule();
 
-	/**
-	 * @brief 模块加载
-	 * @return bool 
-	 */
+    /**
+     * @brief 模块加载
+     * @return bool
+     */
     bool onLoad() override;
 
-	/**
-	 * @brief 模块卸载
-	 * @return bool 
-	 */
+    /**
+     * @brief 模块卸载
+     * @return bool
+     */
     bool onUnload() override;
 
-	/**
-	 * @brief 服务器就绪
-	 * @return bool 
-	 */
+    /**
+     * @brief 服务器就绪
+     * @return bool
+     */
     bool onServerReady() override;
 
-	/**
-	 * @brief 服务器启动
-	 * @return bool 
-	 */
+    /**
+     * @brief 服务器启动
+     * @return bool
+     */
     bool onServerUp() override;
 
 private:
 
-	/**
-	 * @brief 初始化数据库
-	 */
-	bool initDB();
+    /**
+     * @brief 初始化数据库
+     */
+    bool initDB();
 
-	/**
-	 * @brief 加载所有数据到内存
-	 */
-	void loadAllData();
+    /**
+     * @brief 加载所有数据到内存
+     */
+    void loadAllData();
 
-	/**
-	 * @brief 注册Servlet
-	 */
-	void registerServlets(std::vector<chen::TcpServer::ptr>& servers);
+    /**
+     * @brief 注册Servlet
+     */
+    void registerServlets(std::vector<chen::TcpServer::ptr>& servers);
 
-	/**
-	 * @brief 注册WebSocket Servlet
-	 */
-	void registerWSServlets(std::vector<chen::TcpServer::ptr>& servers);
+    /**
+     * @brief 注册WebSocket Servlet
+     */
+    void registerWSServlets(std::vector<chen::TcpServer::ptr>& servers);
 };
 
 }

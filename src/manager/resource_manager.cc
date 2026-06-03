@@ -86,7 +86,7 @@ data::ResourceInfo::ptr ResourceManager::get(int64_t id) {
 
 void ResourceManager::getByHash(std::vector<data::ResourceInfo::ptr>& results, const std::string& hash) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
-    
+
     for (auto& [f, info] : m_biz_uid_name_map[hash]) {
         results.push_back(info);
     }

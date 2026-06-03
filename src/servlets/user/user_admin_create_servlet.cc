@@ -9,7 +9,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 UserAdminCreateServlet::UserAdminCreateServlet()
-    :BlogLoginedServlet("UserAdminCreateServlet") {
+    : BlogLoginedServlet("UserAdminCreateServlet") {
 }
 
 int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -26,9 +26,9 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
             result->setResult(500, "not login");
             break;
         }
-        int32_t userRole = UserMgr::GetInstance()->get(uid)->getRole();
+        int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
 
-        if (userRole != UserManager::Role::ADMIN) {
+        if (user_role != UserManager::Role::ADMIN) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -49,11 +49,11 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
             result->setResult(401, "email exists");
             break;
         }
-        if (!is_email(email)) {
+        if (!IsEmail(email)) {
             result->setResult(402, "invalid email format");
             break;
         }
-        if (!is_vaild_account(account)) {
+        if (!IsValidAccount(account)) {
             result->setResult(402, "invalid account");
             break;
         }

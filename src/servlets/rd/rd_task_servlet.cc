@@ -1,9 +1,9 @@
 #include "rd_task_servlet.h"
-#include "rd_helper.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/task_manager.h"
 #include "../../permission.h"
+#include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
@@ -18,8 +18,8 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
         int64_t id = request->getParamAs<int64_t>("id", 0);
         int64_t org_id = request->getParamAs<int64_t>("org_id", 0);
         int64_t uid = getUserId(request);
-        int32_t systemRole = UserMgr::GetInstance()->get(uid)->getRole();
-        bool isPlatformAdmin = (systemRole == UserManager::Role::ADMIN);
+        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        bool is_platform_admin = (system_role == UserManager::Role::ADMIN);
 
         if (id) {
             auto info = TaskMgr::GetInstance()->get(id);
@@ -27,48 +27,48 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
                 result->setResult(404, "task not exist");
                 break;
             }
-            int64_t infoOrgId = info->getOrgId();
-            if (!isPlatformAdmin) {
-                auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(infoOrgId, uid);
+            int64_t info_org_id = info->getOrgId();
+            if (!is_platform_admin) {
+                auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
                 if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
                     result->setResult(403, "Access Denied");
                     break;
                 }
-                bool isRelated = (uid == info->getCreatorId() || uid == info->getAssigneeId());
-                if (!permission::canViewTask(rel->getRole(), isRelated)) {
+                bool is_related = (uid == info->getCreatorId() || uid == info->getAssigneeId());
+                if (!permission::CanViewTask(rel->getRole(), is_related)) {
                     result->setResult(403, "Access Denied");
                     break;
                 }
             }
-            rd::buildTaskJson(result->jsondata, info);
+            rd::BuildTaskJson(result->jsondata, info);
             break;
         }
 
         uint64_t page = request->getParamAs<uint64_t>("page", 1);
-        uint64_t pageSize = request->getParamAs<uint64_t>("page_size", 10);
+        uint64_t page_size = request->getParamAs<uint64_t>("page_size", 10);
         uint64_t offset, size;
-        rd::parsePagination(page, pageSize, offset, size);
+        rd::ParsePagination(page, page_size, offset, size);
 
         std::string search = request->getParam("search");
-        std::string statusStr = request->getParam("status");
-        std::string priorityStr = request->getParam("priority");
-        int64_t filterAssigneeId = request->getParamAs<int64_t>("assignee_id", 0);
+        std::string status_str = request->getParam("status");
+        std::string priority_str = request->getParam("priority");
+        int64_t filter_assignee_id = request->getParamAs<int64_t>("assignee_id", 0);
 
         std::vector<data::TaskInfo::ptr> all;
-        if (isPlatformAdmin && org_id) {
+        if (is_platform_admin && org_id) {
             TaskMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
-        } else if (!isPlatformAdmin) {
-            std::vector<data::OrganizationUserRelInfo::ptr> userOrgs;
-            OrganizationUserRelMgr::GetInstance()->getOrgByUserId(userOrgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
-            for (auto& rel : userOrgs) {
+        } else if (!is_platform_admin) {
+            std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
+            OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
+            for (auto& rel : user_orgs) {
                 if (org_id && rel->getOrgId() != org_id) {
                     continue;
                 }
-                std::vector<data::TaskInfo::ptr> orgTasks;
-                TaskMgr::GetInstance()->listByOrg(orgTasks, rel->getOrgId(), 0, UINT64_MAX, -1, true);
-                for (auto& task : orgTasks) {
-                    bool isRelated = (uid == task->getCreatorId() || uid == task->getAssigneeId());
-                    if (permission::canViewTask(rel->getRole(), isRelated)) {
+                std::vector<data::TaskInfo::ptr> org_tasks;
+                TaskMgr::GetInstance()->listByOrg(org_tasks, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                for (auto& task : org_tasks) {
+                    bool is_related = (uid == task->getCreatorId() || uid == task->getAssigneeId());
+                    if (permission::CanViewTask(rel->getRole(), is_related)) {
                         all.push_back(task);
                     }
                 }
@@ -79,13 +79,13 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
 
         std::vector<data::TaskInfo::ptr> filtered;
         for (auto& info : all) {
-            if (!statusStr.empty() && rd::stringToTaskStatus(statusStr) != info->getStatus()) {
+            if (!status_str.empty() && rd::StringToTaskStatus(status_str) != info->getStatus()) {
                 continue;
             }
-            if (!priorityStr.empty() && rd::stringToPriority(priorityStr) != info->getPriority()) {
+            if (!priority_str.empty() && rd::StringToPriority(priority_str) != info->getPriority()) {
                 continue;
             }
-            if (filterAssigneeId && info->getAssigneeId() != filterAssigneeId) {
+            if (filter_assignee_id && info->getAssigneeId() != filter_assignee_id) {
                 continue;
             }
             if (!search.empty()) {
@@ -101,13 +101,13 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
         Json::Value arr(Json::arrayValue);
         for (uint64_t i = offset; i < filtered.size() && arr.size() < size; ++i) {
             Json::Value item;
-            rd::buildTaskJson(item, filtered[i]);
+            rd::BuildTaskJson(item, filtered[i]);
             arr.append(item);
         }
         result->set("total", total);
         result->set("list", arr);
     } while (0);
-    
+
     response->setBody(result->toJsonString());
     return 0;
 }

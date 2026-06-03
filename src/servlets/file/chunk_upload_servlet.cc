@@ -16,7 +16,7 @@ namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static chen::ConfigVar<std::string>::ptr server_work_path = 
+static chen::ConfigVar<std::string>::ptr server_work_path =
     chen::Config::Lookup<std::string>("server.work_path");
 
 ChunkUploadServlet::ChunkUploadServlet()
@@ -70,7 +70,7 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
         uint64_t total_size = std::stoull(request->getHeader("X-Upload-Total-Size"));
         uint64_t total_chunks = std::stoull(request->getHeader("X-Upload-Total-Chunks"));
         uint32_t chunk_size = std::stoul(request->getHeader("X-Upload-Chunk-Size"));
-        
+
         if (type != "chunked") {
             result->setResult(400, "Invalid upload type");
             break;
@@ -99,7 +99,7 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
     response->setBody(result->toJsonString());
     return 0;
 }
-    
+
 int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
@@ -123,8 +123,8 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
 
         // 检查是否所有分块都已接收
         {
-            std::lock_guard<std::mutex> lock(upload_session->mtx);
-            if (upload_session->receivedCount != upload_session->totalChunks) {
+            std::lock_guard<std::mutex> lock(upload_session->m_mtx);
+            if (upload_session->received_count != upload_session->total_chunks) {
                 result->setResult(400, "Not all chunks uploaded");
                 break;
             }
@@ -132,24 +132,24 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         }
 
         int64_t uid = getUserId(request);
-        std::string subject_name = AssignmentMgr::GetInstance()->get(upload_session->bizId)->getSubjectName();
+        std::string subject_name = AssignmentMgr::GetInstance()->get(upload_session->biz_id)->getSubjectName();
         std::string user_name = UserMgr::GetInstance()->get(uid)->getName();
-        std::string dir_name = upload_session->bizType + "/" + subject_name + 
-            "/" + upload_session->dirName + "/" + user_name;
-		std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
+        std::string dir_name = upload_session->biz_type + "/" + subject_name +
+            "/" + upload_session->dir_name + "/" + user_name;
+        std::string save_dir = server_work_path->getValue() + "/uploads/" + dir_name;
 
         INFO(logger) << "File upload save dir: " << save_dir;
 
-        std::string filename = save_dir + "/" + upload_session->fileName;
+        std::string filename = save_dir + "/" + upload_session->file_name;
         std::ofstream ofs;
         bool rt = chen::FSUtil::OpenForWrite(ofs, filename, std::ios::binary);
 
         if (rt) {
-            for (size_t i = 0; i < upload_session->totalChunks; ++i) {
+            for (size_t i = 0; i < upload_session->total_chunks; ++i) {
                 // 从临时文件读取并写入最终文件
-                std::ifstream temp_file(upload_session->chunkData[i], std::ios::binary);
+                std::ifstream temp_file(upload_session->chunk_data[i], std::ios::binary);
                 if (!temp_file.is_open()) {
-                    ERROR(logger) << "Failed to open temp file: " << upload_session->chunkData[i];
+                    ERROR(logger) << "Failed to open temp file: " << upload_session->chunk_data[i];
                     result->setResult(500, "Failed to assemble file");
                     ofs.close();
                     break;
@@ -170,14 +170,14 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
                 temp_file.close();
 
                 // 删除临时文件
-                std::remove(upload_session->chunkData[i].c_str());
+                std::remove(upload_session->chunk_data[i].c_str());
             }
         }
         ofs.close();
 
-        INFO(logger) << "File saved: " << filename << " (Size: " << upload_session->totalSize
-                << " bytes -- " << (1.0 * upload_session->totalSize / 1024)
-                << " kb -- " << (1.0 * upload_session->totalSize / (1024 * 1024)) << " mb)";
+        INFO(logger) << "File saved: " << filename << " (Size: " << upload_session->total_size
+                << " bytes -- " << (1.0 * upload_session->total_size / 1024)
+                << " kb -- " << (1.0 * upload_session->total_size / (1024 * 1024)) << " mb)";
 
         // 计算文件MD5，避免内存问题
         std::ifstream final_file(filename, std::ios::binary);
@@ -192,8 +192,8 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
             result->setResult(500, "Failed to calculate file hash");
             break;
         }
-        std::string path = "/uploads/" + dir_name + "/" + upload_session->fileName;
-        if (!dumpToResource(upload_session->bizType, upload_session->bizId, path, hash_key, uid, upload_session->totalSize)) {
+        std::string path = "/uploads/" + dir_name + "/" + upload_session->file_name;
+        if (!dumpToResource(upload_session->biz_type, upload_session->biz_id, path, hash_key, uid, upload_session->total_size)) {
             result->setResult(500, "Dump to resource fail");
             break;
         }
@@ -206,9 +206,9 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
             break;
         }
         // 查找是否已存在该用户该作业的记录
-        auto old_info = AssignmentUserRelMgr::GetInstance()->getByAssignAndUser(upload_session->bizId, uid);
+        auto old_info = AssignmentUserRelMgr::GetInstance()->getByAssignAndUser(upload_session->biz_id, uid);
         auto info = std::make_shared<data::AssignmentUserRelInfo>();
-        info->setAssignmentId(upload_session->bizId);
+        info->setAssignmentId(upload_session->biz_id);
         info->setUserId(uid);
         info->setStatus(AssignmentUserRelManager::SUBMITTED);
         info->setSubmitTime(now);
@@ -258,10 +258,10 @@ int32_t ChunkUploadServlet::handleCancel(chen::http::HttpRequest::ptr request
         }
 
         // 清理临时文件
-        std::lock_guard<std::mutex> lock(upload_session->mtx);
-        for (size_t i = 0; i < upload_session->totalChunks; ++i) {
-            if (upload_session->receivedChunks[i] && !upload_session->chunkData[i].empty()) {
-                std::remove(upload_session->chunkData[i].c_str());
+        std::lock_guard<std::mutex> lock(upload_session->m_mtx);
+        for (size_t i = 0; i < upload_session->total_chunks; ++i) {
+            if (upload_session->received_chunks[i] && !upload_session->chunk_data[i].empty()) {
+                std::remove(upload_session->chunk_data[i].c_str());
             }
         }
 
@@ -297,12 +297,12 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
             break;
         }
 
-        std::lock_guard<std::mutex> lock(upload_session->mtx);
-        if (chunk_index >= upload_session->totalChunks) {
+        std::lock_guard<std::mutex> lock(upload_session->m_mtx);
+        if (chunk_index >= upload_session->total_chunks) {
             result->setResult(400, "Invalid chunk index");
             break;
         }
-        if (upload_session->receivedChunks[chunk_index]) {
+        if (upload_session->received_chunks[chunk_index]) {
             result->setResult(400, "Chunk already received");
             break;
         }
@@ -325,9 +325,9 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
         temp_file.close();
 
         // 只保存文件路径，不保存数据内容
-        upload_session->chunkData[chunk_index] = temp_file_path;
-        upload_session->receivedChunks[chunk_index] = true;
-        upload_session->receivedCount++;
+        upload_session->chunk_data[chunk_index] = temp_file_path;
+        upload_session->received_chunks[chunk_index] = true;
+        upload_session->received_count++;
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
@@ -353,13 +353,13 @@ int32_t ChunkUploadServlet::handleStatus(chen::http::HttpRequest::ptr request
             result->setResult(404, "Upload session not found");
             break;
         }
-        
+
         // FIXME: 这里返回的信息可以更详细一些，比如哪些分块已接收，哪些未接收
-        result->set("upload_id", upload_session->uploadId);
-        result->set("file_name", upload_session->fileName);
-        result->set("total_size", upload_session->totalSize);
-        result->set("total_chunks", upload_session->totalChunks);
-        result->set("received_chunks", upload_session->receivedCount);
+        result->set("upload_id", upload_session->upload_id);
+        result->set("file_name", upload_session->file_name);
+        result->set("total_size", upload_session->total_size);
+        result->set("total_chunks", upload_session->total_chunks);
+        result->set("received_chunks", upload_session->received_count);
         result->set("completed", upload_session->completed);
     } while (0);
     response->setBody(result->toJsonString());

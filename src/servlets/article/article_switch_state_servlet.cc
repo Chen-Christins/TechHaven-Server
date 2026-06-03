@@ -10,7 +10,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 ArticleSwitchStateServlet::ArticleSwitchStateServlet()
-    :BlogLoginedServlet("ArticleSwitchStateServlet") {
+    : BlogLoginedServlet("ArticleSwitchStateServlet") {
 }
 
 int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
@@ -24,7 +24,7 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
             result->setResult(500, "not login");
             break;
         }
-        
+
         auto article = ArticleMgr::GetInstance()->get(id);
         if (!article) {
             result->setResult(404, "article not found");

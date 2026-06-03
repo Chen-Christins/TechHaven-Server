@@ -16,7 +16,7 @@ int32_t OrganizationListServlet::handle(chen::http::HttpRequest::ptr request, ch
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int32_t status = request->getParamAs<int32_t>("status", -1);
-        
+
         std::vector<data::OrganizationInfo::ptr> orgs;
         int64_t total = OrganizationMgr::GetInstance()->listByPages(orgs, 0, UINT64_MAX, status, true);
 

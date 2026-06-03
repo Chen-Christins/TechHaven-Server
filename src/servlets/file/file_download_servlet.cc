@@ -6,7 +6,6 @@
 #include "../../manager/resource_manager.h"
 #include <fstream>
 
-
 namespace blog {
 namespace servlet {
 
@@ -15,9 +14,9 @@ static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup
 static const int64_t MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB文件大小限制
 
 // 安全处理文件名，移除危险字符
-std::string sanitizeFileName(const std::string& fileName) {
+std::string SanitizeFileName(const std::string& file_name) {
     std::string result;
-    for (char c : fileName) {
+    for (char c : file_name) {
         // 只保留安全字符：字母、数字、点、下划线、连字符
         if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
             (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-') {
@@ -30,7 +29,7 @@ std::string sanitizeFileName(const std::string& fileName) {
 }
 
 // 验证路径安全性，防止路径遍历
-bool isPathSafe(const std::string& path) {
+bool IsPathSafe(const std::string& path) {
     // 检查是否包含路径遍历字符
     if (path.find("..") != std::string::npos) {
         return false;
@@ -59,8 +58,8 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         DEFINE_AND_CHECK_STRING(result, fileName, "fileName");
 
         // 安全处理文件名
-        std::string safeFileName = sanitizeFileName(fileName);
-        if (safeFileName.empty()) {
+        std::string safe_file_name = SanitizeFileName(fileName);
+        if (safe_file_name.empty()) {
             result->setResult(400, "Invalid file name");
             break;
         }
@@ -72,7 +71,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         // 验证路径安全性
-        if (!isPathSafe(res_info->getPath())) {
+        if (!IsPathSafe(res_info->getPath())) {
             result->setResult(400, "Invalid file path");
             break;
         }
@@ -92,7 +91,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         INFO(logger) << "File download: " << res_info->getPath();
 
         // 设置安全的响应头
-        response->setHeader("Content-Disposition", "attachment; filename=\"" + safeFileName + "\"");
+        response->setHeader("Content-Disposition", "attachment; filename=\"" + safe_file_name + "\"");
         response->setHeader("Content-Type", "application/octet-stream");
         // 移除手动设置的Content-Length，让框架自动处理
 
@@ -114,8 +113,8 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         // 但对于大文件，这会导致内存问题，所以先检查文件大小
         if (res_info->getSize() > 20 * 1024 * 1024) { // 20MB阈值
             // 对于大文件，使用简化的流式方法：一次性读取
-            std::string fileContent;
-            fileContent.reserve(res_info->getSize());
+            std::string file_content;
+            file_content.reserve(res_info->getSize());
 
             ifs.clear();
             ifs.seekg(0, std::ios::beg);
@@ -125,7 +124,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
 
             while (ifs.read(buffer.data(), BUFFER_SIZE) || ifs.gcount() > 0) {
                 std::streamsize bytesRead = ifs.gcount();
-                fileContent.append(buffer.data(), bytesRead);
+                file_content.append(buffer.data(), bytesRead);
             }
 
             if (ifs.bad()) {
@@ -133,18 +132,18 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
                 break;
             }
 
-            response->setBody(fileContent);
+            response->setBody(file_content);
         } else {
             // 对于较小文件，使用原来的分块方法但累积内容
-            std::string fileContent;
-            fileContent.reserve(res_info->getSize());
+            std::string file_content;
+            file_content.reserve(res_info->getSize());
 
             const std::streamsize CHUNK_SIZE = 8192; // 8KB块大小
             std::vector<char> buffer(CHUNK_SIZE);
 
             while (ifs.read(buffer.data(), CHUNK_SIZE) || ifs.gcount() > 0) {
                 std::streamsize bytesRead = ifs.gcount();
-                fileContent.append(buffer.data(), bytesRead);
+                file_content.append(buffer.data(), bytesRead);
             }
 
             if (ifs.bad()) {
@@ -152,7 +151,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
                 break;
             }
 
-            response->setBody(fileContent);
+            response->setBody(file_content);
         }
 
         success = true;

@@ -11,7 +11,7 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryDeleteServlet::CategoryDeleteServlet()
-    :BlogLoginedServlet("CategoryDeleteServlet") {
+    : BlogLoginedServlet("CategoryDeleteServlet") {
 }
 
 void get_delete_values(std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr> > parent_map
@@ -34,64 +34,64 @@ void get_delete_values(std::map<int64_t, std::map<int64_t, data::CategoryInfo::p
 
 int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_STRING(result, ids, "ids");
-		std::set<int64_t> cat_ids;
-		auto tmp = chen::split(ids, ",");
-		for (auto& i : tmp) {
-			cat_ids.insert(chen::TypeUtil::Atoi(i));
-		}
+    do {
+        DEFINE_AND_CHECK_STRING(result, ids, "ids");
+        std::set<int64_t> cat_ids;
+        auto tmp = chen::split(ids, ",");
+        for (auto& i : tmp) {
+            cat_ids.insert(chen::TypeUtil::Atoi(i));
+        }
 
-		int64_t uid = getUserId(request);
-		if (!uid) {
-			result->setResult(500, "not login");
-			break;
-		}
-		std::vector<data::CategoryInfo::ptr> infos;
-		CategoryMgr::GetInstance()->listAll(infos);
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
+        std::vector<data::CategoryInfo::ptr> infos;
+        CategoryMgr::GetInstance()->listAll(infos);
         if (infos.empty()) {
             result->setResult(400, "no categories");
             break;
         }
-		std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr>> parent_map;
-		for (auto& i : infos) {
-			if (i->getParentId()) {
-				parent_map[i->getParentId()][i->getId()] = i;
-			}
-			parent_map[0][i->getId()] = i;
-		}
+        std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr>> parent_map;
+        for (auto& i : infos) {
+            if (i->getParentId()) {
+                parent_map[i->getParentId()][i->getId()] = i;
+            }
+            parent_map[0][i->getId()] = i;
+        }
 
-		std::set<data::CategoryInfo::ptr> del_cats;
-		for (auto& i : cat_ids) {
-			get_delete_values(parent_map, i, del_cats);
-		}
+        std::set<data::CategoryInfo::ptr> del_cats;
+        for (auto& i : cat_ids) {
+            get_delete_values(parent_map, i, del_cats);
+        }
 
-		auto db = getDB();
-		auto trans = db->openTransaction();
-		if (!trans) {
-			result->setResult(500, "open transaction fail");
-			break;
-		}
-		time_t now = time(0);
-		for (auto& i : del_cats) {
-			i->setIsDeleted(1);
-			i->setUpdateTime(now);
-			data::CategoryInfoDao::Update(i, db);
-		}
-		if (!trans->commit()) {
-			ERROR(logger) << "commit fail";
-			result->setResult(500, "commit fail");
+        auto db = getDB();
+        auto trans = db->openTransaction();
+        if (!trans) {
+            result->setResult(500, "open transaction fail");
+            break;
+        }
+        time_t now = time(0);
+        for (auto& i : del_cats) {
+            i->setIsDeleted(1);
+            i->setUpdateTime(now);
+            data::CategoryInfoDao::Update(i, db);
+        }
+        if (!trans->commit()) {
+            ERROR(logger) << "commit fail";
+            result->setResult(500, "commit fail");
 
-			for (auto& i : del_cats) {
-				i->setIsDeleted(0);
-			}
-			break;
-		}
-		if (!del_cats.empty()) {
+            for (auto& i : del_cats) {
+                i->setIsDeleted(0);
+            }
+            break;
+        }
+        if (!del_cats.empty()) {
             result->set("total", del_cats.size());
-			auto& jids = result->jsondata["list"];
-			for (auto& i : del_cats) {
-				Json::Value item;
+            auto& jids = result->jsondata["list"];
+            for (auto& i : del_cats) {
+                Json::Value item;
                 item["id"] = i->getId();
                 item["name"] = i->getName();
                 item["color"] = i->getColor();
@@ -101,10 +101,10 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
                 item["desc"] = i->getDescription();
                 item["status"] = i->getStatus();
                 jids.append(item);
-			}
-		}
-	} while (0);
-	response->setBody(result->toJsonString());
+            }
+        }
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

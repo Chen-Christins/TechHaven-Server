@@ -17,7 +17,7 @@ int32_t UserOrganizationListServlet::handle(chen::http::HttpRequest::ptr request
         , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
-        
+
         std::vector<data::OrganizationUserRelInfo::ptr> orgs;
         OrganizationUserRelMgr::GetInstance()->getOrgByUserId(orgs, uid, -1, true);
 

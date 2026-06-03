@@ -28,11 +28,11 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
         // 操作者权限检查
         int64_t uid = getUserId(request);
         int32_t system_role = blog::UserMgr::GetInstance()->get(uid)->getRole();
-        
+
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         int32_t org_role = rel->getRole();
-        
-        if (!permission::canSwitchRole(system_role, org_role, role)) {
+
+        if (!permission::CanSwitchRole(system_role, org_role, role)) {
             result->setResult(403, "Access Denied");
             break;
         }
@@ -55,7 +55,7 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
 
         rel->setRole(role);
         rel->setUpdateTime(time(0));
-        
+
         auto db = getDB();
         if (!db) {
             result->setResult(500, "get db error");
@@ -74,25 +74,30 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
             auto org = OrganizationMgr::GetInstance()->get(org_id);
             std::string org_name = org ? org->getName() : std::to_string(org_id);
             const char* role_name = "普通成员";
-            if (role == OrganizationManager::Role::REPORTER) role_name = "报告者";
-            else if (role == OrganizationManager::Role::DEVELOPER) role_name = "开发者";
-            else if (role == OrganizationManager::Role::DEV_LEAD) role_name = "研发主管";
-            else if (role == OrganizationManager::Role::ORG_ADMIN) role_name = "组织管理员";
+            if (role == OrganizationManager::Role::REPORTER) {
+                role_name = "报告者";
+            } else if (role == OrganizationManager::Role::DEVELOPER) {
+                role_name = "开发者";
+            } else if (role == OrganizationManager::Role::DEV_LEAD) {
+                role_name = "研发主管";
+            } else if (role == OrganizationManager::Role::ORG_ADMIN) {
+                role_name = "组织管理员";
+            }
 
             std::string title = "组织角色变更";
             std::string content = "您在组织「" + org_name + "」中的角色已被更新为" + role_name;
 
-            auto notifInfo = NotificationMgr::GetInstance()->addNotification(
+            auto notif_info = NotificationMgr::GetInstance()->addNotification(
                 user_id, title, content, "org_role_change", uid);
 
-            if (notifInfo) {
+            if (notif_info) {
                 Json::Value wsMsg;
-                wsMsg["id"] = notifInfo->getId();
+                wsMsg["id"] = notif_info->getId();
                 wsMsg["title"] = title;
                 wsMsg["content"] = content;
                 wsMsg["type"] = "org_role_change";
                 wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notifInfo->getCreateTime();
+                wsMsg["create_time"] = notif_info->getCreateTime();
                 NotificationMgr::GetInstance()->sendToUser(
                     user_id, chen::JsonUtil::ToString(wsMsg));
             }

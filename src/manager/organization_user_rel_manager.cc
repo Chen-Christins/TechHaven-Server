@@ -93,7 +93,7 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
             results.push_back(tmp[i]);
         }
     }
-    
+
     return tmp.size();
 }
 

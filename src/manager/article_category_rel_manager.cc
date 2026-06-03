@@ -17,7 +17,7 @@ bool ArticleCategoryRelManager::loadAll() {
         ERROR(logger) << "ArticleCategoryManager loadAll fail";
         return false;
     }
-    
+
     std::unordered_map<int64_t, data::ArticleCategoryRelInfo::ptr> datas;
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleCategoryRelInfo::ptr>> articles;
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleCategoryRelInfo::ptr>> categories;
@@ -31,7 +31,7 @@ bool ArticleCategoryRelManager::loadAll() {
     m_datas.swap(datas);
     m_articles.swap(articles);
     m_categories.swap(categories);
-    
+
     return true;
 }
 

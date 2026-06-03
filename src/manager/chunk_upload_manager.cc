@@ -39,5 +39,4 @@ data::ChunkUploadInfo::ptr ChunkUploadManager::get(int64_t id) {
     return it != m_datas.end() ? it->second : nullptr;
 }
 
-
 }

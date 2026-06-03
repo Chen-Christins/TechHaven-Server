@@ -9,37 +9,37 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 CategoryCreateServlet::CategoryCreateServlet()
-    :BlogLoginedServlet("CategoryCreateServlet") {
+    : BlogLoginedServlet("CategoryCreateServlet") {
 }
 
 int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_STRING(result, name, "name");
-		DEFINE_AND_CHECK_STRING(result, url, "url");
-		DEFINE_AND_CHECK_STRING(result, icon, "icon");
-		DEFINE_AND_CHECK_STRING(result, color, "color");
+    do {
+        DEFINE_AND_CHECK_STRING(result, name, "name");
+        DEFINE_AND_CHECK_STRING(result, url, "url");
+        DEFINE_AND_CHECK_STRING(result, icon, "icon");
+        DEFINE_AND_CHECK_STRING(result, color, "color");
         std::string desc = request->getParamAs<std::string>("desc");
-		int64_t parent_id = request->getParamAs<int64_t>("parent_id");
+        int64_t parent_id = request->getParamAs<int64_t>("parent_id");
         int32_t status = request->getParamAs<int32_t>("status", 1);
         int64_t cid = request->getParamAs<int64_t>("id", 0);
 
-		int64_t uid = getUserId(request);
-		if (!uid) {
-			result->setResult(500, "not login");
-			break;
-		}
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
 
-		data::CategoryInfo::ptr parent_info;
-		if (parent_id) {
-			parent_info = CategoryMgr::GetInstance()->get(parent_id);
-			if (!parent_info) {
-				result->setResult(401, "invalid parent_id");
-				break;
-			}
-		}
+        data::CategoryInfo::ptr parent_info;
+        if (parent_id) {
+            parent_info = CategoryMgr::GetInstance()->get(parent_id);
+            if (!parent_info) {
+                result->setResult(401, "invalid parent_id");
+                break;
+            }
+        }
 
-		bool new_cat = false;
+        bool new_cat = false;
         data::CategoryInfo::ptr info;
         if (cid) {
             info = CategoryMgr::GetInstance()->get(cid);
@@ -59,42 +59,42 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
                 info->setIsDeleted(0);
             }
         }
-		info->setColor(color);
-		info->setParentId(parent_id);
-		info->setIsDeleted(0);
+        info->setColor(color);
+        info->setParentId(parent_id);
+        info->setIsDeleted(0);
         info->setStatus(status);
         info->setUrl(url);
         info->setIcon(icon);
         info->setDescription(desc);
-		info->setUpdateTime(time(0));
+        info->setUpdateTime(time(0));
 
-		auto db = getDB();
-		if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+        auto db = getDB();
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
 
-		if (data::CategoryInfoDao::InsertOrUpdate(info, db)) {
-			result->setResult(500, "insert or update category fail");
-			ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
-			break;
-		}
+        if (data::CategoryInfoDao::InsertOrUpdate(info, db)) {
+            result->setResult(500, "insert or update category fail");
+            ERROR(logger) << "db error, errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr();
+            break;
+        }
 
-		if (new_cat) {
-			CategoryMgr::GetInstance()->add(info);
-		}
+        if (new_cat) {
+            CategoryMgr::GetInstance()->add(info);
+        }
 
-		result->set("id", info->getId());
-		result->set("name", info->getName());
-		result->set("color", info->getColor());
-		result->set("parent_id", parent_id);
+        result->set("id", info->getId());
+        result->set("name", info->getName());
+        result->set("color", info->getColor());
+        result->set("parent_id", parent_id);
         result->set("url", info->getUrl());
         result->set("icon", info->getIcon());
         result->set("desc", info->getDescription());
         result->set("status", info->getStatus());
-	} while (0);
-	response->setBody(result->toJsonString());
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

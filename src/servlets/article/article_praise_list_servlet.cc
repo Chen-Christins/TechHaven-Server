@@ -9,7 +9,7 @@ namespace blog {
 namespace servlet {
 
 ArticlePraiseListServlet::ArticlePraiseListServlet()
-    :BlogLoginedServlet("ArticlePraiseListServlet") {
+    : BlogLoginedServlet("ArticlePraiseListServlet") {
 }
 
 int32_t ArticlePraiseListServlet::handle(chen::http::HttpRequest::ptr request,
@@ -57,8 +57,8 @@ int32_t ArticlePraiseListServlet::handle(chen::http::HttpRequest::ptr request,
             result->set("total", ArticlePraiseRelMgr::GetInstance()->countByArticle(article_id));
         } else {
             // list articles praised by this user
-            int64_t queryUserId = user_id > 0 ? user_id : uid;
-            ArticlePraiseRelMgr::GetInstance()->listByUser(results, queryUserId, offset, size);
+            int64_t query_user_id = user_id > 0 ? user_id : uid;
+            ArticlePraiseRelMgr::GetInstance()->listByUser(results, query_user_id, offset, size);
             Json::Value arr(Json::arrayValue);
             for (auto& rel : results) {
                 Json::Value item;
@@ -73,7 +73,7 @@ int32_t ArticlePraiseListServlet::handle(chen::http::HttpRequest::ptr request,
                 arr.append(item);
             }
             result->set("list", arr);
-            result->set("total", ArticlePraiseRelMgr::GetInstance()->countByUser(queryUserId));
+            result->set("total", ArticlePraiseRelMgr::GetInstance()->countByUser(query_user_id));
         }
 
         result->setResult(200, "ok");

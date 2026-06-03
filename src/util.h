@@ -1,5 +1,12 @@
-#ifndef __BLOG_UTIL_H__
-#define __BLOG_UTIL_H__
+/**
+ * @file util.h
+ * @brief 通用工具函数（邮箱/账号校验、用户ID编解码等）
+ * @author Christins
+ * @date 2026-06-03
+ * @copyright Apache 2.0
+ */
+
+#pragma once
 
 #include <chen/db/sqlite3.h>
 #include <chen/util/hash_util.h>
@@ -8,14 +15,14 @@
 
 namespace blog {
 
-inline bool is_email(const std::string& str) {
+inline bool IsEmail(const std::string& str) {
     static const std::regex pattern("([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,8}(\\.[a-z]{2,8})?)");
     return std::regex_match(str, pattern);
 }
 
 static const std::string s_uid_secret = "BlogServer!2025$%^UID#@!EncryptKey";
 
-inline std::string encryptUserId(int64_t uid) {
+inline std::string EncryptUserId(int64_t uid) {
     std::string plain = std::to_string(uid);
     for (size_t i = 0; i < plain.size(); i++) {
         plain[i] ^= s_uid_secret[i % s_uid_secret.size()];
@@ -23,7 +30,7 @@ inline std::string encryptUserId(int64_t uid) {
     return chen::base64encode(plain);
 }
 
-inline int64_t decryptUserId(const std::string& encrypted) {
+inline int64_t DecryptUserId(const std::string& encrypted) {
     if (encrypted.empty()) {
         return 0;
     }
@@ -41,7 +48,7 @@ inline int64_t decryptUserId(const std::string& encrypted) {
     }
 }
 
-inline bool is_vaild_account(const std::string& str) {
+inline bool IsValidAccount(const std::string& str) {
     static const std::regex s_account_regex("[A-Za-z][0-9A-Za-z\\-_\\.]{4,15}");
     return std::regex_match(str, s_account_regex);
 }
@@ -51,7 +58,7 @@ inline chen::IDB::ptr GetDB() {
 }
 
 inline void SendWX(const std::string& group, const std::string& msg) {
-    // TODO: ...    
+    // TODO: ...
 }
 
 #define DEFINE_AND_CHECK_STRING(result, var, param)         \
@@ -73,4 +80,3 @@ inline void SendWX(const std::string& group, const std::string& msg) {
 
 }
 
-#endif // __BLOG_UTIL_H__

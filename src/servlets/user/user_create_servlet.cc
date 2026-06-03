@@ -35,11 +35,11 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             result->setResult(401, "email exists");
             break;
         }
-        if (!is_email(email)) {
+        if (!IsEmail(email)) {
             result->setResult(402, "invalid email format");
             break;
         }
-        if (!is_vaild_account(account)) {
+        if (!IsValidAccount(account)) {
             result->setResult(402, "invalid account");
             break;
         }
@@ -51,12 +51,12 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         }
 
         // 根据系统设置决定是否需要校验邮箱验证码
-        auto sysSettings = SystemSettingsMgr::GetInstance()->get();
-        bool requireVerification = true;
-        if (sysSettings) {
-            requireVerification = sysSettings->getRequireEmailVerification() != 0;
+        auto sys_settings = SystemSettingsMgr::GetInstance()->get();
+        bool require_verification = true;
+        if (sys_settings) {
+            require_verification = sys_settings->getRequireEmailVerification() != 0;
         }
-        if (requireVerification) {
+        if (require_verification) {
             if (!verificationEmailCode(db, email, auth_code)) {
                 result->setResult(403, "invalid auth_code");
                 break;
@@ -88,36 +88,36 @@ bool UserCreateServlet::verificationEmailCode(chen::IDB::ptr conn, const std::st
         ,const std::string& code) {
     // 开启事务
     chen::ITransaction::ptr trans = conn->openTransaction();
-	// 先查询是否存在这个记录
-	std::string select_sql = "SELECT 1 FROM email_verification WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
-    
-	auto stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(select_sql));
+    // 先查询是否存在这个记录
+    std::string select_sql = "SELECT 1 FROM email_verification WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
+
+    auto stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(select_sql));
     if(!stmt) {
         ERROR(logger) << "stmt=" << select_sql
                  << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return false;
     }
     stmt->bindString(1, email);
-	stmt->bindString(2, code);
+    stmt->bindString(2, code);
 
-	int rt = stmt->step();
-    bool canUpdate = (rt == SQLITE_ROW);
-	stmt->finish();
+    int rt = stmt->step();
+    bool can_update = (rt == SQLITE_ROW);
+    stmt->finish();
 
-	if (!canUpdate) {
-		return false;
-	}
+    if (!can_update) {
+        return false;
+    }
 
     std::string update_sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 1 AND state = 0 AND expires_time > datetime('now')";
-	stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(update_sql));
+    stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(update_sql));
 
-	stmt->bindString(1, email);
-	stmt->bindString(2, code);
+    stmt->bindString(1, email);
+    stmt->bindString(2, code);
 
     // 获取影响的行数, 是否成功
     bool success = stmt->step() == SQLITE_DONE && sqlite3_changes(std::dynamic_pointer_cast<chen::SQLite3>(conn)->getDB()) > 0;
     trans->commit();
-	
+
     return success;
 }
 

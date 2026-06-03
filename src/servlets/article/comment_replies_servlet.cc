@@ -14,7 +14,7 @@ CommentRepliesServlet::CommentRepliesServlet()
 }
 
 int32_t CommentRepliesServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, comment_id, "comment_id");
 

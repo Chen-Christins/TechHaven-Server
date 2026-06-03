@@ -17,7 +17,7 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static chen::ConfigVar<std::string>::ptr sqlite3_db_name = 
+static chen::ConfigVar<std::string>::ptr sqlite3_db_name =
     chen::Config::Lookup("sqlite3.db_name", std::string("blog.db"), "sqlite3 db file name");
 
 BlogModule::BlogModule()
@@ -39,14 +39,14 @@ bool BlogModule::onUnload() {
 bool BlogModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
-	if (!initDB()) {
-		ERROR(logger) << "initDB failed";
-		return false;
-	}
+    if (!initDB()) {
+        ERROR(logger) << "initDB failed";
+        return false;
+    }
 
-	loadAllData();
-	
-	ArticleMgr::GetInstance()->start();
+    loadAllData();
+
+    ArticleMgr::GetInstance()->start();
 
     std::vector<chen::TcpServer::ptr> servers;
     if (chen::Application::GetInstance()->getServer("http", servers)) {
@@ -56,16 +56,15 @@ bool BlogModule::onServerReady() {
         return false;
     }
 
-	std::vector<chen::TcpServer::ptr> wsservers;
-	if (chen::Application::GetInstance()->getServer("ws", wsservers)) {
-		registerWSServlets(wsservers);
-	} else {
-		INFO(logger) << "ws_server not open, skip WebSocket servlets";
-	}
+    std::vector<chen::TcpServer::ptr> wsservers;
+    if (chen::Application::GetInstance()->getServer("ws", wsservers)) {
+        registerWSServlets(wsservers);
+    } else {
+        INFO(logger) << "ws_server not open, skip WebSocket servlets";
+    }
 
     return true;
 }
-
 
 bool BlogModule::onServerUp() {
     INFO(logger) << "onServerUp";
@@ -73,9 +72,9 @@ bool BlogModule::onServerUp() {
 }
 
 bool BlogModule::initDB() {
-	INFO(logger) << "initDB";
+    INFO(logger) << "initDB";
 
-	auto work_path = chen::Config::Lookup<std::string>("server.work_path");
+    auto work_path = chen::Config::Lookup<std::string>("server.work_path");
     auto db_path = work_path->getValue() + "/" + sqlite3_db_name->getValue();
 
     chen::SQLite3::ptr db;
@@ -156,57 +155,57 @@ bool BlogModule::initDB() {
         INFO(logger) << "migrate database end";
     }
 
-	return true;
+    return true;
 }
 
 void BlogModule::loadAllData() {
-	INFO(logger) << "loadAllData";
+    INFO(logger) << "loadAllData";
 
-	auto wg = chen::WorkerGroup::Create(4);
+    auto wg = chen::WorkerGroup::Create(4);
 
 #define XX(clazz) \
-	wg->schedule([]() { \
-		if (!clazz::GetInstance()->loadAll()) { \
-			ERROR(logger) << #clazz " load all fail"; \
-		} \
-	});
-	XX(UserMgr)
-	XX(ArticleMgr)
-	XX(CategoryMgr)
-	XX(LabelMgr)
-	XX(ArticleCategoryRelMgr)
-	XX(ArticleLabelRelMgr)
-	XX(AssignmentMgr)
-	XX(OrganizationMgr)
-	XX(OrganizationApplyMgr)
-	XX(OrganizationUserRelMgr)
-	XX(AssignmentOrganizationRelMgr)
-	XX(AssignmentUserRelMgr)
-	XX(ResourceMgr)
-	XX(ChunkUploadMgr)
-	XX(NotificationMgr)
-	XX(UserFollowRelMgr)
-	XX(ArticlePraiseRelMgr)
-	XX(CommentMgr)
-	XX(CommentPraiseRelMgr)
-	XX(RequirementMgr)
-	XX(BugMgr)
-	XX(TaskMgr)
-	XX(SystemSettingsMgr)
+    wg->schedule([]() { \
+        if (!clazz::GetInstance()->loadAll()) { \
+            ERROR(logger) << #clazz " load all fail"; \
+        } \
+    });
+    XX(UserMgr)
+    XX(ArticleMgr)
+    XX(CategoryMgr)
+    XX(LabelMgr)
+    XX(ArticleCategoryRelMgr)
+    XX(ArticleLabelRelMgr)
+    XX(AssignmentMgr)
+    XX(OrganizationMgr)
+    XX(OrganizationApplyMgr)
+    XX(OrganizationUserRelMgr)
+    XX(AssignmentOrganizationRelMgr)
+    XX(AssignmentUserRelMgr)
+    XX(ResourceMgr)
+    XX(ChunkUploadMgr)
+    XX(NotificationMgr)
+    XX(UserFollowRelMgr)
+    XX(ArticlePraiseRelMgr)
+    XX(CommentMgr)
+    XX(CommentPraiseRelMgr)
+    XX(RequirementMgr)
+    XX(BugMgr)
+    XX(TaskMgr)
+    XX(SystemSettingsMgr)
 #undef XX
 
-	wg->waitAll();
+    wg->waitAll();
 }
 
 void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
-	INFO(logger) << "registerServlets";
+    INFO(logger) << "registerServlets";
 
-	for (auto& i : servers) {
+    for (auto& i : servers) {
         auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         auto dp = hs->getServletDispatch();
 
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
-		// 用户相关
+        // 用户相关
         dp->addServlet("/api/v1/user/send_code", XX(UserSendCodeServlet));
         dp->addServlet("/api/v1/user/create", XX(UserCreateServlet));
         dp->addServlet("/api/v1/user/login", XX(UserLoginServlet));
@@ -239,7 +238,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));
-		// 文章相关
+        // 文章相关
         dp->addServlet("/api/v1/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/api/v1/article/admin/stats", XX(ArticleAdminStatsServlet));
         dp->addServlet("/api/v1/article/create", XX(ArticleCreateServlet));
@@ -264,7 +263,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/article/comment/update", XX(CommentUpdateServlet));
         dp->addServlet("/api/v1/article/comment/delete", XX(CommentDeleteServlet));
         dp->addServlet("/api/v1/article/comment/praise", XX(CommentPraiseServlet));
-		// 管理端评论相关
+        // 管理端评论相关
         dp->addServlet("/api/v1/admin/comment/list", XX(AdminCommentListServlet));
         dp->addServlet("/api/v1/admin/comment/approve", XX(AdminCommentApproveServlet));
         dp->addServlet("/api/v1/admin/comment/reject", XX(AdminCommentRejectServlet));
@@ -288,27 +287,27 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/admin/settings/upload", XX(SystemSettingsUploadServlet));
         // 首页统计（公开接口）
         dp->addServlet("/api/v1/stats", XX(StatsServlet));
-		// 文章标签相关
+        // 文章标签相关
         dp->addServlet("/api/v1/label/create", XX(LabelCreateServlet));
         dp->addServlet("/api/v1/label/delete", XX(LabelDeleteServlet));
         dp->addServlet("/api/v1/label/query", XX(LabelQueryServlet));
-		// 文件相关
+        // 文件相关
         dp->addServlet("/api/v1/file/upload", XX(FileUploadServlet));
         dp->addServlet("/api/v1/file/download", XX(FileDownloadServlet));
-		// 大文件分片上传相关
+        // 大文件分片上传相关
         dp->addServlet("/api/v1/upload/init", XX(ChunkUploadServlet));
         dp->addServlet("/api/v1/upload/chunk", XX(ChunkUploadServlet));
         dp->addServlet("/api/v1/upload/complete", XX(ChunkUploadServlet));
         dp->addServlet("/api/v1/upload/cancel", XX(ChunkUploadServlet));
         dp->addServlet("/api/v1/upload/status", XX(ChunkUploadServlet));
-		// 作业相关
+        // 作业相关
         dp->addServlet("/api/v1/assignment/admin/lists", XX(AssignmentAdminListsServlet));
         dp->addServlet("/api/v1/assignment/admin/stats", XX(AssignmentAdminStatsServlet));
         dp->addServlet("/api/v1/assignment/create", XX(AssignmentCreateServlet));
         dp->addServlet("/api/v1/assignment/delete", XX(AssignmentDeleteServlet));
         dp->addServlet("/api/v1/assignment/detail", XX(AssignmentDetailServlet));
         dp->addServlet("/api/v1/assignment/submission/list", XX(AssignmentSubmissionListServlet));
-		// 组织相关
+        // 组织相关
         dp->addServlet("/api/v1/organization/admin/lists", XX(OrganizationAdminListsServlet));
         dp->addServlet("/api/v1/organization/admin/stats", XX(OrganizationAdminStatsServlet));
         dp->addServlet("/api/v1/organization/create", XX(OrganizationCreateServlet));
@@ -354,12 +353,12 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
 
     for (auto& i : servers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
-		ASSERT(ws);
+        ASSERT(ws);
 
         chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
-		ASSERT(dp);
+        ASSERT(dp);
 
-		servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
+        servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
         dp->addServlet("/ws/v1/notification", notify_servlet);
     }
 }

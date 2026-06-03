@@ -9,22 +9,22 @@ namespace servlet {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 LabelCreateServlet::LabelCreateServlet()
-    :BlogLoginedServlet("LabelCreateServlet") {
+    : BlogLoginedServlet("LabelCreateServlet") {
 }
 
 int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_STRING(result, name, "name");
-		DEFINE_AND_CHECK_STRING(result, color, "color");
+    do {
+        DEFINE_AND_CHECK_STRING(result, name, "name");
+        DEFINE_AND_CHECK_STRING(result, color, "color");
         std::string desc = request->getParamAs<std::string>("desc");
         int64_t lid = request->getParamAs<int64_t>("id", 0);
 
-		int64_t uid = getUserId(request);
-		if (!uid) {
-			result->setResult(500, "not login");
-			break;
-		}
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
 
         bool new_label = false;
         data::LabelInfo::ptr info;
@@ -52,34 +52,34 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
             }
         }
         info->setDescription(desc);
-		info->setColor(color);
-		info->setIsDeleted(0);
-		info->setUpdateTime(time(0));
+        info->setColor(color);
+        info->setIsDeleted(0);
+        info->setUpdateTime(time(0));
 
-		auto db = getDB();
-		if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+        auto db = getDB();
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
 
-		if (data::LabelInfoDao::InsertOrUpdate(info, db)) {
-			result->setResult(500, "insert or update label fail");
-			ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
-			break;
-		}
+        if (data::LabelInfoDao::InsertOrUpdate(info, db)) {
+            result->setResult(500, "insert or update label fail");
+            ERROR(logger) << "db error, errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr();
+            break;
+        }
 
-		if (new_label) {
-			LabelMgr::GetInstance()->add(info);
-		}
+        if (new_label) {
+            LabelMgr::GetInstance()->add(info);
+        }
 
-		result->set("id", info->getId());
-		result->set("name", info->getName());
-		result->set("color", info->getColor());
+        result->set("id", info->getId());
+        result->set("name", info->getName());
+        result->set("color", info->getColor());
         result->set("desc", info->getDescription());
         result->set("create_time", info->getCreateTime());
-	} while (0);
-	response->setBody(result->toJsonString());
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

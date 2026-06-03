@@ -17,7 +17,7 @@ bool ArticleLabelRelManager::loadAll() {
         ERROR(logger) << "ArticleLabelManager loadAll fail";
         return false;
     }
-    
+
     std::unordered_map<int64_t, data::ArticleLabelRelInfo::ptr> datas;
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> articles;
     std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> labels;
@@ -31,7 +31,7 @@ bool ArticleLabelRelManager::loadAll() {
     m_datas.swap(datas);
     m_articles.swap(articles);
     m_labels.swap(labels);
-    
+
     return true;
 }
 

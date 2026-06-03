@@ -15,9 +15,9 @@ AssignmentCreateServlet::AssignmentCreateServlet()
 
 int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         , chen::http::HttpSession::ptr session, Result::ptr result) {
-	do {
-		DEFINE_AND_CHECK_STRING(result, name, "name");
-		DEFINE_AND_CHECK_STRING(result, subject_name, "subject_name");
+    do {
+        DEFINE_AND_CHECK_STRING(result, name, "name");
+        DEFINE_AND_CHECK_STRING(result, subject_name, "subject_name");
         DEFINE_AND_CHECK_TYPE(result, uint64_t, end_time, "end_time");
         DEFINE_AND_CHECK_TYPE(result, int32_t, file_size, "file_size");
         DEFINE_AND_CHECK_TYPE(result, int32_t, priority, "priority");
@@ -26,24 +26,24 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         DEFINE_AND_CHECK_STRING(result, file_type, "file_type");
         int64_t aid = request->getParamAs<int64_t>("id", 0);
 
-		int64_t uid = getUserId(request);
-		if (!uid) {
-			result->setResult(500, "not login");
-			break;
-		}
-		if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-			result->setResult(403, "Access Denied");
-			break;
-		}
+        int64_t uid = getUserId(request);
+        if (!uid) {
+            result->setResult(500, "not login");
+            break;
+        }
+        if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
+            result->setResult(403, "Access Denied");
+            break;
+        }
 
         if (file_size > 96) {
             result->setResult(400, "file_size exceed limit");
             break;
         }
 
-		bool new_assignment = false;
+        bool new_assignment = false;
         data::AssignmentInfo::ptr info;
-		if (aid) {
+        if (aid) {
             info = AssignmentMgr::GetInstance()->get(aid);
             if (!info) {
                 result->setResult(404, "assignment not exist");
@@ -69,29 +69,29 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         info->setMaxSize(file_size);
         info->setStatus(status);
         info->setPriority(priority);
-		info->setIsDeleted(0);
-		info->setUpdateTime(time(0));
+        info->setIsDeleted(0);
+        info->setUpdateTime(time(0));
 
-		auto db = getDB();
-		if (!db) {
-			result->setResult(500, "get db error");
-			break;
-		}
+        auto db = getDB();
+        if (!db) {
+            result->setResult(500, "get db error");
+            break;
+        }
 
-		if (data::AssignmentInfoDao::InsertOrUpdate(info, db)) {
-			result->setResult(500, "insert or update assignment fail");
-			ERROR(logger) << "db error, errno=" << db->getErrno()
-				<< " errstr=" << db->getErrStr();
-			break;
-		}
+        if (data::AssignmentInfoDao::InsertOrUpdate(info, db)) {
+            result->setResult(500, "insert or update assignment fail");
+            ERROR(logger) << "db error, errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr();
+            break;
+        }
 
-		if (new_assignment) {
-			AssignmentMgr::GetInstance()->add(info);
-		}
+        if (new_assignment) {
+            AssignmentMgr::GetInstance()->add(info);
+        }
 
-		result->set("id", info->getId());
-		result->set("name", info->getName());
-		result->set("subject_name", info->getSubjectName());
+        result->set("id", info->getId());
+        result->set("name", info->getName());
+        result->set("subject_name", info->getSubjectName());
         result->set("status", info->getStatus());
         result->set("priority", info->getPriority());
         result->set("end_time", info->getDeadline());
@@ -99,8 +99,8 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         result->set("file_size", info->getMaxSize());
         result->set("file_type", info->getFileType());
         result->set("description", info->getDescription());
-	} while (0);
-	response->setBody(result->toJsonString());
+    } while (0);
+    response->setBody(result->toJsonString());
     return 0;
 }
 

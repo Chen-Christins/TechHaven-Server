@@ -18,7 +18,7 @@ int32_t UserAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, 
     do {
         // 获取当前用户
         auto uid = getUserId(request);
-        
+
         // 当前用户的所有组织关系
         std::vector<data::OrganizationUserRelInfo::ptr> user_org_rels;
         OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_org_rels, uid, -1, true);

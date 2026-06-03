@@ -1,9 +1,9 @@
 #include "rd_requirement_detail_servlet.h"
-#include "rd_helper.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
 #include "../../permission.h"
+#include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
@@ -22,8 +22,8 @@ int32_t RdRequirementDetailServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         int64_t uid = getUserId(request);
-        int32_t systemRole = UserMgr::GetInstance()->get(uid)->getRole();
-        bool isPlatformAdmin = (systemRole == UserManager::Role::ADMIN);
+        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        bool is_platform_admin = (system_role == UserManager::Role::ADMIN);
 
         auto info = RequirementMgr::GetInstance()->get(id);
         if (!info || info->getIsDeleted()) {
@@ -31,20 +31,20 @@ int32_t RdRequirementDetailServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
-        int64_t infoOrgId = info->getOrgId();
-        if (!isPlatformAdmin) {
-            auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(infoOrgId, uid);
+        int64_t info_org_id = info->getOrgId();
+        if (!is_platform_admin) {
+            auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
                 result->setResult(403, "Access Denied");
                 break;
             }
-            if (!permission::canViewRequirement(rel->getRole(), uid, info->getCreatorId())) {
+            if (!permission::CanViewRequirement(rel->getRole(), uid, info->getCreatorId())) {
                 result->setResult(403, "Access Denied");
                 break;
             }
         }
 
-        rd::buildRequirementJson(result->jsondata, info);
+        rd::BuildRequirementJson(result->jsondata, info);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

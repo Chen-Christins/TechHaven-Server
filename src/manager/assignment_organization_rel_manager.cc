@@ -76,7 +76,7 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
 int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results
         , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
     std::shared_lock<std::shared_mutex> lock(m_mutex);
-    
+
     auto check = [&](data::AssignmentOrganizationRelInfo::ptr info) {
         if (status != -1 && info->getStatus() != status) {
             return false;
@@ -103,7 +103,7 @@ int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::Assignmen
             results.push_back(tmp[i]);
         }
     }
-    
+
     return tmp.size();
 }
 

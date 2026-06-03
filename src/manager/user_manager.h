@@ -25,11 +25,11 @@ public:
     void add(blog::data::UserInfo::ptr info);
     void update(blog::data::UserInfo::ptr info, int32_t old_role, const std::string& old_account, const std::string& old_email);
     void getAllIds(std::vector<int64_t>& ids, bool isValid);
-	
+
     uint64_t listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
         , int32_t role, int32_t state, int32_t days, bool isValid);
 
-	blog::data::UserInfo::ptr get(int64_t id);
+    blog::data::UserInfo::ptr get(int64_t id);
     blog::data::UserInfo::ptr getByAccount(const std::string& v);
     blog::data::UserInfo::ptr getByEmail(const std::string& v);
     blog::data::UserInfo::ptr getByName(const std::string& v);

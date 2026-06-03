@@ -1,14 +1,13 @@
 #include "dashboard_activities_servlet.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/comment_manager.h"
-
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 DashboardActivitiesServlet::DashboardActivitiesServlet()
-    :BlogLoginedServlet("DashboardActivitiesServlet") {
+    : BlogLoginedServlet("DashboardActivitiesServlet") {
 }
 
 struct ActivityItem {
@@ -17,17 +16,25 @@ struct ActivityItem {
     int64_t create_time;
 };
 
-static std::string timeAgo(int64_t now, int64_t ts) {
+static std::string TimeAgo(int64_t now, int64_t ts) {
     int64_t diff = now - ts;
-    if (diff < 0) diff = 0;
-    if (diff < 60) return "just now";
-    if (diff < 3600) return std::to_string(diff / 60) + "分钟前";
-    if (diff < 86400) return std::to_string(diff / 3600) + "小时前";
+    if (diff < 0) {
+        diff = 0;
+    }
+    if (diff < 60) {
+        return "just now";
+    }
+    if (diff < 3600) {
+        return std::to_string(diff / 60) + "分钟前";
+    }
+    if (diff < 86400) {
+        return std::to_string(diff / 3600) + "小时前";
+    }
     return std::to_string(diff / 86400) + "天前";
 }
 
 int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -41,7 +48,9 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         int32_t limit = request->getParamAs<int32_t>("limit", 5);
-        if (limit <= 0) limit = 5;
+        if (limit <= 0) {
+            limit = 5;
+        }
         int32_t fetch_count = limit * 2;
 
         std::vector<ActivityItem> all;
@@ -53,7 +62,9 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
             std::vector<data::UserInfo::ptr> users;
             for (auto id : ids) {
                 auto u = UserMgr::GetInstance()->get(id);
-                if (u) users.push_back(u);
+                if (u) {
+                    users.push_back(u);
+                }
             }
             std::sort(users.begin(), users.end(),
                 [](auto& a, auto& b) { return a->getCreateTime() > b->getCreateTime(); });
@@ -117,7 +128,7 @@ int32_t DashboardActivitiesServlet::handle(chen::http::HttpRequest::ptr request,
             item["type"] = act.type;
             item["title"] = act.title;
             item["timestamp"] = (Json::Int64)act.create_time;
-            item["time"] = timeAgo(now, act.create_time);
+            item["time"] = TimeAgo(now, act.create_time);
             list.append(item);
         }
 

@@ -1,9 +1,9 @@
 #include "rd_requirement_edit_servlet.h"
-#include "rd_helper.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
+#include "rd_helper.h"
 
 namespace blog {
 namespace servlet {
@@ -29,7 +29,7 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
             result->setResult(403, "not a member of this organization");
             break;
         }
-        int32_t orgRole = rel->getRole();
+        int32_t org_role = rel->getRole();
 
         bool is_new = false;
         data::RequirementInfo::ptr info;
@@ -40,12 +40,12 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
                 result->setResult(404, "requirement not exist");
                 break;
             }
-            if (!permission::canEditRequirement(orgRole)) {
+            if (!permission::CanEditRequirement(org_role)) {
                 result->setResult(403, "Access Denied");
                 break;
             }
         } else {
-            if (!permission::canCreateRequirement(orgRole)) {
+            if (!permission::CanCreateRequirement(org_role)) {
                 result->setResult(403, "Access Denied");
                 break;
             }
@@ -60,23 +60,23 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
         if (!title.empty()) {
             info->setTitle(title);
         }
-        
+
         std::string desc = request->getParam("description");
         if (!desc.empty()) {
             info->setDescription(desc);
         }
 
-        std::string priorityStr = request->getParam("priority");
-        if (!priorityStr.empty()) {
-            int32_t p = rd::stringToPriority(priorityStr);
+        std::string priority_str = request->getParam("priority");
+        if (!priority_str.empty()) {
+            int32_t p = rd::StringToPriority(priority_str);
             if (p >= 0) {
                 info->setPriority(p);
             }
         }
 
-        std::string statusStr = request->getParam("status");
-        if (!statusStr.empty()) {
-            int32_t s = rd::stringToRequirementStatus(statusStr);
+        std::string status_str = request->getParam("status");
+        if (!status_str.empty()) {
+            int32_t s = rd::StringToRequirementStatus(status_str);
             if (s >= 0) {
                 info->setStatus(s);
             }
@@ -96,7 +96,7 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
         if (!iteration.empty()) {
             info->setIteration(iteration);
         }
-        
+
         std::string category = request->getParam("category");
         if (!category.empty()) {
             info->setCategory(category);
@@ -125,7 +125,7 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
             RequirementMgr::GetInstance()->add(info);
         }
 
-        rd::buildRequirementJson(result->jsondata, info);
+        rd::BuildRequirementJson(result->jsondata, info);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

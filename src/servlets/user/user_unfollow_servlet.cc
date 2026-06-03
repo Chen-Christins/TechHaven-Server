@@ -6,7 +6,7 @@ namespace blog {
 namespace servlet {
 
 UserUnfollowServlet::UserUnfollowServlet()
-    :BlogLoginedServlet("UserUnfollowServlet") {
+    : BlogLoginedServlet("UserUnfollowServlet") {
 }
 
 int32_t UserUnfollowServlet::handle(chen::http::HttpRequest::ptr request,

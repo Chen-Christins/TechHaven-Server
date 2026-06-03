@@ -23,10 +23,10 @@ public:
     ResourceServlet(const std::string& path);
     virtual int32_t handle(HttpRequest::ptr request, HttpResponse::ptr response
                         ,HttpSession::ptr session) override;
-    
+
 private:
     std::string m_path;
-	std::string m_content;
+    std::string m_content;
 };
 
 }

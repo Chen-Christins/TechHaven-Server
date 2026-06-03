@@ -1,18 +1,17 @@
 #include "dashboard_stats_servlet.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/comment_manager.h"
-
+#include "../../manager/user_manager.h"
 
 namespace blog {
 namespace servlet {
 
 DashboardStatsServlet::DashboardStatsServlet()
-    :BlogLoginedServlet("DashboardStatsServlet") {
+    : BlogLoginedServlet("DashboardStatsServlet") {
 }
 
 int32_t DashboardStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -32,7 +31,9 @@ int32_t DashboardStatsServlet::handle(chen::http::HttpRequest::ptr request, chen
         int64_t two_weeks_ago_start = today_start - 14 * 86400;
 
         auto pct_change = [](int64_t cur, int64_t prev) -> int64_t {
-            if (prev == 0) return cur > 0 ? 100 : 0;
+            if (prev == 0) {
+                    return cur > 0 ? 100 : 0;
+                }
             return (cur - prev) * 100 / prev;
         };
 
@@ -45,7 +46,9 @@ int32_t DashboardStatsServlet::handle(chen::http::HttpRequest::ptr request, chen
         int64_t today_users = 0, yesterday_users = 0;
         for (auto id : ids) {
             auto u = UserMgr::GetInstance()->get(id);
-            if (!u) continue;
+            if (!u) {
+                    continue;
+                }
             auto ct = u->getCreateTime();
             if (ct >= week_ago_start) {
                 this_week_users++;

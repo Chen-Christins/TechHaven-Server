@@ -17,7 +17,7 @@ int32_t AssignmentDetailServlet::handle(chen::http::HttpRequest::ptr request, ch
     do {
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
         auto assignment = AssignmentMgr::GetInstance()->get(id);
-        
+
         if (!assignment || assignment->getIsDeleted()) {
             result->setResult(404, "invalid id");
             break;

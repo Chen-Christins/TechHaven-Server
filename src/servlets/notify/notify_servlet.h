@@ -6,11 +6,11 @@ namespace blog::servlet {
 
 class NotifyServlet : public chen::http::WSServlet {
 public:
-	typedef std::shared_ptr<NotifyServlet> ptr;
+    typedef std::shared_ptr<NotifyServlet> ptr;
 
-	NotifyServlet();
+    NotifyServlet();
 
-	virtual int32_t onConnect(chen::http::HttpRequest::ptr header
+    virtual int32_t onConnect(chen::http::HttpRequest::ptr header
                             ,chen::http::WSSession::ptr session) override;
     virtual int32_t onClose(chen::http::HttpRequest::ptr header
                             ,chen::http::WSSession::ptr session) override;

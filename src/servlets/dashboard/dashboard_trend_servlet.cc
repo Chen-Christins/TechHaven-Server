@@ -1,18 +1,18 @@
 #include "dashboard_trend_servlet.h"
-#include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/comment_manager.h"
-#include <ctime>
+#include "../../manager/user_manager.h"
 
+#include <ctime>
 
 namespace blog {
 namespace servlet {
 
 DashboardTrendServlet::DashboardTrendServlet()
-    :BlogLoginedServlet("DashboardTrendServlet") {
+    : BlogLoginedServlet("DashboardTrendServlet") {
 }
 
-static std::string formatDate(int64_t ts) {
+static std::string FormatDate(int64_t ts) {
     struct tm t;
     localtime_r(&ts, &t);
     char buf[16];
@@ -20,7 +20,7 @@ static std::string formatDate(int64_t ts) {
     return buf;
 }
 
-static const char* weekdayName(int64_t ts) {
+static const char* WeekdayName(int64_t ts) {
     static const char* names[] = {"周日", "周一", "周二", "周三", "周四", "周五", "周六"};
     struct tm t;
     localtime_r(&ts, &t);
@@ -28,7 +28,7 @@ static const char* weekdayName(int64_t ts) {
 }
 
 int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-		, chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
@@ -69,11 +69,15 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
         UserMgr::GetInstance()->getAllIds(ids, true);
         for (auto id : ids) {
             auto u = UserMgr::GetInstance()->get(id);
-            if (!u) continue;
+            if (!u) {
+            continue;
+        }
             int64_t ts = u->getCreateTime();
             if (ts >= period_start) {
                 int32_t idx = (ts - period_start) / bucket_sec;
-                if (idx < num_buckets) buckets[idx]++;
+                if (idx < num_buckets) {
+                    buckets[idx]++;
+                }
             }
         }
 
@@ -84,7 +88,9 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
             int64_t ts = a->getCreateTime();
             if (ts >= period_start) {
                 int32_t idx = (ts - period_start) / bucket_sec;
-                if (idx < num_buckets) buckets[idx]++;
+                if (idx < num_buckets) {
+                    buckets[idx]++;
+                }
             }
         }
 
@@ -95,7 +101,9 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
             int64_t ts = c->getCreateTime();
             if (ts >= period_start) {
                 int32_t idx = (ts - period_start) / bucket_sec;
-                if (idx < num_buckets) buckets[idx]++;
+                if (idx < num_buckets) {
+                    buckets[idx]++;
+                }
             }
         }
 
@@ -107,20 +115,24 @@ int32_t DashboardTrendServlet::handle(chen::http::HttpRequest::ptr request, chen
             int64_t bucket_ts = period_start + i * bucket_sec;
             int64_t visits = buckets[i];
             total_visits += visits;
-            if (visits > max_visits) max_visits = visits;
+            if (visits > max_visits) {
+            max_visits = visits;
+        }
 
             Json::Value item;
             if (period == 7) {
-                item["label"] = weekdayName(bucket_ts);
-                item["date"] = formatDate(bucket_ts);
+                item["label"] = WeekdayName(bucket_ts);
+                item["date"] = FormatDate(bucket_ts);
             } else if (period == 30) {
-                item["label"] = formatDate(bucket_ts);
-                item["date"] = formatDate(bucket_ts);
+                item["label"] = FormatDate(bucket_ts);
+                item["date"] = FormatDate(bucket_ts);
             } else {
                 int64_t week_end = bucket_ts + bucket_sec - 1;
-                if (week_end > now) week_end = now;
+                if (week_end > now) {
+                week_end = now;
+            }
                 item["label"] = "第" + std::to_string(i + 1) + "周";
-                item["date"] = formatDate(bucket_ts) + " ~ " + formatDate(week_end);
+                item["date"] = FormatDate(bucket_ts) + " ~ " + FormatDate(week_end);
             }
             item["visits"] = (Json::Int64)visits;
             list.append(item);
