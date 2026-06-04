@@ -5,23 +5,16 @@
  * @date 2026-06-03
  * @copyright Apache 2.0
  */
-
 #pragma once
 
 #include <chen/db/mysql.h>
 #include <chen/util/hash_util.h>
-#include <chen/config/config.h>
 
 #include <regex>
 
 namespace blog {
 
-static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
-    chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
-
-inline chen::IDB::ptr GetDB() {
-    return chen::MySQLMgr::GetInstance()->get(g_mysql_dbs->getValue().begin()->first);
-}
+chen::IDB::ptr GetDB();
 
 inline bool IsEmail(const std::string& str) {
     static const std::regex pattern("([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,8}(\\.[a-z]{2,8})?)");
