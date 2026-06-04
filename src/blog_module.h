@@ -50,7 +50,7 @@ private:
     /**
      * @brief 初始化数据库
      */
-    bool initDB();
+    bool initMySQL();
 
     /**
      * @brief 加载所有数据到内存

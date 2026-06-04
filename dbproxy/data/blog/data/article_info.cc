@@ -356,7 +356,7 @@ int ArticleInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '文章id',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户id',"
             "`title` varchar(256) NOT NULL DEFAULT '' COMMENT '文章标题',"
-            "`content` text NOT NULL DEFAULT '' COMMENT '文章内容',"
+            "`content` text NOT NULL COMMENT '文章内容',"
             "`type` int NOT NULL DEFAULT 0 COMMENT '类型 1:原创,2:转发',"
             "`state` int NOT NULL DEFAULT 0 COMMENT '状态: 0全部 1审核中 2已发布 3未通过 4私密',"
             "`channel` bigint NOT NULL DEFAULT 0 COMMENT '频道id',"
@@ -747,7 +747,7 @@ int ArticleInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         auto it = existing_cols.find("content");
         if (it != existing_cols.end() && it->second != "text") {
             INFO(logger) << "Modifying column article.content " << it->second << " -> text";
-            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '文章内容'");
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `content` text NOT NULL COMMENT '文章内容'");
             if (rt) {
                 ERROR(logger) << "MODIFY COLUMN article.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
             }
@@ -909,7 +909,7 @@ int ArticleInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
 
     if (existing_cols.find("content") == existing_cols.end()) {
         INFO(logger) << "Adding column article.content";
-        int rt = conn->execute("ALTER TABLE article ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '文章内容'");
+        int rt = conn->execute("ALTER TABLE article ADD COLUMN `content` text COMMENT '文章内容'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE article ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }

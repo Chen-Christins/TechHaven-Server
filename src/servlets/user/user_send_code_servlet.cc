@@ -1,6 +1,6 @@
 #include "user_send_code_servlet.h"
 #include <chen/log/log.h>
-#include "blog/data/email_verification_info.h"
+#include <chen/db/redis.h>
 #include <chen/email/email.h>
 #include <chen/email/smtp.h>
 #include "../../manager/user_manager.h"
@@ -45,30 +45,15 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             break;
         }
 
-        auto db = getDB();
-        if (!db) {
-            result->setResult(500, "get db connection error");
-            break;
-        }
-
-        // 生成验证码并立即持久化（不再等待邮件发送结果）
+        // 生成验证码并写入 Redis，10分钟过期
         std::string code = chen::random_string(8);
-        std::string ipaddr = session->getRemoteAddressString();
-        data::EmailVerificationInfo::ptr info(new data::EmailVerificationInfo);
-        info->setEmail(email);
-        info->setCode(code);
-        info->setType(std::stoi(type));
-        info->setState(0);
-        info->setExpiresTime(time(0) + 10 * 60);
-        info->setClientIp(ipaddr);
-        info->setUserAgent(agent);
-
-        if (data::EmailVerificationInfoDao::Insert(info, db)) {
-            result->setResult(500, "insert email fail");
+        auto rpy = chen::RedisUtil::Cmd("blog", "SETEX email:verify:%s:%s 600 %s", type.c_str(), email.c_str(), code.c_str());
+        if (!rpy) {
+            result->setResult(500, "redis setex fail");
             break;
         }
 
-        INFO(logger) << info->toJsonString();
+        INFO(logger) << "email=" << email << " type=" << type << " code=" << code;
 
         // 异步发送邮件，不阻塞请求响应
         std::string title = (type == "1" ? "Blog Create Account Auth - 验证码" : "Blog 重置密码 - 验证码");

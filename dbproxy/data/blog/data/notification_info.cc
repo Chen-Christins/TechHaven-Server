@@ -378,7 +378,7 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '接收用户id',"
             "`title` varchar(128) NOT NULL DEFAULT '' COMMENT '通知标题',"
-            "`content` text NOT NULL DEFAULT '' COMMENT '通知内容',"
+            "`content` text NOT NULL COMMENT '通知内容',"
             "`type` varchar(32) NOT NULL DEFAULT '' COMMENT '通知类型: system/announcement/article',"
             "`sender_id` bigint NOT NULL DEFAULT 0 COMMENT '发送者id(0=系统)',"
             "`article_id` bigint NOT NULL DEFAULT 0 COMMENT '关联文章ID',"
@@ -730,7 +730,7 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         auto it = existing_cols.find("content");
         if (it != existing_cols.end() && it->second != "text") {
             INFO(logger) << "Modifying column notification.content " << it->second << " -> text";
-            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '通知内容'");
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `content` text NOT NULL COMMENT '通知内容'");
             if (rt) {
                 ERROR(logger) << "MODIFY COLUMN notification.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
             }
@@ -870,7 +870,7 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
 
     if (existing_cols.find("content") == existing_cols.end()) {
         INFO(logger) << "Adding column notification.content";
-        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '通知内容'");
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `content` text COMMENT '通知内容'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }

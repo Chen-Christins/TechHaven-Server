@@ -68,6 +68,15 @@ sqlite3:
       path: /home/chen/workspace/Blog/blog.db
       sql: PRAGMA synchronous = OFF
 
+mysql:
+  dbs:
+    techhaven:
+      dbname: techhaven
+      host: 192.168.139.3
+      port: 3306
+      user: root
+      passwd: 123456
+
 # Redis configuration for Fox Thread, defining the Redis settings for the Fox Thread component, including the name, number of connections, and advance settings.
 fox_thread:
   redis:

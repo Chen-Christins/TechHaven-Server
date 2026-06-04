@@ -14,8 +14,7 @@ public:
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session
                     ,Result::ptr result) override;
-    bool verificationEmailCode(chen::IDB::ptr db, const std::string& email
-                    ,const std::string& code);
+    bool verificationEmailCode(const std::string& email, const std::string& code);
 };
 
 }

@@ -469,7 +469,7 @@ int CommentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`article_id` bigint NOT NULL DEFAULT 0 COMMENT '文章ID',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '评论用户ID',"
             "`parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父评论ID(0=顶级评论)',"
-            "`content` text NOT NULL DEFAULT '' COMMENT '评论内容',"
+            "`content` text NOT NULL COMMENT '评论内容',"
             "`ip` varchar(64) NOT NULL DEFAULT '' COMMENT '客户端IP',"
             "`user_agent` varchar(512) NOT NULL DEFAULT '' COMMENT '客户端UserAgent',"
             "`status` int NOT NULL DEFAULT 1 COMMENT '状态 1:待审核 2:已通过 3:已拒绝 4:垃圾',"
@@ -832,7 +832,7 @@ int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         auto it = existing_cols.find("content");
         if (it != existing_cols.end() && it->second != "text") {
             INFO(logger) << "Modifying column comment.content " << it->second << " -> text";
-            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '评论内容'");
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `content` text NOT NULL COMMENT '评论内容'");
             if (rt) {
                 ERROR(logger) << "MODIFY COLUMN comment.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
             }
@@ -970,7 +970,7 @@ int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
 
     if (existing_cols.find("content") == existing_cols.end()) {
         INFO(logger) << "Adding column comment.content";
-        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '评论内容'");
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `content` text COMMENT '评论内容'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE comment ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
