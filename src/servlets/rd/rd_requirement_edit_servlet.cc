@@ -1,6 +1,7 @@
 #include "rd_requirement_edit_servlet.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/requirement_manager.h"
+#include "../../manager/notification_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
 #include "rd_helper.h"
@@ -126,9 +127,38 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
         }
 
         rd::BuildRequirementJson(result->jsondata, info);
+
+        notifyAssignee(assignee_id, info);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
+}
+
+void RdRequirementEditServlet::notifyAssignee(int64_t assignee_id, data::RequirementInfo::ptr requirement) {
+    if (!assignee_id) {
+        return;
+    }
+
+    chen::IOManager::GetThis()->schedule([assignee_id, requirement]() {
+        auto assignee = UserMgr::GetInstance()->get(assignee_id);
+        std::string assignee_name = assignee ? assignee->getName() : std::to_string(assignee_id);
+        std::string title = "你有新的 Requirement 待处理";
+        std::string content = "Requirement「" + requirement->getTitle() + "」被分配给了你，请尽快处理";
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+            assignee_id, title, content, "requirement_assigned", requirement->getCreatorId(), requirement->getId());
+        if (notif_info) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif_info->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "requirement_assigned";
+            wsMsg["requirement_id"] = requirement->getId();
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif_info->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(assignee_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    });
 }
 
 }

@@ -50,8 +50,7 @@ int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::
             if (!delIds.count(i->getId())) {
                 continue;
             }
-            if (!is_platform_admin && uid != i->getCreatorId()
-                    && !permission::CanDeleteTask(org_role)) {
+            if (!is_platform_admin && uid != i->getCreatorId() && !permission::CanDeleteTask(org_role)) {
                 continue;
             }
             delItems.push_back(i);

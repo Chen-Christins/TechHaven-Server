@@ -4,6 +4,8 @@
 #include "../../struct.h"
 #include <json/json.h>
 
+#include "blog/data/task_info.h"
+
 namespace blog {
 namespace servlet {
 
@@ -15,6 +17,8 @@ public:
                 ,chen::http::HttpResponse::ptr response
                 ,chen::http::HttpSession::ptr session
                 ,Result::ptr result) override;
+private:
+    void notifyAssignee(int64_t assignee_id, data::TaskInfo::ptr task);
 };
 
 }

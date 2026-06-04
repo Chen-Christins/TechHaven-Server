@@ -51,8 +51,7 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
             if (!delIds.count(i->getId())) {
                 continue;
             }
-            if (!is_platform_admin && uid != i->getCreatorId()
-                    && !permission::CanDeleteBug(org_role)) {
+            if (!is_platform_admin && uid != i->getCreatorId() && !permission::CanDeleteBug(org_role)) {
                 continue;
             }
             delItems.push_back(i);

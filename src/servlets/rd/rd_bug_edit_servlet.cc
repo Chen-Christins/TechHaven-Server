@@ -1,6 +1,7 @@
 #include "rd_bug_edit_servlet.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"
+#include "../../manager/notification_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
 #include "rd_helper.h"
@@ -130,10 +131,39 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             BugMgr::GetInstance()->add(info);
         }
         rd::BuildBugJson(result->jsondata, info);
+
+        notifyAssignee(assignee_id, info);
     } while (0);
 
     response->setBody(result->toJsonString());
     return 0;
+}
+
+void RdBugEditServlet::notifyAssignee(int64_t assignee_id, data::BugInfo::ptr bug) {
+    if (!assignee_id) {
+        return;
+    }
+
+    chen::IOManager::GetThis()->schedule([assignee_id, bug]() {
+        auto assignee = UserMgr::GetInstance()->get(assignee_id);
+        std::string assignee_name = assignee ? assignee->getName() : std::to_string(assignee_id);
+        std::string title = "你有新的 Bug 待处理";
+        std::string content = "Bug「" + bug->getTitle() + "」被分配给了你，请尽快处理";
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+            assignee_id, title, content, "bug_assigned", bug->getCreatorId(), bug->getId());
+        if (notif_info) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif_info->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "bug_assigned";
+            wsMsg["bug_id"] = bug->getId();
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif_info->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(assignee_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    });
 }
 
 }
