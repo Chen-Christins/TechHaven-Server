@@ -1,28 +1,29 @@
-#ifndef __BLOG_MANAGER_LABEL_MANAGER_H__
-#define __BLOG_MANAGER_LABEL_MANAGER_H__
+#pragma once
 
 #include <shared_mutex>
-#include <unordered_map>
 #include "blog/data/label_info.h"
+#include <chen/ds/lru_cache.h>
+#include <chen/db/query_builder.h>
 #include <chen/singleton.h>
 
 namespace blog {
 
 class LabelManager {
 public:
+    LabelManager();
+
     bool loadAll();
     void add(data::LabelInfo::ptr info);
     data::LabelInfo::ptr get(int64_t id);
     data::LabelInfo::ptr getByUserIdName(int64_t id, const std::string& name);
     bool listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_t id, bool valid);
 private:
+    static data::LabelInfo::ptr parseRow(chen::ISQLData::ptr rt);
+
     std::shared_mutex m_mutex;
-    std::unordered_map<int64_t, data::LabelInfo::ptr> m_datas;
-    std::unordered_map<int64_t, std::map<std::string, data::LabelInfo::ptr>> m_users;
+    chen::ds::LruCache<int64_t, data::LabelInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<LabelManager> LabelMgr;
 
 }
-
-#endif // __BLOG_MANAGER_LABEL_MANAGER_H__

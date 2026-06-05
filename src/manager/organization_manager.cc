@@ -6,115 +6,147 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 200;
+
+OrganizationManager::OrganizationManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt) {
+    data::OrganizationInfo::ptr v(new data::OrganizationInfo);
+    v->setId(rt->getInt64(0));
+    v->setName(rt->getString(1));
+    v->setType(rt->getString(2));
+    v->setDescription(rt->getString(3));
+    v->setOwnerId(rt->getInt64(4));
+    v->setStatus(rt->getInt32(5));
+    v->setIsDeleted(rt->getInt32(6));
+    v->setCreateTime(rt->getTime(7));
+    v->setUpdateTime(rt->getTime(8));
+    return v;
+}
+
 bool OrganizationManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-
-    std::vector<data::OrganizationInfo::ptr> results;
-    if (blog::data::OrganizationInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "OrganizationManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, data::OrganizationInfo::ptr> datas;
-    std::unordered_map<std::string, data::OrganizationInfo::ptr> names;
-    std::unordered_map<int64_t, std::set<data::OrganizationInfo::ptr>> userOrganizations;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        names[i->getName()] = i;
-        userOrganizations[i->getOwnerId()].insert(i);
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_names.swap(names);
-    m_userOrganizations.swap(userOrganizations);
+    INFO(logger) << "OrganizationManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void OrganizationManager::add(data::OrganizationInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_names[info->getName()] = info;
-    m_userOrganizations[info->getOwnerId()].insert(info);
+    m_cache.set(info->getId(), info);
 }
 
 data::OrganizationInfo::ptr OrganizationManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    if (it != m_datas.end()) {
-        return it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::OrganizationInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& name) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_names.find(name);
-    if (it != m_names.end()) {
-        return it->second;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    return nullptr;
+    return data::OrganizationInfoDao::QueryByName(name, db);
 }
 
 int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr>& orgs
         , uint64_t offset, uint64_t limit, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("organization");
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
 
-    std::vector<data::OrganizationInfo::ptr> tmp;
-
-    auto check = [&](data::OrganizationInfo::ptr info) {
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        return true;
-    };
-
-    for (auto& [id, info] : m_datas) {
-        if (check(info)) {
-            tmp.push_back(info);
-        }
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "listByPages executeCount fail errno=" << db->getErrno();
+        return 0;
     }
 
-    if (offset < tmp.size()) {
-        for (size_t i = offset; i < tmp.size(); ++i) {
-            if (orgs.size() >= limit) {
-                break;
-            }
-            orgs.push_back(tmp[i]);
-        }
+    if (limit < (uint64_t)INT32_MAX) {
+        qb->limit((int32_t)limit);
+        qb->offset((int32_t)offset);
     }
-
-    return tmp.size();
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        orgs.push_back(parseRow(rt));
+    }
+    return total;
 }
 
 OrganizationManager::OrganizationStats OrganizationManager::getStats() {
     OrganizationStats stats;
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return stats;
+    }
 
-    for (auto& i : m_datas) {
-        auto& info = i.second;
-        if (info->getIsDeleted()) {
-            continue;
+    // Query total (non-deleted)
+    {
+        auto qb = chen::QueryBuilder::Create("organization");
+        qb->where("is_deleted", "=", (int64_t)0);
+        int64_t total = 0;
+        if (qb->executeCount(total, db) == 0) {
+            stats.total = total;
         }
-        stats.total++;
-        switch (info->getStatus()) {
-        case Status::ACTIVE:
-            stats.active++;
-            break;
-        case Status::INACTIVE:
-            stats.inactive++;
-            break;
+    }
+
+    // Query active
+    {
+        auto qb = chen::QueryBuilder::Create("organization");
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->where("status", "=", (int64_t)Status::ACTIVE);
+        int64_t active = 0;
+        if (qb->executeCount(active, db) == 0) {
+            stats.active = active;
+        }
+    }
+
+    // Query inactive
+    {
+        auto qb = chen::QueryBuilder::Create("organization");
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->where("status", "=", (int64_t)Status::INACTIVE);
+        int64_t inactive = 0;
+        if (qb->executeCount(inactive, db) == 0) {
+            stats.inactive = inactive;
         }
     }
 
     return stats;
 }
 
-} // namespace blog
+}

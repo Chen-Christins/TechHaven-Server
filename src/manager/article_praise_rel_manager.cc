@@ -6,70 +6,73 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 1000;
+
+ArticlePraiseRelManager::ArticlePraiseRelManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::ArticlePraiseRelInfo::ptr v(new data::ArticlePraiseRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setUserId(rt->getInt64(1));
+    v->setArticleId(rt->getInt64(2));
+    v->setIsDeleted(rt->getInt32(3));
+    v->setCreateTime(rt->getTime(4));
+    v->setUpdateTime(rt->getTime(5));
+    return v;
+}
+
 bool ArticlePraiseRelManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    std::vector<data::ArticlePraiseRelInfo::ptr> results;
-    if (data::ArticlePraiseRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "ArticlePraiseRelManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, data::ArticlePraiseRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticlePraiseRelInfo::ptr>> userPraises;
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticlePraiseRelInfo::ptr>> articlePraises;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        userPraises[i->getUserId()][i->getArticleId()] = i;
-        articlePraises[i->getArticleId()][i->getUserId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_userPraises.swap(userPraises);
-    m_articlePraises.swap(articlePraises);
-
+    INFO(logger) << "ArticlePraiseRelManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_userPraises[info->getUserId()][info->getArticleId()] = info;
-    m_articlePraises[info->getArticleId()][info->getUserId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::ArticlePraiseRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(
     int64_t user_id, int64_t article_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_userPraises.find(user_id);
-    if (it != m_userPraises.end()) {
-        auto iit = it->second.find(article_id);
-        return iit == it->second.end() ? nullptr : iit->second;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    return nullptr;
+    return data::ArticlePraiseRelInfoDao::QueryByUserIdArticleId(user_id, article_id, db);
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id, int64_t article_id) {
-    // check if already praising
     auto existing = getByUserAndArticle(user_id, article_id);
     if (existing) {
         if (!existing->getIsDeleted()) {
-            return existing; // already praising
+            return existing;
         }
-        // re-praise: update existing record
         auto db = GetDB();
         if (!db) {
-            ERROR(logger) << "get db connection fail";
+            ERROR(logger) << "Get DB connection fail";
             return nullptr;
         }
         existing->setIsDeleted(0);
@@ -78,15 +81,13 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id,
             ERROR(logger) << "ArticlePraiseRelManager praise Update fail";
             return nullptr;
         }
-        // update in-memory maps
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        existing->setIsDeleted(0);
+        m_cache.set(existing->getId(), existing);
         return existing;
     }
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
 
@@ -102,13 +103,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id,
         return nullptr;
     }
 
-    {
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        m_datas[info->getId()] = info;
-        m_userPraises[info->getUserId()][info->getArticleId()] = info;
-        m_articlePraises[info->getArticleId()][info->getUserId()] = info;
-    }
-
+    m_cache.set(info->getId(), info);
     return info;
 }
 
@@ -120,7 +115,7 @@ bool ArticlePraiseRelManager::unpraise(int64_t user_id, int64_t article_id) {
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
 
@@ -130,6 +125,7 @@ bool ArticlePraiseRelManager::unpraise(int64_t user_id, int64_t article_id) {
         ERROR(logger) << "ArticlePraiseRelManager unpraise Update fail";
         return false;
     }
+    m_cache.set(info->getId(), info);
     return true;
 }
 
@@ -140,78 +136,96 @@ bool ArticlePraiseRelManager::isPraising(int64_t user_id, int64_t article_id) {
 
 void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelInfo::ptr>& results,
     int64_t article_id, uint64_t offset, uint64_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articlePraises.find(article_id);
-    if (it == m_articlePraises.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& praiseMap = it->second;
-    uint64_t idx = 0;
-    for (auto rit = praiseMap.rbegin(); rit != praiseMap.rend(); ++rit) {
-        if (rit->second->getIsDeleted()) {
-            continue;
-        }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(rit->second);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
-        }
+    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    qb->where("article_id", "=", article_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        results.push_back(parseRow(rt));
     }
 }
 
 void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo::ptr>& results,
     int64_t user_id, uint64_t offset, uint64_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_userPraises.find(user_id);
-    if (it == m_userPraises.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& praiseMap = it->second;
-    uint64_t idx = 0;
-    for (auto rit = praiseMap.rbegin(); rit != praiseMap.rend(); ++rit) {
-        if (rit->second->getIsDeleted()) {
-            continue;
-        }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(rit->second);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
-        }
+    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    qb->where("user_id", "=", user_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        results.push_back(parseRow(rt));
     }
 }
 
 int64_t ArticlePraiseRelManager::countByArticle(int64_t article_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articlePraises.find(article_id);
-    if (it == m_articlePraises.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted()) {
-            count++;
-        }
+    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    qb->where("article_id", "=", article_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
-    return count;
+    return total;
 }
 
 int64_t ArticlePraiseRelManager::countByUser(int64_t user_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_userPraises.find(user_id);
-    if (it == m_userPraises.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted()) {
-            count++;
-        }
+    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    qb->where("user_id", "=", user_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
-    return count;
+    return total;
 }
 
 }

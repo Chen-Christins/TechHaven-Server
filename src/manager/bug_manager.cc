@@ -6,110 +6,143 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 500;
+
+BugManager::BugManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::BugInfo::ptr BugManager::parseRow(chen::ISQLData::ptr rt) {
+    data::BugInfo::ptr v(new data::BugInfo);
+    v->setId(rt->getInt64(0));
+    v->setOrgId(rt->getInt64(1));
+    v->setTitle(rt->getString(2));
+    v->setDescription(rt->getString(3));
+    v->setSeverity(rt->getInt32(4));
+    v->setPriority(rt->getInt32(5));
+    v->setStatus(rt->getInt32(6));
+    v->setCreatorId(rt->getInt64(7));
+    v->setAssigneeId(rt->getInt64(8));
+    v->setRequirementId(rt->getInt64(9));
+    v->setModule(rt->getString(10));
+    v->setStepsToReproduce(rt->getString(11));
+    v->setEnvironment(rt->getString(12));
+    v->setIsDeleted(rt->getInt32(13));
+    v->setCreateTime(rt->getTime(14));
+    v->setUpdateTime(rt->getTime(15));
+    return v;
+}
+
 bool BugManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    std::vector<data::BugInfo::ptr> results;
-    if (blog::data::BugInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "BugManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, data::BugInfo::ptr> datas;
-    std::unordered_map<int64_t, std::unordered_map<int64_t, data::BugInfo::ptr>> org_datas;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        org_datas[i->getOrgId()][i->getId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_org_datas.swap(org_datas);
+    INFO(logger) << "BugManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void BugManager::add(data::BugInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_org_datas[info->getOrgId()][info->getId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::BugInfo::ptr BugManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::BugInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
         uint64_t offset, uint64_t size, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("bug");
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
 
-    auto check = [&](auto info) -> bool {
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        return true;
-    };
-
-    std::vector<data::BugInfo::ptr> temp;
-    for (auto& i : m_datas) {
-        if (check(i.second)) {
-            temp.emplace_back(i.second);
-        }
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
 
-    if (offset < temp.size()) {
-        for (size_t i = offset; i < temp.size(); ++i) {
-            if (infos.size() >= size) {
-                break;
-            }
-            infos.emplace_back(temp[i]);
-        }
+    if (size < (uint64_t)INT32_MAX) {
+        qb->limit((int32_t)size);
+        qb->offset((int32_t)offset);
     }
-    return temp.size();
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        infos.push_back(parseRow(rt));
+    }
+    return total;
 }
 
 uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos,
         int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("bug");
+    qb->where("org_id", "=", orgId);
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
 
-    auto it = m_org_datas.find(orgId);
-    if (it == m_org_datas.end()) {
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
         return 0;
     }
 
-    auto check = [&](auto info) -> bool {
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        return true;
-    };
-
-    std::vector<data::BugInfo::ptr> temp;
-    for (auto& i : it->second) {
-        if (check(i.second)) {
-            temp.emplace_back(i.second);
-        }
+    if (size < (uint64_t)INT32_MAX) {
+        qb->limit((int32_t)size);
+        qb->offset((int32_t)offset);
     }
-
-    if (offset < temp.size()) {
-        for (size_t i = offset; i < temp.size(); ++i) {
-            if (infos.size() >= size) {
-                break;
-            }
-            infos.emplace_back(temp[i]);
-        }
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
     }
-    return temp.size();
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        infos.push_back(parseRow(rt));
+    }
+    return total;
 }
 
 }

@@ -6,70 +6,73 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 1000;
+
+CommentPraiseRelManager::CommentPraiseRelManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::CommentPraiseRelInfo::ptr v(new data::CommentPraiseRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setUserId(rt->getInt64(1));
+    v->setCommentId(rt->getInt64(2));
+    v->setIsDeleted(rt->getInt32(3));
+    v->setCreateTime(rt->getTime(4));
+    v->setUpdateTime(rt->getTime(5));
+    return v;
+}
+
 bool CommentPraiseRelManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    std::vector<data::CommentPraiseRelInfo::ptr> results;
-    if (data::CommentPraiseRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "CommentPraiseRelManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, data::CommentPraiseRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::CommentPraiseRelInfo::ptr>> userPraises;
-    std::unordered_map<int64_t, std::map<int64_t, data::CommentPraiseRelInfo::ptr>> commentPraises;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        userPraises[i->getUserId()][i->getCommentId()] = i;
-        commentPraises[i->getCommentId()][i->getUserId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_userPraises.swap(userPraises);
-    m_commentPraises.swap(commentPraises);
-
+    INFO(logger) << "CommentPraiseRelManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void CommentPraiseRelManager::add(data::CommentPraiseRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_userPraises[info->getUserId()][info->getCommentId()] = info;
-    m_commentPraises[info->getCommentId()][info->getUserId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::CommentPraiseRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::getByUserAndComment(
     int64_t user_id, int64_t comment_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_userPraises.find(user_id);
-    if (it != m_userPraises.end()) {
-        auto iit = it->second.find(comment_id);
-        return iit == it->second.end() ? nullptr : iit->second;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    return nullptr;
+    return data::CommentPraiseRelInfoDao::QueryByUserIdCommentId(user_id, comment_id, db);
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::praise(int64_t user_id, int64_t comment_id) {
-    // check if already praising
     auto existing = getByUserAndComment(user_id, comment_id);
     if (existing) {
         if (!existing->getIsDeleted()) {
-            return existing; // already praising
+            return existing;
         }
-        // re-praise: update existing record
         auto db = GetDB();
         if (!db) {
-            ERROR(logger) << "get db connection fail";
+            ERROR(logger) << "Get DB connection fail";
             return nullptr;
         }
         existing->setIsDeleted(0);
@@ -78,15 +81,13 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::praise(int64_t user_id,
             ERROR(logger) << "CommentPraiseRelManager praise Update fail";
             return nullptr;
         }
-        // update in-memory maps
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        existing->setIsDeleted(0);
+        m_cache.set(existing->getId(), existing);
         return existing;
     }
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
 
@@ -102,13 +103,7 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::praise(int64_t user_id,
         return nullptr;
     }
 
-    {
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        m_datas[info->getId()] = info;
-        m_userPraises[info->getUserId()][info->getCommentId()] = info;
-        m_commentPraises[info->getCommentId()][info->getUserId()] = info;
-    }
-
+    m_cache.set(info->getId(), info);
     return info;
 }
 
@@ -120,7 +115,7 @@ bool CommentPraiseRelManager::unpraise(int64_t user_id, int64_t comment_id) {
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
 
@@ -130,6 +125,7 @@ bool CommentPraiseRelManager::unpraise(int64_t user_id, int64_t comment_id) {
         ERROR(logger) << "CommentPraiseRelManager unpraise Update fail";
         return false;
     }
+    m_cache.set(info->getId(), info);
     return true;
 }
 
@@ -139,18 +135,20 @@ bool CommentPraiseRelManager::isPraising(int64_t user_id, int64_t comment_id) {
 }
 
 int64_t CommentPraiseRelManager::countByComment(int64_t comment_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_commentPraises.find(comment_id);
-    if (it == m_commentPraises.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted()) {
-            count++;
-        }
+    auto qb = chen::QueryBuilder::Create("comment_praise_rel");
+    qb->where("comment_id", "=", comment_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
-    return count;
+    return total;
 }
 
 }

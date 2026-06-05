@@ -6,142 +6,153 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 1000;
+
+OrganizationUserRelManager::OrganizationUserRelManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::OrganizationUserRelInfo::ptr v(new data::OrganizationUserRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setOrgId(rt->getInt64(1));
+    v->setUserId(rt->getInt64(2));
+    v->setRole(rt->getInt32(3));
+    v->setStatus(rt->getInt32(4));
+    v->setIsDeleted(rt->getInt32(5));
+    v->setCreateTime(rt->getTime(6));
+    v->setUpdateTime(rt->getTime(7));
+    return v;
+}
+
 bool OrganizationUserRelManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-
-    std::vector<data::OrganizationUserRelInfo::ptr> results;
-    if (blog::data::OrganizationUserRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "OrganizationUserRelManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr>> org_user_datas;
-    std::unordered_map<int64_t, std::unordered_map<int64_t, data::OrganizationUserRelInfo::ptr>> user_org_datas;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        org_user_datas[i->getOrgId()][i->getUserId()] = i;
-        user_org_datas[i->getUserId()][i->getOrgId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_org_user_datas.swap(org_user_datas);
-    m_user_org_datas.swap(user_org_datas);
+    INFO(logger) << "OrganizationUserRelManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void OrganizationUserRelManager::add(data::OrganizationUserRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_org_user_datas[info->getOrgId()][info->getUserId()] = info;
-    m_user_org_datas[info->getUserId()][info->getOrgId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    if (it != m_datas.end()) {
-        return it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::OrganizationUserRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(int64_t o_id, int64_t u_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_org_user_datas.find(o_id);
-    if (it != m_org_user_datas.end()) {
-        auto uit = it->second.find(u_id);
-        if (uit != it->second.end()) {
-            return uit->second;
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    return nullptr;
+    return data::OrganizationUserRelInfoDao::QueryByOrgIdUserId(o_id, u_id, db);
 }
 
 int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
         , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("organization_user_rel");
+    qb->where("org_id", "=", o_id);
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
 
-    auto check = [&](data::OrganizationUserRelInfo::ptr info) {
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        return true;
-    };
-
-    std::vector<data::OrganizationUserRelInfo::ptr> tmp;
-
-    for (auto& i : m_org_user_datas[o_id]) {
-        if (check(i.second)) {
-            tmp.push_back(i.second);
-        }
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
 
-    if (offset < tmp.size()) {
-        for (size_t i = offset; i < tmp.size(); ++i) {
-            if (results.size() >= size) {
-                break;
-            }
-            results.push_back(tmp[i]);
-        }
+    if (size < (uint64_t)INT32_MAX) {
+        qb->limit((int32_t)size);
+        qb->offset((int32_t)offset);
     }
-
-    return tmp.size();
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        results.push_back(parseRow(rt));
+    }
+    return total;
 }
 
 int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::OrganizationUserRelInfo::ptr>& results
         , int64_t u_id, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-
-    auto check = [&](data::OrganizationUserRelInfo::ptr info) {
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        if (info->getStatus() == OrganizationUserRelManager::Status::PENDING) {
-            return false;
-        }
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        return true;
-    };
-
-    for (auto& i : m_user_org_datas[u_id]) {
-        if (check(i.second)) {
-            results.push_back(i.second);
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("organization_user_rel");
+    qb->where("user_id", "=", u_id);
+    qb->where("status", "!=", (int64_t)Status::PENDING);
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        results.push_back(parseRow(rt));
     }
     return results.size();
 }
 
 int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-
-    auto check = [&](data::OrganizationUserRelInfo::ptr info) {
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        return true;
-    };
-
-    int64_t count = 0;
-    for (auto& i : m_org_user_datas[o_id]) {
-        if (check(i.second)) {
-            ++count;
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
     }
-    return count;
+    auto qb = chen::QueryBuilder::Create("organization_user_rel");
+    qb->where("org_id", "=", o_id);
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
+    }
+    return total;
 }
 
 }

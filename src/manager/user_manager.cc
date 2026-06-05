@@ -6,139 +6,180 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 1000;
+
+UserManager::UserManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt) {
+    data::UserInfo::ptr v(new data::UserInfo);
+    v->setId(rt->getInt64(0));
+    v->setName(rt->getString(1));
+    v->setAccount(rt->getString(2));
+    v->setAvatar(rt->getString(3));
+    v->setEmail(rt->getString(4));
+    v->setRole(rt->getInt32(5));
+    v->setPasswd(rt->getString(6));
+    v->setState(rt->getInt32(7));
+    v->setBio(rt->getString(8));
+    v->setWebsite(rt->getString(9));
+    v->setLocation(rt->getString(10));
+    v->setToken(rt->getString(11));
+    v->setTokenTime(rt->getInt64(12));
+    v->setLoginTime(rt->getTime(13));
+    v->setIsDeleted(rt->getInt32(14));
+    v->setCreateTime(rt->getTime(15));
+    v->setUpdateTime(rt->getTime(16));
+    return v;
+}
+
 bool UserManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    std::vector<data::UserInfo::ptr> results;
-    if (blog::data::UserInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "UserManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, blog::data::UserInfo::ptr> datas;
-    std::unordered_map<std::string, blog::data::UserInfo::ptr> accounts;
-    std::unordered_map<std::string, blog::data::UserInfo::ptr> emails;
-    std::unordered_map<std::string, blog::data::UserInfo::ptr> names;
-    std::unordered_map<int32_t, std::unordered_map<int64_t, blog::data::UserInfo::ptr>> role_id_users;
-
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        accounts[i->getAccount()] = i;
-        emails[i->getEmail()] = i;
-        names[i->getName()] = i;
-        role_id_users[i->getRole()][i->getId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_accounts.swap(accounts);
-    m_emails.swap(emails);
-    m_names.swap(names);
-    m_role_id_users.swap(role_id_users);
+    INFO(logger) << "UserManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
+void UserManager::add(blog::data::UserInfo::ptr info) {
+    m_cache.set(info->getId(), info);
+}
+
+void UserManager::update(blog::data::UserInfo::ptr info) {
+    m_cache.set(info->getId(), info);
+}
+
 void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    for (auto [id, user] : m_datas) {
-        if (isValid && user->getIsDeleted()) {
-            continue;
-        }
-        ids.emplace_back(id);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return;
+    }
+    auto qb = chen::QueryBuilder::Create("user");
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->select("id");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        ids.push_back(rt->getInt64(0));
     }
 }
 
 uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
         , int32_t role, int32_t state, int32_t days, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-
-    std::vector<blog::data::UserInfo::ptr> temp;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
 
     int64_t start_time = 0;
     if (days > 0) {
         start_time = time(0) - days * 24 * 3600;
     }
 
-    auto check = [&](blog::data::UserInfo::ptr info) -> bool {
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        if (state != -1 && info->getState() != state) {
-            return false;
-        }
-        if (start_time && info->getCreateTime() < start_time) {
-            return false;
-        }
-        return true;
-    };
+    auto qb = chen::QueryBuilder::Create("user");
+    qb->whereIf(role != -1, "role", "=", (int64_t)role);
+    qb->whereIf(state != -1, "state", "=", (int64_t)state);
+    qb->whereIf(days > 0, "create_time", ">=", start_time);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
 
-    if (role != -1) {
-        auto it = m_role_id_users.find(role);
-        if (it != m_role_id_users.end()) {
-            for (auto& i : it->second) {
-                if (check(i.second)) {
-                    temp.push_back(i.second);
-                }
-            }
-        }
-    } else {
-        for (auto& i : m_datas) {
-            if (check(i.second)) {
-                temp.push_back(i.second);
-            }
-        }
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "listByPages executeCount fail errno=" << db->getErrno();
+        return 0;
     }
 
-    // std::sort(temp.begin(), temp.end(), [](const auto& a, const auto& b) {
-    //     return a->getId() > b->getId();
-    // });
-
-    if (offset < temp.size()) {
-        for (size_t i = offset; i < temp.size(); ++i) {
-            if (infos.size() >= size) {
-                break;
-            }
-            infos.push_back(temp[i]);
-        }
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
     }
-    return temp.size();
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        infos.push_back(parseRow(rt));
+    }
+    return total;
 }
 
-void UserManager::add(blog::data::UserInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_accounts[info->getAccount()] = info;
-    m_emails[info->getEmail()] = info;
-    m_names[info->getName()] = info;
-    m_role_id_users[info->getRole()][info->getId()] = info;
+blog::data::UserInfo::ptr UserManager::get(int64_t id) {
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::UserInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
-void UserManager::update(blog::data::UserInfo::ptr info, int32_t old_role, const std::string& old_account, const std::string& old_email) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    int64_t id = info->getId();
-    m_datas[id] = info;
-    if (info->getAccount() != old_account) {
-        m_accounts.erase(old_account);
-        m_accounts[info->getAccount()] = info;
+blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v) {
+    // Check cache first
+    // Since cache is only keyed by id, query DB directly via DAO
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    if (info->getEmail() != old_email) {
-        m_emails.erase(old_email);
-        m_emails[info->getEmail()] = info;
+    auto info = data::UserInfoDao::QueryByAccount(v, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
     }
-    m_names[info->getName()] = info;
-    if (info->getRole() != old_role) {
-        auto it = m_role_id_users.find(old_role);
-        if (it != m_role_id_users.end()) {
-            it->second.erase(id);
-            if (it->second.empty()) {
-                m_role_id_users.erase(it);
-            }
-        }
-        m_role_id_users[info->getRole()][id] = info;
+    return info;
+}
+
+blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
+    auto info = data::UserInfoDao::QueryByEmail(v, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
+}
+
+blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    auto info = data::UserInfoDao::QueryByName(v, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 std::string UserManager::GetToken(data::UserInfo::ptr info, int64_t us) {
@@ -156,28 +197,5 @@ std::string UserManager::generateToken() {
     ss << std::hex << chen::GetCurrentUs() << rand() << rand();
     return chen::md5(ss.str());
 }
-
-#define XX(map, key)                                   \
-    std::shared_lock<std::shared_mutex> lock(m_mutex); \
-    auto it = map.find(key);                           \
-    return it == map.end() ? nullptr : it->second;
-
-blog::data::UserInfo::ptr UserManager::get(int64_t id) {
-    XX(m_datas, id);
-}
-
-blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v) {
-    XX(m_accounts, v);
-}
-
-blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
-    XX(m_emails, v);
-}
-
-blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {
-    XX(m_names, v);
-}
-
-#undef XX
 
 }

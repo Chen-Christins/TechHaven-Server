@@ -9,8 +9,6 @@
 #include <mutex>
 #include <set>
 #include <shared_mutex>
-#include <unordered_map>
-#include <vector>
 
 namespace blog {
 
@@ -93,14 +91,6 @@ private:
     std::mutex m_mutex;
     /// 文章浏览数锁
     std::shared_mutex m_viewsMutex;
-    /// 文章数据内容（保留以保持内存布局兼容）
-    std::map<int64_t, blog::data::ArticleInfo::ptr> m_datas;
-    /// 按id降序排列的文章id索引（保留以保持内存布局兼容）
-    std::vector<int64_t> m_sortedIds;
-    /// 用户i 对应 -> 文章（保留以保持内存布局兼容）
-    std::unordered_map<int64_t, std::map<int64_t, blog::data::ArticleInfo::ptr>> m_users;
-    /// 文章发布的状态（保留以保持内存布局兼容）
-    std::map<int64_t, blog::data::ArticleInfo::ptr> m_verifys;
     /// LRU 文章缓存（最多 1000 条）
     chen::ds::LruCache<int64_t, data::ArticleInfo::ptr> m_cache;
     /// 文章浏览数

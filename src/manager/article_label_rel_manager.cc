@@ -6,89 +6,120 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 500;
+
+ArticleLabelRelManager::ArticleLabelRelManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::ArticleLabelRelInfo::ptr v(new data::ArticleLabelRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setArticleId(rt->getInt64(1));
+    v->setLabelId(rt->getInt64(2));
+    v->setIsDeleted(rt->getInt32(3));
+    v->setCreateTime(rt->getTime(4));
+    v->setUpdateTime(rt->getTime(5));
+    return v;
+}
+
 bool ArticleLabelRelManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    std::vector<data::ArticleLabelRelInfo::ptr> results;
-    if (data::ArticleLabelRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "ArticleLabelManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, data::ArticleLabelRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> articles;
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticleLabelRelInfo::ptr>> labels;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        articles[i->getArticleId()][i->getLabelId()] = i;
-        labels[i->getLabelId()][i->getArticleId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_articles.swap(articles);
-    m_labels.swap(labels);
-
+    INFO(logger) << "ArticleLabelRelManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void ArticleLabelRelManager::add(data::ArticleLabelRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_articles[info->getArticleId()][info->getLabelId()] = info;
-    m_labels[info->getLabelId()][info->getArticleId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::ArticleLabelRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
         ,int64_t id, bool valid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articles.find(id);
-    if (it == m_articles.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-
-    for (auto& i : it->second) {
-        if (!valid || !i.second->getIsDeleted()) {
-            infos.push_back(i.second);
-        }
+    auto qb = chen::QueryBuilder::Create("article_label_rel");
+    qb->where("article_id", "=", id);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return false;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return false;
+    }
+    while (rt->next()) {
+        infos.push_back(parseRow(rt));
     }
     return true;
 }
 
 bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
         ,int64_t label_id, bool valid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_labels.find(label_id);
-    if (it == m_labels.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-
-    for (auto& i : it->second) {
-        if (!valid || !i.second->getIsDeleted()) {
-            infos.push_back(i.second);
-        }
+    auto qb = chen::QueryBuilder::Create("article_label_rel");
+    qb->where("label_id", "=", label_id);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return false;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return false;
+    }
+    while (rt->next()) {
+        infos.push_back(parseRow(rt));
     }
     return true;
 }
 
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int64_t article_id
-        ,int64_t category_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articles.find(article_id);
-    if (it != m_articles.end()) {
-        auto iit = it->second.find(category_id);
-        return iit == it->second.end() ? nullptr : iit->second;
+        ,int64_t label_id) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    return nullptr;
+    return data::ArticleLabelRelInfoDao::QueryByArticleIdLabelId(article_id, label_id, db);
 }
 
 }

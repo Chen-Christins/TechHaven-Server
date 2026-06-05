@@ -6,105 +6,131 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static const size_t kCacheMaxSize = 500;
+
+AssignmentOrganizationRelManager::AssignmentOrganizationRelManager()
+    :m_cache(kCacheMaxSize, 0, nullptr) {
+}
+
+data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::AssignmentOrganizationRelInfo::ptr v(new data::AssignmentOrganizationRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setAssignmentId(rt->getInt64(1));
+    v->setOrganizationId(rt->getInt64(2));
+    v->setAssignedBy(rt->getString(3));
+    v->setStatus(rt->getInt32(4));
+    v->setIsDeleted(rt->getInt32(5));
+    v->setCreateTime(rt->getTime(6));
+    v->setUpdateTime(rt->getTime(7));
+    return v;
+}
+
 bool AssignmentOrganizationRelManager::loadAll() {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    std::vector<blog::data::AssignmentOrganizationRelInfo::ptr> results;
-    if (blog::data::AssignmentOrganizationRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "AssignmentOrganizationRelManager loadAll fail";
-        return false;
-    }
-
-    std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr>> org_assign_datas;
-    std::unordered_map<int64_t, std::unordered_map<int64_t, blog::data::AssignmentOrganizationRelInfo::ptr>> assign_org_datas;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        org_assign_datas[i->getOrganizationId()][i->getAssignmentId()] = i;
-        assign_org_datas[i->getAssignmentId()][i->getOrganizationId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_org_assign_datas.swap(org_assign_datas);
-    m_assign_org_datas.swap(assign_org_datas);
+    INFO(logger) << "AssignmentOrganizationRelManager loadAll: DB connection verified, no preloading needed";
     return true;
 }
 
 void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_org_assign_datas[info->getOrganizationId()][info->getAssignmentId()] = info;
-    m_assign_org_datas[info->getAssignmentId()][info->getOrganizationId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    if (it != m_datas.end()) {
-        return it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::AssignmentOrganizationRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::getByOrgAndAssign(int64_t org_id, int64_t assign_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto org_it = m_org_assign_datas.find(org_id);
-    if (org_it != m_org_assign_datas.end()) {
-        auto assign_it = org_it->second.find(assign_id);
-        if (assign_it != org_it->second.end()) {
-            return assign_it->second;
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-    return nullptr;
+    return data::AssignmentOrganizationRelInfoDao::QueryByAssignmentIdOrganizationId(assign_id, org_id, db);
 }
 
 int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results, int64_t assign_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto assign_it = m_assign_org_datas.find(assign_id);
-    if (assign_it != m_assign_org_datas.end()) {
-        for (auto& i : assign_it->second) {
-            results.push_back(i.second);
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("assignment_organization_rel");
+    qb->where("assignment_id", "=", assign_id);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        results.push_back(parseRow(rt));
     }
     return results.size();
 }
 
 int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results
         , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("assignment_organization_rel");
+    qb->where("organization_id", "=", o_id);
+    qb->whereIf(status != -1, "status", "=", (int64_t)status);
+    qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
 
-    auto check = [&](data::AssignmentOrganizationRelInfo::ptr info) {
-        if (status != -1 && info->getStatus() != status) {
-            return false;
-        }
-        if (isValid && info->getIsDeleted()) {
-            return false;
-        }
-        return true;
-    };
-
-    std::vector<data::AssignmentOrganizationRelInfo::ptr> tmp;
-
-    for (auto& i : m_org_assign_datas[o_id]) {
-        if (check(i.second)) {
-            tmp.push_back(i.second);
-        }
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
 
-    if (offset < tmp.size()) {
-        for (size_t i = offset; i < tmp.size(); ++i) {
-            if (results.size() >= size) {
-                break;
-            }
-            results.push_back(tmp[i]);
-        }
+    if (size < (uint64_t)INT32_MAX) {
+        qb->limit((int32_t)size);
+        qb->offset((int32_t)offset);
     }
-
-    return tmp.size();
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        results.push_back(parseRow(rt));
+    }
+    return total;
 }
 
 }

@@ -1,9 +1,9 @@
-#ifndef __BLOG_MANAGER_USER_MANAGER_H__
-#define __BLOG_MANAGER_USER_MANAGER_H__
+#pragma once
 
 #include "blog/data/user_info.h"
+#include <chen/ds/lru_cache.h>
+#include <chen/db/query_builder.h>
 #include <chen/singleton.h>
-#include <unordered_map>
 #include <shared_mutex>
 
 namespace blog {
@@ -21,9 +21,12 @@ public:
         ACTIVE = 1,
         BANNED = 2
     };
+
+    UserManager();
+
     bool loadAll();
     void add(blog::data::UserInfo::ptr info);
-    void update(blog::data::UserInfo::ptr info, int32_t old_role, const std::string& old_account, const std::string& old_email);
+    void update(blog::data::UserInfo::ptr info);
     void getAllIds(std::vector<int64_t>& ids, bool isValid);
 
     uint64_t listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
@@ -36,17 +39,14 @@ public:
 
     static std::string GetToken(data::UserInfo::ptr info, int64_t us);
     static std::string generateToken();
+
 private:
-    std::unordered_map<int64_t, blog::data::UserInfo::ptr> m_datas;
-    std::unordered_map<std::string, blog::data::UserInfo::ptr> m_accounts;
-    std::unordered_map<std::string, blog::data::UserInfo::ptr> m_emails;
-    std::unordered_map<std::string, blog::data::UserInfo::ptr> m_names;
-    std::unordered_map<int32_t, std::unordered_map<int64_t, blog::data::UserInfo::ptr>> m_role_id_users;
+    static data::UserInfo::ptr parseRow(chen::ISQLData::ptr rt);
+
     std::shared_mutex m_mutex;
+    chen::ds::LruCache<int64_t, data::UserInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<UserManager> UserMgr;
 
 }
-
-#endif // __BLOG_MANAGER_USER_MANAGER_H__

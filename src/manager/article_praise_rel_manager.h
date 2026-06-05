@@ -1,16 +1,17 @@
-#ifndef __BLOG_MANAGER_ARTICLE_PRAISE_REL_MANAGER_H__
-#define __BLOG_MANAGER_ARTICLE_PRAISE_REL_MANAGER_H__
+#pragma once
 
 #include <shared_mutex>
-#include <unordered_map>
-#include <map>
 #include "blog/data/article_praise_rel_info.h"
+#include <chen/ds/lru_cache.h>
+#include <chen/db/query_builder.h>
 #include <chen/singleton.h>
 
 namespace blog {
 
 class ArticlePraiseRelManager {
 public:
+    ArticlePraiseRelManager();
+
     bool loadAll();
     void add(data::ArticlePraiseRelInfo::ptr info);
     data::ArticlePraiseRelInfo::ptr get(int64_t id);
@@ -31,16 +32,12 @@ public:
     int64_t countByUser(int64_t user_id);
 
 private:
+    static data::ArticlePraiseRelInfo::ptr parseRow(chen::ISQLData::ptr rt);
+
     std::shared_mutex m_mutex;
-    std::unordered_map<int64_t, data::ArticlePraiseRelInfo::ptr> m_datas;
-    // user_id -> (article_id -> info)
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticlePraiseRelInfo::ptr>> m_userPraises;
-    // article_id -> (user_id -> info)
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticlePraiseRelInfo::ptr>> m_articlePraises;
+    chen::ds::LruCache<int64_t, data::ArticlePraiseRelInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<ArticlePraiseRelManager> ArticlePraiseRelMgr;
 
 }
-
-#endif // __BLOG_MANAGER_ARTICLE_PRAISE_REL_MANAGER_H__
