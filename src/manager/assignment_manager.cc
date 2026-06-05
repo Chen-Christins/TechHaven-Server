@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 AssignmentManager::AssignmentManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(4, kCacheMaxSize, 0) {
 }
 
 data::AssignmentInfo::ptr AssignmentManager::parseRow(chen::ISQLData::ptr rt) {

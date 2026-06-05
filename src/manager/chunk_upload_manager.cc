@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 ChunkUploadManager::ChunkUploadManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(4, kCacheMaxSize, 0) {
 }
 
 data::ChunkUploadInfo::ptr ChunkUploadManager::parseRow(chen::ISQLData::ptr rt) {

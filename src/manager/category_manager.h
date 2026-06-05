@@ -20,7 +20,7 @@ private:
     static data::CategoryInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
     std::shared_mutex m_mutex;
-    chen::ds::LruCache<int64_t, data::CategoryInfo::ptr> m_cache;
+    chen::ds::HashLruCache<int64_t, data::CategoryInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<CategoryManager> CategoryMgr;

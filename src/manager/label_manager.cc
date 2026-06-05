@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 LabelManager::LabelManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
 data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt) {

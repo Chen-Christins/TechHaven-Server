@@ -12,7 +12,7 @@ static chen::ConfigVar<std::string>::ptr server_work_path = chen::Config::Lookup
 static const size_t kCacheMaxSize = 500;
 
 ResourceManager::ResourceManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
 ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string& filename) {

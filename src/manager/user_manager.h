@@ -43,7 +43,7 @@ private:
     static data::UserInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
     std::shared_mutex m_mutex;
-    chen::ds::LruCache<int64_t, data::UserInfo::ptr> m_cache;
+    chen::ds::HashLruCache<int64_t, data::UserInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<UserManager> UserMgr;

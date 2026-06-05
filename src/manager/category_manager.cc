@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 100;
 
 CategoryManager::CategoryManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(4, kCacheMaxSize, 0) {
 }
 
 data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt) {

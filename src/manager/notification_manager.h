@@ -45,7 +45,7 @@ private:
     std::shared_mutex m_connMutex;
 
     // notification cache
-    chen::ds::LruCache<int64_t, data::NotificationInfo::ptr> m_cache;
+    chen::ds::HashLruCache<int64_t, data::NotificationInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<NotificationManager> NotificationMgr;

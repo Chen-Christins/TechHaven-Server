@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 ArticleCategoryRelManager::ArticleCategoryRelManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
 data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::parseRow(chen::ISQLData::ptr rt) {

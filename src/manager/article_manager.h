@@ -91,7 +91,7 @@ private:
     /// 文章浏览数锁
     std::shared_mutex m_viewsMutex;
     /// LRU 文章缓存（最多 1000 条）
-    chen::ds::LruCache<int64_t, data::ArticleInfo::ptr> m_cache;
+    chen::ds::HashLruCache<int64_t, data::ArticleInfo::ptr> m_cache;
     /// 文章浏览数
     std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
     /// 待更新到 DB 的文章 ID 集合

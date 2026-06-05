@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 UserManager::UserManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(32, kCacheMaxSize, 0) {
 }
 
 data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt) {

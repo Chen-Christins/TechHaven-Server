@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_NAME("system");
 static const size_t kCacheMaxSize = 2000;
 
 NotificationManager::NotificationManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(16, kCacheMaxSize, 0) {
 }
 
 data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt) {

@@ -1,5 +1,5 @@
 #include "article_manager.h"
-#include "user_manager.h"
+#include "cache_util.h"
 #include "../util.h"
 #include <chen/log/log.h>
 #include <chen/iomanager/iomanager.h>
@@ -12,7 +12,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 ArticleManager::ArticleManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(32, kCacheMaxSize, 0) {
 }
 
 data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt) {
@@ -145,11 +145,23 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
     qb->limit(size);
     qb->offset(offset);
 
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
-        return 0;
+    // 结果缓存：仅对首页做缓存
+    std::string listKey = "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0")
+                        + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                infos.push_back(info);
+            }
+        }
+        return executeCountCached(qb, db,
+            "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
     }
+
+    int64_t total = executeCountCached(qb, db,
+        "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
     if (total == 0) {
         return 0;
     }
@@ -166,9 +178,13 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
     if (!rt) {
         return 0;
     }
+    std::vector<int64_t> ids;
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        infos.push_back(info);
     }
+    cacheListResult(listKey, ids);
     return total;
 }
 
@@ -190,11 +206,23 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
     qb->limit(size);
     qb->offset(offset);
 
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
-        return 0;
+    // 结果缓存：仅对首页做缓存
+    std::string listKey = "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0")
+                        + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                infos.push_back(info);
+            }
+        }
+        return executeCountCached(qb, db,
+            "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
     }
+
+    int64_t total = executeCountCached(qb, db,
+        "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
     if (total == 0) {
         return 0;
     }
@@ -211,9 +239,13 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
     if (!rt) {
         return 0;
     }
+    std::vector<int64_t> ids;
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        infos.push_back(info);
     }
+    cacheListResult(listKey, ids);
     return total;
 }
 
@@ -233,6 +265,11 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         qb->where("acr.category_id", "=", (int64_t)category);
         qb->where("acr.is_deleted", "=", (int64_t)0);
     }
+    if (role != -1) {
+        qb->join("user u", "a.user_id = u.id");
+        qb->where("u.role", "=", (int64_t)role);
+        qb->where("u.is_deleted", "=", (int64_t)0);
+    }
     qb->whereIf(state != 0, "a.state", "=", (int64_t)state);
     qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
     if (days > 0) {
@@ -243,42 +280,31 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
     qb->limit(size);
     qb->offset(offset);
 
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
-        return 0;
-    }
-    if (total == 0) {
-        return 0;
-    }
+    {
+        std::stringstream ck;
+        ck << "art:list:" << state << ":" << category << ":" << role << ":" << days << ":" << (valid ? "1" : "0");
+        int64_t total = executeCountCached(qb, db, ck.str());
+        if (total == 0) {
+            return 0;
+        }
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        // 角色筛选：需要关联 UserMgr，在 DB 外完成
-        if (role != -1) {
-            auto user = UserMgr::GetInstance()->get(info->getUserId());
-            if (!user || user->getRole() != role) {
-                --total;
-                continue;
-            }
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (!stmt) {
+            ERROR(logger) << "stmt=" << sql
+                     << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            return 0;
         }
-        if (infos.size() < (size_t)size) {
-            infos.push_back(info);
+        qb->bindParams(stmt);
+        auto rt = stmt->query();
+        if (!rt) {
+            return 0;
         }
+        while (rt->next()) {
+            infos.push_back(parseRow(rt));
+        }
+        return total;
     }
-    return total;
 }
 
 void ArticleManager::delVerify(int64_t id) {
@@ -301,11 +327,7 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
     qb->limit(size);
     qb->offset(offset);
 
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
-        return 0;
-    }
+    int64_t total = executeCountCached(qb, db, "art:verify", 60);
     if (total == 0) {
         return 0;
     }
@@ -399,6 +421,11 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
         qb->where("acr.category_id", "=", (int64_t)category);
         qb->where("acr.is_deleted", "=", (int64_t)0);
     }
+    if (role != -1) {
+        qb->join("user u", "a.user_id = u.id");
+        qb->where("u.role", "=", (int64_t)role);
+        qb->where("u.is_deleted", "=", (int64_t)0);
+    }
     qb->where("a.is_deleted", "=", (int64_t)0);
     if (days > 0) {
         time_t now = time(0);
@@ -419,56 +446,6 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
     qb->bindParams(stmt);
     auto rt = stmt->query();
     if (!rt) {
-        return stats;
-    }
-
-    // 如果需要角色筛选，先收集所有涉及的 userId 检查角色
-    std::set<int64_t> roleFilterUserIds;
-    if (role != -1) {
-        // 角色筛选需要在分组结果上做，先单独查一次获取匹配角色的文章
-        auto qb2 = chen::QueryBuilder::Create("article a");
-        qb2->select("a.id, a.user_id, a.state");
-        qb2->where("a.is_deleted", "=", (int64_t)0);
-        if (category > 0) {
-            qb2->join("article_category_rel acr", "a.id = acr.article_id");
-            qb2->where("acr.category_id", "=", (int64_t)category);
-            qb2->where("acr.is_deleted", "=", (int64_t)0);
-        }
-        if (days > 0) {
-            time_t now = time(0);
-            qb2->whereSQL("a.create_time >= ?", (int64_t)(now - days * 24 * 3600));
-        }
-        if (!keyword.empty()) {
-            qb2->where("a.title", "LIKE", "%" + keyword + "%");
-        }
-        std::string sql2 = qb2->buildQuerySQL();
-        auto stmt2 = db->prepare(sql2);
-        if (stmt2) {
-            qb2->bindParams(stmt2);
-            auto rt2 = stmt2->query();
-            if (rt2) {
-                while (rt2->next()) {
-                    auto userId = rt2->getInt64(1);
-                    auto artState = rt2->getInt32(2);
-                    auto user = UserMgr::GetInstance()->get(userId);
-                    if (!user || user->getRole() != role) {
-                        continue;
-                    }
-                    stats.total++;
-                    switch (artState) {
-                    case Status::CHECKING:
-                        stats.pending++;
-                        break;
-                    case Status::PUBLISHED:
-                        stats.published++;
-                        break;
-                    case Status::REJECTED:
-                        stats.rejected++;
-                        break;
-                    }
-                }
-            }
-        }
         return stats;
     }
 

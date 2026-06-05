@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 200;
 
 OrganizationManager::OrganizationManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(4, kCacheMaxSize, 0) {
 }
 
 data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt) {

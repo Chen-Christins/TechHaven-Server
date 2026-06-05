@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 TaskManager::TaskManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
 data::TaskInfo::ptr TaskManager::parseRow(chen::ISQLData::ptr rt) {

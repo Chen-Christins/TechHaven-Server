@@ -9,7 +9,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 1000;
 
 CommentManager::CommentManager()
-    :m_cache(kCacheMaxSize, 0, nullptr) {
+    :m_cache(16, kCacheMaxSize, 0) {
 }
 
 data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt) {
@@ -298,47 +298,59 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
 }
 
 int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32_t status) {
+    if (ids.empty()) {
+        return 0;
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
 
-    int64_t affected = 0;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->set("status", (int64_t)status);
+    qb->whereIn("id", ids);
+    if (qb->executeUpdate(db)) {
+        ERROR(logger) << "batchUpdateStatus executeUpdate fail errno=" << db->getErrno();
+        return 0;
+    }
+
     for (auto& id : ids) {
         auto info = get(id);
-        if (!info || info->getIsDeleted()) {
-            continue;
-        }
-        info->setStatus(status);
-        info->setUpdateTime(time(0));
-        if (data::CommentInfoDao::Update(info, db) == 0) {
-            affected++;
+        if (info) {
+            info->setStatus(status);
+            info->setUpdateTime(time(0));
         }
     }
-    return affected;
+    return ids.size();
 }
 
 int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids) {
+    if (ids.empty()) {
+        return 0;
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
 
-    int64_t affected = 0;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->set("is_deleted", (int64_t)1);
+    qb->whereIn("id", ids);
+    if (qb->executeUpdate(db)) {
+        ERROR(logger) << "batchDelete executeUpdate fail errno=" << db->getErrno();
+        return 0;
+    }
+
     for (auto& id : ids) {
         auto info = get(id);
-        if (!info || info->getIsDeleted()) {
-            continue;
-        }
-        info->setIsDeleted(1);
-        info->setUpdateTime(time(0));
-        if (data::CommentInfoDao::Update(info, db) == 0) {
-            affected++;
+        if (info) {
+            info->setIsDeleted(1);
+            info->setUpdateTime(time(0));
         }
     }
-    return affected;
+    return ids.size();
 }
 
 CommentManager::CommentStats CommentManager::getStats() {
