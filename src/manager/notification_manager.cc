@@ -4,7 +4,7 @@
 
 namespace blog {
 
-static chen::Logger::ptr logger = LOG_NAME("system");
+static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 2000;
 
