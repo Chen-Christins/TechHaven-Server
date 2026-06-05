@@ -35,15 +35,6 @@ data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool ArticleManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "ArticleManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void ArticleManager::add(blog::data::ArticleInfo::ptr info) {
     m_cache.set(info->getId(), info);

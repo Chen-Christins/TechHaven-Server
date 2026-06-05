@@ -24,7 +24,6 @@ public:
     int32_t getOnlineCount();
 
     // DB persistence
-    bool loadAll();
     data::NotificationInfo::ptr get(int64_t id);
     data::NotificationInfo::ptr addNotification(int64_t user_id, const std::string& title,
         const std::string& content, const std::string& type, int64_t sender_id,

@@ -25,15 +25,6 @@ data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parse
     return v;
 }
 
-bool AssignmentOrganizationRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "AssignmentOrganizationRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

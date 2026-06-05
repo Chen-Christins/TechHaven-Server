@@ -12,7 +12,6 @@ class LabelManager {
 public:
     LabelManager();
 
-    bool loadAll();
     void add(data::LabelInfo::ptr info);
     data::LabelInfo::ptr get(int64_t id);
     data::LabelInfo::ptr getByUserIdName(int64_t id, const std::string& name);

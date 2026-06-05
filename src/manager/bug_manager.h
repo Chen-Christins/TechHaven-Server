@@ -32,7 +32,6 @@ public:
 
     BugManager();
 
-    bool loadAll();
     void add(data::BugInfo::ptr info);
     data::BugInfo::ptr get(int64_t id);
     uint64_t listByPages(std::vector<data::BugInfo::ptr>& infos,

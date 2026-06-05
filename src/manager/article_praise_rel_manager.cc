@@ -23,15 +23,6 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData
     return v;
 }
 
-bool ArticlePraiseRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "ArticlePraiseRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

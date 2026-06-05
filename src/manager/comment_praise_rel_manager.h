@@ -12,7 +12,6 @@ class CommentPraiseRelManager {
 public:
     CommentPraiseRelManager();
 
-    bool loadAll();
     void add(data::CommentPraiseRelInfo::ptr info);
     data::CommentPraiseRelInfo::ptr get(int64_t id);
     data::CommentPraiseRelInfo::ptr getByUserAndComment(int64_t user_id, int64_t comment_id);

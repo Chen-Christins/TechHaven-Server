@@ -26,7 +26,6 @@ public:
 
     RequirementManager();
 
-    bool loadAll();
     void add(data::RequirementInfo::ptr info);
     data::RequirementInfo::ptr get(int64_t id);
     uint64_t listByPages(std::vector<data::RequirementInfo::ptr>& infos,

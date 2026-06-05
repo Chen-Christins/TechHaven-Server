@@ -82,15 +82,6 @@ int32_t NotificationManager::getOnlineCount() {
 
 // ========== DB persistence ==========
 
-bool NotificationManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "NotificationManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 data::NotificationInfo::ptr NotificationManager::addNotification(
     int64_t user_id, const std::string& title,

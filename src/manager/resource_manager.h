@@ -28,7 +28,6 @@ public:
 
     ResourceType GetResourceType(const std::string& filename);
 
-    bool loadAll();
     void add(blog::data::ResourceInfo::ptr info);
     data::ResourceInfo::ptr get(int64_t id);
 

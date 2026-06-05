@@ -53,11 +53,6 @@ private:
     bool initMySQL();
 
     /**
-     * @brief 加载所有数据到内存
-     */
-    void loadAllData();
-
-    /**
      * @brief 注册Servlet
      */
     void registerServlets(std::vector<chen::TcpServer::ptr>& servers);

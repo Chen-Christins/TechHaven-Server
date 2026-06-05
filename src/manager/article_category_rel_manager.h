@@ -12,7 +12,6 @@ class ArticleCategoryRelManager {
 public:
     ArticleCategoryRelManager();
 
-    bool loadAll();
     void add(data::ArticleCategoryRelInfo::ptr info);
     data::ArticleCategoryRelInfo::ptr get(int64_t id);
     bool listByArticleId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos, int64_t id, bool valid);

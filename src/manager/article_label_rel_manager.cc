@@ -23,15 +23,6 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::parseRow(chen::ISQLData::
     return v;
 }
 
-bool ArticleLabelRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "ArticleLabelRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void ArticleLabelRelManager::add(data::ArticleLabelRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

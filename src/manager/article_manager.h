@@ -28,7 +28,6 @@ public:
 
     ArticleManager();
 
-    bool loadAll();
     void add(blog::data::ArticleInfo::ptr info);
     blog::data::ArticleInfo::ptr get(int64_t id);
     bool listByUserId(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, bool valid);

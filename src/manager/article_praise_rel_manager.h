@@ -12,7 +12,6 @@ class ArticlePraiseRelManager {
 public:
     ArticlePraiseRelManager();
 
-    bool loadAll();
     void add(data::ArticlePraiseRelInfo::ptr info);
     data::ArticlePraiseRelInfo::ptr get(int64_t id);
     data::ArticlePraiseRelInfo::ptr getByUserAndArticle(int64_t user_id, int64_t article_id);

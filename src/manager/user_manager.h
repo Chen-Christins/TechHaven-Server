@@ -24,7 +24,6 @@ public:
 
     UserManager();
 
-    bool loadAll();
     void add(blog::data::UserInfo::ptr info);
     void update(blog::data::UserInfo::ptr info);
     void getAllIds(std::vector<int64_t>& ids, bool isValid);

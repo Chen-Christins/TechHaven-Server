@@ -12,7 +12,6 @@ class AssignmentOrganizationRelManager {
 public:
     AssignmentOrganizationRelManager();
 
-    bool loadAll();
     void add(blog::data::AssignmentOrganizationRelInfo::ptr info);
     blog::data::AssignmentOrganizationRelInfo::ptr get(int64_t id);
     blog::data::AssignmentOrganizationRelInfo::ptr getByOrgAndAssign(int64_t org_id, int64_t assign_id);

@@ -26,15 +26,6 @@ data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLDa
     return v;
 }
 
-bool AssignmentUserRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "AssignmentUserRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

@@ -8,7 +8,6 @@ namespace blog {
 
 class SystemSettingsManager {
 public:
-    bool loadAll();
     void add(blog::data::SystemSettingsInfo::ptr info);
     blog::data::SystemSettingsInfo::ptr get();
     bool update(blog::data::SystemSettingsInfo::ptr info);

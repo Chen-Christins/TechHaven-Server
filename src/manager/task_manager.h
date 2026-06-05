@@ -25,7 +25,6 @@ public:
 
     TaskManager();
 
-    bool loadAll();
     void add(data::TaskInfo::ptr info);
     data::TaskInfo::ptr get(int64_t id);
     uint64_t listByPages(std::vector<data::TaskInfo::ptr>& infos,

@@ -12,7 +12,6 @@ class CategoryManager {
 public:
     CategoryManager();
 
-    bool loadAll();
     void listAll(std::vector<blog::data::CategoryInfo::ptr>& infos, bool isValid = false);
     void add(blog::data::CategoryInfo::ptr info);
     blog::data::CategoryInfo::ptr get(int64_t id);

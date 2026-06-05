@@ -28,15 +28,6 @@ data::ChunkUploadInfo::ptr ChunkUploadManager::parseRow(chen::ISQLData::ptr rt) 
     return v;
 }
 
-bool ChunkUploadManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "ChunkUploadManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void ChunkUploadManager::add(data::ChunkUploadInfo::ptr info) {
     m_cache.set(info->getId(), info);

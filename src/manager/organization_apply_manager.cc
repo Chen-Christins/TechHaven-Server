@@ -27,15 +27,6 @@ data::OrganizationApplyInfo::ptr OrganizationApplyManager::parseRow(chen::ISQLDa
     return v;
 }
 
-bool OrganizationApplyManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "OrganizationApplyManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void OrganizationApplyManager::add(data::OrganizationApplyInfo::ptr info) {
     m_cache.set(info->getId(), info);

@@ -12,7 +12,6 @@ class ArticleLabelRelManager {
 public:
     ArticleLabelRelManager();
 
-    bool loadAll();
     void add(data::ArticleLabelRelInfo::ptr info);
     data::ArticleLabelRelInfo::ptr get(int64_t id);
     bool listByArticleId(std::vector<data::ArticleLabelRelInfo::ptr>& infos, int64_t id, bool valid);

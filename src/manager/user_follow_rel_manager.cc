@@ -23,15 +23,6 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr 
     return v;
 }
 
-bool UserFollowRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "UserFollowRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void UserFollowRelManager::add(data::UserFollowRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

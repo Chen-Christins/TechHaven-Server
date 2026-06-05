@@ -32,15 +32,6 @@ data::RequirementInfo::ptr RequirementManager::parseRow(chen::ISQLData::ptr rt) 
     return v;
 }
 
-bool RequirementManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "RequirementManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void RequirementManager::add(data::RequirementInfo::ptr info) {
     m_cache.set(info->getId(), info);

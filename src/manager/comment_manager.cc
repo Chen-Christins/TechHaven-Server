@@ -30,15 +30,6 @@ data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool CommentManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "CommentManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void CommentManager::add(data::CommentInfo::ptr info) {
     m_cache.set(info->getId(), info);

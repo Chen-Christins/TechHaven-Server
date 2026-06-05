@@ -18,7 +18,6 @@ public:
 
     OrganizationApplyManager();
 
-    bool loadAll();
     void add(data::OrganizationApplyInfo::ptr info);
     void update(data::OrganizationApplyInfo::ptr info);
     data::OrganizationApplyInfo::ptr get(int64_t id);

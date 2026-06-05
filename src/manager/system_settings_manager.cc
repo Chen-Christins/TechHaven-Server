@@ -8,15 +8,6 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool SystemSettingsManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "SystemSettingsManager loadAll: DB connection verified, lazy load on first access";
-    return true;
-}
 
 void SystemSettingsManager::add(blog::data::SystemSettingsInfo::ptr info) {
     std::unique_lock<std::mutex> lock(m_mutex);

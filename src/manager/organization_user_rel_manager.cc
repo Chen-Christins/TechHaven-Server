@@ -25,15 +25,6 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::IS
     return v;
 }
 
-bool OrganizationUserRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "OrganizationUserRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void OrganizationUserRelManager::add(data::OrganizationUserRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

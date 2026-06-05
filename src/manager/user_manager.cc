@@ -34,15 +34,6 @@ data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool UserManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "UserManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void UserManager::add(blog::data::UserInfo::ptr info) {
     m_cache.set(info->getId(), info);

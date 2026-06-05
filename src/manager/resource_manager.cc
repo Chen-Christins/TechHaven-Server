@@ -56,15 +56,6 @@ data::ResourceInfo::ptr ResourceManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool ResourceManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "ResourceManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void ResourceManager::add(blog::data::ResourceInfo::ptr info) {
     m_cache.set(info->getId(), info);

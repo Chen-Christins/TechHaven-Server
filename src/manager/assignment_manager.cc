@@ -29,15 +29,6 @@ data::AssignmentInfo::ptr AssignmentManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool AssignmentManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "AssignmentManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void AssignmentManager::add(data::AssignmentInfo::ptr info) {
     m_cache.set(info->getId(), info);

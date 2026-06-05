@@ -24,7 +24,6 @@ public:
 
     OrganizationManager();
 
-    bool loadAll();
     void add(data::OrganizationInfo::ptr info);
     data::OrganizationInfo::ptr get(int64_t id);
     data::OrganizationInfo::ptr getByName(const std::string& name);

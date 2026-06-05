@@ -32,15 +32,6 @@ data::TaskInfo::ptr TaskManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool TaskManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "TaskManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void TaskManager::add(data::TaskInfo::ptr info) {
     m_cache.set(info->getId(), info);

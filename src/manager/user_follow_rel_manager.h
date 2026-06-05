@@ -12,7 +12,6 @@ class UserFollowRelManager {
 public:
     UserFollowRelManager();
 
-    bool loadAll();
     void add(data::UserFollowRelInfo::ptr info);
     data::UserFollowRelInfo::ptr get(int64_t id);
     data::UserFollowRelInfo::ptr getByFollowerAndFollowing(int64_t follower_id, int64_t following_id);

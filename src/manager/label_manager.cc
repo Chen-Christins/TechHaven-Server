@@ -25,15 +25,6 @@ data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool LabelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "get db connection fail";
-        return false;
-    }
-    INFO(logger) << "LabelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void LabelManager::add(data::LabelInfo::ptr info) {
     m_cache.set(info->getId(), info);

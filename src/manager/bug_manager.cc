@@ -33,15 +33,6 @@ data::BugInfo::ptr BugManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-bool BugManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "BugManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void BugManager::add(data::BugInfo::ptr info) {
     m_cache.set(info->getId(), info);

@@ -23,15 +23,6 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData
     return v;
 }
 
-bool CommentPraiseRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "CommentPraiseRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void CommentPraiseRelManager::add(data::CommentPraiseRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

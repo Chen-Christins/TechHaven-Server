@@ -24,15 +24,6 @@ data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::parseRow(chen::ISQL
     return v;
 }
 
-bool ArticleCategoryRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get DB connection fail";
-        return false;
-    }
-    INFO(logger) << "ArticleCategoryRelManager loadAll: DB connection verified, no preloading needed";
-    return true;
-}
 
 void ArticleCategoryRelManager::add(data::ArticleCategoryRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

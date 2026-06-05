@@ -14,7 +14,6 @@ public:
 
     CommentManager();
 
-    bool loadAll();
     void add(data::CommentInfo::ptr info);
     data::CommentInfo::ptr get(int64_t id);
 
