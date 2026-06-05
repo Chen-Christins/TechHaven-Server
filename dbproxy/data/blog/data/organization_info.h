@@ -74,6 +74,7 @@ public:
     static int QueryAll(std::vector<OrganizationInfo::ptr>& results, chen::IDB::ptr conn);
     static OrganizationInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByOwnerId(std::vector<OrganizationInfo::ptr>& results,  const int64_t& owner_id, chen::IDB::ptr conn);
+    static int QueryByOwnerIdPages(std::vector<OrganizationInfo::ptr>& results, int64_t& total,  const int64_t& owner_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static OrganizationInfo::ptr QueryByName( const std::string& name, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);

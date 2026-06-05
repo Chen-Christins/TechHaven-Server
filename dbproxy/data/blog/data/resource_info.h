@@ -91,8 +91,11 @@ public:
     static int QueryAll(std::vector<ResourceInfo::ptr>& results, chen::IDB::ptr conn);
     static ResourceInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByOwnerId(std::vector<ResourceInfo::ptr>& results,  const int64_t& owner_id, chen::IDB::ptr conn);
+    static int QueryByOwnerIdPages(std::vector<ResourceInfo::ptr>& results, int64_t& total,  const int64_t& owner_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByBizTypeBizId(std::vector<ResourceInfo::ptr>& results,  const std::string& biz_type,  const int64_t& biz_id, chen::IDB::ptr conn);
+    static int QueryByBizTypeBizIdPages(std::vector<ResourceInfo::ptr>& results, int64_t& total,  const std::string& biz_type,  const int64_t& biz_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByHash(std::vector<ResourceInfo::ptr>& results,  const std::string& hash, chen::IDB::ptr conn);
+    static int QueryByHashPages(std::vector<ResourceInfo::ptr>& results, int64_t& total,  const std::string& hash, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

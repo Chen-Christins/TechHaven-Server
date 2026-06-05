@@ -297,6 +297,57 @@ int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo
     return 0;
 }
 
+int EmailVerificationInfoDao::QueryByEmailCodePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const std::string& email,  const std::string& code, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from email_verification where email = ? and code = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindString(1, email);
+    countStmt->bindString(2, code);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where email = ? and code = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindString(1, email);
+    stmt->bindString(2, code);
+    stmt->bindInt32(3, limit);
+    stmt->bindInt32(4, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_email = rt->getString(1);
+        v->m_code = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_state = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_expiresTime = rt->getTime(6);
+        v->m_clientIp = rt->getString(7);
+        v->m_userAgent = rt->getString(8);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where email = ? and type = ?";
     auto stmt = conn->prepare(sql);
@@ -309,6 +360,57 @@ int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo
     stmt->bindInt32(2, type);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_email = rt->getString(1);
+        v->m_code = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_state = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_expiresTime = rt->getTime(6);
+        v->m_clientIp = rt->getString(7);
+        v->m_userAgent = rt->getString(8);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int EmailVerificationInfoDao::QueryByEmailTypePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const std::string& email,  const int32_t& type, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from email_verification where email = ? and type = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindString(1, email);
+    countStmt->bindInt32(2, type);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where email = ? and type = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindString(1, email);
+    stmt->bindInt32(2, type);
+    stmt->bindInt32(3, limit);
+    stmt->bindInt32(4, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {
@@ -356,6 +458,55 @@ int EmailVerificationInfoDao::QueryByExpiresTime(std::vector<EmailVerificationIn
     return 0;
 }
 
+int EmailVerificationInfoDao::QueryByExpiresTimePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const int64_t& expires_time, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from email_verification where expires_time = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindTime(1, expires_time);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where expires_time = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindTime(1, expires_time);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_email = rt->getString(1);
+        v->m_code = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_state = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_expiresTime = rt->getTime(6);
+        v->m_clientIp = rt->getString(7);
+        v->m_userAgent = rt->getString(8);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, chen::IDB::ptr conn) {
     std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where create_time = ?";
     auto stmt = conn->prepare(sql);
@@ -367,6 +518,55 @@ int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInf
     stmt->bindTime(1, create_time);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_email = rt->getString(1);
+        v->m_code = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_state = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_expiresTime = rt->getTime(6);
+        v->m_clientIp = rt->getString(7);
+        v->m_userAgent = rt->getString(8);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int EmailVerificationInfoDao::QueryByCreateTimePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const int64_t& create_time, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from email_verification where create_time = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindTime(1, create_time);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, email, code, type, state, create_time, expires_time, client_ip, user_agent from email_verification where create_time = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindTime(1, create_time);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

@@ -235,6 +235,52 @@ int ArticleLabelRelInfoDao::QueryByArticleId(std::vector<ArticleLabelRelInfo::pt
     return 0;
 }
 
+int ArticleLabelRelInfoDao::QueryByArticleIdPages(std::vector<ArticleLabelRelInfo::ptr>& results, int64_t& total,  const int64_t& article_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from article_label_rel where article_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, article_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, article_id, label_id, is_deleted, create_time, update_time from article_label_rel where article_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, article_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ArticleLabelRelInfo::ptr v(new ArticleLabelRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_labelId = rt->getInt64(2);
+        v->m_isDeleted = rt->getInt32(3);
+        v->m_createTime = rt->getTime(4);
+        v->m_updateTime = rt->getTime(5);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 ArticleLabelRelInfo::ptr ArticleLabelRelInfoDao::QueryByArticleIdLabelId( const int64_t& article_id,  const int64_t& label_id, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, label_id, is_deleted, create_time, update_time from article_label_rel where article_id = ? and label_id = ?";
     auto stmt = conn->prepare(sql);

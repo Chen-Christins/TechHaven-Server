@@ -331,6 +331,59 @@ int ResourceInfoDao::QueryByOwnerId(std::vector<ResourceInfo::ptr>& results,  co
     return 0;
 }
 
+int ResourceInfoDao::QueryByOwnerIdPages(std::vector<ResourceInfo::ptr>& results, int64_t& total,  const int64_t& owner_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from resource where owner_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, owner_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time from resource where owner_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, owner_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ResourceInfo::ptr v(new ResourceInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_path = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_size = rt->getInt64(4);
+        v->m_hash = rt->getString(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_bizType = rt->getString(7);
+        v->m_bizId = rt->getInt64(8);
+        v->m_status = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int ResourceInfoDao::QueryByBizTypeBizId(std::vector<ResourceInfo::ptr>& results,  const std::string& biz_type,  const int64_t& biz_id, chen::IDB::ptr conn) {
     std::string sql = "select id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time from resource where biz_type = ? and biz_id = ?";
     auto stmt = conn->prepare(sql);
@@ -365,6 +418,61 @@ int ResourceInfoDao::QueryByBizTypeBizId(std::vector<ResourceInfo::ptr>& results
     return 0;
 }
 
+int ResourceInfoDao::QueryByBizTypeBizIdPages(std::vector<ResourceInfo::ptr>& results, int64_t& total,  const std::string& biz_type,  const int64_t& biz_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from resource where biz_type = ? and biz_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindString(1, biz_type);
+    countStmt->bindInt64(2, biz_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time from resource where biz_type = ? and biz_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindString(1, biz_type);
+    stmt->bindInt64(2, biz_id);
+    stmt->bindInt32(3, limit);
+    stmt->bindInt32(4, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ResourceInfo::ptr v(new ResourceInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_path = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_size = rt->getInt64(4);
+        v->m_hash = rt->getString(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_bizType = rt->getString(7);
+        v->m_bizId = rt->getInt64(8);
+        v->m_status = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int ResourceInfoDao::QueryByHash(std::vector<ResourceInfo::ptr>& results,  const std::string& hash, chen::IDB::ptr conn) {
     std::string sql = "select id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time from resource where hash = ?";
     auto stmt = conn->prepare(sql);
@@ -376,6 +484,59 @@ int ResourceInfoDao::QueryByHash(std::vector<ResourceInfo::ptr>& results,  const
     stmt->bindString(1, hash);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ResourceInfo::ptr v(new ResourceInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_path = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_size = rt->getInt64(4);
+        v->m_hash = rt->getString(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_bizType = rt->getString(7);
+        v->m_bizId = rt->getInt64(8);
+        v->m_status = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int ResourceInfoDao::QueryByHashPages(std::vector<ResourceInfo::ptr>& results, int64_t& total,  const std::string& hash, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from resource where hash = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindString(1, hash);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time from resource where hash = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindString(1, hash);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

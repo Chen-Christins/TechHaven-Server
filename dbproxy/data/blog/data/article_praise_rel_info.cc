@@ -274,6 +274,52 @@ int ArticlePraiseRelInfoDao::QueryByUserId(std::vector<ArticlePraiseRelInfo::ptr
     return 0;
 }
 
+int ArticlePraiseRelInfoDao::QueryByUserIdPages(std::vector<ArticlePraiseRelInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from article_praise_rel where user_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, article_id, is_deleted, create_time, update_time from article_praise_rel where user_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ArticlePraiseRelInfo::ptr v(new ArticlePraiseRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_articleId = rt->getInt64(2);
+        v->m_isDeleted = rt->getInt32(3);
+        v->m_createTime = rt->getTime(4);
+        v->m_updateTime = rt->getTime(5);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int ArticlePraiseRelInfoDao::QueryByArticleId(std::vector<ArticlePraiseRelInfo::ptr>& results,  const int64_t& article_id, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, article_id, is_deleted, create_time, update_time from article_praise_rel where article_id = ?";
     auto stmt = conn->prepare(sql);
@@ -285,6 +331,52 @@ int ArticlePraiseRelInfoDao::QueryByArticleId(std::vector<ArticlePraiseRelInfo::
     stmt->bindInt64(1, article_id);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ArticlePraiseRelInfo::ptr v(new ArticlePraiseRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_articleId = rt->getInt64(2);
+        v->m_isDeleted = rt->getInt32(3);
+        v->m_createTime = rt->getTime(4);
+        v->m_updateTime = rt->getTime(5);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int ArticlePraiseRelInfoDao::QueryByArticleIdPages(std::vector<ArticlePraiseRelInfo::ptr>& results, int64_t& total,  const int64_t& article_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from article_praise_rel where article_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, article_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, article_id, is_deleted, create_time, update_time from article_praise_rel where article_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, article_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

@@ -76,7 +76,9 @@ public:
     static AssignmentUserRelInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static AssignmentUserRelInfo::ptr QueryByAssignmentIdUserId( const int64_t& assignment_id,  const int64_t& user_id, chen::IDB::ptr conn);
     static int QueryByAssignmentId(std::vector<AssignmentUserRelInfo::ptr>& results,  const int64_t& assignment_id, chen::IDB::ptr conn);
+    static int QueryByAssignmentIdPages(std::vector<AssignmentUserRelInfo::ptr>& results, int64_t& total,  const int64_t& assignment_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByUserId(std::vector<AssignmentUserRelInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static int QueryByUserIdPages(std::vector<AssignmentUserRelInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

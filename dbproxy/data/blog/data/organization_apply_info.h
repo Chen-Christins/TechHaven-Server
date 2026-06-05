@@ -78,7 +78,9 @@ public:
     static int QueryAll(std::vector<OrganizationApplyInfo::ptr>& results, chen::IDB::ptr conn);
     static OrganizationApplyInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByUserId(std::vector<OrganizationApplyInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static int QueryByUserIdPages(std::vector<OrganizationApplyInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByStatus(std::vector<OrganizationApplyInfo::ptr>& results,  const int32_t& status, chen::IDB::ptr conn);
+    static int QueryByStatusPages(std::vector<OrganizationApplyInfo::ptr>& results, int64_t& total,  const int32_t& status, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

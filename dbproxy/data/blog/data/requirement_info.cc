@@ -354,6 +354,61 @@ int RequirementInfoDao::QueryByOrgId(std::vector<RequirementInfo::ptr>& results,
     return 0;
 }
 
+int RequirementInfoDao::QueryByOrgIdPages(std::vector<RequirementInfo::ptr>& results, int64_t& total,  const int64_t& org_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from requirement where org_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, org_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time from requirement where org_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, org_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        RequirementInfo::ptr v(new RequirementInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_iteration = rt->getString(8);
+        v->m_category = rt->getString(9);
+        v->m_source = rt->getString(10);
+        v->m_deadline = rt->getTime(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int RequirementInfoDao::QueryByCreatorId(std::vector<RequirementInfo::ptr>& results,  const int64_t& creator_id, chen::IDB::ptr conn) {
     std::string sql = "select id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time from requirement where creator_id = ?";
     auto stmt = conn->prepare(sql);
@@ -389,6 +444,61 @@ int RequirementInfoDao::QueryByCreatorId(std::vector<RequirementInfo::ptr>& resu
     return 0;
 }
 
+int RequirementInfoDao::QueryByCreatorIdPages(std::vector<RequirementInfo::ptr>& results, int64_t& total,  const int64_t& creator_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from requirement where creator_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, creator_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time from requirement where creator_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, creator_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        RequirementInfo::ptr v(new RequirementInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_iteration = rt->getString(8);
+        v->m_category = rt->getString(9);
+        v->m_source = rt->getString(10);
+        v->m_deadline = rt->getTime(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int RequirementInfoDao::QueryByAssigneeId(std::vector<RequirementInfo::ptr>& results,  const int64_t& assignee_id, chen::IDB::ptr conn) {
     std::string sql = "select id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time from requirement where assignee_id = ?";
     auto stmt = conn->prepare(sql);
@@ -400,6 +510,61 @@ int RequirementInfoDao::QueryByAssigneeId(std::vector<RequirementInfo::ptr>& res
     stmt->bindInt64(1, assignee_id);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        RequirementInfo::ptr v(new RequirementInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_iteration = rt->getString(8);
+        v->m_category = rt->getString(9);
+        v->m_source = rt->getString(10);
+        v->m_deadline = rt->getTime(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int RequirementInfoDao::QueryByAssigneeIdPages(std::vector<RequirementInfo::ptr>& results, int64_t& total,  const int64_t& assignee_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from requirement where assignee_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, assignee_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time from requirement where assignee_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, assignee_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

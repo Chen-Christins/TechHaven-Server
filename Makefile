@@ -22,7 +22,7 @@ xx:
 %:
 	$(call time_wrapper, \
 		if [ -d "build" ]; then \
-			cd build && cmake .. && +$(MAKE) $@; \
+			cd build && cmake .. && $(MAKE) $@; \
 		else \
 			mkdir build; \
 			cd build && cmake ..; \
