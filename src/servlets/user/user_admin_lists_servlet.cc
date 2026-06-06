@@ -2,6 +2,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include <chen/util/json_util.h>
+#include <chen/db/query_builder.h>
 
 namespace blog {
 namespace servlet {
@@ -33,7 +34,49 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         uint64_t offset = (page_num - 1) * page_size;
         std::vector<data::UserInfo::ptr> users;
-        uint64_t total = UserMgr::GetInstance()->listByPages(users, offset, page_size, rrole, state, days, false);
+        uint64_t total = UserMgr::GetInstance()->listByPages(users, offset, page_size, rrole, state, days, true);
+
+        // 批量查询文章数和评论数，避免逐用户查询
+        std::map<int64_t, int64_t> article_counts, comment_counts;
+        auto db = getDB();
+        if (db && !users.empty()) {
+            std::vector<int64_t> user_ids;
+            for (auto& u : users) {
+                user_ids.push_back(u->getId());
+            }
+
+            auto aqb = chen::QueryBuilder::Create("article");
+            aqb->select("user_id, COUNT(*) as cnt");
+            aqb->whereIn("user_id", user_ids);
+            aqb->where("is_deleted", "=", (int64_t)0);
+            aqb->groupBy("user_id");
+            auto stmt = db->prepare(aqb->buildQuerySQL());
+            if (stmt) {
+                aqb->bindParams(stmt);
+                auto rt = stmt->query();
+                if (rt) {
+                    while (rt->next()) {
+                        article_counts[rt->getInt64(0)] = rt->getInt64(1);
+                    }
+                }
+            }
+
+            auto cqb = chen::QueryBuilder::Create("comment");
+            cqb->select("user_id, COUNT(*) as cnt");
+            cqb->whereIn("user_id", user_ids);
+            cqb->where("is_deleted", "=", (int64_t)0);
+            cqb->groupBy("user_id");
+            stmt = db->prepare(cqb->buildQuerySQL());
+            if (stmt) {
+                cqb->bindParams(stmt);
+                auto rt = stmt->query();
+                if (rt) {
+                    while (rt->next()) {
+                        comment_counts[rt->getInt64(0)] = rt->getInt64(1);
+                    }
+                }
+            }
+        }
 
         result->set("total", total);
         auto& list = result->jsondata["list"];
@@ -47,6 +90,8 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
             item["state"] = user->getState();
             item["create_time"] = user->getCreateTime();
             item["login_time"] = user->getLoginTime();
+            item["article_count"] = article_counts[user->getId()];
+            item["comment_count"] = comment_counts[user->getId()];
             list.append(item);
         }
     } while (0);

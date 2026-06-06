@@ -5,6 +5,7 @@
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"
 #include "../../manager/assignment_manager.h"
+#include "../../manager/notification_manager.h"
 #include "../../util.h"
 #include "../../permission.h"
 
@@ -118,6 +119,33 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
             result->set("assign_id", assign_info->getId());
             result->set("assigned_by", org_assign_rel->getAssignedBy());
+
+            // Notify org members about new assignment
+            {
+                std::string title = "新作业发布";
+                std::string content = "组织发布了新作业「" + name + "」（" + subject_name + "），请及时完成";
+                std::vector<data::OrganizationUserRelInfo::ptr> org_members;
+                OrganizationUserRelMgr::GetInstance()->getByPages(org_members, org_id, 0, 10000, -1, true);
+                for (auto& m : org_members) {
+                    if (m->getStatus() != OrganizationUserRelManager::Status::APPROVED) continue;
+                    if (m->getUserId() == uid) continue; // Don't notify creator
+                    chen::IOManager::GetThis()->schedule([m, title, content, assign_id = assign_info->getId()]() {
+                        auto notif = NotificationMgr::GetInstance()->addNotification(
+                            m->getUserId(), title, content, "assignment_created", 0, assign_id);
+                        if (notif) {
+                            Json::Value wsMsg;
+                            wsMsg["id"] = notif->getId();
+                            wsMsg["title"] = title;
+                            wsMsg["content"] = content;
+                            wsMsg["type"] = "assignment_created";
+                            wsMsg["assignment_id"] = assign_id;
+                            wsMsg["is_read"] = false;
+                            wsMsg["create_time"] = notif->getCreateTime();
+                            NotificationMgr::GetInstance()->sendToUser(m->getUserId(), chen::JsonUtil::ToString(wsMsg));
+                        }
+                    });
+                }
+            }
         }
         result->set("id", assign_info->getId());
         result->set("name", assign_info->getName());

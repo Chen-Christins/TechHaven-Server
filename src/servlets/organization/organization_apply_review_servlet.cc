@@ -5,6 +5,7 @@
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_apply_manager.h"
+#include "../../manager/notification_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -118,6 +119,28 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
             OrganizationApplyMgr::GetInstance()->update(apply);
 
             result->set("org_id", org->getId());
+
+            // Notify applicant
+            {
+                int64_t applicant_id = apply->getUserId();
+                std::string title = "组织申请已通过";
+                std::string content = "你申请创建的组织「" + apply->getOrgName() + "」已通过审核";
+                chen::IOManager::GetThis()->schedule([applicant_id, title, content, org_id = org->getId()]() {
+                    auto notif = NotificationMgr::GetInstance()->addNotification(
+                        applicant_id, title, content, "org_apply_approved", 0, org_id);
+                    if (notif) {
+                        Json::Value wsMsg;
+                        wsMsg["id"] = notif->getId();
+                        wsMsg["title"] = title;
+                        wsMsg["content"] = content;
+                        wsMsg["type"] = "org_apply_approved";
+                        wsMsg["org_id"] = org_id;
+                        wsMsg["is_read"] = false;
+                        wsMsg["create_time"] = notif->getCreateTime();
+                        NotificationMgr::GetInstance()->sendToUser(applicant_id, chen::JsonUtil::ToString(wsMsg));
+                    }
+                });
+            }
         } else {
             // Reject
             apply->setStatus(OrganizationApplyManager::Status::REJECTED);
@@ -132,6 +155,28 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
             }
 
             OrganizationApplyMgr::GetInstance()->update(apply);
+
+            // Notify applicant
+            {
+                int64_t applicant_id = apply->getUserId();
+                std::string title = "组织申请被拒绝";
+                std::string reject_reason = reason.empty() ? "" : "，原因：" + reason;
+                std::string content = "你申请创建的组织「" + apply->getOrgName() + "」未通过审核" + reject_reason;
+                chen::IOManager::GetThis()->schedule([applicant_id, title, content]() {
+                    auto notif = NotificationMgr::GetInstance()->addNotification(
+                        applicant_id, title, content, "org_apply_rejected", 0);
+                    if (notif) {
+                        Json::Value wsMsg;
+                        wsMsg["id"] = notif->getId();
+                        wsMsg["title"] = title;
+                        wsMsg["content"] = content;
+                        wsMsg["type"] = "org_apply_rejected";
+                        wsMsg["is_read"] = false;
+                        wsMsg["create_time"] = notif->getCreateTime();
+                        NotificationMgr::GetInstance()->sendToUser(applicant_id, chen::JsonUtil::ToString(wsMsg));
+                    }
+                });
+            }
         }
     } while (0);
     response->setBody(result->toJsonString());

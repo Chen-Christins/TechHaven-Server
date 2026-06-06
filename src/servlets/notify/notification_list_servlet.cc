@@ -31,8 +31,26 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
             item["title"] = n->getTitle();
             item["content"] = n->getContent();
             item["type"] = n->getType();
-            item["article_id"] = n->getArticleId();
-            item["comment_id"] = n->getCommentId();
+
+            const std::string& type = n->getType();
+            int64_t target_id = n->getArticleId();
+            if (type == "bug_assigned") {
+                item["bug_id"] = target_id;
+            } else if (type == "task_assigned") {
+                item["task_id"] = target_id;
+            } else if (type == "requirement_assigned") {
+                item["requirement_id"] = target_id;
+            } else if (type == "assignment_submitted" || type == "assignment_created") {
+                item["assignment_id"] = target_id;
+            } else if (type == "org_apply_approved") {
+                item["org_id"] = target_id;
+            } else if (type == "org_apply_request") {
+                item["apply_id"] = target_id;
+            } else {
+                item["article_id"] = target_id;
+                item["comment_id"] = n->getCommentId();
+            }
+
             item["is_read"] = n->getIsRead();
             item["create_time"] = n->getCreateTime();
             arr.append(item);
