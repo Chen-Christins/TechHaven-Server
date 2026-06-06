@@ -70,6 +70,7 @@ public:
     static int QueryAll(std::vector<LabelInfo::ptr>& results, chen::IDB::ptr conn);
     static LabelInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByUserId(std::vector<LabelInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static int QueryByUserIdPages(std::vector<LabelInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static LabelInfo::ptr QueryByUserIdName( const int64_t& user_id,  const std::string& name, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);

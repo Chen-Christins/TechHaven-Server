@@ -1,4 +1,5 @@
 #include "article_category_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -6,59 +7,74 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool ArticleCategoryRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "get db connection fail";
-        return false;
-    }
-    std::vector<data::ArticleCategoryRelInfo::ptr> results;
-    if (data::ArticleCategoryRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "ArticleCategoryManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 500;
 
-    std::unordered_map<int64_t, data::ArticleCategoryRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticleCategoryRelInfo::ptr>> articles;
-    std::unordered_map<int64_t, std::map<int64_t, data::ArticleCategoryRelInfo::ptr>> categories;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        articles[i->getArticleId()][i->getCategoryId()] = i;
-        categories[i->getCategoryId()][i->getArticleId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_articles.swap(articles);
-    m_categories.swap(categories);
-
-    return true;
+ArticleCategoryRelManager::ArticleCategoryRelManager()
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
+data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::ArticleCategoryRelInfo::ptr v(new data::ArticleCategoryRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setArticleId(rt->getInt64(1));
+    v->setCategoryId(rt->getInt64(2));
+    v->setIsDeleted(rt->getInt32(3));
+    v->setPublishTime(rt->getTime(4));
+    v->setCreateTime(rt->getTime(5));
+    v->setUpdateTime(rt->getTime(6));
+    return v;
+}
+
+
 void ArticleCategoryRelManager::add(data::ArticleCategoryRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_articles[info->getArticleId()][info->getCategoryId()] = info;
-    m_categories[info->getCategoryId()][info->getArticleId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::ArticleCategoryRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos
         ,int64_t id, bool valid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articles.find(id);
-    if (it == m_articles.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-
-    for (auto& i : it->second) {
-        if (!valid || !i.second->getIsDeleted()) {
-            infos.push_back(i.second);
+    auto qb = chen::QueryBuilder::Create("article_category_rel");
+    qb->where("article_id", "=", id);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return false;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return false;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
     return true;
@@ -66,15 +82,32 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
 
 bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos
         ,int64_t category_id, bool valid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_categories.find(category_id);
-    if (it == m_categories.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-
-    for (auto& i : it->second) {
-        if (!valid || !i.second->getIsDeleted()) {
-            infos.push_back(i.second);
+    auto qb = chen::QueryBuilder::Create("article_category_rel");
+    qb->where("category_id", "=", category_id);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return false;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return false;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
     return true;
@@ -82,13 +115,22 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
 
 data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCategoryId(int64_t article_id
         ,int64_t category_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articles.find(article_id);
-    if (it != m_articles.end()) {
-        auto iit = it->second.find(category_id);
-        return iit == it->second.end() ? nullptr : iit->second;
+    std::string ck = "acr:" + std::to_string(article_id) + ":" + std::to_string(category_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    auto info = data::ArticleCategoryRelInfoDao::QueryByArticleIdCategoryId(article_id, category_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
+    }
+    return info;
 }
 
 }

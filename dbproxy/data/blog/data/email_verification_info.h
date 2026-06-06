@@ -76,9 +76,13 @@ public:
     static int QueryAll(std::vector<EmailVerificationInfo::ptr>& results, chen::IDB::ptr conn);
     static EmailVerificationInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByEmailCode(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const std::string& code, chen::IDB::ptr conn);
+    static int QueryByEmailCodePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const std::string& email,  const std::string& code, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByEmailType(std::vector<EmailVerificationInfo::ptr>& results,  const std::string& email,  const int32_t& type, chen::IDB::ptr conn);
+    static int QueryByEmailTypePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const std::string& email,  const int32_t& type, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByExpiresTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& expires_time, chen::IDB::ptr conn);
+    static int QueryByExpiresTimePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const int64_t& expires_time, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByCreateTime(std::vector<EmailVerificationInfo::ptr>& results,  const int64_t& create_time, chen::IDB::ptr conn);
+    static int QueryByCreateTimePages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total,  const int64_t& create_time, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

@@ -319,6 +319,59 @@ int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& resul
     return 0;
 }
 
+int NotificationInfoDao::QueryByUserIdPages(std::vector<NotificationInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from notification where user_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        NotificationInfo::ptr v(new NotificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getString(4);
+        v->m_senderId = rt->getInt64(5);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id,  const int32_t& is_read, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? and is_read = ?";
     auto stmt = conn->prepare(sql);
@@ -331,6 +384,61 @@ int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>&
     stmt->bindInt32(2, is_read);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        NotificationInfo::ptr v(new NotificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getString(4);
+        v->m_senderId = rt->getInt64(5);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::ptr>& results, int64_t& total,  const int64_t& user_id,  const int32_t& is_read, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from notification where user_id = ? and is_read = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    countStmt->bindInt32(2, is_read);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? and is_read = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, is_read);
+    stmt->bindInt32(3, limit);
+    stmt->bindInt32(4, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {
@@ -378,7 +486,7 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '接收用户id',"
             "`title` varchar(128) NOT NULL DEFAULT '' COMMENT '通知标题',"
-            "`content` text NOT NULL DEFAULT '' COMMENT '通知内容',"
+            "`content` text NOT NULL COMMENT '通知内容',"
             "`type` varchar(32) NOT NULL DEFAULT '' COMMENT '通知类型: system/announcement/article',"
             "`sender_id` bigint NOT NULL DEFAULT 0 COMMENT '发送者id(0=系统)',"
             "`article_id` bigint NOT NULL DEFAULT 0 COMMENT '关联文章ID',"
@@ -730,7 +838,7 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         auto it = existing_cols.find("content");
         if (it != existing_cols.end() && it->second != "text") {
             INFO(logger) << "Modifying column notification.content " << it->second << " -> text";
-            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '通知内容'");
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `content` text NOT NULL COMMENT '通知内容'");
             if (rt) {
                 ERROR(logger) << "MODIFY COLUMN notification.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
             }
@@ -870,7 +978,7 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
 
     if (existing_cols.find("content") == existing_cols.end()) {
         INFO(logger) << "Adding column notification.content";
-        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '通知内容'");
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `content` text COMMENT '通知内容'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }

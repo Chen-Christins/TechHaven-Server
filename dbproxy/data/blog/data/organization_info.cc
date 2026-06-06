@@ -270,6 +270,55 @@ int OrganizationInfoDao::QueryByOwnerId(std::vector<OrganizationInfo::ptr>& resu
     return 0;
 }
 
+int OrganizationInfoDao::QueryByOwnerIdPages(std::vector<OrganizationInfo::ptr>& results, int64_t& total,  const int64_t& owner_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from organization where owner_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, owner_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, name, type, description, owner_id, status, is_deleted, create_time, update_time from organization where owner_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, owner_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationInfo::ptr v(new OrganizationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_type = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_ownerId = rt->getInt64(4);
+        v->m_status = rt->getInt32(5);
+        v->m_isDeleted = rt->getInt32(6);
+        v->m_createTime = rt->getTime(7);
+        v->m_updateTime = rt->getTime(8);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 OrganizationInfo::ptr OrganizationInfoDao::QueryByName( const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "select id, name, type, description, owner_id, status, is_deleted, create_time, update_time from organization where name = ?";
     auto stmt = conn->prepare(sql);

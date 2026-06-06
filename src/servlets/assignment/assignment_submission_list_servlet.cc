@@ -38,10 +38,8 @@ int32_t AssignmentSubmissionListServlet::handle(chen::http::HttpRequest::ptr req
 
             // 获取提交的资源信息
             std::string biz_type = "assignment_submission";
-            std::string key = chen::md5(biz_type + "|"
-                + std::to_string(assign_id) + "|" + std::to_string(uid));
             std::vector<data::ResourceInfo::ptr> resources;
-            ResourceMgr::GetInstance()->getByHash(resources, key);
+            ResourceMgr::GetInstance()->getByBizUid(resources, biz_type, assign_id, uid);
 
             auto& list = result->jsondata["list"];
             for (auto& res : resources) {

@@ -64,8 +64,7 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
             if (!delIds.count(i->getId())) {
                 continue;
             }
-            if (!is_platform_admin && uid != i->getCreatorId()
-                    && !permission::CanDeleteRequirement(org_role)) {
+            if (!is_platform_admin && uid != i->getCreatorId() && !permission::CanDeleteRequirement(org_role)) {
                 continue;
             }
             delItems.push_back(i);

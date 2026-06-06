@@ -1,56 +1,56 @@
 #include "comment_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
-#include <algorithm>
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool CommentManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "get db connection fail";
-        return false;
-    }
-    std::vector<data::CommentInfo::ptr> results;
-    if (data::CommentInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "CommentManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 1000;
 
-    std::unordered_map<int64_t, data::CommentInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::CommentInfo::ptr>> articleComments;
-    std::unordered_map<int64_t, std::map<int64_t, data::CommentInfo::ptr>> replies;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        articleComments[i->getArticleId()][i->getId()] = i;
-        if (i->getParentId() > 0) {
-            replies[i->getParentId()][i->getId()] = i;
-        }
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_articleComments.swap(articleComments);
-    m_replies.swap(replies);
-
-    return true;
+CommentManager::CommentManager()
+    :m_cache(16, kCacheMaxSize, 0) {
 }
 
+data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt) {
+    data::CommentInfo::ptr v(new data::CommentInfo);
+    v->setId(rt->getInt64(0));
+    v->setArticleId(rt->getInt64(1));
+    v->setUserId(rt->getInt64(2));
+    v->setParentId(rt->getInt64(3));
+    v->setContent(rt->getString(4));
+    v->setIp(rt->getString(5));
+    v->setUserAgent(rt->getString(6));
+    v->setStatus(rt->getInt32(7));
+    v->setIsReported(rt->getInt32(8));
+    v->setReportCount(rt->getInt32(9));
+    v->setIsDeleted(rt->getInt32(10));
+    v->setCreateTime(rt->getTime(11));
+    v->setUpdateTime(rt->getTime(12));
+    return v;
+}
+
+
 void CommentManager::add(data::CommentInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_articleComments[info->getArticleId()][info->getId()] = info;
-    if (info->getParentId() > 0) {
-        m_replies[info->getParentId()][info->getId()] = info;
-    }
+    m_cache.set(info->getId(), info);
 }
 
 data::CommentInfo::ptr CommentManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::CommentInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_id,
@@ -58,7 +58,7 @@ data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_i
     const std::string& ip, const std::string& user_agent) {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
 
@@ -69,7 +69,7 @@ data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_i
     info->setParentId(parent_id);
     info->setIp(ip);
     info->setUserAgent(user_agent);
-    info->setStatus(APPROVED); // auto-approve for now
+    info->setStatus(APPROVED);
     info->setIsReported(0);
     info->setReportCount(0);
     info->setIsDeleted(0);
@@ -81,15 +81,7 @@ data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_i
         return nullptr;
     }
 
-    {
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        m_datas[info->getId()] = info;
-        m_articleComments[info->getArticleId()][info->getId()] = info;
-        if (parent_id > 0) {
-            m_replies[parent_id][info->getId()] = info;
-        }
-    }
-
+    m_cache.set(info->getId(), info);
     return info;
 }
 
@@ -101,7 +93,7 @@ bool CommentManager::update(int64_t id, const std::string& content) {
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
 
@@ -122,7 +114,7 @@ bool CommentManager::del(int64_t id) {
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
 
@@ -136,217 +128,329 @@ bool CommentManager::del(int64_t id) {
 }
 
 void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articleComments.find(article_id);
-    if (it == m_articleComments.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted() && info->getStatus() == APPROVED) {
-            results.push_back(info);
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->where("article_id", "=", article_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("status", "=", (int64_t)APPROVED);
+    qb->orderBy("id", "ASC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
 }
 
 void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     int64_t article_id, uint64_t offset, uint64_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articleComments.find(article_id);
-    if (it == m_articleComments.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& commentMap = it->second;
-    uint64_t idx = 0;
-    // Iterate in reverse order (latest first) for top-level comments
-    for (auto rit = commentMap.rbegin(); rit != commentMap.rend(); ++rit) {
-        auto& info = rit->second;
-        if (info->getIsDeleted() || info->getParentId() != 0 || info->getStatus() != APPROVED) {
-            continue;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->where("article_id", "=", article_id);
+    qb->where("parent_id", "=", (int64_t)0);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("status", "=", (int64_t)APPROVED);
+    qb->orderBy("id", "DESC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+
+    // 结果缓存：仅对首页做缓存
+    std::string listKey = "cmt:art:" + std::to_string(article_id) + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                results.push_back(info);
+            }
         }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(info);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
+        return;
+    }
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    std::vector<int64_t> ids;
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
+    cacheListResult(listKey, ids);
 }
 
 void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
     int64_t parent_id, uint64_t offset, uint64_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_replies.find(parent_id);
-    if (it == m_replies.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& replyMap = it->second;
-    uint64_t idx = 0;
-    // Replies in forward order (earliest first)
-    for (auto& [id, info] : replyMap) {
-        if (info->getIsDeleted() || info->getStatus() != APPROVED) {
-            continue;
-        }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(info);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->where("parent_id", "=", parent_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("status", "=", (int64_t)APPROVED);
+    qb->orderBy("id", "ASC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
 }
 
 int64_t CommentManager::countByArticle(int64_t article_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_articleComments.find(article_id);
-    if (it == m_articleComments.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted() && info->getParentId() == 0 && info->getStatus() == APPROVED) {
-            count++;
-        }
-    }
-    return count;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->where("article_id", "=", article_id);
+    qb->where("parent_id", "=", (int64_t)0);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("status", "=", (int64_t)APPROVED);
+    return executeCountCached(qb, db,
+        "cmt:cnt:" + std::to_string(article_id));
 }
 
 int64_t CommentManager::countReplies(int64_t parent_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_replies.find(parent_id);
-    if (it == m_replies.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted() && info->getStatus() == APPROVED) {
-            count++;
-        }
-    }
-    return count;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->where("parent_id", "=", parent_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("status", "=", (int64_t)APPROVED);
+    return executeCountCached(qb, db,
+        "cmt:reply:" + std::to_string(parent_id));
 }
-
-// --- admin methods ---
 
 int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results,
     int64_t page_num, int64_t page_size,
     int32_t status, const std::string& keyword,
     int64_t article_id, int32_t is_reported) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->whereIf(status > 0, "status", "=", (int64_t)status);
+    qb->whereIf(article_id > 0, "article_id", "=", article_id);
+    qb->whereIf(is_reported >= 0, "is_reported", "=", (int64_t)is_reported);
+    qb->whereIf(!keyword.empty(), "content", "LIKE", "%" + keyword + "%");
+    qb->orderBy("id", "DESC");
 
-    std::vector<data::CommentInfo::ptr> filtered;
-    for (auto& [id, info] : m_datas) {
-        if (info->getIsDeleted()) {
-            continue;
-        }
-        // filter by status
-        if (status > 0 && info->getStatus() != status) {
-            continue;
-        }
-        // filter by article_id
-        if (article_id > 0 && info->getArticleId() != article_id) {
-            continue;
-        }
-        // filter by is_reported
-        if (is_reported >= 0 && info->getIsReported() != is_reported) {
-            continue;
-        }
-        // filter by keyword (search in content)
-        if (!keyword.empty()) {
-            if (info->getContent().find(keyword) == std::string::npos) {
-                continue;
-            }
-        }
-        filtered.push_back(info);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "listByAdmin executeCount fail errno=" << db->getErrno();
+        return 0;
     }
 
-    // sort by create_time descending (latest first)
-    std::sort(filtered.begin(), filtered.end(),
-        [](const data::CommentInfo::ptr& a, const data::CommentInfo::ptr& b) {
-            return a->getCreateTime() > b->getCreateTime();
-        });
-
-    int64_t total = filtered.size();
-    int64_t start = (page_num - 1) * page_size;
-    if (start < 0) {
-        start = 0;
+    qb->limit((int32_t)page_size);
+    qb->offset((int32_t)((page_num - 1) * page_size));
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
     }
-
-    for (int64_t i = start; i < total && (int64_t)results.size() < page_size; i++) {
-        results.push_back(filtered[i]);
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
     }
-
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
+    }
     return total;
 }
 
 int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32_t status) {
+    if (ids.empty()) {
+        return 0;
+    }
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
 
-    int64_t affected = 0;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->set("status", (int64_t)status);
+    qb->whereIn("id", ids);
+    if (qb->executeUpdate(db)) {
+        ERROR(logger) << "batchUpdateStatus executeUpdate fail errno=" << db->getErrno();
+        return 0;
+    }
+
     for (auto& id : ids) {
         auto info = get(id);
-        if (!info || info->getIsDeleted()) {
-            continue;
-        }
-        info->setStatus(status);
-        info->setUpdateTime(time(0));
-        if (data::CommentInfoDao::Update(info, db) == 0) {
-            affected++;
+        if (info) {
+            info->setStatus(status);
+            info->setUpdateTime(time(0));
         }
     }
-    return affected;
+    return ids.size();
 }
 
 int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids) {
+    if (ids.empty()) {
+        return 0;
+    }
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
 
-    int64_t affected = 0;
+    auto qb = chen::QueryBuilder::Create("comment");
+    qb->set("is_deleted", (int64_t)1);
+    qb->whereIn("id", ids);
+    if (qb->executeUpdate(db)) {
+        ERROR(logger) << "batchDelete executeUpdate fail errno=" << db->getErrno();
+        return 0;
+    }
+
     for (auto& id : ids) {
         auto info = get(id);
-        if (!info || info->getIsDeleted()) {
-            continue;
-        }
-        info->setIsDeleted(1);
-        info->setUpdateTime(time(0));
-        if (data::CommentInfoDao::Update(info, db) == 0) {
-            affected++;
+        if (info) {
+            info->setIsDeleted(1);
+            info->setUpdateTime(time(0));
         }
     }
-    return affected;
+    return ids.size();
 }
 
 CommentManager::CommentStats CommentManager::getStats() {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
     CommentStats stats;
-    for (auto& [id, info] : m_datas) {
-        if (info->getIsDeleted()) {
-            continue;
-        }
-        stats.total++;
-        switch (info->getStatus()) {
-        case PENDING:
-            stats.pending++;
-            break;
-        case APPROVED:
-            stats.approved++;
-            break;
-        case SPAM:
-            stats.spam++;
-            break;
-        }
-        if (info->getIsReported()) {
-            stats.reported++;
+
+    std::string cached;
+    if (getCachedStringResult("cmt:stats", cached)) {
+        std::stringstream ss(cached);
+        std::string token;
+        auto next = [&]() -> int64_t {
+            std::getline(ss, token, '|');
+            return chen::TypeUtil::Atoi(token);
+        };
+        stats.total = next();
+        stats.pending = next();
+        stats.approved = next();
+        stats.spam = next();
+        stats.reported = next();
+        return stats;
+    }
+
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return stats;
+    }
+
+    // Query status counts with GROUP BY
+    {
+        auto qb = chen::QueryBuilder::Create("comment");
+        qb->select("status, COUNT(*) AS cnt");
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->groupBy("status");
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (stmt) {
+            qb->bindParams(stmt);
+            auto rt = stmt->query();
+            if (rt) {
+                while (rt->next()) {
+                    int32_t s = rt->getInt32(0);
+                    int64_t cnt = rt->getInt64(1);
+                    stats.total += cnt;
+                    switch (s) {
+                    case PENDING:
+                        stats.pending = cnt;
+                        break;
+                    case APPROVED:
+                        stats.approved = cnt;
+                        break;
+                    case SPAM:
+                        stats.spam = cnt;
+                        break;
+                    }
+                }
+            }
         }
     }
+
+    // Query reported count
+    {
+        auto qb = chen::QueryBuilder::Create("comment");
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->where("is_reported", "=", (int64_t)1);
+        int64_t reported = 0;
+        if (qb->executeCount(reported, db) == 0) {
+            stats.reported = reported;
+        }
+    }
+
+    std::stringstream ss;
+    ss << stats.total << "|" << stats.pending << "|" << stats.approved << "|" << stats.spam << "|" << stats.reported;
+    cacheStringResult("cmt:stats", ss.str());
+
     return stats;
 }
 

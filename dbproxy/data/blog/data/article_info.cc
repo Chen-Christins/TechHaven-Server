@@ -330,6 +330,61 @@ int ArticleInfoDao::QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const
     return 0;
 }
 
+int ArticleInfoDao::QueryByUserIdPages(std::vector<ArticleInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from article where user_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time from article where user_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ArticleInfo::ptr v(new ArticleInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getInt32(4);
+        v->m_state = rt->getInt32(5);
+        v->m_channel = rt->getInt64(6);
+        v->m_isDeleted = rt->getInt32(7);
+        v->m_publishTime = rt->getTime(8);
+        v->m_weight = rt->getInt64(9);
+        v->m_views = rt->getInt64(10);
+        v->m_praise = rt->getInt64(11);
+        v->m_favorites = rt->getInt64(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int ArticleInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE IF NOT EXISTS article("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -356,7 +411,7 @@ int ArticleInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`id` bigint AUTO_INCREMENT COMMENT '文章id',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户id',"
             "`title` varchar(256) NOT NULL DEFAULT '' COMMENT '文章标题',"
-            "`content` text NOT NULL DEFAULT '' COMMENT '文章内容',"
+            "`content` text NOT NULL COMMENT '文章内容',"
             "`type` int NOT NULL DEFAULT 0 COMMENT '类型 1:原创,2:转发',"
             "`state` int NOT NULL DEFAULT 0 COMMENT '状态: 0全部 1审核中 2已发布 3未通过 4私密',"
             "`channel` bigint NOT NULL DEFAULT 0 COMMENT '频道id',"
@@ -747,7 +802,7 @@ int ArticleInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         auto it = existing_cols.find("content");
         if (it != existing_cols.end() && it->second != "text") {
             INFO(logger) << "Modifying column article.content " << it->second << " -> text";
-            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '文章内容'");
+            int rt = conn->execute("ALTER TABLE article MODIFY COLUMN `content` text NOT NULL COMMENT '文章内容'");
             if (rt) {
                 ERROR(logger) << "MODIFY COLUMN article.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
             }
@@ -909,7 +964,7 @@ int ArticleInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
 
     if (existing_cols.find("content") == existing_cols.end()) {
         INFO(logger) << "Adding column article.content";
-        int rt = conn->execute("ALTER TABLE article ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '文章内容'");
+        int rt = conn->execute("ALTER TABLE article ADD COLUMN `content` text COMMENT '文章内容'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE article ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }

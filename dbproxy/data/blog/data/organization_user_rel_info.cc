@@ -288,6 +288,54 @@ int OrganizationUserRelInfoDao::QueryByUserId(std::vector<OrganizationUserRelInf
     return 0;
 }
 
+int OrganizationUserRelInfoDao::QueryByUserIdPages(std::vector<OrganizationUserRelInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from organization_user_rel where user_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, org_id, user_id, role, status, is_deleted, create_time, update_time from organization_user_rel where user_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationUserRelInfo::ptr v(new OrganizationUserRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_role = rt->getInt32(3);
+        v->m_status = rt->getInt32(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int OrganizationUserRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE IF NOT EXISTS organization_user_rel("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"

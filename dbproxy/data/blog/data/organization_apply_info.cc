@@ -282,6 +282,56 @@ int OrganizationApplyInfoDao::QueryByUserId(std::vector<OrganizationApplyInfo::p
     return 0;
 }
 
+int OrganizationApplyInfoDao::QueryByUserIdPages(std::vector<OrganizationApplyInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from organization_apply where user_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted from organization_apply where user_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationApplyInfo::ptr v(new OrganizationApplyInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_orgName = rt->getString(2);
+        v->m_orgType = rt->getString(3);
+        v->m_orgDescription = rt->getString(4);
+        v->m_status = rt->getInt32(5);
+        v->m_reviewReason = rt->getString(6);
+        v->m_createdAt = rt->getInt64(7);
+        v->m_reviewedAt = rt->getInt64(8);
+        v->m_isDeleted = rt->getInt32(9);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int OrganizationApplyInfoDao::QueryByStatus(std::vector<OrganizationApplyInfo::ptr>& results,  const int32_t& status, chen::IDB::ptr conn) {
     std::string sql = "select id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted from organization_apply where status = ?";
     auto stmt = conn->prepare(sql);
@@ -293,6 +343,56 @@ int OrganizationApplyInfoDao::QueryByStatus(std::vector<OrganizationApplyInfo::p
     stmt->bindInt32(1, status);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationApplyInfo::ptr v(new OrganizationApplyInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_orgName = rt->getString(2);
+        v->m_orgType = rt->getString(3);
+        v->m_orgDescription = rt->getString(4);
+        v->m_status = rt->getInt32(5);
+        v->m_reviewReason = rt->getString(6);
+        v->m_createdAt = rt->getInt64(7);
+        v->m_reviewedAt = rt->getInt64(8);
+        v->m_isDeleted = rt->getInt32(9);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int OrganizationApplyInfoDao::QueryByStatusPages(std::vector<OrganizationApplyInfo::ptr>& results, int64_t& total,  const int32_t& status, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from organization_apply where status = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt32(1, status);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted from organization_apply where status = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt32(1, status);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

@@ -307,6 +307,58 @@ int AssignmentInfoDao::QueryBySubjectName(std::vector<AssignmentInfo::ptr>& resu
     return 0;
 }
 
+int AssignmentInfoDao::QueryBySubjectNamePages(std::vector<AssignmentInfo::ptr>& results, int64_t& total,  const std::string& subject_name, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from assignment where subject_name = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindString(1, subject_name);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time from assignment where subject_name = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindString(1, subject_name);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        AssignmentInfo::ptr v(new AssignmentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_subjectName = rt->getString(2);
+        v->m_priority = rt->getInt32(3);
+        v->m_status = rt->getInt32(4);
+        v->m_description = rt->getString(5);
+        v->m_maxSize = rt->getInt32(6);
+        v->m_fileType = rt->getString(7);
+        v->m_deadline = rt->getTime(8);
+        v->m_isDeleted = rt->getInt32(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int AssignmentInfoDao::QueryBySubjectNameName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn) {
     std::string sql = "select id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time from assignment where subject_name = ? and name = ?";
     auto stmt = conn->prepare(sql);
@@ -319,6 +371,60 @@ int AssignmentInfoDao::QueryBySubjectNameName(std::vector<AssignmentInfo::ptr>& 
     stmt->bindString(2, name);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        AssignmentInfo::ptr v(new AssignmentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_subjectName = rt->getString(2);
+        v->m_priority = rt->getInt32(3);
+        v->m_status = rt->getInt32(4);
+        v->m_description = rt->getString(5);
+        v->m_maxSize = rt->getInt32(6);
+        v->m_fileType = rt->getString(7);
+        v->m_deadline = rt->getTime(8);
+        v->m_isDeleted = rt->getInt32(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int AssignmentInfoDao::QueryBySubjectNameNamePages(std::vector<AssignmentInfo::ptr>& results, int64_t& total,  const std::string& subject_name,  const std::string& name, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from assignment where subject_name = ? and name = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindString(1, subject_name);
+    countStmt->bindString(2, name);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time from assignment where subject_name = ? and name = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindString(1, subject_name);
+    stmt->bindString(2, name);
+    stmt->bindInt32(3, limit);
+    stmt->bindInt32(4, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

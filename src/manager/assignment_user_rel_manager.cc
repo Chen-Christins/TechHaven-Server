@@ -1,4 +1,5 @@
 #include "assignment_user_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -6,56 +7,64 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool AssignmentUserRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
-        return false;
-    }
-    std::vector<blog::data::AssignmentUserRelInfo::ptr> results;
-    if (blog::data::AssignmentUserRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "AssignmentUserRelManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 500;
 
-    std::unordered_map<int64_t, blog::data::AssignmentUserRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::unordered_map<int64_t, blog::data::AssignmentUserRelInfo::ptr>> assign_user;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        assign_user[i->getAssignmentId()][i->getUserId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_assign_user.swap(assign_user);
-    return true;
+AssignmentUserRelManager::AssignmentUserRelManager()
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
+data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::AssignmentUserRelInfo::ptr v(new data::AssignmentUserRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setAssignmentId(rt->getInt64(1));
+    v->setUserId(rt->getInt64(2));
+    v->setStatus(rt->getInt32(3));
+    v->setScore(rt->getInt32(4));
+    v->setSubmitTime(rt->getInt64(5));
+    v->setIsDeleted(rt->getInt32(6));
+    v->setCreateTime(rt->getTime(7));
+    v->setUpdateTime(rt->getTime(8));
+    return v;
+}
+
+
 void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_assign_user[info->getAssignmentId()][info->getUserId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    if (it != m_datas.end()) {
-        return it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::AssignmentUserRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::getByAssignAndUser(int64_t assign_id, int64_t user_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_assign_user.find(assign_id);
-    if (it != m_assign_user.end()) {
-        auto uit = it->second.find(user_id);
-        if (uit != it->second.end()) {
-            return uit->second;
-        }
+    int64_t cachedId = getCachedIdMapping("assign_usr:" + std::to_string(assign_id) + ":" + std::to_string(user_id));
+    if (cachedId > 0) {
+        return get(cachedId);
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    auto info = data::AssignmentUserRelInfoDao::QueryByAssignmentIdUserId(assign_id, user_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+        cacheIdMapping("assign_usr:" + std::to_string(assign_id) + ":" + std::to_string(user_id), info->getId());
+    }
+    return info;
 }
 
 }

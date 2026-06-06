@@ -65,36 +65,34 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
         // 异步通知管理员和审核员有新文章待审核
         {
             std::string article_title = info->getTitle();
-            chen::IOManager::GetThis()->schedule(
-                [author_id=uid, article_id=id, article_title]() {
-                    auto author = UserMgr::GetInstance()->get(author_id);
-                    std::string author_name = author ? author->getName() : std::to_string(author_id);
-                    std::string title = "新的文章待审核";
-                    std::string content = "「" + author_name + "」提交了文章「" + article_title + "」等待审核";
+            chen::IOManager::GetThis()->schedule([author_id=uid, article_id=id, article_title]() {
+                auto author = UserMgr::GetInstance()->get(author_id);
+                std::string author_name = author ? author->getName() : std::to_string(author_id);
+                std::string title = "新的文章待审核";
+                std::string content = "「" + author_name + "」提交了文章「" + article_title + "」等待审核";
 
-                    std::vector<int64_t> userIds;
-                    UserMgr::GetInstance()->getAllIds(userIds, true);
-                    for (auto targetId : userIds) {
-                        auto u = UserMgr::GetInstance()->get(targetId);
-                        if (u && (u->getRole() == UserManager::Role::ADMIN
-                                || u->getRole() == UserManager::Role::CHECKER)) {
-                            auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                                targetId, title, content, "article_review_request", author_id, article_id);
-                            if (notif_info) {
-                                Json::Value wsMsg;
-                                wsMsg["id"] = notif_info->getId();
-                                wsMsg["title"] = title;
-                                wsMsg["content"] = content;
-                                wsMsg["type"] = "article_review_request";
-                                wsMsg["article_id"] = article_id;
-                                wsMsg["is_read"] = false;
-                                wsMsg["create_time"] = notif_info->getCreateTime();
-                                NotificationMgr::GetInstance()->sendToUser(
-                                    targetId, chen::JsonUtil::ToString(wsMsg));
-                            }
+                std::vector<int64_t> userIds;
+                UserMgr::GetInstance()->getAllIds(userIds, true);
+                for (auto targetId : userIds) {
+                    auto u = UserMgr::GetInstance()->get(targetId);
+                    if (u && (u->getRole() == UserManager::Role::ADMIN
+                            || u->getRole() == UserManager::Role::CHECKER)) {
+                        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                            targetId, title, content, "article_review_request", author_id, article_id);
+                        if (notif_info) {
+                            Json::Value wsMsg;
+                            wsMsg["id"] = notif_info->getId();
+                            wsMsg["title"] = title;
+                            wsMsg["content"] = content;
+                            wsMsg["type"] = "article_review_request";
+                            wsMsg["article_id"] = article_id;
+                            wsMsg["is_read"] = false;
+                            wsMsg["create_time"] = notif_info->getCreateTime();
+                            NotificationMgr::GetInstance()->sendToUser(targetId, chen::JsonUtil::ToString(wsMsg));
                         }
                     }
-                });
+                }
+            });
         }
     } while (0);
     response->setBody(result->toJsonString());

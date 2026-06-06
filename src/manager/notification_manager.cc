@@ -1,10 +1,35 @@
 #include "notification_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
 namespace blog {
 
-static chen::Logger::ptr logger = LOG_NAME("system");
+static chen::Logger::ptr logger = LOG_ROOT();
+
+static const size_t kCacheMaxSize = 2000;
+
+NotificationManager::NotificationManager()
+    :m_cache(16, kCacheMaxSize, 0) {
+}
+
+data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt) {
+    data::NotificationInfo::ptr v(new data::NotificationInfo);
+    v->setId(rt->getInt64(0));
+    v->setUserId(rt->getInt64(1));
+    v->setTitle(rt->getString(2));
+    v->setContent(rt->getString(3));
+    v->setType(rt->getString(4));
+    v->setSenderId(rt->getInt64(5));
+    v->setArticleId(rt->getInt64(6));
+    v->setCommentId(rt->getInt64(7));
+    v->setIsRead(rt->getInt32(8));
+    v->setReadTime(rt->getTime(9));
+    v->setIsDeleted(rt->getInt32(10));
+    v->setCreateTime(rt->getTime(11));
+    v->setUpdateTime(rt->getTime(12));
+    return v;
+}
 
 // ========== WS connection management ==========
 
@@ -21,13 +46,24 @@ void NotificationManager::removeConnection(int64_t user_id) {
 }
 
 void NotificationManager::closeAllConnections() {
-    std::unique_lock<std::shared_mutex> lock(m_connMutex);
-    for (auto& [user_id, session] : m_connections) {
-        session->close();
-        INFO(logger) << "Notification WS closed: user_id=" << user_id;
+    {
+        std::unique_lock<std::shared_mutex> lock(m_connMutex);
+        for (auto& [user_id, session] : m_connections) {
+            session->close();
+            INFO(logger) << "Notification WS closed: user_id=" << user_id;
+        }
+        m_connections.clear();
+        INFO(logger) << "All Notification WS connections closed";
     }
-    m_connections.clear();
-    INFO(logger) << "All Notification WS connections closed";
+    {
+        std::unique_lock<std::shared_mutex> lock(m_presenceMutex);
+        for (auto& [user_id, session] : m_presenceConnections) {
+            session->close();
+            INFO(logger) << "Presence WS closed: user_id=" << user_id;
+        }
+        m_presenceConnections.clear();
+        INFO(logger) << "All Presence WS connections closed";
+    }
 }
 
 int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& message) {
@@ -56,33 +92,34 @@ int32_t NotificationManager::getOnlineCount() {
     return (int32_t)m_connections.size();
 }
 
+// ========== Presence WS connection management ==========
+
+void NotificationManager::addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+    std::unique_lock<std::shared_mutex> lock(m_presenceMutex);
+    m_presenceConnections[user_id] = session;
+    INFO(logger) << "Presence WS connected: user_id=" << user_id;
+}
+
+void NotificationManager::removePresenceConnection(int64_t user_id) {
+    std::unique_lock<std::shared_mutex> lock(m_presenceMutex);
+    m_presenceConnections.erase(user_id);
+    INFO(logger) << "Presence WS disconnected: user_id=" << user_id;
+}
+
+void NotificationManager::broadcastPresence(const std::string& message) {
+    std::shared_lock<std::shared_mutex> lock(m_presenceMutex);
+    for (auto& [user_id, session] : m_presenceConnections) {
+        session->sendMessage(message);
+    }
+}
+
+int32_t NotificationManager::getPresenceOnlineCount() {
+    std::shared_lock<std::shared_mutex> lock(m_presenceMutex);
+    return (int32_t)m_presenceConnections.size();
+}
+
 // ========== DB persistence ==========
 
-bool NotificationManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
-        return false;
-    }
-    std::vector<data::NotificationInfo::ptr> results;
-    if (data::NotificationInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "NotificationManager loadAll fail";
-        return false;
-    }
-
-    std::map<int64_t, data::NotificationInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::NotificationInfo::ptr>> userNotifications;
-
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        userNotifications[i->getUserId()][i->getId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_dataMutex);
-    m_datas.swap(datas);
-    m_userNotifications.swap(userNotifications);
-    return true;
-}
 
 data::NotificationInfo::ptr NotificationManager::addNotification(
     int64_t user_id, const std::string& title,
@@ -90,7 +127,7 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
     int64_t article_id, int64_t comment_id) {
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
 
@@ -113,85 +150,98 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
         return nullptr;
     }
 
-    {
-        std::unique_lock<std::shared_mutex> lock(m_dataMutex);
-        m_datas[info->getId()] = info;
-        m_userNotifications[user_id][info->getId()] = info;
-    }
-
+    m_cache.set(info->getId(), info);
     return info;
 }
 
 void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& results,
     int64_t user_id, uint64_t offset, uint64_t size, const std::string& type) {
-    std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-    auto it = m_userNotifications.find(user_id);
-    if (it == m_userNotifications.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& userMap = it->second;
-    uint64_t idx = 0;
-    for (auto rit = userMap.rbegin(); rit != userMap.rend(); ++rit) {
-        if (!type.empty() && rit->second->getType() != type) {
-            continue;
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->where("user_id", "=", user_id);
+    qb->whereIf(!type.empty(), "type", "=", type);
+    qb->orderBy("id", "DESC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+
+    // 结果缓存：仅对首页做缓存
+    std::string typeKey = type.empty() ? "all" : type;
+    std::string listKey = "notif:list:" + std::to_string(user_id) + ":" + typeKey + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                results.push_back(info);
+            }
         }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(rit->second);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
+        return;
+    }
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    std::vector<int64_t> ids;
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+            m_cache.set(info->getId(), info);
         }
     }
+    cacheListResult(listKey, ids);
 }
 
 int64_t NotificationManager::countByUser(int64_t user_id, const std::string& type) {
-    std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-    auto it = m_userNotifications.find(user_id);
-    if (it == m_userNotifications.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    if (type.empty()) {
-        return it->second.size();
-    }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (info->getType() == type) {
-            count++;
-        }
-    }
-    return count;
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->where("user_id", "=", user_id);
+    qb->whereIf(!type.empty(), "type", "=", type);
+    std::string ck = "notif:cnt:" + std::to_string(user_id) + ":" + (type.empty() ? "all" : type);
+    return executeCountCached(qb, db, ck);
 }
 
 int64_t NotificationManager::unreadCount(int64_t user_id) {
-    std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-    auto it = m_userNotifications.find(user_id);
-    if (it == m_userNotifications.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (info->getIsRead() == 0 && info->getIsDeleted() == 0) {
-            count++;
-        }
-    }
-    return count;
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->where("user_id", "=", user_id);
+    qb->where("is_read", "=", (int64_t)0);
+    qb->where("is_deleted", "=", (int64_t)0);
+    return executeCountCached(qb, db, "notif:unread:" + std::to_string(user_id));
 }
 
 bool NotificationManager::markRead(int64_t notification_id) {
     auto db = GetDB();
     if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
 
-    data::NotificationInfo::ptr info;
-    {
-        std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-        auto it = m_datas.find(notification_id);
-        if (it == m_datas.end()) {
-            return false;
-        }
-        info = it->second;
+    auto info = get(notification_id);
+    if (!info) {
+        return false;
     }
 
     info->setIsRead(1);
@@ -202,31 +252,57 @@ bool NotificationManager::markRead(int64_t notification_id) {
     return true;
 }
 
+bool NotificationManager::markRead(const std::vector<int64_t>& ids) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return false;
+    }
+
+    for (auto id : ids) {
+        auto info = get(id);
+        if (!info) {
+            continue;
+        }
+        info->setIsRead(1);
+        info->setReadTime(time(0));
+        data::NotificationInfoDao::Update(info, db);
+    }
+    return true;
+}
+
 int64_t NotificationManager::markAllRead(int64_t user_id) {
     auto db = GetDB();
     if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
 
-    std::vector<data::NotificationInfo::ptr> unreadList;
-    {
-        std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-        auto it = m_userNotifications.find(user_id);
-        if (it == m_userNotifications.end()) {
-            return 0;
-        }
-        for (auto& [id, info] : it->second) {
-            if (info->getIsRead() == 0 && info->getIsDeleted() == 0) {
-                unreadList.push_back(info);
-            }
-        }
+    // Find all unread, non-deleted notifications for this user
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->where("user_id", "=", user_id);
+    qb->where("is_read", "=", (int64_t)0);
+    qb->where("is_deleted", "=", (int64_t)0);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
     }
 
     int64_t count = 0;
-    for (auto& info : unreadList) {
+    while (rt->next()) {
+        auto info = parseRow(rt);
         info->setIsRead(1);
         info->setReadTime(time(0));
         if (data::NotificationInfoDao::Update(info, db) == 0) {
+            m_cache.set(info->getId(), info);
             count++;
         }
     }
@@ -236,56 +312,56 @@ int64_t NotificationManager::markAllRead(int64_t user_id) {
 int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& type) {
     auto db = GetDB();
     if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
 
-    std::vector<data::NotificationInfo::ptr> matchedList;
-    {
-        std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-        auto it = m_userNotifications.find(user_id);
-        if (it == m_userNotifications.end()) {
-            return 0;
-        }
-        for (auto& [id, info] : it->second) {
-            if (info->getIsRead() == 0 && info->getIsDeleted() == 0
-                    && info->getType() == type) {
-                matchedList.push_back(info);
-            }
-        }
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->where("user_id", "=", user_id);
+    qb->where("is_read", "=", (int64_t)0);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("type", "=", type);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
     }
 
     int64_t count = 0;
-    for (auto& info : matchedList) {
+    while (rt->next()) {
+        auto info = parseRow(rt);
         info->setIsRead(1);
         info->setReadTime(time(0));
         if (data::NotificationInfoDao::Update(info, db) == 0) {
+            m_cache.set(info->getId(), info);
             count++;
         }
     }
     return count;
 }
 
-bool NotificationManager::markRead(const std::vector<int64_t>& ids) {
+data::NotificationInfo::ptr NotificationManager::get(int64_t id) {
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
     auto db = GetDB();
     if (!db) {
-        return false;
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
     }
-
-    for (auto id : ids) {
-        data::NotificationInfo::ptr info;
-        {
-            std::shared_lock<std::shared_mutex> lock(m_dataMutex);
-            auto it = m_datas.find(id);
-            if (it == m_datas.end()) {
-                continue;
-            }
-            info = it->second;
-        }
-        info->setIsRead(1);
-        info->setReadTime(time(0));
-        data::NotificationInfoDao::Update(info, db);
+    v = data::NotificationInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
     }
-    return true;
+    return v;
 }
 
 }

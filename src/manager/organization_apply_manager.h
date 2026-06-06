@@ -1,9 +1,8 @@
-#ifndef __BLOG_MANAGER_ORGANIZATION_APPLY_MANAGER_H__
-#define __BLOG_MANAGER_ORGANIZATION_APPLY_MANAGER_H__
+#pragma once
 
-#include <shared_mutex>
-#include <unordered_map>
 #include "blog/data/organization_apply_info.h"
+#include <chen/ds/lru_cache.h>
+#include <chen/db/query_builder.h>
 #include <chen/singleton.h>
 
 namespace blog {
@@ -16,7 +15,8 @@ public:
         REJECTED = 2
     };
 
-    bool loadAll();
+    OrganizationApplyManager();
+
     void add(data::OrganizationApplyInfo::ptr info);
     void update(data::OrganizationApplyInfo::ptr info);
     data::OrganizationApplyInfo::ptr get(int64_t id);
@@ -28,12 +28,11 @@ public:
         , int64_t user_id, uint64_t offset, uint64_t limit, bool isValid);
 
 private:
-    std::shared_mutex m_mutex;
-    std::unordered_map<int64_t, data::OrganizationApplyInfo::ptr> m_datas;
+    static data::OrganizationApplyInfo::ptr parseRow(chen::ISQLData::ptr rt);
+
+    chen::ds::HashLruCache<int64_t, data::OrganizationApplyInfo::ptr> m_cache;
 };
 
 typedef chen::Singleton<OrganizationApplyManager> OrganizationApplyMgr;
 
 }
-
-#endif // __BLOG_MANAGER_ORGANIZATION_APPLY_MANAGER_H__

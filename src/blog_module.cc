@@ -3,12 +3,15 @@
 #include <chen/http/http_server.h>
 #include <chen/log/log.h>
 #include <chen/db/sqlite3.h>
+#include <chen/db/mysql.h>
 #include <chen/config/config.h>
 #include <chen/application.h>
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
 #include <chen/env.h>
 #include <chen/worker.h>
+
+#include <ranges>
 
 #include "./include/tables.h"
 #include "./include/managers.h"
@@ -17,8 +20,8 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static chen::ConfigVar<std::string>::ptr sqlite3_db_name =
-    chen::Config::Lookup("sqlite3.db_name", std::string("blog.db"), "sqlite3 db file name");
+static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
+    chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
 BlogModule::BlogModule()
     :chen::Module("Blog", "1.0", "") {
@@ -39,12 +42,10 @@ bool BlogModule::onUnload() {
 bool BlogModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
-    if (!initDB()) {
+    if (!initMySQL()) {
         ERROR(logger) << "initDB failed";
         return false;
     }
-
-    loadAllData();
 
     ArticleMgr::GetInstance()->start();
 
@@ -71,31 +72,21 @@ bool BlogModule::onServerUp() {
     return true;
 }
 
-bool BlogModule::initDB() {
-    INFO(logger) << "initDB";
+bool BlogModule::initMySQL() {
+    INFO(logger) << "initMySQL";
 
-    auto work_path = chen::Config::Lookup<std::string>("server.work_path");
-    auto db_path = work_path->getValue() + "/" + sqlite3_db_name->getValue();
-
-    chen::SQLite3::ptr db;
-    db = chen::SQLite3::Create(db_path);
-    if (!db) {
-        INFO(logger) << "init database begin";
-        db = chen::SQLite3::Create(db_path);
-        if (!db) {
-            INFO(logger) << "open database db=" << db_path
-                << " failed";
+    const auto& mysql_dbs = g_mysql_dbs->getValue();
+    for (const auto& params : mysql_dbs | std::views::values) {
+        chen::MySQL::ptr mysql(new chen::MySQL(params));
+        if (!mysql->connect()) {
+            ERROR(logger) << "connect mysql failed";
             return false;
         }
-        INFO(logger) << "init database end";
-    }
 
-    // 确保所有表存在（CREATE TABLE IF NOT EXISTS 幂等，新旧数据库均可安全执行）
-    {
-#define XX(clazz, t)                                   \
-    if (blog::data::clazz::CreateTableSQLite3(db)) {   \
-        ERROR(logger) << "create table " t " failed";  \
-        return false;                                  \
+#define XX(class_name, table_name)                             \
+    if (data::class_name::CreateTableMySQL(mysql)) {           \
+        ERROR(logger) << "create " table_name " table failed"; \
+        return false;                                          \
     }
     XX(EmailVerificationInfoDao, "email_verification")
     XX(UserInfoDao, "user")
@@ -122,12 +113,11 @@ bool BlogModule::initDB() {
     XX(TaskInfoDao, "task")
     XX(SystemSettingsInfoDao, "system_settings")
 #undef XX
-    }
 
     // 数据库迁移：为已有表补充新增列
     {
         INFO(logger) << "migrate database begin";
-#define XX(clazz) blog::data::clazz::MigrateTableSQLite3(db);
+#define XX(clazz) blog::data::clazz::MigrateTableMySQL(mysql);
         XX(EmailVerificationInfoDao)
         XX(UserInfoDao)
         XX(ArticleInfoDao)
@@ -155,46 +145,9 @@ bool BlogModule::initDB() {
         INFO(logger) << "migrate database end";
     }
 
+    }
+
     return true;
-}
-
-void BlogModule::loadAllData() {
-    INFO(logger) << "loadAllData";
-
-    auto wg = chen::WorkerGroup::Create(4);
-
-#define XX(clazz) \
-    wg->schedule([]() { \
-        if (!clazz::GetInstance()->loadAll()) { \
-            ERROR(logger) << #clazz " load all fail"; \
-        } \
-    });
-    XX(UserMgr)
-    XX(ArticleMgr)
-    XX(CategoryMgr)
-    XX(LabelMgr)
-    XX(ArticleCategoryRelMgr)
-    XX(ArticleLabelRelMgr)
-    XX(AssignmentMgr)
-    XX(OrganizationMgr)
-    XX(OrganizationApplyMgr)
-    XX(OrganizationUserRelMgr)
-    XX(AssignmentOrganizationRelMgr)
-    XX(AssignmentUserRelMgr)
-    XX(ResourceMgr)
-    XX(ChunkUploadMgr)
-    XX(NotificationMgr)
-    XX(UserFollowRelMgr)
-    XX(ArticlePraiseRelMgr)
-    XX(CommentMgr)
-    XX(CommentPraiseRelMgr)
-    XX(RequirementMgr)
-    XX(BugMgr)
-    XX(TaskMgr)
-    XX(SystemSettingsMgr)
-#undef XX
-
-    wg->waitAll();
 }
 
 void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
@@ -360,6 +313,9 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
 
         servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
         dp->addServlet("/ws/v1/notification", notify_servlet);
+
+        servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
+        dp->addServlet("/ws/v1/presence", presence_servlet);
     }
 }
 

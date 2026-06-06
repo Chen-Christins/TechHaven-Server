@@ -64,7 +64,9 @@ public:
     static UserFollowRelInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static UserFollowRelInfo::ptr QueryByFollowerIdFollowingId( const int64_t& follower_id,  const int64_t& following_id, chen::IDB::ptr conn);
     static int QueryByFollowerId(std::vector<UserFollowRelInfo::ptr>& results,  const int64_t& follower_id, chen::IDB::ptr conn);
+    static int QueryByFollowerIdPages(std::vector<UserFollowRelInfo::ptr>& results, int64_t& total,  const int64_t& follower_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByFollowingId(std::vector<UserFollowRelInfo::ptr>& results,  const int64_t& following_id, chen::IDB::ptr conn);
+    static int QueryByFollowingIdPages(std::vector<UserFollowRelInfo::ptr>& results, int64_t& total,  const int64_t& following_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

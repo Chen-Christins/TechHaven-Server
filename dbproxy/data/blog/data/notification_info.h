@@ -90,7 +90,9 @@ public:
     static int QueryAll(std::vector<NotificationInfo::ptr>& results, chen::IDB::ptr conn);
     static NotificationInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByUserId(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static int QueryByUserIdPages(std::vector<NotificationInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id,  const int32_t& is_read, chen::IDB::ptr conn);
+    static int QueryByUserIdIsReadPages(std::vector<NotificationInfo::ptr>& results, int64_t& total,  const int64_t& user_id,  const int32_t& is_read, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

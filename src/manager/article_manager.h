@@ -1,14 +1,14 @@
-#ifndef __BLOG_MANAGER_ARTICLE_MANAGER_H__
-#define __BLOG_MANAGER_ARTICLE_MANAGER_H__
+#pragma once
 
 #include "blog/data/article_info.h"
+#include <chen/ds/lru_cache.h>
+#include <chen/db/query_builder.h>
 #include <chen/singleton.h>
-#include <chen/timer/timer.h>
-#include <shared_mutex>
-#include <unordered_map>
+#include <chen/timer/timer.h>   
 #include <map>
+#include <mutex>
 #include <set>
-#include <vector>
+#include <shared_mutex>
 
 namespace blog {
 
@@ -25,7 +25,9 @@ public:
         ORIGINAL = 1,
         REPRINT = 2
     };
-    bool loadAll();
+
+    ArticleManager();
+
     void add(blog::data::ArticleInfo::ptr info);
     blog::data::ArticleInfo::ptr get(int64_t id);
     bool listByUserId(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, bool valid);
@@ -54,7 +56,6 @@ public:
     bool decPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id);
     bool decFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id);
 
-    // directly update the praise counter (for use with ArticlePraiseRelManager)
     void incPraiseCount(int64_t id);
     void decPraiseCount(int64_t id);
 
@@ -75,34 +76,32 @@ public:
     int64_t getTodayViews();
     int64_t getTotalViews();
     int64_t getTotalVisitors();
+
 private:
     void onTimer();
     void onUpdateTimer();
     bool addViews(uint64_t id, const std::string& cookie_id);
     void addUpdate(int64_t id);
+
+    static data::ArticleInfo::ptr parseRow(chen::ISQLData::ptr rt);
+
 private:
-    /// 读写锁
-    std::shared_mutex m_mutex;
+    /// 定时器锁
+    std::mutex m_mutex;
     /// 文章浏览数锁
     std::shared_mutex m_viewsMutex;
-    /// 文章数据内容
-    std::map<int64_t, blog::data::ArticleInfo::ptr> m_datas;
-    /// 按id降序排列的文章id索引，用于O(1)分页（只包含未删除文章）
-    std::vector<int64_t> m_sortedIds;
-    /// 用户i 对应 -> 文章
-    std::unordered_map<int64_t, std::map<int64_t, blog::data::ArticleInfo::ptr>> m_users;
-    /// 文章发布的状态
-    std::map<int64_t, blog::data::ArticleInfo::ptr> m_verifys;
+    /// LRU 文章缓存（最多 1000 条）
+    chen::ds::HashLruCache<int64_t, data::ArticleInfo::ptr> m_cache;
     /// 文章浏览数
     std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
-    ///
+    /// 待更新到 DB 的文章 ID 集合
     std::set<int64_t> m_updates;
+    /// 定时发布文章定时器
     chen::Timer::ptr m_timer;
+    /// 定时 flush 脏数据定时器
     chen::Timer::ptr m_updateTimer;
 };
 
 typedef chen::Singleton<ArticleManager> ArticleMgr;
 
 }
-
-#endif // __BLOG_MANAGER_ARTICLE_MANAGER_H__

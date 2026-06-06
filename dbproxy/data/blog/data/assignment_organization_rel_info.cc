@@ -300,6 +300,54 @@ int AssignmentOrganizationRelInfoDao::QueryByAssignmentId(std::vector<Assignment
     return 0;
 }
 
+int AssignmentOrganizationRelInfoDao::QueryByAssignmentIdPages(std::vector<AssignmentOrganizationRelInfo::ptr>& results, int64_t& total,  const int64_t& assignment_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from assignment_organization_rel where assignment_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, assignment_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where assignment_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, assignment_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        AssignmentOrganizationRelInfo::ptr v(new AssignmentOrganizationRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_assignmentId = rt->getInt64(1);
+        v->m_organizationId = rt->getInt64(2);
+        v->m_assignedBy = rt->getString(3);
+        v->m_status = rt->getInt32(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int AssignmentOrganizationRelInfoDao::QueryByOrganizationId(std::vector<AssignmentOrganizationRelInfo::ptr>& results,  const int64_t& organization_id, chen::IDB::ptr conn) {
     std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where organization_id = ?";
     auto stmt = conn->prepare(sql);
@@ -311,6 +359,54 @@ int AssignmentOrganizationRelInfoDao::QueryByOrganizationId(std::vector<Assignme
     stmt->bindInt64(1, organization_id);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        AssignmentOrganizationRelInfo::ptr v(new AssignmentOrganizationRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_assignmentId = rt->getInt64(1);
+        v->m_organizationId = rt->getInt64(2);
+        v->m_assignedBy = rt->getString(3);
+        v->m_status = rt->getInt32(4);
+        v->m_isDeleted = rt->getInt32(5);
+        v->m_createTime = rt->getTime(6);
+        v->m_updateTime = rt->getTime(7);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int AssignmentOrganizationRelInfoDao::QueryByOrganizationIdPages(std::vector<AssignmentOrganizationRelInfo::ptr>& results, int64_t& total,  const int64_t& organization_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from assignment_organization_rel where organization_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, organization_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, assignment_id, organization_id, assigned_by, status, is_deleted, create_time, update_time from assignment_organization_rel where organization_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, organization_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {

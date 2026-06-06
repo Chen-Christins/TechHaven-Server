@@ -14,8 +14,10 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer")
+set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-fsanitize=address")
+set(CMAKE_SHARED_LINKER_FLAGS_DEBUG "-fsanitize=address")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 

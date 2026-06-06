@@ -6,37 +6,48 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool ChunkUploadManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get SQLite3 connection fail";
-        return false;
-    }
-    std::vector<data::ChunkUploadInfo::ptr> results;
-    if (blog::data::ChunkUploadInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "ChunkUploadManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 200;
 
-    std::unordered_map<int64_t, data::ChunkUploadInfo::ptr> datas;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    return true;
+ChunkUploadManager::ChunkUploadManager()
+    :m_cache(4, kCacheMaxSize, 0) {
 }
 
+data::ChunkUploadInfo::ptr ChunkUploadManager::parseRow(chen::ISQLData::ptr rt) {
+    data::ChunkUploadInfo::ptr v(new data::ChunkUploadInfo);
+    v->setId(rt->getInt64(0));
+    v->setUploadId(rt->getString(1));
+    v->setFilename(rt->getString(2));
+    v->setTotalChunks(rt->getInt32(3));
+    v->setUploadedChunks(rt->getInt32(4));
+    v->setSize(rt->getInt64(5));
+    v->setOwnerId(rt->getInt64(6));
+    v->setStatus(rt->getInt32(7));
+    v->setIsDeleted(rt->getInt32(8));
+    v->setCreateTime(rt->getTime(9));
+    v->setUpdateTime(rt->getTime(10));
+    return v;
+}
+
+
 void ChunkUploadManager::add(data::ChunkUploadInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::ChunkUploadInfo::ptr ChunkUploadManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it != m_datas.end() ? it->second : nullptr;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::ChunkUploadInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 }

@@ -5,15 +5,16 @@
  * @date 2026-06-03
  * @copyright Apache 2.0
  */
-
 #pragma once
 
-#include <chen/db/sqlite3.h>
+#include <chen/db/mysql.h>
 #include <chen/util/hash_util.h>
 
 #include <regex>
 
 namespace blog {
+
+chen::IDB::ptr GetDB();
 
 inline bool IsEmail(const std::string& str) {
     static const std::regex pattern("([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,8}(\\.[a-z]{2,8})?)");
@@ -51,10 +52,6 @@ inline int64_t DecryptUserId(const std::string& encrypted) {
 inline bool IsValidAccount(const std::string& str) {
     static const std::regex s_account_regex("[A-Za-z][0-9A-Za-z\\-_\\.]{4,15}");
     return std::regex_match(str, s_account_regex);
-}
-
-inline chen::IDB::ptr GetDB() {
-    return chen::SQLite3Mgr::GetInstance()->get("blog");
 }
 
 inline void SendWX(const std::string& group, const std::string& msg) {

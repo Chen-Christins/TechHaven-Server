@@ -35,10 +35,6 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
             break;
         }
 
-        int32_t old_role = info->getRole();
-        std::string old_account = info->getAccount();
-        std::string old_email = info->getEmail();
-
         std::string account = request->getParam("account");
         std::string email = request->getParam("email");
         std::string passwd = request->getParam("passwd");
@@ -112,7 +108,7 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
             break;
         }
 
-        UserMgr::GetInstance()->update(info, old_role, old_account, old_email);
+        UserMgr::GetInstance()->update(info);
 
         result->set("id", info->getId());
         result->set("account", info->getAccount());

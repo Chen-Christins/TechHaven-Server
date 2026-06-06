@@ -1,4 +1,5 @@
 #include "user_follow_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -6,70 +7,74 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool UserFollowRelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "get db connection fail";
-        return false;
-    }
-    std::vector<data::UserFollowRelInfo::ptr> results;
-    if (data::UserFollowRelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "UserFollowRelManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 1000;
 
-    std::unordered_map<int64_t, data::UserFollowRelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, data::UserFollowRelInfo::ptr>> followings;
-    std::unordered_map<int64_t, std::map<int64_t, data::UserFollowRelInfo::ptr>> followers;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        followings[i->getFollowerId()][i->getFollowingId()] = i;
-        followers[i->getFollowingId()][i->getFollowerId()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_followings.swap(followings);
-    m_followers.swap(followers);
-
-    return true;
+UserFollowRelManager::UserFollowRelManager()
+    :m_cache(8, kCacheMaxSize, 0) {
 }
 
+data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::UserFollowRelInfo::ptr v(new data::UserFollowRelInfo);
+    v->setId(rt->getInt64(0));
+    v->setFollowerId(rt->getInt64(1));
+    v->setFollowingId(rt->getInt64(2));
+    v->setIsDeleted(rt->getInt32(3));
+    v->setCreateTime(rt->getTime(4));
+    v->setUpdateTime(rt->getTime(5));
+    return v;
+}
+
+
 void UserFollowRelManager::add(data::UserFollowRelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_followings[info->getFollowerId()][info->getFollowingId()] = info;
-    m_followers[info->getFollowingId()][info->getFollowerId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::UserFollowRelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(
     int64_t follower_id, int64_t following_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_followings.find(follower_id);
-    if (it != m_followings.end()) {
-        auto iit = it->second.find(following_id);
-        return iit == it->second.end() ? nullptr : iit->second;
+    std::string ck = "flw:" + std::to_string(follower_id) + ":" + std::to_string(following_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    auto info = data::UserFollowRelInfoDao::QueryByFollowerIdFollowingId(follower_id, following_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
+    }
+    return info;
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, int64_t following_id) {
-    // check if already following
     auto existing = getByFollowerAndFollowing(follower_id, following_id);
     if (existing) {
         if (!existing->getIsDeleted()) {
-            return existing; // already following
+            return existing;
         }
-        // re-follow: update existing record
         auto db = GetDB();
         if (!db) {
-            ERROR(logger) << "get db connection fail";
+            ERROR(logger) << "Get DB connection fail";
             return nullptr;
         }
         existing->setIsDeleted(0);
@@ -78,15 +83,13 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, i
             ERROR(logger) << "UserFollowRelManager follow Update fail";
             return nullptr;
         }
-        // update in-memory maps
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        existing->setIsDeleted(0);
+        m_cache.set(existing->getId(), existing);
         return existing;
     }
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
 
@@ -102,13 +105,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, i
         return nullptr;
     }
 
-    {
-        std::unique_lock<std::shared_mutex> lock(m_mutex);
-        m_datas[info->getId()] = info;
-        m_followings[info->getFollowerId()][info->getFollowingId()] = info;
-        m_followers[info->getFollowingId()][info->getFollowerId()] = info;
-    }
-
+    m_cache.set(info->getId(), info);
     return info;
 }
 
@@ -120,7 +117,7 @@ bool UserFollowRelManager::unfollow(int64_t follower_id, int64_t following_id) {
 
     auto db = GetDB();
     if (!db) {
-        ERROR(logger) << "get db connection fail";
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
 
@@ -130,6 +127,7 @@ bool UserFollowRelManager::unfollow(int64_t follower_id, int64_t following_id) {
         ERROR(logger) << "UserFollowRelManager unfollow Update fail";
         return false;
     }
+    m_cache.set(info->getId(), info);
     return true;
 }
 
@@ -140,78 +138,104 @@ bool UserFollowRelManager::isFollowing(int64_t follower_id, int64_t following_id
 
 void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::ptr>& results,
     int64_t follower_id, uint64_t offset, uint64_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_followings.find(follower_id);
-    if (it == m_followings.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& followMap = it->second;
-    uint64_t idx = 0;
-    for (auto rit = followMap.rbegin(); rit != followMap.rend(); ++rit) {
-        if (rit->second->getIsDeleted()) {
-            continue;
-        }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(rit->second);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
+    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    qb->where("follower_id", "=", follower_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
 }
 
 void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results,
     int64_t following_id, uint64_t offset, uint64_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_followers.find(following_id);
-    if (it == m_followers.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto& followMap = it->second;
-    uint64_t idx = 0;
-    for (auto rit = followMap.rbegin(); rit != followMap.rend(); ++rit) {
-        if (rit->second->getIsDeleted()) {
-            continue;
-        }
-        if (idx >= offset && results.size() < size) {
-            results.push_back(rit->second);
-        }
-        idx++;
-        if (results.size() >= size) {
-            break;
+    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    qb->where("following_id", "=", following_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    qb->limit((int32_t)size);
+    qb->offset((int32_t)offset);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        results.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
 }
 
 int64_t UserFollowRelManager::countFollowing(int64_t follower_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_followings.find(follower_id);
-    if (it == m_followings.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted()) {
-            count++;
-        }
+    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    qb->where("follower_id", "=", follower_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
-    return count;
+    return total;
 }
 
 int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_followers.find(following_id);
-    if (it == m_followers.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    int64_t count = 0;
-    for (auto& [id, info] : it->second) {
-        if (!info->getIsDeleted()) {
-            count++;
-        }
+    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    qb->where("following_id", "=", following_id);
+    qb->where("is_deleted", "=", (int64_t)0);
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
     }
-    return count;
+    return total;
 }
 
 }

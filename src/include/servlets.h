@@ -53,6 +53,7 @@
 #include "../servlets/notify/notification_send_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/notify/notification_unread_count_servlet.h"           // IWYU pragma: keep
 #include "../servlets/notify/notify_servlet.h"                              // IWYU pragma: keep
+#include "../servlets/notify/presence_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/organization/organization_admin_lists_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_apply_create_servlet.h"     // IWYU pragma: keep
 #include "../servlets/organization/organization_apply_list_servlet.h"       // IWYU pragma: keep

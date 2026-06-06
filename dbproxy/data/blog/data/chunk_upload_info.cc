@@ -325,6 +325,57 @@ int ChunkUploadInfoDao::QueryByOwnerId(std::vector<ChunkUploadInfo::ptr>& result
     return 0;
 }
 
+int ChunkUploadInfoDao::QueryByOwnerIdPages(std::vector<ChunkUploadInfo::ptr>& results, int64_t& total,  const int64_t& owner_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from chunk_upload where owner_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, owner_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, upload_id, filename, total_chunks, uploaded_chunks, size, owner_id, status, is_deleted, create_time, update_time from chunk_upload where owner_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, owner_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ChunkUploadInfo::ptr v(new ChunkUploadInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_uploadId = rt->getString(1);
+        v->m_filename = rt->getString(2);
+        v->m_totalChunks = rt->getInt32(3);
+        v->m_uploadedChunks = rt->getInt32(4);
+        v->m_size = rt->getInt64(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isDeleted = rt->getInt32(8);
+        v->m_createTime = rt->getTime(9);
+        v->m_updateTime = rt->getTime(10);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int ChunkUploadInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
     return conn->execute("CREATE TABLE IF NOT EXISTS chunk_upload("
             "id INTEGER PRIMARY KEY AUTOINCREMENT,"

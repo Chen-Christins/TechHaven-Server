@@ -1,4 +1,5 @@
 #include "label_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -6,69 +7,92 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool LabelManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "get db connection fail";
-        return false;
-    }
-    std::vector<data::LabelInfo::ptr> results;
-    if (data::LabelInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "LabelManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 500;
 
-    std::unordered_map<int64_t, data::LabelInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<std::string, data::LabelInfo::ptr>> users;
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        users[i->getUserId()][i->getName()] = i;
-    }
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_users.swap(users);
-
-    return true;
+LabelManager::LabelManager()
+    :m_cache(8, kCacheMaxSize, 50) {
 }
 
+data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt) {
+    data::LabelInfo::ptr v(new data::LabelInfo);
+    v->setId(rt->getInt64(0));
+    v->setUserId(rt->getInt64(1));
+    v->setName(rt->getString(2));
+    v->setColor(rt->getString(3));
+    v->setDescription(rt->getString(4));
+    v->setIsDeleted(rt->getInt32(5));
+    v->setCreateTime(rt->getTime(6));
+    v->setUpdateTime(rt->getTime(7));
+    return v;
+}
+
+
 void LabelManager::add(data::LabelInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_users[info->getUserId()][info->getName()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 data::LabelInfo::ptr LabelManager::get(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    return it == m_datas.end() ? nullptr : it->second;
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::LabelInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
 data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string& name) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_users.find(id);
-    if (it != m_users.end()) {
-        auto iit = it->second.find(name);
-        return iit == it->second.end() ? nullptr : iit->second;
+    int64_t cachedId = getCachedIdMapping("lbl:uid_name:" + std::to_string(id) + ":" + name);
+    if (cachedId > 0) {
+        return get(cachedId);
     }
-    return nullptr;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    auto info = data::LabelInfoDao::QueryByUserIdName(id, name, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+        cacheIdMapping("lbl:uid_name:" + std::to_string(id) + ":" + name, info->getId());
+    }
+    return info;
 }
 
 bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_t id, bool valid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_users.find(id);
-    if (it == m_users.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    if (valid) {
-        for (auto& i : it->second) {
-            if (i.second->getIsDeleted() == 0) {
-                infos.push_back(i.second);
-            }
-        }
-    } else {
-        for (auto& i : it->second) {
-            infos.push_back(i.second);
+    auto qb = chen::QueryBuilder::Create("label");
+    qb->where("user_id", "=", id);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return false;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return false;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
         }
     }
     return true;

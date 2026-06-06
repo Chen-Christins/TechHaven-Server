@@ -1,89 +1,92 @@
 #include "article_manager.h"
+#include "cache_util.h"
 #include "../util.h"
 #include <chen/log/log.h>
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>
-#include "user_manager.h"
-#include "article_label_rel_manager.h"
-#include "article_category_rel_manager.h"
 
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-bool ArticleManager::loadAll() {
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "Get Sqlite3 connection fail";
-        return false;
-    }
-    std::vector<data::ArticleInfo::ptr> results;
-    if (blog::data::ArticleInfoDao::QueryAll(results, db)) {
-        ERROR(logger) << "ArticleManager loadAll fail";
-        return false;
-    }
+static const size_t kCacheMaxSize = 1000;
 
-    std::map<int64_t, blog::data::ArticleInfo::ptr> datas;
-    std::unordered_map<int64_t, std::map<int64_t, blog::data::ArticleInfo::ptr>> users;
-    std::map<int64_t, blog::data::ArticleInfo::ptr> verifys;
-    std::vector<int64_t> sortedIds;
-
-    for (auto& i : results) {
-        datas[i->getId()] = i;
-        users[i->getUserId()][i->getId()] = i;
-        if (i->getState() == 1) {
-            verifys[i->getId()] = i;
-        }
-        if (!i->getIsDeleted()) {
-            sortedIds.push_back(i->getId());
-        }
-    }
-    // 按 id 降序（新文章在前）
-    std::sort(sortedIds.begin(), sortedIds.end(), std::greater<int64_t>());
-
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas.swap(datas);
-    m_users.swap(users);
-    m_verifys.swap(verifys);
-    m_sortedIds.swap(sortedIds);
-    return true;
+ArticleManager::ArticleManager()
+    :m_cache(32, kCacheMaxSize, 0) {
 }
+
+data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt) {
+    data::ArticleInfo::ptr v(new data::ArticleInfo);
+    v->setId(rt->getInt64(0));
+    v->setUserId(rt->getInt64(1));
+    v->setTitle(rt->getString(2));
+    v->setContent(rt->getString(3));
+    v->setType(rt->getInt32(4));
+    v->setState(rt->getInt32(5));
+    v->setChannel(rt->getInt64(6));
+    v->setIsDeleted(rt->getInt32(7));
+    v->setPublishTime(rt->getTime(8));
+    v->setWeight(rt->getInt64(9));
+    v->setViews(rt->getInt64(10));
+    v->setPraise(rt->getInt64(11));
+    v->setFavorites(rt->getInt64(12));
+    v->setCreateTime(rt->getTime(13));
+    v->setUpdateTime(rt->getTime(14));
+    return v;
+}
+
 
 void ArticleManager::add(blog::data::ArticleInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_datas[info->getId()] = info;
-    m_users[info->getUserId()][info->getId()] = info;
-    if (info->getState() == 1 && info->getIsDeleted() == 0) {
-        m_verifys[info->getId()] = info;
-    }
-    if (!info->getIsDeleted()) {
-        // 按降序插入到 m_sortedIds
-        auto it = std::lower_bound(m_sortedIds.begin(), m_sortedIds.end(),
-                                   info->getId(), std::greater<int64_t>());
-        m_sortedIds.insert(it, info->getId());
-    }
+    m_cache.set(info->getId(), info);
 }
-
-#define XX(map, key)                                   \
-    std::shared_lock<std::shared_mutex> lock(m_mutex); \
-    auto it = map.find(key);                           \
-    return it == map.end() ? nullptr : it->second;
 
 blog::data::ArticleInfo::ptr ArticleManager::get(int64_t id) {
-    XX(m_datas, id);
+    auto v = m_cache.get(id);
+    if (v) {
+        return v;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return nullptr;
+    }
+    v = data::ArticleInfoDao::Query(id, db);
+    if (v) {
+        m_cache.set(id, v);
+    }
+    return v;
 }
 
-#undef XX
-
 bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, int64_t id, bool valid) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_users.find(id);
-    if (it == m_users.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    for (auto& i : it->second) {
-        if (!valid || !i.second->getIsDeleted()) {
-            infos.push_back(i.second);
+    auto qb = chen::QueryBuilder::Create("article");
+    qb->where("user_id", "=", id);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return false;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return false;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        auto cached = m_cache.get(info->getId());
+        if (cached) {
+            infos.push_back(cached);
+        } else {
+            m_cache.set(info->getId(), info);
+            infos.push_back(info);
         }
     }
     return true;
@@ -91,301 +94,436 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
 
 int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t id
         ,int32_t offset, int32_t size, bool valid, int state) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    if (id == 0) {
-        if (!state && valid) {
-            // 快速路径：无筛选条件，O(1) count + O(size) 直接索引
-            int64_t total = m_sortedIds.size();
-            if (offset < total) {
-                for (size_t i = offset; i < m_sortedIds.size() && infos.size() < (size_t)size; ++i) {
-                    auto it = m_datas.find(m_sortedIds[i]);
-                    if (it != m_datas.end()) {
-                        infos.push_back(it->second);
-                    }
-                }
-            }
-            return total;
-        }
-        // 带状态筛选：单次遍历 m_sortedIds，计数+分页合并
-        int64_t total = 0;
-        for (auto& articleId : m_sortedIds) {
-            auto it = m_datas.find(articleId);
-            if (it == m_datas.end()) continue;
-            auto& info = it->second;
-            if (state && info->getState() != state) continue;
-            if (total >= offset && infos.size() < (size_t)size) {
-                infos.push_back(info);
-            }
-            total++;
-        }
-        return total;
-    } else {
-        auto uit = m_users.find(id);
-        if (uit == m_users.end()) {
-            return 0;
-        }
-        // 单次遍历：计数+分页合并
-        int64_t total = 0;
-        for (auto it = uit->second.rbegin(); it != uit->second.rend(); ++it) {
-            if (valid && it->second->getIsDeleted()) continue;
-            if (state && it->second->getState() != state) continue;
-            if (total >= offset && infos.size() < (size_t)size) {
-                infos.push_back(it->second);
-            }
-            total++;
-        }
-        return total;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
     }
+    auto qb = chen::QueryBuilder::Create("article");
+    qb->whereIf(id != 0, "user_id", "=", id);
+    qb->whereIf(state != 0, "state", "=", (int64_t)state);
+    qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
+    qb->orderBy("id", "DESC");
+    qb->limit(size);
+    qb->offset(offset);
+
+    int64_t total = 0;
+    if (qb->executeCount(total, db)) {
+        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+        return 0;
+    }
+    if (total == 0) {
+        return 0;
+    }
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        auto cached = m_cache.get(info->getId());
+        if (cached) {
+            infos.push_back(cached);
+        } else {
+            m_cache.set(info->getId(), info);
+            infos.push_back(info);
+        }
+    }
+    return total;
 }
 
 int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t label_id
         ,int32_t offset, int32_t size, bool valid) {
-    std::vector<data::ArticleLabelRelInfo::ptr> rels;
-    ArticleLabelRelMgr::GetInstance()->listByLabelId(rels, label_id, valid);
-
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-
-    std::vector<data::ArticleInfo::ptr> matched;
-    for (auto& rel : rels) {
-        auto it = m_datas.find(rel->getArticleId());
-        if (it != m_datas.end()
-                && (!valid || !it->second->getIsDeleted())
-                && it->second->getState() == Status::PUBLISHED) {
-            matched.push_back(it->second);
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
     }
-    std::sort(matched.begin(), matched.end(), [](const data::ArticleInfo::ptr& a, const data::ArticleInfo::ptr& b) {
-        return a->getId() > b->getId();
-    });
+    auto qb = chen::QueryBuilder::Create("article a");
+    qb->select("a.*");
+    qb->join("article_label_rel alr", "a.id = alr.article_id");
+    qb->where("alr.label_id", "=", label_id);
+    qb->where("alr.is_deleted", "=", (int64_t)0);
+    qb->where("a.state", "=", (int64_t)Status::PUBLISHED);
+    qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
+    qb->orderBy("a.id", "DESC");
+    qb->limit(size);
+    qb->offset(offset);
 
-    int64_t total = matched.size();
-
-    if (offset < (int32_t)matched.size()) {
-        for (int32_t i = offset; i < (int32_t)matched.size() && (int32_t)infos.size() < size; ++i) {
-            infos.push_back(matched[i]);
+    // 结果缓存：仅对首页做缓存
+    std::string listKey = "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0")
+                        + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                infos.push_back(info);
+            }
         }
+        return executeCountCached(qb, db,
+            "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
     }
+
+    int64_t total = executeCountCached(qb, db,
+        "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
+    if (total == 0) {
+        return 0;
+    }
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    std::vector<int64_t> ids;
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        infos.push_back(info);
+    }
+    cacheListResult(listKey, ids);
     return total;
 }
 
 int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t category_id
         ,int32_t offset, int32_t size, bool valid) {
-    std::vector<data::ArticleCategoryRelInfo::ptr> rels;
-    ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, category_id, valid);
-
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-
-    std::vector<data::ArticleInfo::ptr> matched;
-    for (auto& rel : rels) {
-        auto it = m_datas.find(rel->getArticleId());
-        if (it != m_datas.end()
-                && (!valid || !it->second->getIsDeleted())
-                && it->second->getState() == Status::PUBLISHED) {
-            matched.push_back(it->second);
-        }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
     }
-    std::sort(matched.begin(), matched.end(), [](const data::ArticleInfo::ptr& a, const data::ArticleInfo::ptr& b) {
-        return a->getId() > b->getId();
-    });
+    auto qb = chen::QueryBuilder::Create("article a");
+    qb->select("a.*");
+    qb->join("article_category_rel acr", "a.id = acr.article_id");
+    qb->where("acr.category_id", "=", category_id);
+    qb->where("acr.is_deleted", "=", (int64_t)0);
+    qb->where("a.state", "=", (int64_t)Status::PUBLISHED);
+    qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
+    qb->orderBy("a.id", "DESC");
+    qb->limit(size);
+    qb->offset(offset);
 
-    int64_t total = matched.size();
-
-    if (offset < (int32_t)matched.size()) {
-        for (int32_t i = offset; i < (int32_t)matched.size() && (int32_t)infos.size() < size; ++i) {
-            infos.push_back(matched[i]);
+    // 结果缓存：仅对首页做缓存
+    std::string listKey = "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0")
+                        + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                infos.push_back(info);
+            }
         }
+        return executeCountCached(qb, db,
+            "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
     }
+
+    int64_t total = executeCountCached(qb, db,
+        "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
+    if (total == 0) {
+        return 0;
+    }
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    std::vector<int64_t> ids;
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        infos.push_back(info);
+    }
+    cacheListResult(listKey, ids);
     return total;
 }
 
 int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int state
         , int category, int32_t role, int32_t days, int32_t size, bool valid) {
-    // 如果按分类筛选，先获取该分类下的文章ID集合
-    std::set<int64_t> categoryArticleIds;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
+    }
+
+    auto qb = chen::QueryBuilder::Create("article a");
+    qb->select("a.*");
+
     if (category > 0) {
-        std::vector<data::ArticleCategoryRelInfo::ptr> rels;
-        ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, category, true);
-        for (auto& rel : rels) {
-            categoryArticleIds.insert(rel->getArticleId());
-        }
+        qb->join("article_category_rel acr", "a.id = acr.article_id");
+        qb->where("acr.category_id", "=", (int64_t)category);
+        qb->where("acr.is_deleted", "=", (int64_t)0);
     }
+    if (role != -1) {
+        qb->join("user u", "a.user_id = u.id");
+        qb->where("u.role", "=", (int64_t)role);
+        qb->where("u.is_deleted", "=", (int64_t)0);
+    }
+    qb->whereIf(state != 0, "a.state", "=", (int64_t)state);
+    qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
+    if (days > 0) {
+        time_t now = time(0);
+        qb->whereSQL("a.create_time >= ?", (int64_t)(now - days * 24 * 3600));
+    }
+    qb->orderBy("a.id", "DESC");
+    qb->limit(size);
+    qb->offset(offset);
 
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    {
+        std::stringstream ck;
+        ck << "art:list:" << state << ":" << category << ":" << role << ":" << days << ":" << (valid ? "1" : "0");
+        int64_t total = executeCountCached(qb, db, ck.str());
+        if (total == 0) {
+            return 0;
+        }
 
-    auto check = [&](data::ArticleInfo::ptr info) {
-        if (valid && info->getIsDeleted()) {
-            return false;
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (!stmt) {
+            ERROR(logger) << "stmt=" << sql
+                     << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            return 0;
         }
-        if (state && info->getState() != state) {
-            return false;
+        qb->bindParams(stmt);
+        auto rt = stmt->query();
+        if (!rt) {
+            return 0;
         }
-        if (category > 0 && categoryArticleIds.find(info->getId()) == categoryArticleIds.end()) {
-            return false;
-        }
-        if (role != -1) {
-            auto user = UserMgr::GetInstance()->get(info->getUserId());
-            if (!user || user->getRole() != role) {
-                return false;
+        while (rt->next()) {
+            auto info = parseRow(rt);
+            auto cached = m_cache.get(info->getId());
+            if (cached) {
+                infos.push_back(cached);
+            } else {
+                m_cache.set(info->getId(), info);
+                infos.push_back(info);
             }
         }
-        if (days) {
-            time_t now = time(0);
-            if (info->getCreateTime() < now - days * 24 * 3600) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    std::vector<data::ArticleInfo::ptr> temp;
-    for (auto& i : m_datas) {
-        if (check(i.second)) {
-            temp.emplace_back(i.second);
-        }
+        return total;
     }
-
-    if (offset < (int32_t)temp.size()) {
-        for (size_t i = offset; i < temp.size(); ++i) {
-            if (infos.size() >= (size_t)size) {
-                break;
-            }
-            infos.emplace_back(temp[i]);
-        }
-    }
-    return temp.size();
 }
 
 void ArticleManager::delVerify(int64_t id) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_verifys.erase(id);
+    m_cache.del(id);
 }
 
 void ArticleManager::addVerify(data::ArticleInfo::ptr info) {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
-    m_verifys[info->getId()] = info;
+    m_cache.set(info->getId(), info);
 }
 
 int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& infos, int32_t offset, int32_t size) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    if (offset >= (int32_t)m_verifys.size()) {
-        return m_verifys.size();
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return 0;
     }
-    auto it = m_verifys.begin();
-    std::advance(it, offset);
-    std::vector<int64_t> invalids;
-    for (; (int32_t)infos.size() < size && it != m_verifys.end(); ++it) {
-        if (it->second->getIsDeleted()) {
-            invalids.push_back(it->first);
+    auto qb = chen::QueryBuilder::Create("article");
+    qb->where("state", "=", (int64_t)Status::CHECKING);
+    qb->orderBy("id", "DESC");
+    qb->limit(size);
+    qb->offset(offset);
+
+    int64_t total = executeCountCached(qb, db, "art:verify", 60);
+    if (total == 0) {
+        return 0;
+    }
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        if (info->getIsDeleted()) {
+            m_cache.del(info->getId());
             continue;
         }
-        if (it->second->getIsDeleted() != 1) {
-            invalids.push_back(it->first);
-            continue;
-        }
-        infos.push_back(it->second);
-    }
-    int64_t total = m_verifys.size();
-    lock.unlock();
-    for (auto& i : invalids) {
-        delVerify(i);
+        infos.push_back(info);
     }
     return total;
 }
 
 std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby(int64_t id) {
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    auto it = m_datas.find(id);
-    if (it == m_datas.end()) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
         return std::pair(nullptr, nullptr);
     }
-    data::ArticleInfo::ptr next;
-    auto iit = it;
-    ++iit;
-    for (; iit != m_datas.end(); ++iit) {
-        if (iit->second->getIsDeleted()) {
-            continue;
-        }
-        if (iit->second->getState() == ArticleManager::Status::PUBLISHED) {
-            next = iit->second;
-            break;
-        }
-    }
+
+    // 查找上一篇（id 最大的小于给定 id 的已发布文章）
     data::ArticleInfo::ptr prev;
-    ASSERT(id == it->first);
-    while (it != m_datas.begin()) {
-        --it;
-        if (it->second->getIsDeleted()) {
-            continue;
-        }
-        if (it->second->getState() == ArticleManager::Status::PUBLISHED) {
-            prev = it->second;
-            break;
+    {
+        auto qb = chen::QueryBuilder::Create("article");
+        qb->whereSQL("id < ?", id);
+        qb->where("state", "=", (int64_t)Status::PUBLISHED);
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->orderBy("id", "DESC");
+        qb->limit(1);
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (stmt) {
+            qb->bindParams(stmt);
+            auto rt = stmt->query();
+            if (rt && rt->next()) {
+                prev = parseRow(rt);
+                auto cached = m_cache.get(prev->getId());
+                if (cached) {
+                    prev = cached;
+                } else {
+                    m_cache.set(prev->getId(), prev);
+                }
+            }
         }
     }
+
+    // 查找下一篇（id 最小的大于给定 id 的已发布文章）
+    data::ArticleInfo::ptr next;
+    {
+        auto qb = chen::QueryBuilder::Create("article");
+        qb->whereSQL("id > ?", id);
+        qb->where("state", "=", (int64_t)Status::PUBLISHED);
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->orderBy("id", "ASC");
+        qb->limit(1);
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (stmt) {
+            qb->bindParams(stmt);
+            auto rt = stmt->query();
+            if (rt && rt->next()) {
+                next = parseRow(rt);
+                auto cached = m_cache.get(next->getId());
+                if (cached) {
+                    next = cached;
+                } else {
+                    m_cache.set(next->getId(), next);
+                }
+            }
+        }
+    }
+
     return std::pair(prev, next);
 }
 
 ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword) {
     ArticleStats stats;
 
-    // 如果按分类筛选，先获取该分类下的文章ID集合
-    std::set<int64_t> categoryArticleIds;
-    if (category > 0) {
-        std::vector<data::ArticleCategoryRelInfo::ptr> rels;
-        ArticleCategoryRelMgr::GetInstance()->listByCategoryId(rels, category, true);
-        for (auto& rel : rels) {
-            categoryArticleIds.insert(rel->getArticleId());
+    // 无过滤条件时走缓存
+    if (category <= 0 && role == -1 && days <= 0 && keyword.empty()) {
+        std::string cached;
+        if (getCachedStringResult("art:stats", cached)) {
+            std::stringstream ss(cached);
+            std::string token;
+            auto next = [&]() -> int64_t {
+                std::getline(ss, token, '|');
+                return chen::TypeUtil::Atoi(token);
+            };
+            stats.total = next();
+            stats.pending = next();
+            stats.published = next();
+            stats.rejected = next();
+            stats.reported = next();
+            return stats;
         }
     }
 
-    time_t now = time(0);
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return stats;
+    }
 
-    for (auto& i : m_datas) {
-        auto& info = i.second;
-        if (info->getIsDeleted()) {
-            continue;
-        }
+    auto qb = chen::QueryBuilder::Create("article a");
+    qb->select("a.state, COUNT(*) as cnt");
 
-        // 分类筛选
-        if (category > 0 && categoryArticleIds.find(info->getId()) == categoryArticleIds.end()) {
-            continue;
-        }
+    if (category > 0) {
+        qb->join("article_category_rel acr", "a.id = acr.article_id");
+        qb->where("acr.category_id", "=", (int64_t)category);
+        qb->where("acr.is_deleted", "=", (int64_t)0);
+    }
+    if (role != -1) {
+        qb->join("user u", "a.user_id = u.id");
+        qb->where("u.role", "=", (int64_t)role);
+        qb->where("u.is_deleted", "=", (int64_t)0);
+    }
+    qb->where("a.is_deleted", "=", (int64_t)0);
+    if (days > 0) {
+        time_t now = time(0);
+        qb->whereSQL("a.create_time >= ?", (int64_t)(now - days * 24 * 3600));
+    }
+    if (!keyword.empty()) {
+        qb->where("a.title", "LIKE", "%" + keyword + "%");
+    }
+    qb->groupBy("a.state");
 
-        // 角色筛选
-        if (role != -1) {
-            auto user = UserMgr::GetInstance()->get(info->getUserId());
-            if (!user || user->getRole() != role) {
-                continue;
-            }
-        }
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return stats;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return stats;
+    }
 
-        // 时间筛选
-        if (days > 0) {
-            if (info->getCreateTime() < now - days * 24 * 3600) {
-                continue;
-            }
-        }
-
-        // 关键词筛选
-        if (!keyword.empty()) {
-            if (info->getTitle().find(keyword) == std::string::npos) {
-                continue;
-            }
-        }
-
-        stats.total++;
-        switch (info->getState()) {
+    while (rt->next()) {
+        int32_t st = rt->getInt32(0);
+        int64_t cnt = rt->getInt64(1);
+        stats.total += cnt;
+        switch (st) {
         case Status::CHECKING:
-            stats.pending++;
+            stats.pending += cnt;
             break;
         case Status::PUBLISHED:
-            stats.published++;
+            stats.published += cnt;
             break;
         case Status::REJECTED:
-            stats.rejected++;
+            stats.rejected += cnt;
             break;
         }
+    }
+
+    // 无过滤条件时缓存结果
+    if (category <= 0 && role == -1 && days <= 0 && keyword.empty()) {
+        std::stringstream ss;
+        ss << stats.total << "|" << stats.pending << "|" << stats.published << "|" << stats.rejected << "|" << stats.reported;
+        cacheStringResult("art:stats", ss.str());
     }
 
     return stats;
@@ -393,19 +531,12 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
 
 std::string ArticleManager::statusString() {
     std::stringstream ss;
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    ss << "ArticleManager total=" << m_datas.size()
-       << " verify=" << m_verifys.size()
-       << std::endl;
-    for (auto& i : m_users) {
-        ss << "    user(" << i.first << ") size=" << i.second.size() << std::endl;
-    }
-    lock.unlock();
+    ss << "ArticleManager cache=" << m_cache.toStatusString();
     return ss.str();
 }
 
 void ArticleManager::start() {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    std::unique_lock<std::mutex> lock(m_mutex);
     if (m_timer) {
         return;
     }
@@ -416,7 +547,7 @@ void ArticleManager::start() {
 }
 
 void ArticleManager::stop() {
-    std::unique_lock<std::shared_mutex> lock(m_mutex);
+    std::unique_lock<std::mutex> lock(m_mutex);
     if (!m_timer) {
         return;
     }
@@ -436,7 +567,6 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
     if (v) {
         info->setViews(info->getViews() + 1);
         addUpdate(id);
-        // Redis 异步更新（best-effort，不阻塞请求）
         chen::IOManager::GetThis()->schedule([user_id]() {
             chen::RedisUtil::Cmd("blog", "incr blog:total_visits");
             auto rpy = chen::RedisUtil::Cmd("blog", "incr blog:today_visits");
@@ -469,7 +599,6 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
         ERROR(logger) << "hset fail";
         return false;
     }
-    // 双向映射的 hset 异步写入（best-effort）
     chen::IOManager::GetThis()->schedule([id, user_id]() {
         chen::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
     });
@@ -497,7 +626,6 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
         ERROR(logger) << "hset fail";
         return false;
     }
-    // 双向映射的 hset 异步写入（best-effort）
     chen::IOManager::GetThis()->schedule([id, user_id]() {
         chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
     });
@@ -598,28 +726,41 @@ bool ArticleManager::listArticlePra(int64_t id, std::map<int64_t, int64_t>& user
 
 void ArticleManager::onTimer() {
     time_t now = time(0);
-    std::vector<data::ArticleInfo::ptr> infos;
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    for (auto& i : m_datas) {
-        if (i.second->getState() != ArticleManager::Status::PUBLISHED) {
-            continue;
-        }
-        if (i.second->getPublishTime() < now) {
-            i.second->setState(ArticleManager::Status::PUBLISHED);
-            i.second->setUpdateTime(now);
-            infos.push_back(i.second);
-        }
-    }
-    lock.unlock();
-
-    if (infos.empty()) {
-        return;
-    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "getDB error";
         return;
     }
+
+    auto qb = chen::QueryBuilder::Create("article");
+    qb->where("state", "!=", (int64_t)Status::PUBLISHED);
+    qb->whereSQL("publish_time <= ?", (int64_t)now);
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+
+    std::vector<data::ArticleInfo::ptr> infos;
+    while (rt->next()) {
+        auto info = parseRow(rt);
+        info->setState(Status::PUBLISHED);
+        info->setUpdateTime(now);
+        infos.push_back(info);
+    }
+
+    if (infos.empty()) {
+        return;
+    }
+
     auto trans = db->openTransaction();
     for (auto& i : infos) {
         if (data::ArticleInfoDao::Update(i, db)) {
@@ -627,6 +768,7 @@ void ArticleManager::onTimer() {
                 << db->getErrno() << " errstr=" << db->getErrStr()
                 << " data=" << i->toJsonString();
         }
+        m_cache.set(i->getId(), i);
     }
     trans->commit();
 }
@@ -665,7 +807,7 @@ void ArticleManager::onUpdateTimer() {
 
 bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
     time_t now = time(0);
-    std::shared_lock<std::shared_mutex> lock(m_viewsMutex);
+    std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
     auto it = m_viewsCache.find(id);
     if (it != m_viewsCache.end()) {
         auto iit = it->second.find(cookie_id);
@@ -673,9 +815,6 @@ bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
             return false;
         }
     }
-    lock.unlock();
-
-    std::unique_lock<std::shared_mutex> lock2(m_viewsMutex);
     m_viewsCache[id][cookie_id] = now;
     return true;
 }
@@ -718,15 +857,25 @@ int64_t ArticleManager::getTotalViews() {
     if (rpy && rpy->str) {
         return chen::TypeUtil::Atoi(rpy->str);
     }
-    // Redis key not yet seeded — compute from articles and initialise
-    std::shared_lock<std::shared_mutex> lock(m_mutex);
-    int64_t total = 0;
-    for (auto& i : m_datas) {
-        if (!i.second->getIsDeleted()) {
-            total += i.second->getViews();
-        }
+    // Redis 未初始化 — 从 DB 计算并回填
+    auto db = GetDB();
+    if (!db) {
+        return 0;
     }
-    lock.unlock();
+    auto qb = chen::QueryBuilder::Create("article");
+    qb->select("COALESCE(SUM(views), 0)");
+    qb->where("is_deleted", "=", (int64_t)0);
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        return 0;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    int64_t total = 0;
+    if (rt && rt->next()) {
+        total = rt->getInt64(0);
+    }
     chen::RedisUtil::Cmd("blog", "set blog:total_visits %lld", total);
     return total;
 }

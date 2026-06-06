@@ -342,6 +342,59 @@ int CommentInfoDao::QueryByArticleId(std::vector<CommentInfo::ptr>& results,  co
     return 0;
 }
 
+int CommentInfoDao::QueryByArticleIdPages(std::vector<CommentInfo::ptr>& results, int64_t& total,  const int64_t& article_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from comment where article_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, article_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time from comment where article_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, article_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        CommentInfo::ptr v(new CommentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_parentId = rt->getInt64(3);
+        v->m_content = rt->getString(4);
+        v->m_ip = rt->getString(5);
+        v->m_userAgent = rt->getString(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isReported = rt->getInt32(8);
+        v->m_reportCount = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int CommentInfoDao::QueryByUserId(std::vector<CommentInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time from comment where user_id = ?";
     auto stmt = conn->prepare(sql);
@@ -353,6 +406,59 @@ int CommentInfoDao::QueryByUserId(std::vector<CommentInfo::ptr>& results,  const
     stmt->bindInt64(1, user_id);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        CommentInfo::ptr v(new CommentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_parentId = rt->getInt64(3);
+        v->m_content = rt->getString(4);
+        v->m_ip = rt->getString(5);
+        v->m_userAgent = rt->getString(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isReported = rt->getInt32(8);
+        v->m_reportCount = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int CommentInfoDao::QueryByUserIdPages(std::vector<CommentInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from comment where user_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, user_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time from comment where user_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {
@@ -408,6 +514,59 @@ int CommentInfoDao::QueryByParentId(std::vector<CommentInfo::ptr>& results,  con
     return 0;
 }
 
+int CommentInfoDao::QueryByParentIdPages(std::vector<CommentInfo::ptr>& results, int64_t& total,  const int64_t& parent_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from comment where parent_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, parent_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time from comment where parent_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, parent_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        CommentInfo::ptr v(new CommentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_parentId = rt->getInt64(3);
+        v->m_content = rt->getString(4);
+        v->m_ip = rt->getString(5);
+        v->m_userAgent = rt->getString(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isReported = rt->getInt32(8);
+        v->m_reportCount = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
 int CommentInfoDao::QueryByStatus(std::vector<CommentInfo::ptr>& results,  const int32_t& status, chen::IDB::ptr conn) {
     std::string sql = "select id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time from comment where status = ?";
     auto stmt = conn->prepare(sql);
@@ -419,6 +578,59 @@ int CommentInfoDao::QueryByStatus(std::vector<CommentInfo::ptr>& results,  const
     stmt->bindInt32(1, status);
     auto rt = stmt->query();
     if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        CommentInfo::ptr v(new CommentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_parentId = rt->getInt64(3);
+        v->m_content = rt->getString(4);
+        v->m_ip = rt->getString(5);
+        v->m_userAgent = rt->getString(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isReported = rt->getInt32(8);
+        v->m_reportCount = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int CommentInfoDao::QueryByStatusPages(std::vector<CommentInfo::ptr>& results, int64_t& total,  const int32_t& status, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from comment where status = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt32(1, status);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time from comment where status = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt32(1, status);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
         return 0;
     }
     while (rt->next()) {
@@ -469,7 +681,7 @@ int CommentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`article_id` bigint NOT NULL DEFAULT 0 COMMENT '文章ID',"
             "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '评论用户ID',"
             "`parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父评论ID(0=顶级评论)',"
-            "`content` text NOT NULL DEFAULT '' COMMENT '评论内容',"
+            "`content` text NOT NULL COMMENT '评论内容',"
             "`ip` varchar(64) NOT NULL DEFAULT '' COMMENT '客户端IP',"
             "`user_agent` varchar(512) NOT NULL DEFAULT '' COMMENT '客户端UserAgent',"
             "`status` int NOT NULL DEFAULT 1 COMMENT '状态 1:待审核 2:已通过 3:已拒绝 4:垃圾',"
@@ -832,7 +1044,7 @@ int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         auto it = existing_cols.find("content");
         if (it != existing_cols.end() && it->second != "text") {
             INFO(logger) << "Modifying column comment.content " << it->second << " -> text";
-            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `content` text NOT NULL DEFAULT '' COMMENT '评论内容'");
+            int rt = conn->execute("ALTER TABLE comment MODIFY COLUMN `content` text NOT NULL COMMENT '评论内容'");
             if (rt) {
                 ERROR(logger) << "MODIFY COLUMN comment.content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
             }
@@ -970,7 +1182,7 @@ int CommentInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
 
     if (existing_cols.find("content") == existing_cols.end()) {
         INFO(logger) << "Adding column comment.content";
-        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `content` text NOT NULL DEFAULT '' COMMENT '评论内容'");
+        int rt = conn->execute("ALTER TABLE comment ADD COLUMN `content` text COMMENT '评论内容'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE comment ADD COLUMN content failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }

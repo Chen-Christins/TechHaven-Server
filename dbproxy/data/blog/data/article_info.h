@@ -97,6 +97,7 @@ public:
     static int QueryAll(std::vector<ArticleInfo::ptr>& results, chen::IDB::ptr conn);
     static ArticleInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn);
+    static int QueryByUserIdPages(std::vector<ArticleInfo::ptr>& results, int64_t& total,  const int64_t& user_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

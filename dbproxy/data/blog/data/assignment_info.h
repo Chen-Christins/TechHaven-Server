@@ -86,7 +86,9 @@ public:
     static int QueryAll(std::vector<AssignmentInfo::ptr>& results, chen::IDB::ptr conn);
     static AssignmentInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryBySubjectName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name, chen::IDB::ptr conn);
+    static int QueryBySubjectNamePages(std::vector<AssignmentInfo::ptr>& results, int64_t& total,  const std::string& subject_name, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int QueryBySubjectNameName(std::vector<AssignmentInfo::ptr>& results,  const std::string& subject_name,  const std::string& name, chen::IDB::ptr conn);
+    static int QueryBySubjectNameNamePages(std::vector<AssignmentInfo::ptr>& results, int64_t& total,  const std::string& subject_name,  const std::string& name, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);

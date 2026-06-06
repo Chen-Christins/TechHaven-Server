@@ -1,5 +1,7 @@
 #include "user_reset_passwd_servlet.h"
 #include <chen/log/log.h>
+#include <chen/db/redis.h>
+
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 
@@ -39,7 +41,7 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
             break;
         }
 
-        if (!verificationEmailCode(db, email, auth_code)) {
+        if (!verificationEmailCode(email, auth_code)) {
             result->setResult(403, "invalid auth_code");
             break;
         }
@@ -58,41 +60,17 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
     return 0;
 }
 
-bool UserResetPasswdServlet::verificationEmailCode(chen::IDB::ptr conn, const std::string& email
-        ,const std::string& code) {
-    // 开启事务
-    chen::ITransaction::ptr trans = conn->openTransaction();
-    // 先查询是否存在这个记录
-    std::string select_sql = "SELECT 1 FROM email_verification WHERE email = ? AND code = ? AND type = 3 AND state = 0 AND expires_time > datetime('now')";
-
-    auto stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(select_sql));
-    if(!stmt) {
-        ERROR(logger) << "stmt=" << select_sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+bool UserResetPasswdServlet::verificationEmailCode(const std::string& email, const std::string& code) {
+    auto rpy = chen::RedisUtil::Cmd("blog", "GET email:verify:3:%s", email.c_str());
+    if (!rpy || rpy->type != REDIS_REPLY_STRING) {
         return false;
     }
-    stmt->bindString(1, email);
-    stmt->bindString(2, code);
-
-    int rt = stmt->step();
-    bool can_update = (rt == SQLITE_ROW);
-    stmt->finish();
-
-    if (!can_update) {
+    if (code != rpy->str) {
         return false;
     }
-
-    std::string update_sql = "UPDATE email_verification SET state = 1 WHERE email = ? AND code = ? AND type = 3 AND state = 0 AND expires_time > datetime('now')";
-    stmt = std::dynamic_pointer_cast<chen::SQLite3Stmt>(conn->prepare(update_sql));
-
-    stmt->bindString(1, email);
-    stmt->bindString(2, code);
-
-    // 获取影响的行数, 是否成功
-    bool success = stmt->step() == SQLITE_DONE && sqlite3_changes(std::dynamic_pointer_cast<chen::SQLite3>(conn)->getDB()) > 0;
-    trans->commit();
-
-    return success;
+    // 一次性使用，校验通过后删除
+    chen::RedisUtil::Cmd("blog", "DEL email:verify:3:%s", email.c_str());
+    return true;
 }
 
 }

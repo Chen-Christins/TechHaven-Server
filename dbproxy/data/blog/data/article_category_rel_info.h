@@ -66,6 +66,7 @@ public:
     static int QueryAll(std::vector<ArticleCategoryRelInfo::ptr>& results, chen::IDB::ptr conn);
     static ArticleCategoryRelInfo::ptr Query( const int64_t& id, chen::IDB::ptr conn);
     static int QueryByArticleId(std::vector<ArticleCategoryRelInfo::ptr>& results,  const int64_t& article_id, chen::IDB::ptr conn);
+    static int QueryByArticleIdPages(std::vector<ArticleCategoryRelInfo::ptr>& results, int64_t& total,  const int64_t& article_id, int32_t offset, int32_t limit, chen::IDB::ptr conn);
     static ArticleCategoryRelInfo::ptr QueryByArticleIdCategoryId( const int64_t& article_id,  const int64_t& category_id, chen::IDB::ptr conn);
     static int CreateTableSQLite3(chen::IDB::ptr info);
     static int CreateTableMySQL(chen::IDB::ptr info);
