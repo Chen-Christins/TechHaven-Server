@@ -1,4 +1,5 @@
 #include "user_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -89,9 +90,10 @@ uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos,
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
 
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "listByPages executeCount fail errno=" << db->getErrno();
+    std::stringstream ck;
+    ck << "usr:list:" << role << ":" << state << ":" << days << ":" << (isValid ? "1" : "0");
+    int64_t total = executeCountCached(qb, db, ck.str());
+    if (total == 0) {
         return 0;
     }
 
@@ -110,7 +112,9 @@ uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos,
         return 0;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

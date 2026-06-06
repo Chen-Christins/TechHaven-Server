@@ -80,7 +80,9 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
         return false;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return true;
 }
@@ -122,7 +124,9 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         return 0;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }
@@ -301,7 +305,9 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
             return 0;
         }
         while (rt->next()) {
-            infos.push_back(parseRow(rt));
+            auto info = parseRow(rt);
+            infos.push_back(info);
+            m_cache.set(info->getId(), info);
         }
         return total;
     }

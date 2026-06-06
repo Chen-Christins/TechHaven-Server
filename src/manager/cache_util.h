@@ -27,8 +27,8 @@ static const int kListCacheTTL = 10;
  * @param ttlSec 缓存 TTL 秒数
  * @return COUNT 结果，失败返回 0
  */
-inline int64_t executeCountCached(chen::QueryBuilder::ptr qb, chen::IDB::ptr conn,
-                                   const std::string& cacheKey, int ttlSec = kCountCacheTTL) {
+inline int64_t executeCountCached(chen::QueryBuilder::ptr qb, chen::IDB::ptr conn
+        , const std::string& cacheKey, int ttlSec = kCountCacheTTL) {
     std::string redisKey = "cache:count:" + cacheKey;
     auto rpy = chen::RedisUtil::Cmd("blog", "get %s", redisKey.c_str());
     if (rpy && rpy->str) {

@@ -52,7 +52,11 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::ArticlePraiseRelInfoDao::QueryByUserIdArticleId(user_id, article_id, db);
+    auto info = data::ArticlePraiseRelInfoDao::QueryByUserIdArticleId(user_id, article_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::praise(int64_t user_id, int64_t article_id) {
@@ -151,7 +155,9 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
@@ -181,7 +187,9 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 

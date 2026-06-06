@@ -4,8 +4,6 @@
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
 #include <chen/singleton.h>
-#include <shared_mutex>
-
 namespace blog {
 
 class CommentManager {
@@ -49,7 +47,6 @@ public:
 private:
     static data::CommentInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
-    std::shared_mutex m_mutex;
     chen::ds::HashLruCache<int64_t, data::CommentInfo::ptr> m_cache;
 };
 

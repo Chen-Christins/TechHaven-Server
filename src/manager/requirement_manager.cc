@@ -89,7 +89,9 @@ uint64_t RequirementManager::listByPages(std::vector<data::RequirementInfo::ptr>
         return 0;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }
@@ -130,7 +132,9 @@ uint64_t RequirementManager::listByOrg(std::vector<data::RequirementInfo::ptr>& 
         return 0;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

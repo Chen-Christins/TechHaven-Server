@@ -86,7 +86,9 @@ int64_t OrganizationApplyManager::listByPages(std::vector<data::OrganizationAppl
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }
@@ -124,7 +126,9 @@ int64_t OrganizationApplyManager::listByUserId(std::vector<data::OrganizationApp
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

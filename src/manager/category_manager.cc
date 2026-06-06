@@ -72,7 +72,9 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
         return;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
@@ -84,7 +86,11 @@ blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::CategoryInfoDao::QueryByName(name, db);
+    auto info = data::CategoryInfoDao::QueryByName(name, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 }

@@ -1,4 +1,5 @@
 #include "comment_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -150,7 +151,9 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
@@ -169,6 +172,20 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     qb->orderBy("id", "DESC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
+
+    // 结果缓存：仅对首页做缓存
+    std::string listKey = "cmt:art:" + std::to_string(article_id) + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                results.push_back(info);
+            }
+        }
+        return;
+    }
+
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
@@ -181,9 +198,14 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     if (!rt) {
         return;
     }
+    std::vector<int64_t> ids;
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
+    cacheListResult(listKey, ids);
 }
 
 void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
@@ -213,7 +235,9 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
@@ -228,12 +252,8 @@ int64_t CommentManager::countByArticle(int64_t article_id) {
     qb->where("parent_id", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "countByArticle executeCount fail errno=" << db->getErrno();
-        return 0;
-    }
-    return total;
+    return executeCountCached(qb, db,
+        "cmt:cnt:" + std::to_string(article_id));
 }
 
 int64_t CommentManager::countReplies(int64_t parent_id) {
@@ -246,12 +266,8 @@ int64_t CommentManager::countReplies(int64_t parent_id) {
     qb->where("parent_id", "=", parent_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "countReplies executeCount fail errno=" << db->getErrno();
-        return 0;
-    }
-    return total;
+    return executeCountCached(qb, db,
+        "cmt:reply:" + std::to_string(parent_id));
 }
 
 int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results,
@@ -292,7 +308,9 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <shared_mutex>
 #include "blog/data/article_category_rel_info.h"
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
@@ -20,7 +19,6 @@ public:
 private:
     static data::ArticleCategoryRelInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
-    std::shared_mutex m_mutex;
     chen::ds::HashLruCache<int64_t, data::ArticleCategoryRelInfo::ptr> m_cache;
 };
 

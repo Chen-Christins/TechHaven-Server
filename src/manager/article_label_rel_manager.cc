@@ -69,7 +69,9 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
         return false;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return true;
 }
@@ -98,7 +100,9 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
         return false;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return true;
 }
@@ -110,7 +114,11 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::ArticleLabelRelInfoDao::QueryByArticleIdLabelId(article_id, label_id, db);
+    auto info = data::ArticleLabelRelInfoDao::QueryByArticleIdLabelId(article_id, label_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 }

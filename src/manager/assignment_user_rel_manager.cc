@@ -54,7 +54,11 @@ blog::data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::getByAssignAndU
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::AssignmentUserRelInfoDao::QueryByAssignmentIdUserId(assign_id, user_id, db);
+    auto info = data::AssignmentUserRelInfoDao::QueryByAssignmentIdUserId(assign_id, user_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 }

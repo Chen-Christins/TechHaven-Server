@@ -90,7 +90,9 @@ uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
         return 0;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }
@@ -131,7 +133,9 @@ uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos,
         return 0;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

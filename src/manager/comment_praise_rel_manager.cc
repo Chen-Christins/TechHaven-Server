@@ -52,7 +52,11 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::getByUserAndComment(
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::CommentPraiseRelInfoDao::QueryByUserIdCommentId(user_id, comment_id, db);
+    auto info = data::CommentPraiseRelInfoDao::QueryByUserIdCommentId(user_id, comment_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::praise(int64_t user_id, int64_t comment_id) {

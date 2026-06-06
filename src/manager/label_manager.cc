@@ -53,7 +53,11 @@ data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::LabelInfoDao::QueryByUserIdName(id, name, db);
+    auto info = data::LabelInfoDao::QueryByUserIdName(id, name, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_t id, bool valid) {
@@ -79,7 +83,9 @@ bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_
         return false;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return true;
 }

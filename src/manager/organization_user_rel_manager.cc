@@ -53,7 +53,11 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(i
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::OrganizationUserRelInfoDao::QueryByOrgIdUserId(o_id, u_id, db);
+    auto info = data::OrganizationUserRelInfoDao::QueryByOrgIdUserId(o_id, u_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
@@ -92,7 +96,9 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }
@@ -123,7 +129,9 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return results.size();
 }

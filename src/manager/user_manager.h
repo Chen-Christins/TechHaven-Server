@@ -4,8 +4,6 @@
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
 #include <chen/singleton.h>
-#include <shared_mutex>
-
 namespace blog {
 
 class UserManager {
@@ -42,7 +40,6 @@ public:
 private:
     static data::UserInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
-    std::shared_mutex m_mutex;
     chen::ds::HashLruCache<int64_t, data::UserInfo::ptr> m_cache;
 };
 

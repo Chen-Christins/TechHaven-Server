@@ -1,4 +1,5 @@
 #include "notification_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -129,6 +130,21 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
     qb->orderBy("id", "DESC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
+
+    // 结果缓存：仅对首页做缓存
+    std::string typeKey = type.empty() ? "all" : type;
+    std::string listKey = "notif:list:" + std::to_string(user_id) + ":" + typeKey + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::vector<int64_t> cachedIds;
+    if (getCachedListResult(listKey, cachedIds)) {
+        for (auto id : cachedIds) {
+            auto info = get(id);
+            if (info) {
+                results.push_back(info);
+            }
+        }
+        return;
+    }
+
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
@@ -141,9 +157,14 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
     if (!rt) {
         return;
     }
+    std::vector<int64_t> ids;
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        ids.push_back(info->getId());
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
+    cacheListResult(listKey, ids);
 }
 
 int64_t NotificationManager::countByUser(int64_t user_id, const std::string& type) {
@@ -155,12 +176,8 @@ int64_t NotificationManager::countByUser(int64_t user_id, const std::string& typ
     auto qb = chen::QueryBuilder::Create("notification");
     qb->where("user_id", "=", user_id);
     qb->whereIf(!type.empty(), "type", "=", type);
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "countByUser executeCount fail errno=" << db->getErrno();
-        return 0;
-    }
-    return total;
+    std::string ck = "notif:cnt:" + std::to_string(user_id) + ":" + (type.empty() ? "all" : type);
+    return executeCountCached(qb, db, ck);
 }
 
 int64_t NotificationManager::unreadCount(int64_t user_id) {
@@ -173,12 +190,7 @@ int64_t NotificationManager::unreadCount(int64_t user_id) {
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "unreadCount executeCount fail errno=" << db->getErrno();
-        return 0;
-    }
-    return total;
+    return executeCountCached(qb, db, "notif:unread:" + std::to_string(user_id));
 }
 
 bool NotificationManager::markRead(int64_t notification_id) {

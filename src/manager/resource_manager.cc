@@ -104,7 +104,9 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
@@ -131,7 +133,9 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
     qb->bindParams(stmt);
     auto rt = stmt->query();
     if (rt && rt->next()) {
-        return parseRow(rt);
+        auto info = parseRow(rt);
+        m_cache.set(info->getId(), info);
+        return info;
     }
     return nullptr;
 }
@@ -155,7 +159,9 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
     qb->bindParams(stmt);
     auto rt = stmt->query();
     if (rt && rt->next()) {
-        return parseRow(rt);
+        auto info = parseRow(rt);
+        m_cache.set(info->getId(), info);
+        return info;
     }
     return nullptr;
 }

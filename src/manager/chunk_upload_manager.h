@@ -1,6 +1,5 @@
 #pragma once
 
-#include <shared_mutex>
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
 #include <chen/singleton.h>
@@ -20,7 +19,6 @@ public:
 private:
     static data::ChunkUploadInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
-    std::shared_mutex m_mutex;
     chen::ds::HashLruCache<int64_t, data::ChunkUploadInfo::ptr> m_cache;
 };
 

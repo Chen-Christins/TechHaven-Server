@@ -53,7 +53,11 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::AssignmentOrganizationRelInfoDao::QueryByAssignmentIdOrganizationId(assign_id, org_id, db);
+    auto info = data::AssignmentOrganizationRelInfoDao::QueryByAssignmentIdOrganizationId(assign_id, org_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::AssignmentOrganizationRelInfo::ptr>& results, int64_t assign_id) {
@@ -78,7 +82,9 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return results.size();
 }
@@ -119,7 +125,9 @@ int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::Assignmen
         return 0;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

@@ -1,4 +1,5 @@
 #include "organization_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -54,7 +55,11 @@ data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& na
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::OrganizationInfoDao::QueryByName(name, db);
+    auto info = data::OrganizationInfoDao::QueryByName(name, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr>& orgs
@@ -69,9 +74,10 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
 
-    int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "listByPages executeCount fail errno=" << db->getErrno();
+    std::stringstream ck;
+    ck << "org:list:" << status << ":" << (isValid ? "1" : "0");
+    int64_t total = executeCountCached(qb, db, ck.str());
+    if (total == 0) {
         return 0;
     }
 
@@ -92,7 +98,9 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
         return 0;
     }
     while (rt->next()) {
-        orgs.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        orgs.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return total;
 }

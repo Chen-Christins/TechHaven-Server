@@ -70,7 +70,9 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
         return false;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return true;
 }
@@ -99,7 +101,9 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
         return false;
     }
     while (rt->next()) {
-        infos.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        infos.push_back(info);
+        m_cache.set(info->getId(), info);
     }
     return true;
 }
@@ -111,7 +115,11 @@ data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCateg
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::ArticleCategoryRelInfoDao::QueryByArticleIdCategoryId(article_id, category_id, db);
+    auto info = data::ArticleCategoryRelInfoDao::QueryByArticleIdCategoryId(article_id, category_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 }

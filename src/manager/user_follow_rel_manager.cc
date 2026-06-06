@@ -52,7 +52,11 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    return data::UserFollowRelInfoDao::QueryByFollowerIdFollowingId(follower_id, following_id, db);
+    auto info = data::UserFollowRelInfoDao::QueryByFollowerIdFollowingId(follower_id, following_id, db);
+    if (info) {
+        m_cache.set(info->getId(), info);
+    }
+    return info;
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::follow(int64_t follower_id, int64_t following_id) {
@@ -151,7 +155,9 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
@@ -181,7 +187,9 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
         return;
     }
     while (rt->next()) {
-        results.push_back(parseRow(rt));
+        auto info = parseRow(rt);
+        results.push_back(info);
+        m_cache.set(info->getId(), info);
     }
 }
 
