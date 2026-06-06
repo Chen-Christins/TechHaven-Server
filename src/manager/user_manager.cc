@@ -137,6 +137,10 @@ blog::data::UserInfo::ptr UserManager::get(int64_t id) {
 }
 
 blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v) {
+    int64_t cachedId = getCachedIdMapping("usr:acct:" + v);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     // Check cache first
     // Since cache is only keyed by id, query DB directly via DAO
     auto db = GetDB();
@@ -147,11 +151,16 @@ blog::data::UserInfo::ptr UserManager::getByAccount(const std::string& v) {
     auto info = data::UserInfoDao::QueryByAccount(v, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("usr:acct:" + v, info->getId());
     }
     return info;
 }
 
 blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
+    int64_t cachedId = getCachedIdMapping("usr:eml:" + v);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -160,11 +169,16 @@ blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
     auto info = data::UserInfoDao::QueryByEmail(v, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("usr:eml:" + v, info->getId());
     }
     return info;
 }
 
 blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {
+    int64_t cachedId = getCachedIdMapping("usr:name:" + v);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -173,6 +187,7 @@ blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {
     auto info = data::UserInfoDao::QueryByName(v, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("usr:name:" + v, info->getId());
     }
     return info;
 }

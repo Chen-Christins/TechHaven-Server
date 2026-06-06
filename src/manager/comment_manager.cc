@@ -373,6 +373,23 @@ int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids) {
 
 CommentManager::CommentStats CommentManager::getStats() {
     CommentStats stats;
+
+    std::string cached;
+    if (getCachedStringResult("cmt:stats", cached)) {
+        std::stringstream ss(cached);
+        std::string token;
+        auto next = [&]() -> int64_t {
+            std::getline(ss, token, '|');
+            return chen::TypeUtil::Atoi(token);
+        };
+        stats.total = next();
+        stats.pending = next();
+        stats.approved = next();
+        stats.spam = next();
+        stats.reported = next();
+        return stats;
+    }
+
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -421,6 +438,10 @@ CommentManager::CommentStats CommentManager::getStats() {
             stats.reported = reported;
         }
     }
+
+    std::stringstream ss;
+    ss << stats.total << "|" << stats.pending << "|" << stats.approved << "|" << stats.spam << "|" << stats.reported;
+    cacheStringResult("cmt:stats", ss.str());
 
     return stats;
 }

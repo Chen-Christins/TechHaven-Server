@@ -1,4 +1,5 @@
 #include "organization_user_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -48,6 +49,10 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::get(int64_t id) {
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(int64_t o_id, int64_t u_id) {
+    int64_t cachedId = getCachedIdMapping("org_usr:" + std::to_string(o_id) + ":" + std::to_string(u_id));
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -56,6 +61,7 @@ data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::getByOrgAndUser(i
     auto info = data::OrganizationUserRelInfoDao::QueryByOrgIdUserId(o_id, u_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("org_usr:" + std::to_string(o_id) + ":" + std::to_string(u_id), info->getId());
     }
     return info;
 }

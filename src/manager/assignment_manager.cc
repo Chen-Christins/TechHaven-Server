@@ -1,4 +1,5 @@
 #include "assignment_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -52,6 +53,11 @@ data::AssignmentInfo::ptr AssignmentManager::get(int64_t id) {
 }
 
 data::AssignmentInfo::ptr AssignmentManager::getByName(const std::string& subject_name, const std::string& name) {
+    std::string ck = "assign:name:" + subject_name + ":" + name;
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -63,6 +69,7 @@ data::AssignmentInfo::ptr AssignmentManager::getByName(const std::string& subjec
     }
     if (!results.empty()) {
         m_cache.set(results[0]->getId(), results[0]);
+        cacheIdMapping(ck, results[0]->getId());
         return results[0];
     }
     return nullptr;

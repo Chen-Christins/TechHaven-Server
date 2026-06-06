@@ -7,10 +7,10 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 200;
+static const size_t kCacheMaxSize = 300;
 
 OrganizationManager::OrganizationManager()
-    :m_cache(4, kCacheMaxSize, 0) {
+    :m_cache(4, kCacheMaxSize, 30) {
 }
 
 data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt) {
@@ -50,6 +50,10 @@ data::OrganizationInfo::ptr OrganizationManager::get(int64_t id) {
 }
 
 data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& name) {
+    int64_t cachedId = getCachedIdMapping("org:name:" + name);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -58,6 +62,7 @@ data::OrganizationInfo::ptr OrganizationManager::getByName(const std::string& na
     auto info = data::OrganizationInfoDao::QueryByName(name, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("org:name:" + name, info->getId());
     }
     return info;
 }
@@ -107,6 +112,21 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
 
 OrganizationManager::OrganizationStats OrganizationManager::getStats() {
     OrganizationStats stats;
+
+    std::string cached;
+    if (getCachedStringResult("org:stats", cached)) {
+        std::stringstream ss(cached);
+        std::string token;
+        auto next = [&]() -> int64_t {
+            std::getline(ss, token, '|');
+            return chen::TypeUtil::Atoi(token);
+        };
+        stats.total = next();
+        stats.active = next();
+        stats.inactive = next();
+        return stats;
+    }
+
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -144,6 +164,10 @@ OrganizationManager::OrganizationStats OrganizationManager::getStats() {
             stats.inactive = inactive;
         }
     }
+
+    std::stringstream ss;
+    ss << stats.total << "|" << stats.active << "|" << stats.inactive;
+    cacheStringResult("org:stats", ss.str());
 
     return stats;
 }

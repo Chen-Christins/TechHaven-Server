@@ -18,6 +18,10 @@ namespace blog {
 static const int kCountCacheTTL = 30;
 /// 列表结果缓存 TTL（秒）
 static const int kListCacheTTL = 10;
+/// Stats 缓存 TTL（秒）
+static const int kStatsCacheTTL = 60;
+/// ID 映射缓存 TTL（秒）— alternate_key → id
+static const int kIdMapCacheTTL = 300;
 
 /**
  * @brief 执行 COUNT 查询，优先从 Redis 缓存读取
@@ -86,6 +90,58 @@ inline bool getCachedListResult(const std::string& cacheKey, std::vector<int64_t
         pos = end + 1;
     }
     return true;
+}
+
+/**
+ * @brief 缓存字符串结果
+ * @param cacheKey 缓存键
+ * @param value 字符串值
+ * @param ttlSec TTL 秒数
+ */
+inline void cacheStringResult(const std::string& cacheKey, const std::string& value, int ttlSec = kStatsCacheTTL) {
+    std::string redisKey = "cache:str:" + cacheKey;
+    chen::RedisUtil::Cmd("blog", "setex %s %d %s", redisKey.c_str(), ttlSec, value.c_str());
+}
+
+/**
+ * @brief 读取缓存的字符串结果
+ * @param cacheKey 缓存键
+ * @param[out] value 缓存的字符串
+ * @return true 表示命中缓存
+ */
+inline bool getCachedStringResult(const std::string& cacheKey, std::string& value) {
+    std::string redisKey = "cache:str:" + cacheKey;
+    auto rpy = chen::RedisUtil::Cmd("blog", "get %s", redisKey.c_str());
+    if (!rpy || !rpy->str) {
+        return false;
+    }
+    value = rpy->str;
+    return true;
+}
+
+/**
+ * @brief 缓存 alternate_key → id 映射
+ * @param cacheKey 缓存键（不含前缀）
+ * @param id 主键 ID
+ * @param ttlSec TTL 秒数
+ */
+inline void cacheIdMapping(const std::string& cacheKey, int64_t id, int ttlSec = kIdMapCacheTTL) {
+    std::string redisKey = "cache:map:" + cacheKey;
+    chen::RedisUtil::Cmd("blog", "setex %s %d %lld", redisKey.c_str(), ttlSec, id);
+}
+
+/**
+ * @brief 读取 alternate_key → id 映射
+ * @param cacheKey 缓存键（不含前缀）
+ * @return ID，未命中返回 0
+ */
+inline int64_t getCachedIdMapping(const std::string& cacheKey) {
+    std::string redisKey = "cache:map:" + cacheKey;
+    auto rpy = chen::RedisUtil::Cmd("blog", "get %s", redisKey.c_str());
+    if (rpy && rpy->str) {
+        return chen::TypeUtil::Atoi(rpy->str);
+    }
+    return 0;
 }
 
 } // namespace blog

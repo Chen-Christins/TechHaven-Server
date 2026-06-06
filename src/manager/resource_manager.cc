@@ -1,4 +1,5 @@
 #include "resource_manager.h"
+#include "cache_util.h"
 #include <chen/config/config.h>
 #include <chen/util/util.h>
 #include <chen/log/log.h>
@@ -141,6 +142,11 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
 }
 
 data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
+    std::string ck = "res:path:" + path;
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -161,6 +167,7 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
     if (rt && rt->next()) {
         auto info = parseRow(rt);
         m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
         return info;
     }
     return nullptr;

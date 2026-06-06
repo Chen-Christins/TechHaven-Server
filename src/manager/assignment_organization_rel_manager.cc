@@ -1,4 +1,5 @@
 #include "assignment_organization_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -48,6 +49,10 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
 }
 
 blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::getByOrgAndAssign(int64_t org_id, int64_t assign_id) {
+    int64_t cachedId = getCachedIdMapping("assign_org:" + std::to_string(org_id) + ":" + std::to_string(assign_id));
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -56,6 +61,7 @@ blog::data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager:
     auto info = data::AssignmentOrganizationRelInfoDao::QueryByAssignmentIdOrganizationId(assign_id, org_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("assign_org:" + std::to_string(org_id) + ":" + std::to_string(assign_id), info->getId());
     }
     return info;
 }

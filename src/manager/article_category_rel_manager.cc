@@ -1,4 +1,5 @@
 #include "article_category_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -110,6 +111,11 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
 
 data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCategoryId(int64_t article_id
         ,int64_t category_id) {
+    std::string ck = "acr:" + std::to_string(article_id) + ":" + std::to_string(category_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -118,6 +124,7 @@ data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCateg
     auto info = data::ArticleCategoryRelInfoDao::QueryByArticleIdCategoryId(article_id, category_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
     }
     return info;
 }

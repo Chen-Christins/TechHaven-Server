@@ -1,4 +1,5 @@
 #include "article_praise_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -47,6 +48,11 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id) {
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(
     int64_t user_id, int64_t article_id) {
+    std::string ck = "pra:" + std::to_string(user_id) + ":" + std::to_string(article_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -55,6 +61,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(
     auto info = data::ArticlePraiseRelInfoDao::QueryByUserIdArticleId(user_id, article_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
     }
     return info;
 }

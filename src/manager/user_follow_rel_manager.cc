@@ -1,4 +1,5 @@
 #include "user_follow_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -47,6 +48,11 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id) {
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(
     int64_t follower_id, int64_t following_id) {
+    std::string ck = "flw:" + std::to_string(follower_id) + ":" + std::to_string(following_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -55,6 +61,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(
     auto info = data::UserFollowRelInfoDao::QueryByFollowerIdFollowingId(follower_id, following_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
     }
     return info;
 }

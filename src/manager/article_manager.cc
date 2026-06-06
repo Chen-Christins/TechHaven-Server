@@ -384,6 +384,7 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
             auto rt = stmt->query();
             if (rt && rt->next()) {
                 prev = parseRow(rt);
+                m_cache.set(prev->getId(), prev);
             }
         }
     }
@@ -404,6 +405,7 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
             auto rt = stmt->query();
             if (rt && rt->next()) {
                 next = parseRow(rt);
+                m_cache.set(next->getId(), next);
             }
         }
     }
@@ -413,6 +415,26 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
 
 ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t role, int32_t days, const std::string& keyword) {
     ArticleStats stats;
+
+    // 无过滤条件时走缓存
+    if (category <= 0 && role == -1 && days <= 0 && keyword.empty()) {
+        std::string cached;
+        if (getCachedStringResult("art:stats", cached)) {
+            std::stringstream ss(cached);
+            std::string token;
+            auto next = [&]() -> int64_t {
+                std::getline(ss, token, '|');
+                return chen::TypeUtil::Atoi(token);
+            };
+            stats.total = next();
+            stats.pending = next();
+            stats.published = next();
+            stats.rejected = next();
+            stats.reported = next();
+            return stats;
+        }
+    }
+
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -471,6 +493,14 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
             break;
         }
     }
+
+    // 无过滤条件时缓存结果
+    if (category <= 0 && role == -1 && days <= 0 && keyword.empty()) {
+        std::stringstream ss;
+        ss << stats.total << "|" << stats.pending << "|" << stats.published << "|" << stats.rejected << "|" << stats.reported;
+        cacheStringResult("art:stats", ss.str());
+    }
+
     return stats;
 }
 

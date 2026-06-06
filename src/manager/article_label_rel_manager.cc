@@ -1,4 +1,5 @@
 #include "article_label_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -109,6 +110,11 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
 
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int64_t article_id
         ,int64_t label_id) {
+    std::string ck = "alr:" + std::to_string(article_id) + ":" + std::to_string(label_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -117,6 +123,7 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int
     auto info = data::ArticleLabelRelInfoDao::QueryByArticleIdLabelId(article_id, label_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
     }
     return info;
 }

@@ -1,4 +1,5 @@
 #include "category_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -6,10 +7,10 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
-static const size_t kCacheMaxSize = 100;
+static const size_t kCacheMaxSize = 300;
 
 CategoryManager::CategoryManager()
-    :m_cache(4, kCacheMaxSize, 0) {
+    :m_cache(4, kCacheMaxSize, 30) {
 }
 
 data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt) {
@@ -79,6 +80,10 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
 }
 
 blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name) {
+    int64_t cachedId = getCachedIdMapping("cat:name:" + name);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     // 先扫缓存
     // LRU 缓存只支持按 id 查找，所以直接用 DAO 查 DB
     auto db = GetDB();
@@ -89,6 +94,7 @@ blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name
     auto info = data::CategoryInfoDao::QueryByName(name, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("cat:name:" + name, info->getId());
     }
     return info;
 }

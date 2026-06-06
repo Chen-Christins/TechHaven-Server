@@ -1,4 +1,5 @@
 #include "label_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -9,7 +10,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static const size_t kCacheMaxSize = 500;
 
 LabelManager::LabelManager()
-    :m_cache(8, kCacheMaxSize, 0) {
+    :m_cache(8, kCacheMaxSize, 50) {
 }
 
 data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt) {
@@ -48,6 +49,10 @@ data::LabelInfo::ptr LabelManager::get(int64_t id) {
 }
 
 data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string& name) {
+    int64_t cachedId = getCachedIdMapping("lbl:uid_name:" + std::to_string(id) + ":" + name);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -56,6 +61,7 @@ data::LabelInfo::ptr LabelManager::getByUserIdName(int64_t id, const std::string
     auto info = data::LabelInfoDao::QueryByUserIdName(id, name, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping("lbl:uid_name:" + std::to_string(id) + ":" + name, info->getId());
     }
     return info;
 }

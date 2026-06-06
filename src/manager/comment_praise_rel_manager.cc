@@ -1,4 +1,5 @@
 #include "comment_praise_rel_manager.h"
+#include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
 
@@ -47,6 +48,11 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::get(int64_t id) {
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::getByUserAndComment(
     int64_t user_id, int64_t comment_id) {
+    std::string ck = "cpra:" + std::to_string(user_id) + ":" + std::to_string(comment_id);
+    int64_t cachedId = getCachedIdMapping(ck);
+    if (cachedId > 0) {
+        return get(cachedId);
+    }
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -55,6 +61,7 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::getByUserAndComment(
     auto info = data::CommentPraiseRelInfoDao::QueryByUserIdCommentId(user_id, comment_id, db);
     if (info) {
         m_cache.set(info->getId(), info);
+        cacheIdMapping(ck, info->getId());
     }
     return info;
 }
