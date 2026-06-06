@@ -23,6 +23,12 @@ public:
     bool isConnected(int64_t user_id);
     int32_t getOnlineCount();
 
+    // Presence WS connection management
+    void addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session);
+    void removePresenceConnection(int64_t user_id);
+    void broadcastPresence(const std::string& message);
+    int32_t getPresenceOnlineCount();
+
     // DB persistence
     data::NotificationInfo::ptr get(int64_t id);
     data::NotificationInfo::ptr addNotification(int64_t user_id, const std::string& title,
@@ -40,9 +46,13 @@ public:
 private:
     static data::NotificationInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
-    // WS connections
+    // WS connections (notification)
     std::unordered_map<int64_t, chen::http::WSSession::ptr> m_connections;
     std::shared_mutex m_connMutex;
+
+    // WS connections (presence)
+    std::unordered_map<int64_t, chen::http::WSSession::ptr> m_presenceConnections;
+    std::shared_mutex m_presenceMutex;
 
     // notification cache
     chen::ds::HashLruCache<int64_t, data::NotificationInfo::ptr> m_cache;

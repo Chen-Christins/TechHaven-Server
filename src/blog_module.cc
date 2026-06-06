@@ -313,6 +313,9 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
 
         servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
         dp->addServlet("/ws/v1/notification", notify_servlet);
+
+        servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
+        dp->addServlet("/ws/v1/presence", presence_servlet);
     }
 }
 

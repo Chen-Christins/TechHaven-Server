@@ -105,7 +105,9 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
     while (rt->next()) {
         auto info = parseRow(rt);
         orgs.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return total;
 }

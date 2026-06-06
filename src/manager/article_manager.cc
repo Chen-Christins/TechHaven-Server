@@ -81,8 +81,13 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
     }
     while (rt->next()) {
         auto info = parseRow(rt);
-        infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        auto cached = m_cache.get(info->getId());
+        if (cached) {
+            infos.push_back(cached);
+        } else {
+            m_cache.set(info->getId(), info);
+            infos.push_back(info);
+        }
     }
     return true;
 }
@@ -125,8 +130,13 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
     }
     while (rt->next()) {
         auto info = parseRow(rt);
-        infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        auto cached = m_cache.get(info->getId());
+        if (cached) {
+            infos.push_back(cached);
+        } else {
+            m_cache.set(info->getId(), info);
+            infos.push_back(info);
+        }
     }
     return total;
 }
@@ -306,8 +316,13 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         }
         while (rt->next()) {
             auto info = parseRow(rt);
-            infos.push_back(info);
-            m_cache.set(info->getId(), info);
+            auto cached = m_cache.get(info->getId());
+            if (cached) {
+                infos.push_back(cached);
+            } else {
+                m_cache.set(info->getId(), info);
+                infos.push_back(info);
+            }
         }
         return total;
     }
@@ -384,7 +399,12 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
             auto rt = stmt->query();
             if (rt && rt->next()) {
                 prev = parseRow(rt);
-                m_cache.set(prev->getId(), prev);
+                auto cached = m_cache.get(prev->getId());
+                if (cached) {
+                    prev = cached;
+                } else {
+                    m_cache.set(prev->getId(), prev);
+                }
             }
         }
     }
@@ -405,7 +425,12 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
             auto rt = stmt->query();
             if (rt && rt->next()) {
                 next = parseRow(rt);
-                m_cache.set(next->getId(), next);
+                auto cached = m_cache.get(next->getId());
+                if (cached) {
+                    next = cached;
+                } else {
+                    m_cache.set(next->getId(), next);
+                }
             }
         }
     }

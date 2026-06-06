@@ -75,7 +75,9 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
 }
 

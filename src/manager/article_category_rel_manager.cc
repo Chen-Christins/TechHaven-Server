@@ -73,7 +73,9 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return true;
 }
@@ -104,7 +106,9 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return true;
 }

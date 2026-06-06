@@ -1,5 +1,7 @@
 #include "user_stats_servlet.h"
 #include "../../include/managers.h"
+#include "../../util.h"
+#include <chen/db/query_builder.h>
 #include <set>
 
 namespace blog {
@@ -65,7 +67,18 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         result->set("private_articles", private_articles);
         result->set("total_views", total_views);
         result->set("total_likes", total_likes);
-        result->set("total_comments", 0);       // 暂无评论表
+        // total_comments
+        int64_t total_comments = 0;
+        {
+            auto db = GetDB();
+            if (db) {
+                auto qb = chen::QueryBuilder::Create("comment");
+                qb->where("user_id", "=", uid);
+                qb->where("is_deleted", "=", (int64_t)0);
+                qb->executeCount(total_comments, db);
+            }
+        }
+        result->set("total_comments", total_comments);
         result->set("total_tags", (int64_t)unique_labels.size());
         result->set("total_organizations", total_organizations);
     } while (0);

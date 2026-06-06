@@ -164,7 +164,9 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
     while (rt->next()) {
         auto info = parseRow(rt);
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
 }
 
@@ -196,7 +198,9 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
     while (rt->next()) {
         auto info = parseRow(rt);
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
 }
 

@@ -91,7 +91,9 @@ uint64_t TaskManager::listByPages(std::vector<data::TaskInfo::ptr>& infos,
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return total;
 }
@@ -134,7 +136,9 @@ uint64_t TaskManager::listByOrg(std::vector<data::TaskInfo::ptr>& infos,
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return total;
 }

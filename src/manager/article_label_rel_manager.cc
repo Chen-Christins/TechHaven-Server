@@ -72,7 +72,9 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return true;
 }
@@ -103,7 +105,9 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
     while (rt->next()) {
         auto info = parseRow(rt);
         infos.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return true;
 }

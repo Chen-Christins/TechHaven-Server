@@ -46,13 +46,24 @@ void NotificationManager::removeConnection(int64_t user_id) {
 }
 
 void NotificationManager::closeAllConnections() {
-    std::unique_lock<std::shared_mutex> lock(m_connMutex);
-    for (auto& [user_id, session] : m_connections) {
-        session->close();
-        INFO(logger) << "Notification WS closed: user_id=" << user_id;
+    {
+        std::unique_lock<std::shared_mutex> lock(m_connMutex);
+        for (auto& [user_id, session] : m_connections) {
+            session->close();
+            INFO(logger) << "Notification WS closed: user_id=" << user_id;
+        }
+        m_connections.clear();
+        INFO(logger) << "All Notification WS connections closed";
     }
-    m_connections.clear();
-    INFO(logger) << "All Notification WS connections closed";
+    {
+        std::unique_lock<std::shared_mutex> lock(m_presenceMutex);
+        for (auto& [user_id, session] : m_presenceConnections) {
+            session->close();
+            INFO(logger) << "Presence WS closed: user_id=" << user_id;
+        }
+        m_presenceConnections.clear();
+        INFO(logger) << "All Presence WS connections closed";
+    }
 }
 
 int32_t NotificationManager::sendToUser(int64_t user_id, const std::string& message) {
@@ -79,6 +90,32 @@ bool NotificationManager::isConnected(int64_t user_id) {
 int32_t NotificationManager::getOnlineCount() {
     std::shared_lock<std::shared_mutex> lock(m_connMutex);
     return (int32_t)m_connections.size();
+}
+
+// ========== Presence WS connection management ==========
+
+void NotificationManager::addPresenceConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+    std::unique_lock<std::shared_mutex> lock(m_presenceMutex);
+    m_presenceConnections[user_id] = session;
+    INFO(logger) << "Presence WS connected: user_id=" << user_id;
+}
+
+void NotificationManager::removePresenceConnection(int64_t user_id) {
+    std::unique_lock<std::shared_mutex> lock(m_presenceMutex);
+    m_presenceConnections.erase(user_id);
+    INFO(logger) << "Presence WS disconnected: user_id=" << user_id;
+}
+
+void NotificationManager::broadcastPresence(const std::string& message) {
+    std::shared_lock<std::shared_mutex> lock(m_presenceMutex);
+    for (auto& [user_id, session] : m_presenceConnections) {
+        session->sendMessage(message);
+    }
+}
+
+int32_t NotificationManager::getPresenceOnlineCount() {
+    std::shared_lock<std::shared_mutex> lock(m_presenceMutex);
+    return (int32_t)m_presenceConnections.size();
 }
 
 // ========== DB persistence ==========
@@ -162,7 +199,9 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
         auto info = parseRow(rt);
         ids.push_back(info->getId());
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+            m_cache.set(info->getId(), info);
+        }
     }
     cacheListResult(listKey, ids);
 }

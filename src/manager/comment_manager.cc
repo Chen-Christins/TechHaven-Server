@@ -153,7 +153,9 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
     while (rt->next()) {
         auto info = parseRow(rt);
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
 }
 
@@ -203,7 +205,9 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
         auto info = parseRow(rt);
         ids.push_back(info->getId());
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     cacheListResult(listKey, ids);
 }
@@ -237,7 +241,9 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
     while (rt->next()) {
         auto info = parseRow(rt);
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
 }
 
@@ -310,7 +316,9 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
     while (rt->next()) {
         auto info = parseRow(rt);
         results.push_back(info);
-        m_cache.set(info->getId(), info);
+        if (!m_cache.exists(info->getId())) {
+    m_cache.set(info->getId(), info);
+        }
     }
     return total;
 }
