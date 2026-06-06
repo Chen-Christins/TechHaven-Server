@@ -11,6 +11,9 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/assignment_manager.h"
 #include "../../manager/assignment_user_rel_manager.h"
+#include "../../manager/assignment_organization_rel_manager.h"
+#include "../../manager/organization_user_rel_manager.h"
+#include "../../manager/notification_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -249,6 +252,44 @@ assembly_done:
             }
         }
         AssignmentUserRelMgr::GetInstance()->add(info);
+
+        // Notify org admins about assignment submission
+        {
+            int64_t assign_id = upload_session->biz_id;
+            auto assignment = AssignmentMgr::GetInstance()->get(assign_id);
+            std::string assign_name = assignment ? assignment->getName() : std::to_string(assign_id);
+            std::string submitter_name = user_name;
+
+            std::vector<data::AssignmentOrganizationRelInfo::ptr> org_rels;
+            AssignmentOrganizationRelMgr::GetInstance()->getByAssignmentId(org_rels, assign_id);
+            for (auto& org_rel : org_rels) {
+                if (org_rel->getIsDeleted()) continue;
+                int64_t org_id = org_rel->getOrganizationId();
+                std::vector<data::OrganizationUserRelInfo::ptr> members;
+                OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
+                for (auto& m : members) {
+                    if (m->getRole() == 5) { // ORG_ADMIN
+                        chen::IOManager::GetThis()->schedule([m, submitter_name, assign_name, assign_id]() {
+                            std::string title = "作业提交通知";
+                            std::string content = "用户「" + submitter_name + "」提交了作业「" + assign_name + "」";
+                            auto notif = NotificationMgr::GetInstance()->addNotification(
+                                m->getUserId(), title, content, "assignment_submitted", 0, assign_id);
+                            if (notif) {
+                                Json::Value wsMsg;
+                                wsMsg["id"] = notif->getId();
+                                wsMsg["title"] = title;
+                                wsMsg["content"] = content;
+                                wsMsg["type"] = "assignment_submitted";
+                                wsMsg["assignment_id"] = assign_id;
+                                wsMsg["is_read"] = false;
+                                wsMsg["create_time"] = notif->getCreateTime();
+                                NotificationMgr::GetInstance()->sendToUser(m->getUserId(), chen::JsonUtil::ToString(wsMsg));
+                            }
+                        });
+                    }
+                }
+            }
+        }
 
         result->set("file_path", path);
         // 成功后清理会话

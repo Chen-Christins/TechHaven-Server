@@ -1,6 +1,7 @@
 #include "user_admin_recover_servlet.h"
 #include <chen/log/log.h>
 #include "../../manager/user_manager.h"
+#include "../../manager/notification_manager.h"
 #include "../../util.h"
 #include <set>
 
@@ -54,6 +55,7 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
         time_t now = time(0);
         for (auto& i : infos) {
             i->setIsDeleted(0);
+            i->setState(UserManager::Status::ACTIVE);
             i->setUpdateTime(now);
             data::UserInfoDao::Update(i, db);
         }
@@ -70,6 +72,26 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
             auto& jids = result->jsondata["ids"];
             for (auto& i : infos) {
                 jids.append(i->getId());
+            }
+
+            // Notify recovered users
+            for (auto& u : infos) {
+                chen::IOManager::GetThis()->schedule([user_id = u->getId()]() {
+                    std::string title = "账户已恢复";
+                    std::string content = "你的账户已被管理员恢复，现在可以正常使用";
+                    auto notif = NotificationMgr::GetInstance()->addNotification(
+                        user_id, title, content, "account_recovered", 0);
+                    if (notif) {
+                        Json::Value wsMsg;
+                        wsMsg["id"] = notif->getId();
+                        wsMsg["title"] = title;
+                        wsMsg["content"] = content;
+                        wsMsg["type"] = "account_recovered";
+                        wsMsg["is_read"] = false;
+                        wsMsg["create_time"] = notif->getCreateTime();
+                        NotificationMgr::GetInstance()->sendToUser(user_id, chen::JsonUtil::ToString(wsMsg));
+                    }
+                });
             }
         }
     }while (0);
