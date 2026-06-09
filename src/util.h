@@ -54,6 +54,41 @@ inline bool IsValidAccount(const std::string& str) {
     return std::regex_match(str, s_account_regex);
 }
 
+static const std::string s_api_key_secret = "BlogServer!2025$%^APIKey#@!SecretKey";
+
+inline std::string EncryptApiKey(const std::string& api_key) {
+    if (api_key.empty()) {
+        return "";
+    }
+    std::string data = api_key;
+    for (size_t i = 0; i < data.size(); i++) {
+        data[i] ^= s_api_key_secret[i % s_api_key_secret.size()];
+    }
+    return chen::base64encode(data);
+}
+
+inline std::string DecryptApiKey(const std::string& encrypted) {
+    if (encrypted.empty()) {
+        return "";
+    }
+    std::string data = chen::base64decode(encrypted);
+    if (data.empty()) {
+        return "";
+    }
+    for (size_t i = 0; i < data.size(); i++) {
+        data[i] ^= s_api_key_secret[i % s_api_key_secret.size()];
+    }
+    return data;
+}
+
+inline std::string MaskApiKey(const std::string& api_key) {
+    if (api_key.length() <= 8) {
+        return std::string(api_key.length(), '*');
+    }
+    // 保留前4位和后4位，中间用星号替代
+    return api_key.substr(0, 3) + std::string(api_key.length() - 8, '*') + api_key.substr(api_key.length() - 2);
+}
+
 inline void SendWX(const std::string& group, const std::string& msg) {
     // TODO: ...
 }

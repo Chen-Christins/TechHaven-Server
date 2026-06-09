@@ -1,0 +1,699 @@
+#include "user_ai_config_info.h"
+#include "chen/log/log.h"
+#include <map>
+
+namespace blog {
+namespace data {
+
+static chen::Logger::ptr logger = LOG_NAME("orm");
+
+UserAiConfigInfo::UserAiConfigInfo()
+    :m_maxTokens(4096)
+    ,m_id()
+    ,m_userId()
+    ,m_type()
+    ,m_url()
+    ,m_apiKey()
+    ,m_model()
+    ,m_createTime(time(0))
+    ,m_updateTime(time(0)) {
+}
+
+std::string UserAiConfigInfo::toJsonString() const {
+    Json::Value v;
+    v["id"] = std::to_string(m_id);
+    v["user_id"] = std::to_string(m_userId);
+    v["type"] = m_type;
+    v["url"] = m_url;
+    v["api_key"] = m_apiKey;
+    v["model"] = m_model;
+    v["max_tokens"] = m_maxTokens;
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
+}
+
+void UserAiConfigInfo::setId(const int64_t& v) {
+    m_id = v;
+}
+
+void UserAiConfigInfo::setUserId(const int64_t& v) {
+    m_userId = v;
+}
+
+void UserAiConfigInfo::setType(const std::string& v) {
+    m_type = v;
+}
+
+void UserAiConfigInfo::setUrl(const std::string& v) {
+    m_url = v;
+}
+
+void UserAiConfigInfo::setApiKey(const std::string& v) {
+    m_apiKey = v;
+}
+
+void UserAiConfigInfo::setModel(const std::string& v) {
+    m_model = v;
+}
+
+void UserAiConfigInfo::setMaxTokens(const int32_t& v) {
+    m_maxTokens = v;
+}
+
+void UserAiConfigInfo::setCreateTime(const int64_t& v) {
+    m_createTime = v;
+}
+
+void UserAiConfigInfo::setUpdateTime(const int64_t& v) {
+    m_updateTime = v;
+}
+
+
+int UserAiConfigInfoDao::Update(UserAiConfigInfo::ptr info, chen::IDB::ptr conn) {
+    std::string sql = "update user_ai_config set user_id = ?, type = ?, url = ?, api_key = ?, model = ?, max_tokens = ?, create_time = ?, update_time = ? where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_userId);
+    stmt->bindString(2, info->m_type);
+    stmt->bindString(3, info->m_url);
+    stmt->bindString(4, info->m_apiKey);
+    stmt->bindString(5, info->m_model);
+    stmt->bindInt32(6, info->m_maxTokens);
+    stmt->bindTime(7, info->m_createTime);
+    stmt->bindTime(8, info->m_updateTime);
+    stmt->bindInt64(9, info->m_id);
+    return stmt->execute();
+}
+
+int UserAiConfigInfoDao::Insert(UserAiConfigInfo::ptr info, chen::IDB::ptr conn) {
+    std::string sql = "insert into user_ai_config (user_id, type, url, api_key, model, max_tokens, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?)";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_userId);
+    stmt->bindString(2, info->m_type);
+    stmt->bindString(3, info->m_url);
+    stmt->bindString(4, info->m_apiKey);
+    stmt->bindString(5, info->m_model);
+    stmt->bindInt32(6, info->m_maxTokens);
+    stmt->bindTime(7, info->m_createTime);
+    stmt->bindTime(8, info->m_updateTime);
+    int rt = stmt->execute();
+    if(rt == 0) {
+        info->m_id = conn->getLastInsertId();
+    }
+    return rt;
+}
+
+int UserAiConfigInfoDao::InsertOrUpdate(UserAiConfigInfo::ptr info, chen::IDB::ptr conn) {
+    if(info->m_id == 0) {
+        return Insert(info, conn);
+    }
+    std::string sql = "replace into user_ai_config (id, user_id, type, url, api_key, model, max_tokens, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_id);
+    stmt->bindInt64(2, info->m_userId);
+    stmt->bindString(3, info->m_type);
+    stmt->bindString(4, info->m_url);
+    stmt->bindString(5, info->m_apiKey);
+    stmt->bindString(6, info->m_model);
+    stmt->bindInt32(7, info->m_maxTokens);
+    stmt->bindTime(8, info->m_createTime);
+    stmt->bindTime(9, info->m_updateTime);
+    return stmt->execute();
+}
+
+int UserAiConfigInfoDao::Delete(UserAiConfigInfo::ptr info, chen::IDB::ptr conn) {
+    std::string sql = "delete from user_ai_config where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_id);
+    return stmt->execute();
+}
+
+int UserAiConfigInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
+    std::string sql = "delete from user_ai_config where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, id);
+    return stmt->execute();
+}
+
+int UserAiConfigInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn) {
+    std::string sql = "delete from user_ai_config where user_id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, user_id);
+    return stmt->execute();
+}
+
+int UserAiConfigInfoDao::QueryAll(std::vector<UserAiConfigInfo::ptr>& results, chen::IDB::ptr conn) {
+    std::string sql = "select id, user_id, type, url, api_key, model, max_tokens, create_time, update_time from user_ai_config";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        UserAiConfigInfo::ptr v(new UserAiConfigInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_type = rt->getString(2);
+        v->m_url = rt->getString(3);
+        v->m_apiKey = rt->getString(4);
+        v->m_model = rt->getString(5);
+        v->m_maxTokens = rt->getInt32(6);
+        v->m_createTime = rt->getTime(7);
+        v->m_updateTime = rt->getTime(8);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+UserAiConfigInfo::ptr UserAiConfigInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
+    std::string sql = "select id, user_id, type, url, api_key, model, max_tokens, create_time, update_time from user_ai_config where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return nullptr;
+    }
+    stmt->bindInt64(1, id);
+    auto rt = stmt->query();
+    if(!rt) {
+        return nullptr;
+    }
+    if(!rt->next()) {
+        return nullptr;
+    }
+    UserAiConfigInfo::ptr v(new UserAiConfigInfo);
+    v->m_id = rt->getInt64(0);
+    v->m_userId = rt->getInt64(1);
+    v->m_type = rt->getString(2);
+    v->m_url = rt->getString(3);
+    v->m_apiKey = rt->getString(4);
+    v->m_model = rt->getString(5);
+    v->m_maxTokens = rt->getInt32(6);
+    v->m_createTime = rt->getTime(7);
+    v->m_updateTime = rt->getTime(8);
+    return v;
+}
+
+UserAiConfigInfo::ptr UserAiConfigInfoDao::QueryByUserId( const int64_t& user_id, chen::IDB::ptr conn) {
+    std::string sql = "select id, user_id, type, url, api_key, model, max_tokens, create_time, update_time from user_ai_config where user_id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return nullptr;
+    }
+    stmt->bindInt64(1, user_id);
+    auto rt = stmt->query();
+    if(!rt) {
+        return nullptr;
+    }
+    if(!rt->next()) {
+        return nullptr;
+    }
+    UserAiConfigInfo::ptr v(new UserAiConfigInfo);
+    v->m_id = rt->getInt64(0);
+    v->m_userId = rt->getInt64(1);
+    v->m_type = rt->getString(2);
+    v->m_url = rt->getString(3);
+    v->m_apiKey = rt->getString(4);
+    v->m_model = rt->getString(5);
+    v->m_maxTokens = rt->getInt32(6);
+    v->m_createTime = rt->getTime(7);
+    v->m_updateTime = rt->getTime(8);
+    return v;
+}
+
+int UserAiConfigInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
+    return conn->execute("CREATE TABLE IF NOT EXISTS user_ai_config("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "user_id INTEGER NOT NULL DEFAULT 0,"
+            "type TEXT NOT NULL DEFAULT '',"
+            "url TEXT NOT NULL DEFAULT '',"
+            "api_key TEXT NOT NULL DEFAULT '',"
+            "model TEXT NOT NULL DEFAULT '',"
+            "max_tokens INTEGER NOT NULL DEFAULT 4096,"
+            "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
+            "update_time TIMESTAMP NOT NULL DEFAULT current_timestamp);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS user_ai_config_user_id ON user_ai_config(user_id);"
+            );
+}
+
+int UserAiConfigInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
+    return conn->execute("CREATE TABLE IF NOT EXISTS user_ai_config("
+            "`id` bigint AUTO_INCREMENT COMMENT '主键id',"
+            "`user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID',"
+            "`type` varchar(20) NOT NULL DEFAULT '' COMMENT 'AI类型: openai 或 claude',"
+            "`url` varchar(1024) NOT NULL DEFAULT '' COMMENT '接口地址',"
+            "`api_key` varchar(512) NOT NULL DEFAULT '' COMMENT 'API密钥(加密存储)',"
+            "`model` varchar(100) NOT NULL DEFAULT '' COMMENT '模型名称',"
+            "`max_tokens` int NOT NULL DEFAULT 4096 COMMENT '最大生成长度',"
+            "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
+            "`update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间',"
+            "PRIMARY KEY(`id`),"
+            "UNIQUE KEY `user_ai_config_user_id` (`user_id`))");
+}
+
+int UserAiConfigInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(user_ai_config)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(user_ai_config) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::map<std::string, std::string> existing_cols;  // name -> type
+    while (data->next()) {
+        existing_cols[data->getString(1)] = data->getString(2);
+    }
+
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user_ai_config.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user_ai_config.user_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user_ai_config.type " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("url");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user_ai_config.url " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("api_key");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user_ai_config.api_key " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("model");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: user_ai_config.model " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("max_tokens");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: user_ai_config.max_tokens " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: user_ai_config.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: user_ai_config.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "user_id") found = true;
+            if (name == "type") found = true;
+            if (name == "url") found = true;
+            if (name == "api_key") found = true;
+            if (name == "model") found = true;
+            if (name == "max_tokens") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column user_ai_config." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table user_ai_config";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("user_id") != existing_cols.end()) {
+            common_cols.push_back("user_id");
+        }
+        if (existing_cols.find("type") != existing_cols.end()) {
+            common_cols.push_back("type");
+        }
+        if (existing_cols.find("url") != existing_cols.end()) {
+            common_cols.push_back("url");
+        }
+        if (existing_cols.find("api_key") != existing_cols.end()) {
+            common_cols.push_back("api_key");
+        }
+        if (existing_cols.find("model") != existing_cols.end()) {
+            common_cols.push_back("model");
+        }
+        if (existing_cols.find("max_tokens") != existing_cols.end()) {
+            common_cols.push_back("max_tokens");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE user_ai_config RENAME TO user_ai_config_tmp")) {
+            ERROR(logger) << "RENAME TABLE user_ai_config failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO user_ai_config (" + cols + ") SELECT " + cols + " FROM user_ai_config_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from user_ai_config_tmp to user_ai_config failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE user_ai_config_tmp");
+        return 0;
+    }
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.user_id";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.type";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN type TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("url") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.url";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN url TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN url failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("api_key") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.api_key";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN api_key TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN api_key failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("model") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.model";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN model TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN model failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("max_tokens") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.max_tokens";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN max_tokens INTEGER NOT NULL DEFAULT 4096");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN max_tokens failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.create_time";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.update_time";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    return 0;
+}
+
+int UserAiConfigInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM user_ai_config");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM user_ai_config errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::map<std::string, std::string> existing_cols;  // name -> type
+    while (data->next()) {
+        existing_cols[data->getString(0)] = data->getString(1);
+    }
+
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column user_ai_config.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键id'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("user_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column user_ai_config.user_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("type");
+        if (it != existing_cols.end() && it->second != "varchar(20)") {
+            INFO(logger) << "Modifying column user_ai_config.type " << it->second << " -> varchar(20)";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `type` varchar(20) NOT NULL DEFAULT '' COMMENT 'AI类型: openai 或 claude'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("url");
+        if (it != existing_cols.end() && it->second != "varchar(1024)") {
+            INFO(logger) << "Modifying column user_ai_config.url " << it->second << " -> varchar(1024)";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `url` varchar(1024) NOT NULL DEFAULT '' COMMENT '接口地址'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.url failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("api_key");
+        if (it != existing_cols.end() && it->second != "varchar(512)") {
+            INFO(logger) << "Modifying column user_ai_config.api_key " << it->second << " -> varchar(512)";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `api_key` varchar(512) NOT NULL DEFAULT '' COMMENT 'API密钥(加密存储)'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.api_key failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("model");
+        if (it != existing_cols.end() && it->second != "varchar(100)") {
+            INFO(logger) << "Modifying column user_ai_config.model " << it->second << " -> varchar(100)";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `model` varchar(100) NOT NULL DEFAULT '' COMMENT '模型名称'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.model failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("max_tokens");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column user_ai_config.max_tokens " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `max_tokens` int NOT NULL DEFAULT 4096 COMMENT '最大生成长度'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.max_tokens failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column user_ai_config.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column user_ai_config.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE user_ai_config MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN user_ai_config.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "user_id") found = true;
+        if (name == "type") found = true;
+        if (name == "url") found = true;
+        if (name == "api_key") found = true;
+        if (name == "model") found = true;
+        if (name == "max_tokens") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column user_ai_config." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE user_ai_config DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN user_ai_config." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    if (existing_cols.find("user_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.user_id";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `user_id` bigint NOT NULL DEFAULT 0 COMMENT '用户ID'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN user_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("type") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.type";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `type` varchar(20) NOT NULL DEFAULT '' COMMENT 'AI类型: openai 或 claude'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN type failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("url") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.url";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `url` varchar(1024) NOT NULL DEFAULT '' COMMENT '接口地址'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN url failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("api_key") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.api_key";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `api_key` varchar(512) NOT NULL DEFAULT '' COMMENT 'API密钥(加密存储)'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN api_key failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("model") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.model";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `model` varchar(100) NOT NULL DEFAULT '' COMMENT '模型名称'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN model failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("max_tokens") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.max_tokens";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `max_tokens` int NOT NULL DEFAULT 4096 COMMENT '最大生成长度'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN max_tokens failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.create_time";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column user_ai_config.update_time";
+        int rt = conn->execute("ALTER TABLE user_ai_config ADD COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE user_ai_config ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    return 0;
+}
+
+
+} //namespace data
+} //namespace blog

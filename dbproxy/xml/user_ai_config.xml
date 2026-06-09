@@ -1,0 +1,17 @@
+<table name="user_ai_config" namespace="blog.data">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键id"/>
+        <column name="user_id" type="int64" desc="用户ID"/>
+        <column name="type" type="string" length="20" desc="AI类型: openai 或 claude"/>
+        <column name="url" type="string" length="1024" desc="接口地址"/>
+        <column name="api_key" type="string" length="512" desc="API密钥(加密存储)"/>
+        <column name="model" type="string" length="100" desc="模型名称"/>
+        <column name="max_tokens" type="int32" default="4096" desc="最大生成长度"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
+        <column name="update_time" type="datetime" default="current_timestamp" desc="更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="user_id" cols="user_id" type="uniq"/>
+    </indexs>
+</table>

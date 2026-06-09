@@ -92,6 +92,7 @@
 #include "../servlets/settings/system_settings_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/settings/system_settings_upload_servlet.h"            // IWYU pragma: keep
 #include "../servlets/stats/stats_servlet.h"                                // IWYU pragma: keep
+#include "../servlets/user/user_ai_config_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_detail_servlet.h"                     // IWYU pragma: keep

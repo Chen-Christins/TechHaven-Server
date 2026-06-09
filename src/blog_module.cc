@@ -112,6 +112,7 @@ bool BlogModule::initMySQL() {
     XX(BugInfoDao, "bug")
     XX(TaskInfoDao, "task")
     XX(SystemSettingsInfoDao, "system_settings")
+    XX(UserAiConfigInfoDao, "user_ai_config")
 #undef XX
 
     // 数据库迁移：为已有表补充新增列
@@ -141,6 +142,7 @@ bool BlogModule::initMySQL() {
         XX(RequirementInfoDao)
         XX(BugInfoDao)
         XX(TaskInfoDao)
+        XX(UserAiConfigInfoDao)
 #undef XX
         INFO(logger) << "migrate database end";
     }
@@ -170,6 +172,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/user/update", XX(UserUpdateServlet));
         dp->addServlet("/api/v1/user/query", XX(UserQueryServlet));
         dp->addServlet("/api/v1/user/stats", XX(UserStatsServlet));
+        dp->addServlet("/api/v1/user/ai-config", XX(UserAIConfigServlet));
         dp->addServlet("/api/v1/user/admin/create", XX(UserAdminCreateServlet));
         dp->addServlet("/api/v1/user/admin/delete", XX(UserAdminDeleteServlet));
         dp->addServlet("/api/v1/user/admin/recover", XX(UserAdminRecoverServlet));

@@ -19,4 +19,5 @@
 #include "blog/data/resource_info.h"                    // IWYU pragma: keep
 #include "blog/data/system_settings_info.h"             // IWYU pragma: keep
 #include "blog/data/task_info.h"                        // IWYU pragma: keep
+#include "blog/data/user_ai_config_info.h"              // IWYU pragma: keep
 #include "blog/data/user_follow_rel_info.h"             // IWYU pragma: keep
