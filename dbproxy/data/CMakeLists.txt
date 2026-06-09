@@ -25,6 +25,7 @@ set(LIB_SRC
     blog/data/system_settings_info.cc
     blog/data/task_info.cc
     blog/data/user_info.cc
+    blog/data/user_ai_config_info.cc
     blog/data/user_follow_rel_info.cc
 )
 add_library(dbproxy_data ${LIB_SRC})
