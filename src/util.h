@@ -8,6 +8,7 @@
 #pragma once
 
 #include <chen/db/mysql.h>
+#include <chen/http/sse_session.h>
 #include <chen/util/hash_util.h>
 
 #include <regex>
@@ -109,6 +110,14 @@ inline void SendWX(const std::string& group, const std::string& msg) {
         result->setResult(400, "param " param " is null"); \
         break;                                             \
     }
+
+inline void SendSSEJson(chen::http::SSESession::ptr session, const std::string& type
+                       , const std::string& key, const std::string& value) {
+    Json::Value obj;
+    obj["type"] = type;
+    obj[key] = value;
+    session->sendEvent(chen::JsonUtil::ToString(obj));
+}
 
 }
 
