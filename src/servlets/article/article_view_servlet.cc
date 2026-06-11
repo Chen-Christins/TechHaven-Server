@@ -15,7 +15,7 @@ int32_t ArticleViewServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -23,7 +23,7 @@ int32_t ArticleViewServlet::handle(chen::http::HttpRequest::ptr request,
 
         auto article = ArticleMgr::GetInstance()->get(article_id);
         if (!article || article->getIsDeleted()) {
-            result->setResult(404, "article not found");
+            result->setErrno(errcode::ARTICLE_NOT_FOUND);
             break;
         }
 
@@ -31,7 +31,7 @@ int32_t ArticleViewServlet::handle(chen::http::HttpRequest::ptr request,
         ArticleMgr::GetInstance()->incViews(article_id, cookie_id, uid);
 
         result->set("views", article->getViews());
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

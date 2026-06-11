@@ -19,7 +19,7 @@ int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -28,18 +28,18 @@ int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,
 
         auto comment = CommentMgr::GetInstance()->get(id);
         if (!comment || comment->getIsDeleted()) {
-            result->setResult(404, "comment not found");
+            result->setErrno(errcode::COMMENT_NOT_FOUND);
             break;
         }
 
         // only the comment author can edit
         if (comment->getUserId() != uid) {
-            result->setResult(403, "permission denied");
+            result->setErrno(errcode::COMMENT_PERMISSION_DENIED);
             break;
         }
 
         if (!CommentMgr::GetInstance()->update(id, content)) {
-            result->setResult(500, "update comment failed");
+            result->setErrno(errcode::COMMENT_UPDATE_FAILED);
             break;
         }
 
@@ -66,7 +66,7 @@ int32_t CommentUpdateServlet::handle(chen::http::HttpRequest::ptr request,
         item["reply_count"] = CommentMgr::GetInstance()->countReplies(id);
 
         result->jsondata = item;
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

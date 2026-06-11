@@ -21,7 +21,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
 
         auto sdata = getSessionData(request, response);
         if (sdata->getData<int64_t>(CookieKey::USER_ID)) {
-            result->setResult(410, "already login");
+            result->setErrno(errcode::USER_ALREADY_LOGIN);
             break;
         }
 
@@ -31,27 +31,27 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         } else if (IsValidAccount(auth_id)) {
             info = UserMgr::GetInstance()->getByAccount(auth_id);
         } else {
-            result->setResult(402, "invalid auth_id");
+            result->setErrno(errcode::AUTH_CODE_INVALID);
             break;
         }
 
         if (!info) {
-            result->setResult(403, "invalid auth_id");
+            result->setErrno(errcode::AUTH_CODE_INVALID);
             break;
         }
         if (info->getPasswd() != chen::md5(passwd)) {
-            result->setResult(405, "invalid passwd");
+            result->setErrno(errcode::USER_PASSWORD_WRONG);
             break;
         }
 
         if (info->getState() != 1 || info->getIsDeleted()) {
-            result->setResult(406, "account invalid state");
+            result->setErrno(errcode::ACCOUNT_INVALID);
             break;
         }
 
         auto db = getDB();
         if(!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 

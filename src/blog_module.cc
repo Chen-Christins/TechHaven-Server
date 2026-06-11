@@ -49,6 +49,16 @@ bool BlogModule::onServerReady() {
 
     ArticleMgr::GetInstance()->start();
 
+    // 初始化错误码管理器
+    {
+        std::string workPath = chen::Config::Lookup<std::string>("server.work_path")->getValue();
+        std::string errorsPath = workPath + "/bin/conf/errors.json";
+        if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
+            ERROR(logger) << "Failed to load error codes from " << errorsPath;
+            // 不阻止启动，使用空错误码表（兜底）
+        }
+    }
+
     std::vector<chen::TcpServer::ptr> servers;
     if (chen::Application::GetInstance()->getServer("http", servers)) {
         registerServlets(servers);
@@ -236,6 +246,8 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/api/v1/category/admin/delete", XX(CategoryDeleteServlet));
         dp->addServlet("/api/v1/category/admin/query", XX(CategoryQueryServlet));
+        // 错误码下发（公开接口）
+        dp->addServlet("/api/v1/error-codes", XX(ErrorCodesServlet));
         // 站点公开配置
         dp->addServlet("/api/v1/site/settings", XX(SiteSettingsServlet));
         dp->addServlet("/api/v1/site/status", XX(SiteStatusServlet));

@@ -18,21 +18,21 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         DEFINE_AND_CHECK_TYPE(result, int64_t, following_id, "following_id");
 
         if (following_id == uid) {
-            result->setResult(400, "cannot follow yourself");
+            result->setErrno(errcode::USER_CANNOT_FOLLOW_SELF);
             break;
         }
 
         // check the target user exists
         auto targetUser = UserMgr::GetInstance()->get(following_id);
         if (!targetUser || targetUser->getIsDeleted()) {
-            result->setResult(404, "user not found");
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
 
@@ -40,7 +40,7 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
 
         auto info = UserFollowRelMgr::GetInstance()->follow(uid, following_id);
         if (!info) {
-            result->setResult(500, "follow failed");
+            result->setErrno(errcode::USER_FOLLOW_FAILED);
             break;
         }
 
@@ -66,7 +66,7 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
             }
         }
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

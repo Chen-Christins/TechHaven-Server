@@ -21,7 +21,7 @@ int32_t OrganizationMyAppliesServlet::handle(chen::http::HttpRequest::ptr reques
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 

@@ -15,7 +15,7 @@ int32_t SiteSettingsServlet::handle(chen::http::HttpRequest::ptr request, chen::
     do {
         auto settings = SystemSettingsMgr::GetInstance()->get();
         if (!settings) {
-            result->setResult(500, "system settings not loaded");
+            result->setErrno(errcode::SETTINGS_NOT_LOADED);
             break;
         }
         result->set("siteName", settings->getSiteName());

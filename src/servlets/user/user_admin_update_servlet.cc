@@ -19,19 +19,19 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (user_role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto info = UserMgr::GetInstance()->get(user_id);
         if (!info) {
-            result->setResult(404, "user not found");
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
 
@@ -44,51 +44,51 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
         bool has_state = request->checkGetParamAs("state", state);
 
         if (account.empty() && email.empty() && passwd.empty() && !has_role && !has_state) {
-            result->setResult(400, "no param to update");
+            result->setErrno(errcode::USER_NO_PARAM);
             break;
         }
 
         if (!account.empty()) {
             if (!IsValidAccount(account)) {
-                result->setResult(402, "invalid account");
+                result->setErrno(errcode::USER_INVALID_ACCOUNT);
                 break;
             }
             auto exist = UserMgr::GetInstance()->getByAccount(account);
             if (exist && exist->getId() != user_id) {
-                result->setResult(401, "account exists");
+                result->setErrno(errcode::USER_ACCOUNT_EXISTS);
                 break;
             }
             info->setAccount(account);
         }
         if (!email.empty()) {
             if (!IsEmail(email)) {
-                result->setResult(402, "invalid email format");
+                result->setErrno(errcode::USER_INVALID_EMAIL);
                 break;
             }
             auto exist = UserMgr::GetInstance()->getByEmail(email);
             if (exist && exist->getId() != user_id) {
-                result->setResult(401, "email exists");
+                result->setErrno(errcode::USER_EMAIL_EXISTS);
                 break;
             }
             info->setEmail(email);
         }
         if (!passwd.empty()) {
             if (passwd.length() < 6) {
-                result->setResult(400, "passwd must be at least 6 characters");
+                result->setErrno(errcode::USER_INVALID_PASSWORD);
                 break;
             }
             info->setPasswd(chen::md5(passwd));
         }
         if (has_role) {
             if (role < 1 || role > 4) {
-                result->setResult(400, "invalid role");
+                result->setErrno(errcode::PARAM_INVALID, "invalid role");
                 break;
             }
             info->setRole(role);
         }
         if (has_state) {
             if (state < 1 || state > 2) {
-                result->setResult(400, "invalid state");
+                result->setErrno(errcode::PARAM_INVALID, "invalid state");
                 break;
             }
             info->setState(state);
@@ -98,11 +98,11 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
         if (data::UserInfoDao::Update(info, db)) {
-            result->setResult(500, "update user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "update user failed");
             ERROR(logger) << "db error errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

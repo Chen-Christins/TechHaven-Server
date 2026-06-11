@@ -15,18 +15,18 @@ int32_t UserUnfollowServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         DEFINE_AND_CHECK_TYPE(result, int64_t, following_id, "following_id");
 
         if (!UserFollowRelMgr::GetInstance()->unfollow(uid, following_id)) {
-            result->setResult(400, "not following");
+            result->setErrno(errcode::USER_NOT_FOLLOWING);
             break;
         }
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

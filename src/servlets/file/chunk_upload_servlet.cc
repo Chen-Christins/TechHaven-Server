@@ -41,7 +41,7 @@ int32_t ChunkUploadServlet::handle(chen::http::HttpRequest::ptr request
         } else if (path == "/upload/status") {
             return handleStatus(request, response, session, result);
         } else {
-            result->setResult(404, "Not Found");
+            result->setErrno(errcode::FILE_NOT_FOUND);
             break;
         }
     } while (0);
@@ -75,12 +75,12 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
         uint32_t chunk_size = std::stoul(request->getHeader("X-Upload-Chunk-Size"));
 
         if (type != "chunked") {
-            result->setResult(400, "Invalid upload type");
+            result->setErrno(errcode::UPLOAD_INVALID_TYPE);
             break;
         }
         if (file_name.empty() || dir_name.empty() || biz_info.empty()
                 || total_size == 0 || total_chunks == 0 || chunk_size == 0) {
-            result->setResult(400, "Invalid params");
+            result->setErrno(errcode::UPLOAD_INVALID_PARAMS);
             break;
         }
 
@@ -112,17 +112,17 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
-            result->setResult(400, "Invalid upload type");
+            result->setErrno(errcode::UPLOAD_INVALID_TYPE);
             break;
         }
         if (upload_id.empty()) {
-            result->setResult(400, "Invalid params");
+            result->setErrno(errcode::UPLOAD_INVALID_PARAMS);
             break;
         }
 
         auto upload_session = ChunkUploadMgr::GetInstance()->getSession(upload_id);
         if (!upload_session) {
-            result->setResult(404, "Upload session not found");
+            result->setErrno(errcode::UPLOAD_SESSION_NOT_FOUND);
             break;
         }
 
@@ -130,7 +130,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         {
             std::lock_guard<std::mutex> lock(upload_session->m_mtx);
             if (upload_session->received_count != upload_session->total_chunks) {
-                result->setResult(400, "Not all chunks uploaded");
+                result->setErrno(errcode::UPLOAD_CHUNK_INCOMPLETE);
                 break;
             }
             upload_session->completed = true;
@@ -148,7 +148,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
         std::string filename = save_dir + "/" + upload_session->file_name;
         std::ofstream ofs;
         if (!chen::FSUtil::OpenForWrite(ofs, filename, std::ios::binary)) {
-            result->setResult(500, "Failed to create file");
+            result->setErrno(errcode::UPLOAD_FILE_CREATE_FAILED);
             break;
         }
 
@@ -158,7 +158,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
             std::ifstream temp_file(upload_session->chunk_data[i], std::ios::binary);
             if (!temp_file.is_open()) {
                 ERROR(logger) << "Failed to open temp file: " << upload_session->chunk_data[i];
-                result->setResult(500, "Failed to assemble file");
+                result->setErrno(errcode::UPLOAD_FILE_ASSEMBLE_FAILED);
                 goto assembly_done;
             }
             while (temp_file.read(buffer.data(), buffer.size())) {
@@ -196,7 +196,7 @@ assembly_done:
             std::ifstream final_file(filename, std::ios::binary);
             if (!final_file.is_open()) {
                 ERROR(logger) << "Failed to open final file for hash calculation: " << filename;
-                result->setResult(500, "Failed to calculate file hash");
+                result->setErrno(errcode::UPLOAD_FILE_HASH_FAILED);
                 break;
             }
             MD5_CTX md5_ctx;
@@ -217,7 +217,7 @@ assembly_done:
 
         std::string path = "/uploads/" + dir_name + "/" + upload_session->file_name;
         if (!dumpToResource(upload_session->biz_type, upload_session->biz_id, path, hash_key, uid, upload_session->total_size)) {
-            result->setResult(500, "Dump to resource fail");
+            result->setErrno(errcode::FILE_DUMP_FAILED);
             break;
         }
 
@@ -225,7 +225,7 @@ assembly_done:
         auto db = getDB();
         if (!db) {
             ERROR(logger) << "Get SQLite3 connection fail";
-            result->setResult(500, "Get DB connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
         // 查找是否已存在该用户该作业的记录
@@ -240,14 +240,14 @@ assembly_done:
             info->setUpdateTime(now);
             if (blog::data::AssignmentUserRelInfoDao::Update(info, db)) {
                 ERROR(logger) << "AssignmentUserRelInfo Update fail";
-                result->setResult(500, "Database error");
+                result->setErrno(errcode::DB_OPERATION_FAILED);
                 break;
             }
         } else {
             info->setCreateTime(now);
             if (blog::data::AssignmentUserRelInfoDao::Insert(info, db)) {
                 ERROR(logger) << "AssignmentUserRelInfo Insert fail";
-                result->setResult(500, "Database error");
+                result->setErrno(errcode::DB_OPERATION_FAILED);
                 break;
             }
         }
@@ -306,17 +306,17 @@ int32_t ChunkUploadServlet::handleCancel(chen::http::HttpRequest::ptr request
         std::string upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
-            result->setResult(400, "Invalid upload type");
+            result->setErrno(errcode::UPLOAD_INVALID_TYPE);
             break;
         }
         if (upload_id.empty()) {
-            result->setResult(400, "Invalid params");
+            result->setErrno(errcode::UPLOAD_INVALID_PARAMS);
             break;
         }
 
         auto upload_session = ChunkUploadMgr::GetInstance()->getSession(upload_id);
         if (!upload_session) {
-            result->setResult(404, "Upload session not found");
+            result->setErrno(errcode::UPLOAD_SESSION_NOT_FOUND);
             break;
         }
 
@@ -348,38 +348,38 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
         const std::string& body = request->getBody();
 
         if (type != "chunked") {
-            result->setResult(400, "Invalid upload type");
+            result->setErrno(errcode::UPLOAD_INVALID_TYPE);
             break;
         }
         if (upload_id.empty() || chunk_size == 0 || body.empty()) {
-            result->setResult(400, "Invalid params");
+            result->setErrno(errcode::UPLOAD_INVALID_PARAMS);
             break;
         }
         if (body.size() > chunk_size) {
-            result->setResult(400, "Chunk size exceeds declared size");
+            result->setErrno(errcode::UPLOAD_CHUNK_SIZE_EXCEED);
             break;
         }
 
         auto upload_session = ChunkUploadMgr::GetInstance()->getSession(upload_id);
         if (!upload_session) {
-            result->setResult(404, "Upload session not found");
+            result->setErrno(errcode::UPLOAD_SESSION_NOT_FOUND);
             break;
         }
 
         std::lock_guard<std::mutex> lock(upload_session->m_mtx);
         if (chunk_index >= upload_session->total_chunks) {
-            result->setResult(400, "Invalid chunk index");
+            result->setErrno(errcode::UPLOAD_CHUNK_INVALID);
             break;
         }
         if (upload_session->received_chunks[chunk_index]) {
-            result->setResult(400, "Chunk already received");
+            result->setErrno(errcode::UPLOAD_CHUNK_ALREADY_DONE);
             break;
         }
         // 确保临时目录存在
         std::string temp_dir = server_work_path->getValue() + "/temp";
         if (!chen::FSUtil::Mkdir(temp_dir)) {
             ERROR(logger) << "Failed to create temp directory: " << temp_dir;
-            result->setResult(500, "Failed to create temp directory");
+            result->setErrno(errcode::UPLOAD_TEMP_DIR_FAILED);
             break;
         }
 
@@ -387,7 +387,7 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
         std::string temp_file_path = temp_dir + "/" + upload_id + "_" + std::to_string(chunk_index);
         std::ofstream temp_file(temp_file_path, std::ios::binary);
         if (!temp_file.is_open()) {
-            result->setResult(500, "Failed to create temp file");
+            result->setErrno(errcode::UPLOAD_TEMP_FILE_FAILED);
             break;
         }
         temp_file.write(body.c_str(), body.size());
@@ -409,17 +409,17 @@ int32_t ChunkUploadServlet::handleStatus(chen::http::HttpRequest::ptr request
         std::string upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
-            result->setResult(400, "Invalid upload type");
+            result->setErrno(errcode::UPLOAD_INVALID_TYPE);
             break;
         }
         if (upload_id.empty()) {
-            result->setResult(400, "Invalid params");
+            result->setErrno(errcode::UPLOAD_INVALID_PARAMS);
             break;
         }
 
         auto upload_session = ChunkUploadMgr::GetInstance()->getSession(upload_id);
         if (!upload_session) {
-            result->setResult(404, "Upload session not found");
+            result->setErrno(errcode::UPLOAD_SESSION_NOT_FOUND);
             break;
         }
 

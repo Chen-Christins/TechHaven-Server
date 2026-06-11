@@ -18,7 +18,7 @@ int32_t CategoryQueryServlet::handle(chen::http::HttpRequest::ptr request, chen:
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 

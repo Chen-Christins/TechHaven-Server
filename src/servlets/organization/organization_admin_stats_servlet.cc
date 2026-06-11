@@ -14,17 +14,17 @@ int32_t OrganizationAdminStatsServlet::handle(chen::http::HttpRequest::ptr reque
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(401, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto stats = OrganizationMgr::GetInstance()->getStats();
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("total_organizations", stats.total);
         result->set("active_organizations", stats.active);
         result->set("inactive_organizations", stats.inactive);

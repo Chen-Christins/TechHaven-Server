@@ -62,7 +62,7 @@ int32_t CommentListServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         // check article exists
         auto article = ArticleMgr::GetInstance()->get(article_id);
         if (!article || article->getIsDeleted()) {
-            result->setResult(404, "article not found");
+            result->setErrno(errcode::ARTICLE_NOT_FOUND);
             break;
         }
 
@@ -96,7 +96,7 @@ int32_t CommentListServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         result->set("total", it != children.end() ? (Json::Int64)it->second.size() : (Json::Int64)0);
         result->set("list", list);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

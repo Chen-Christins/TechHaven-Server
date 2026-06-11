@@ -15,12 +15,12 @@ int32_t DashboardStatsServlet::handle(chen::http::HttpRequest::ptr request, chen
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -122,7 +122,7 @@ int32_t DashboardStatsServlet::handle(chen::http::HttpRequest::ptr request, chen
         result->set("new_users_today", today_users);
         result->set("new_users_today_change", pct_change(today_users, yesterday_users));
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

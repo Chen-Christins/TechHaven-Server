@@ -18,7 +18,7 @@ int32_t ArticlePraiseListServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -76,7 +76,7 @@ int32_t ArticlePraiseListServlet::handle(chen::http::HttpRequest::ptr request,
             result->set("total", ArticlePraiseRelMgr::GetInstance()->countByUser(query_user_id));
         }
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

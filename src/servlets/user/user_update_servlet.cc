@@ -25,36 +25,36 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         std::string old_passwd = request->getParam("old_passwd");
 
         if (name.empty() && passwd.empty() && bio.empty() && website.empty() && avatar.empty()) {
-            result->setResult(400, "no param provided");
+            result->setErrno(errcode::USER_NO_PARAM);
             break;
         }
 
         if (!passwd.empty() && passwd.length() < 6) {
-            result->setResult(400, "passwd must be at least 6 characters");
+            result->setErrno(errcode::USER_INVALID_PASSWORD);
             break;
         }
 
         auto sdata = getSessionData(request, response);
         int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         data::UserInfo::ptr info = UserMgr::GetInstance()->get(uid);
         if (!info) {
-            result->setResult(403, "invalid account");
+            result->setErrno(errcode::ACCOUNT_INVALID);
             break;
         }
 
         // 修改密码时必须提供旧密码校验
         if (!passwd.empty()) {
             if (old_passwd.empty()) {
-                result->setResult(400, "param old_passwd is null");
+                result->setErrno(errcode::PARAM_MISSING, "old password required");
                 break;
             }
             if (info->getPasswd() != chen::md5(old_passwd)) {
-                result->setResult(403, "invalid old password");
+                result->setErrno(errcode::USER_OLD_PASSWORD_WRONG);
                 break;
             }
         }
@@ -78,16 +78,16 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
         if (data::UserInfoDao::Update(info, db)) {
-            result->setResult(500, "update user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "update user failed");
             ERROR(logger) << "db error errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;
         }
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
 
         if (!passwd.empty()) {
             int64_t token_time = time(0) + 3600 * 24;

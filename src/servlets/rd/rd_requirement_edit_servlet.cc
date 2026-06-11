@@ -21,13 +21,13 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-            result->setResult(403, "not a member of this organization");
+            result->setErrno(errcode::ORG_NOT_MEMBER);
             break;
         }
         int32_t org_role = rel->getRole();
@@ -38,16 +38,16 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
         if (id) {
             info = RequirementMgr::GetInstance()->get(id);
             if (!info || info->getOrgId() != org_id) {
-                result->setResult(404, "requirement not exist");
+                result->setErrno(errcode::REQUIREMENT_NOT_FOUND);
                 break;
             }
             if (!permission::CanEditRequirement(org_role)) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         } else {
             if (!permission::CanCreateRequirement(org_role)) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             info.reset(new data::RequirementInfo);
@@ -113,12 +113,12 @@ int32_t RdRequirementEditServlet::handle(chen::http::HttpRequest::ptr request, c
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::RequirementInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update requirement fail");
+            result->setErrno(errcode::RD_UPDATE_FAILED);
             break;
         }
 

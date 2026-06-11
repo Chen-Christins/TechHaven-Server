@@ -22,7 +22,7 @@ int32_t AssignmentSubmissionListServlet::handle(chen::http::HttpRequest::ptr req
 
         auto assign_info = AssignmentMgr::GetInstance()->get(assign_id);
         if (!assign_info) {
-            result->setResult(404, "assignment not found");
+            result->setErrno(errcode::ASSIGNMENT_NOT_FOUND);
             break;
         }
 

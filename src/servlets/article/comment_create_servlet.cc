@@ -20,7 +20,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -33,7 +33,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // check article exists
         auto article = ArticleMgr::GetInstance()->get(article_id);
         if (!article || article->getIsDeleted()) {
-            result->setResult(404, "article not found");
+            result->setErrno(errcode::ARTICLE_NOT_FOUND);
             break;
         }
 
@@ -41,7 +41,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         if (parent_id > 0) {
             auto parent = CommentMgr::GetInstance()->get(parent_id);
             if (!parent || parent->getIsDeleted()) {
-                result->setResult(404, "parent comment not found");
+                result->setErrno(errcode::COMMENT_PARENT_NOT_FOUND);
                 break;
             }
         }
@@ -51,7 +51,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         auto info = CommentMgr::GetInstance()->create(article_id, uid, content, parent_id, ip, user_agent);
         if (!info) {
-            result->setResult(500, "create comment failed");
+            result->setErrno(errcode::COMMENT_CREATE_FAILED);
             break;
         }
 
@@ -77,7 +77,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         item["reply_count"] = 0;
 
         result->jsondata = item;
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
 
         // 异步通知扇出：评论者信息 + 通知目标用户
         int64_t commenter_id = uid;

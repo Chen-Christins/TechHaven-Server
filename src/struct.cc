@@ -3,6 +3,8 @@
 
 #include "blog/data/user_info.h"
 #include "manager/user_manager.h"
+#include "manager/error_code_manager.h"
+#include "error_codes.h"
 #include "util.h"
 
 namespace blog {
@@ -27,31 +29,36 @@ std::string GetRemoteIP(chen::http::HttpRequest::ptr request
     return rt.substr(0, pos);
 }
 
-Result::Result(int32_t c, const std::string& m)
-    :code(c)
+Result::Result(int32_t ec, const std::string& m)
+    :errno_(ec)
     ,used(chen::GetCurrentUs())
     ,msg(m) {
 }
 
-void Result::setResult(int32_t c, const std::string& m) {
-    code = c;
-    msg = m;
+void Result::setErrno(int32_t ec) {
+    errno_ = ec;
+    msg = ErrorCodeMgr::GetInstance()->getMessage(ec);
+}
+
+void Result::setErrno(int32_t ec, const std::string& customMsg) {
+    errno_ = ec;
+    msg = customMsg;
+}
+
+void Result::setDataJson(const std::string& jsonStr) {
+    Json::Value v;
+    if (chen::JsonUtil::FromString(v, jsonStr)) {
+        jsondata = v;
+    }
 }
 
 std::string Result::toJsonString() const {
     Json::Value v;
-    v["code"] = std::to_string(code);
+    v["errno"] = errno_;
     v["msg"] = msg;
     v["used"] = ((chen::GetCurrentUs() - used) / 1000.0);
     if (!jsondata.isNull()) {
         v["data"] = jsondata;
-    } else {
-        // if (!datas.empty()) {
-        //     auto& d = v["data"];
-        //     for (auto& [key, value] : datas) {
-        //         d[key] = value;
-        //     }
-        // }
     }
     return chen::JsonUtil::ToString(v);
 }
@@ -84,7 +91,7 @@ bool BlogServlet::handlePre(chen::http::HttpRequest::ptr request, chen::http::Ht
     }
     if (request->getMethod() != chen::http::HttpMethod::GET
             && request->getMethod() != chen::http::HttpMethod::POST) {
-        result->setResult(300, "invalid method");
+        result->setErrno(errcode::INVALID_METHOD);
         return false;
     }
     return true;
@@ -96,7 +103,7 @@ bool BlogServlet::handlePost(chen::http::HttpRequest::ptr request, chen::http::H
         << GetRemoteIP(request, session) << "\t"
         << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
         << getUserId(request) << "\t"
-        << result->code << "\t"
+        << result->errno_ << "\t"
         << result->msg << "\t" << request->getPath()
         << "\t" << (!request->getQuery().empty() ? request->getQuery() : "-");
     return true;
@@ -218,7 +225,7 @@ bool BlogLoginedServlet::handlePre(chen::http::HttpRequest::ptr request
         ,chen::http::HttpSession::ptr session
         ,Result::ptr result) {
     if (!initLogin(request, response, session)) {
-        result->setResult(410, "not login");
+        result->setErrno(errcode::NOT_LOGIN);
         return false;
     }
     return true;

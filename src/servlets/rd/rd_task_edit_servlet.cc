@@ -21,13 +21,13 @@ int32_t RdTaskEditServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-            result->setResult(403, "not a member of this organization");
+            result->setErrno(errcode::ORG_NOT_MEMBER);
             break;
         }
         int32_t org_role = rel->getRole();
@@ -37,16 +37,16 @@ int32_t RdTaskEditServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         if (id) {
             info = TaskMgr::GetInstance()->get(id);
             if (!info || info->getOrgId() != org_id) {
-                result->setResult(404, "task not exist");
+                result->setErrno(errcode::TASK_NOT_FOUND);
                 break;
             }
             if (!permission::CanEditTask(org_role, uid, info->getAssigneeId())) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         } else {
             if (!permission::CanCreateTask(org_role)) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             info.reset(new data::TaskInfo);
@@ -112,11 +112,11 @@ int32_t RdTaskEditServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
         if (data::TaskInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update task fail");
+            result->setErrno(errcode::RD_UPDATE_FAILED);
             break;
         }
         if (is_new) {

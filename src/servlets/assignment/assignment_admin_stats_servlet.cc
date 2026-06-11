@@ -14,17 +14,17 @@ int32_t AssignmentAdminStatsServlet::handle(chen::http::HttpRequest::ptr request
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(401, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto stats = AssignmentMgr::GetInstance()->getStats();
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("total_assignments", stats.total);
         result->set("active_assignments", stats.active);
         result->set("closed_assignments", stats.closed);

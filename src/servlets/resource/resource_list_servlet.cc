@@ -21,7 +21,7 @@ int32_t ResourceListServlet::handle(chen::http::HttpRequest::ptr request, chen::
         int64_t uid = getUserId(request);
         int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
         if (!checkPermession(system_role)) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 

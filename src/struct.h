@@ -15,16 +15,17 @@
 #include <chen/db/db.h>
 #include <chen/http/session_data.h>
 
+#include "error_codes.h"
+
 namespace blog {
 
 struct Result {
     typedef std::shared_ptr<Result> ptr;
-    Result(int32_t c = 200, const std::string& msg = "ok");
+    Result(int32_t ec = 0, const std::string& msg = "ok");
 
-    int32_t code;
+    int32_t errno_;       // 统一业务错误码（默认 0 = 成功）
     int64_t used;
     std::string msg;
-    // std::map<std::string, std::string> datas;
     Json::Value jsondata;
 
     template <class T>
@@ -43,7 +44,23 @@ struct Result {
         jsondata[key].append(v);
     }
 
-    void setResult(int32_t c, const std::string& m);
+    /**
+     * @brief 设置错误码并自动填充默认消息
+     * @param ec 业务错误码（errcode::NOT_LOGIN 等）
+     */
+    void setErrno(int32_t ec);
+
+    /**
+     * @brief 设置错误码和自定义消息
+     * @param ec 业务错误码
+     * @param customMsg 自定义消息
+     */
+    void setErrno(int32_t ec, const std::string& customMsg);
+
+    /**
+     * @brief 设置 data 为原始 JSON 字符串（用于下发配置等场景）
+     */
+    void setDataJson(const std::string& jsonStr);
 
     std::string toJsonString() const;
 };

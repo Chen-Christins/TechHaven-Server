@@ -31,7 +31,7 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
         int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 

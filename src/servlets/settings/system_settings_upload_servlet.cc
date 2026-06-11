@@ -20,12 +20,12 @@ int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         auto user = UserMgr::GetInstance()->get(uid);
         if (!user || user->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -34,18 +34,18 @@ int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request
         auto data = parser->parseToMemory(request->getBody());
 
         if (data.size() < 2) {
-            result->setResult(400, "protocol error: need [type, file]");
+            result->setErrno(errcode::FILE_PROTOCOL_ERROR);
             break;
         }
 
         std::string type = data[0].content;
         if (type != "siteIcon" && type != "siteLogo" && type != "favicon") {
-            result->setResult(400, "invalid type, must be siteIcon/siteLogo/favicon");
+            result->setErrno(errcode::UPLOAD_TYPE_INVALID_TYPE);
             break;
         }
 
         if (data[1].content.empty()) {
-            result->setResult(400, "file content is empty");
+            result->setErrno(errcode::UPLOAD_FILE_EMPTY);
             break;
         }
 
@@ -64,7 +64,7 @@ int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request
         std::ofstream ofs;
         if (!chen::FSUtil::OpenForWrite(ofs, full_path, std::ios::binary)) {
             ERROR(logger) << "Open file for write failed: " << full_path;
-            result->setResult(500, "save file fail");
+            result->setErrno(errcode::FILE_SAVE_FAILED);
             break;
         }
         ofs.write(data[1].content.c_str(), data[1].content.size());
@@ -76,7 +76,7 @@ int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request
 
         auto settings = SystemSettingsMgr::GetInstance()->get();
         if (!settings) {
-            result->setResult(500, "system settings not loaded");
+            result->setErrno(errcode::SETTINGS_NOT_LOADED);
             break;
         }
 
@@ -89,7 +89,7 @@ int32_t SystemSettingsUploadServlet::handle(chen::http::HttpRequest::ptr request
         }
 
         if (!SystemSettingsMgr::GetInstance()->update(settings)) {
-            result->setResult(500, "save settings fail");
+            result->setErrno(errcode::SETTINGS_SAVE_FAILED);
             break;
         }
 

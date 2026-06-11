@@ -22,13 +22,13 @@ int32_t OrganizationApplyListServlet::handle(chen::http::HttpRequest::ptr reques
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto uinfo = UserMgr::GetInstance()->get(uid);
         if (!uinfo || uinfo->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 

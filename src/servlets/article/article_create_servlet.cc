@@ -27,14 +27,14 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         if (type != ArticleManager::Type::ORIGINAL
                 && type != ArticleManager::Type::REPRINT) {
-            result->setResult(401, "invalid type");
+            result->setErrno(errcode::ARTICLE_INVALID_TYPE);
             break;
         }
 
         int64_t uid = getUserId(request);
         INFO(logger) << "uid=" << uid;
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         data::ArticleInfo::ptr info(new data::ArticleInfo);
@@ -48,18 +48,18 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
 
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
 
         if (data::ArticleInfoDao::Insert(info, db)) {
-            result->setResult(500, "insert article fail");
+            result->setErrno(errcode::ARTICLE_INSERT_FAILED);
             break;
         }
         result->set("id", info->getId());
@@ -110,7 +110,7 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
 
         if (!trans->commit()) {
-            result->setResult(500, "commit transaction fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
         }
 

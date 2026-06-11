@@ -15,7 +15,7 @@ int32_t UserIsFollowingServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -23,7 +23,7 @@ int32_t UserIsFollowingServlet::handle(chen::http::HttpRequest::ptr request,
 
         bool following = UserFollowRelMgr::GetInstance()->isFollowing(uid, user_id);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("is_following", following);
     } while (0);
 

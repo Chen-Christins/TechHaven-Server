@@ -20,7 +20,7 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             uid = sdata->getData<int64_t>(CookieKey::USER_ID);
         }
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -61,7 +61,7 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             orgs, uid, OrganizationUserRelManager::APPROVED, true);
         int64_t total_organizations = orgs.size();
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("total_articles", total_articles);
         result->set("published_articles", published_articles);
         result->set("private_articles", private_articles);

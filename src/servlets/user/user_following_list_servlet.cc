@@ -15,7 +15,7 @@ int32_t UserFollowingListServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -47,7 +47,7 @@ int32_t UserFollowingListServlet::handle(chen::http::HttpRequest::ptr request,
 
         int64_t total = UserFollowRelMgr::GetInstance()->countFollowing(target_uid);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("list", arr);
         result->set("total", total);
         result->set("offset", offset);

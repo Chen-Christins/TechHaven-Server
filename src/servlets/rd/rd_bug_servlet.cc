@@ -24,18 +24,18 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
         if (id) {
             auto info = BugMgr::GetInstance()->get(id);
             if (!info || info->getIsDeleted()) {
-                result->setResult(404, "bug not exist");
+                result->setErrno(errcode::BUG_NOT_FOUND);
                 break;
             }
             int64_t info_org_id = info->getOrgId();
             if (!is_platform_admin) {
                 auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
                 if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                    result->setResult(403, "Access Denied");
+                    result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
                 if (!permission::CanViewBug(rel->getRole(), uid, info->getCreatorId())) {
-                    result->setResult(403, "Access Denied");
+                    result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
             }

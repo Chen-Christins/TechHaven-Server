@@ -39,12 +39,12 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
         int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         if (max_size > 96) {
-            result->setResult(400, "max_size exceed limit");
+            result->setErrno(errcode::ASSIGNMENT_MAX_SIZE_EXCEED);
             break;
         }
 
@@ -54,7 +54,7 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
         if (assign_id) {
             assign_info = AssignmentMgr::GetInstance()->get(assign_id);
             if (!assign_info) {
-                result->setResult(404, "assignment not exist");
+                result->setErrno(errcode::ASSIGNMENT_NOT_FOUND);
                 break;
             }
             assign_info->setName(name);
@@ -82,12 +82,12 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::AssignmentInfoDao::InsertOrUpdate(assign_info, db)) {
-            result->setResult(500, "insert or update assignment fail");
+            result->setErrno(errcode::ASSIGNMENT_UPDATE_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;
@@ -109,7 +109,7 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
             org_assign_rel->setUpdateTime(time(0));
 
             if (data::AssignmentOrganizationRelInfoDao::InsertOrUpdate(org_assign_rel, db)) {
-                result->setResult(500, "insert or update organization assignment rel fail");
+                result->setErrno(errcode::ASSIGNMENT_UPDATE_FAILED);
                 ERROR(logger) << "db error, errno=" << db->getErrno()
                     << " errstr=" << db->getErrStr();
                 break;

@@ -14,12 +14,12 @@ int32_t AdminCommentStatsServlet::handle(chen::http::HttpRequest::ptr request, c
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -30,7 +30,7 @@ int32_t AdminCommentStatsServlet::handle(chen::http::HttpRequest::ptr request, c
         result->set("approved_comments", stats.approved);
         result->set("spam_comments", stats.spam);
         result->set("reported_comments", stats.reported);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

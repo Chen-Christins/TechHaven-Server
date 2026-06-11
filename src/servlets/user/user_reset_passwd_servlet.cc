@@ -22,27 +22,27 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
         DEFINE_AND_CHECK_STRING(result, auth_code, "auth_code");
 
         if (passwd.empty()) {
-            result->setResult(400, "param passwd empty");
+            result->setErrno(errcode::PARAM_MISSING, "password required");
             break;
         }
 
         if (!IsEmail(email)) {
-            result->setResult(402, "invalid email format");
+            result->setErrno(errcode::USER_INVALID_EMAIL);
             break;
         }
         if (!blog::UserMgr::GetInstance()->getByEmail(email)) {
-            result->setResult(401, "email not register");
+            result->setErrno(errcode::USER_EMAIL_NOT_REGISTER);
             break;
         }
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
 
         if (!verificationEmailCode(email, auth_code)) {
-            result->setResult(403, "invalid auth_code");
+            result->setErrno(errcode::AUTH_CODE_INVALID);
             break;
         }
 
@@ -51,7 +51,7 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
         info->setPasswd(chen::md5(passwd));
 
         if (data::UserInfoDao::Update(info, db)) {
-            result->setResult(500, "insert user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");
             break;
         }
         trans->commit();

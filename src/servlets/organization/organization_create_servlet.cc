@@ -25,18 +25,18 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         int64_t user_id = getUserId(request);
         if (!user_id) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto uinfo = UserMgr::GetInstance()->get(user_id);
         if (!uinfo) {
-            result->setResult(420, "user not exist");
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
 
         if (uinfo->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -45,7 +45,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
         if (oid) {
             info = OrganizationMgr::GetInstance()->get(oid);
             if (!info) {
-                result->setResult(404, "organization not exist");
+                result->setErrno(errcode::ORG_NOT_FOUND);
                 break;
             }
 
@@ -70,12 +70,12 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::OrganizationInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update organization fail");
+            result->setErrno(errcode::ORG_UPDATE_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;
@@ -93,7 +93,7 @@ int32_t OrganizationCreateServlet::handle(chen::http::HttpRequest::ptr request, 
             rel->setUpdateTime(time(0));
 
             if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
-                result->setResult(500, "insert or update organization user rel fail");
+                result->setErrno(errcode::ORG_USER_REL_FAILED);
                 ERROR(logger) << "db error, errno=" << db->getErrno()
                     << " errstr=" << db->getErrStr();
                 break;

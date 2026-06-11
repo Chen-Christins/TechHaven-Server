@@ -24,11 +24,11 @@ int32_t AssignmentAdminListsServlet::handle(chen::http::HttpRequest::ptr request
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 

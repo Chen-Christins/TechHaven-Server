@@ -24,19 +24,19 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
         if (id) {
             auto info = TaskMgr::GetInstance()->get(id);
             if (!info || info->getIsDeleted()) {
-                result->setResult(404, "task not exist");
+                result->setErrno(errcode::TASK_NOT_FOUND);
                 break;
             }
             int64_t info_org_id = info->getOrgId();
             if (!is_platform_admin) {
                 auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
                 if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                    result->setResult(403, "Access Denied");
+                    result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
                 bool is_related = (uid == info->getCreatorId() || uid == info->getAssigneeId());
                 if (!permission::CanViewTask(rel->getRole(), is_related)) {
-                    result->setResult(403, "Access Denied");
+                    result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
             }

@@ -16,7 +16,7 @@ int32_t RdCheckAccessServlet::handle(chen::http::HttpRequest::ptr request, chen:
         int64_t current_uid = getUserId(request);
         data::UserInfo::ptr currentUser = UserMgr::GetInstance()->get(current_uid);
         if (!currentUser || currentUser->getState() != 1) {
-            result->setResult(410, "invalid user");
+            result->setErrno(errcode::RD_INVALID_USER);
             break;
         }
 
@@ -26,14 +26,14 @@ int32_t RdCheckAccessServlet::handle(chen::http::HttpRequest::ptr request, chen:
             target_uid = atol(uidParam.c_str());
             // 只有管理员可以查询其他用户的平台访问权限
             if (target_uid != current_uid && currentUser->getRole() != UserManager::Role::ADMIN) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         }
 
         data::UserInfo::ptr targetUser = UserMgr::GetInstance()->get(target_uid);
         if (!targetUser || targetUser->getState() != 1) {
-            result->setResult(200, "ok");
+            result->setErrno(errcode::SUCCESS);
             result->set("can_access", "0");
             result->set("reason", "user not found or disabled");
             break;
@@ -53,7 +53,7 @@ int32_t RdCheckAccessServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         bool canAccess = permission::CanAccessPlatform(system_role, highest_org_role);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("can_access", canAccess ? "1" : "0");
         if (!canAccess) {
             result->set("reason", "requires system admin or organization role >= reporter");

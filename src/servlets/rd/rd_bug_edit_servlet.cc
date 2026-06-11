@@ -21,13 +21,13 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-            result->setResult(403, "not a member of this organization");
+            result->setErrno(errcode::ORG_NOT_MEMBER);
             break;
         }
         int32_t org_role = rel->getRole();
@@ -37,16 +37,16 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         if (id) {
             info = BugMgr::GetInstance()->get(id);
             if (!info || info->getOrgId() != org_id) {
-                result->setResult(404, "bug not exist");
+                result->setErrno(errcode::BUG_NOT_FOUND);
                 break;
             }
             if (!permission::CanEditBug(org_role, uid, info->getCreatorId())) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         } else {
             if (!permission::CanCreateBug(org_role)) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             info.reset(new data::BugInfo);
@@ -120,11 +120,11 @@ int32_t RdBugEditServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
         if (data::BugInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update bug fail");
+            result->setErrno(errcode::RD_UPDATE_FAILED);
             break;
         }
         if (is_new) {

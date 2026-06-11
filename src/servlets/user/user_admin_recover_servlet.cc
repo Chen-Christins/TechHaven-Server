@@ -27,13 +27,13 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -49,7 +49,7 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
         auto db = getDB();
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -61,7 +61,7 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
 
             for (auto& i : infos) {
                 i->setIsDeleted(0);

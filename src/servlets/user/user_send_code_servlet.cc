@@ -24,24 +24,24 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
         DEFINE_AND_CHECK_STRING(result, agent, "agent");
 
         if (email.empty() && agent.empty()) {
-            result->setResult(400, "no param");
+            result->setErrno(errcode::PARAM_MISSING);
             break;
         }
 
         if (!IsEmail(email)) {
-            result->setResult(402, "invalid email format");
+            result->setErrno(errcode::USER_INVALID_EMAIL);
             break;
         }
 
         if (type == "1" && blog::UserMgr::GetInstance()->getByEmail(email)) {
-            result->setResult(401, "email exists");
+            result->setErrno(errcode::USER_EMAIL_EXISTS);
             break;
         }
 
         // 检查 SMTP 配置（在写 DB 之前校验，避免产生无效验证码）
         auto sys_settings = SystemSettingsMgr::GetInstance()->get();
         if (!sys_settings || sys_settings->getSmtpHost().empty()) {
-            result->setResult(501, "SMTP server not configured");
+            result->setErrno(errcode::SMTP_NOT_CONFIGURED);
             break;
         }
 
@@ -49,7 +49,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
         std::string code = chen::random_string(8);
         auto rpy = chen::RedisUtil::Cmd("blog", "SETEX email:verify:%s:%s 600 %s", type.c_str(), email.c_str(), code.c_str());
         if (!rpy) {
-            result->setResult(500, "redis setex fail");
+            result->setErrno(errcode::REDIS_OPERATION_FAILED);
             break;
         }
 
@@ -76,7 +76,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             }
         });
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

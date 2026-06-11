@@ -24,7 +24,7 @@ int32_t StatsServlet::handle(chen::http::HttpRequest::ptr request,
         result->set("today_visits", today_visits);
         result->set("total_visits", total_visits);
         result->set("total_visitors", total_visitors);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

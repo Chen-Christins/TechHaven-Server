@@ -13,13 +13,13 @@ int32_t NotificationReadAllServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         int64_t count = NotificationMgr::GetInstance()->markAllRead(uid);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("count", count);
     } while (0);
 

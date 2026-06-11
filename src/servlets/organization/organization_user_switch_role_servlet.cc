@@ -33,14 +33,14 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
         int32_t org_role = rel->getRole();
 
         if (!permission::CanSwitchRole(system_role, org_role, role)) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         // 更新用户角色
         rel = blog::OrganizationUserRelMgr::GetInstance()->get(id);
         if (!rel || rel->getOrgId() != org_id || rel->getUserId() != user_id) {
-            result->setResult(404, "invalid id");;
+            result->setErrno(errcode::ARTICLE_INVALID_ID);;
             break;
         }
 
@@ -49,7 +49,7 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
                 && role != OrganizationManager::Role::DEVELOPER
                 && role != OrganizationManager::Role::DEV_LEAD
                 && role != OrganizationManager::Role::ORG_ADMIN) {
-            result->setResult(400, "invalid role");
+            result->setErrno(errcode::PARAM_INVALID, "invalid role");
             break;
         }
 
@@ -58,12 +58,12 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
-            result->setResult(500, "insert or update organization user rel fail");
+            result->setErrno(errcode::ORG_USER_REL_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                           << ", errstr=" << db->getErrStr();
             break;

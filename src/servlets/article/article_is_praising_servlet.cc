@@ -15,7 +15,7 @@ int32_t ArticleIsPraisingServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -23,7 +23,7 @@ int32_t ArticleIsPraisingServlet::handle(chen::http::HttpRequest::ptr request,
 
         bool praising = ArticlePraiseRelMgr::GetInstance()->isPraising(uid, article_id);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("is_praising", praising);
     } while (0);
 

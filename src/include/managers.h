@@ -9,6 +9,7 @@
 #include "../manager/category_manager.h"                    // IWYU pragma: keep
 #include "../manager/chunk_upload_manager.h"                // IWYU pragma: keep
 #include "../manager/comment_manager.h"                     // IWYU pragma: keep
+#include "../manager/error_code_manager.h"                  // IWYU pragma: keep
 #include "../manager/comment_praise_rel_manager.h"          // IWYU pragma: keep
 #include "../manager/label_manager.h"                       // IWYU pragma: keep
 #include "../manager/notification_manager.h"                // IWYU pragma: keep

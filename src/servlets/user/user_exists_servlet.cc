@@ -22,10 +22,10 @@ int32_t UserExistsServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         } else if (IsValidAccount(auth_id)) {
             info = UserMgr::GetInstance()->getByAccount(auth_id);
         } else {
-            result->setResult(402, "invalid auth_id");
+            result->setErrno(errcode::AUTH_CODE_INVALID);
             break;
         }
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("is_exists", info ? "1" : "0");
     } while (0);
     response->setBody(result->toJsonString());

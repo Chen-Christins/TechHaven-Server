@@ -39,7 +39,7 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
         auto db = getDB();
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -50,7 +50,7 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
 
             for (auto& i : infos) {
                 i->setIsDeleted(0);

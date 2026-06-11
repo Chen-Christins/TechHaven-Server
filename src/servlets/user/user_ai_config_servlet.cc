@@ -19,7 +19,7 @@ int32_t UserAIConfigServlet::handle(chen::http::HttpRequest::ptr request, chen::
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -29,7 +29,7 @@ int32_t UserAIConfigServlet::handle(chen::http::HttpRequest::ptr request, chen::
             // 获取AI配置
             auto info = UserAIConfigMgr::GetInstance()->getByUserId(uid);
             if (!info) {
-                result->setResult(200, "ok");
+                result->setErrno(errcode::SUCCESS);
                 result->set("data", Json::Value::null);
                 break;
             }
@@ -38,7 +38,7 @@ int32_t UserAIConfigServlet::handle(chen::http::HttpRequest::ptr request, chen::
             std::string raw_key = DecryptApiKey(info->getApiKey());
             std::string masked_key = MaskApiKey(raw_key);
 
-            result->setResult(200, "ok");
+            result->setErrno(errcode::SUCCESS);
             result->set("type", info->getType());
             result->set("url", info->getUrl());
             result->set("api_key", masked_key);
@@ -52,14 +52,14 @@ int32_t UserAIConfigServlet::handle(chen::http::HttpRequest::ptr request, chen::
 
             // 校验type值
             if (type != "openai" && type != "claude") {
-                result->setResult(400, "type must be 'openai' or 'claude'");
+                result->setErrno(errcode::PARAM_INVALID, "type must be openai or claude");
                 break;
             }
 
             // claude类型必须提供max_tokens
             int32_t max_tokens = request->getParamAs<int32_t>("max_tokens", 0);
             if (type == "claude" && max_tokens <= 0) {
-                result->setResult(400, "param max_tokens is required for claude type");
+                result->setErrno(errcode::PARAM_MISSING, "max_tokens is required for claude");
                 break;
             }
 
@@ -83,11 +83,11 @@ int32_t UserAIConfigServlet::handle(chen::http::HttpRequest::ptr request, chen::
             }
 
             if (!UserAIConfigMgr::GetInstance()->save(info)) {
-                result->setResult(500, "save config fail");
+                result->setErrno(errcode::AI_CONFIG_SAVE_FAILED);
                 break;
             }
         } else {
-            result->setResult(405, "method not allowed");
+            result->setErrno(errcode::METHOD_NOT_ALLOWED);
         }
     } while (0);
     response->setBody(result->toJsonString());

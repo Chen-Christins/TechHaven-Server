@@ -28,16 +28,16 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         if (file_size > 96) {
-            result->setResult(400, "file_size exceed limit");
+            result->setErrno(errcode::ASSIGNMENT_SIZE_EXCEED);
             break;
         }
 
@@ -46,7 +46,7 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
         if (aid) {
             info = AssignmentMgr::GetInstance()->get(aid);
             if (!info) {
-                result->setResult(404, "assignment not exist");
+                result->setErrno(errcode::ASSIGNMENT_NOT_FOUND);
                 break;
             }
             info->setName(name);
@@ -74,12 +74,12 @@ int32_t AssignmentCreateServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::AssignmentInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update assignment fail");
+            result->setErrno(errcode::ASSIGNMENT_UPDATE_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

@@ -13,7 +13,7 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -58,7 +58,7 @@ int32_t NotificationListServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         int64_t total = NotificationMgr::GetInstance()->countByUser(uid, type);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("list", arr);
         result->set("total", total);
         result->set("offset", offset);

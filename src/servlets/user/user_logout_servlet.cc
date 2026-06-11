@@ -17,12 +17,12 @@ int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
     do {
         auto sdata = getSessionData(request, response);
         if (!sdata->getData<int64_t>(CookieKey::USER_ID)) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
 
         // 清除数据库中存储的 token，使其他设备登录失效
         auto uinfo = UserMgr::GetInstance()->get(uid);

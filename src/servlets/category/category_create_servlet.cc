@@ -26,7 +26,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -34,7 +34,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         if (parent_id) {
             parent_info = CategoryMgr::GetInstance()->get(parent_id);
             if (!parent_info) {
-                result->setResult(401, "invalid parent_id");
+                result->setErrno(errcode::PARAM_INVALID, "invalid parent_id");
                 break;
             }
         }
@@ -44,7 +44,7 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
         if (cid) {
             info = CategoryMgr::GetInstance()->get(cid);
             if (!info) {
-                result->setResult(401, "invalid cid");
+                result->setErrno(errcode::PARAM_INVALID, "invalid cid");
                 break;
             }
             info->setName(name);
@@ -70,12 +70,12 @@ int32_t CategoryCreateServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::CategoryInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update category fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "category operation failed");
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

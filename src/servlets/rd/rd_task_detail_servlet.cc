@@ -17,7 +17,7 @@ int32_t RdTaskDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         if (!id) {
-            result->setResult(400, "param id is required");
+            result->setErrno(errcode::PARAM_MISSING, "id is required");
             break;
         }
 
@@ -27,7 +27,7 @@ int32_t RdTaskDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::
 
         auto info = TaskMgr::GetInstance()->get(id);
         if (!info || info->getIsDeleted()) {
-            result->setResult(404, "task not exist");
+            result->setErrno(errcode::TASK_NOT_FOUND);
             break;
         }
 
@@ -35,12 +35,12 @@ int32_t RdTaskDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::
         if (!is_platform_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             bool is_related = (uid == info->getCreatorId() || uid == info->getAssigneeId());
             if (!permission::CanViewTask(rel->getRole(), is_related)) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         }

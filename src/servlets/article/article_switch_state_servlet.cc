@@ -22,23 +22,23 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto article = ArticleMgr::GetInstance()->get(id);
         if (!article) {
-            result->setResult(404, "article not found");
+            result->setErrno(errcode::ARTICLE_NOT_FOUND);
             break;
         }
 
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != UserManager::Role::ADMIN) {
             if (article->getUserId() != uid) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             } else if (new_state != ArticleManager::Status::PRIVATE) {
-                result->setResult(400, "invalid new_state");
+                result->setErrno(errcode::ARTICLE_INVALID_STATE);
                 break;
             }
         }
@@ -49,11 +49,11 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
         if (data::ArticleInfoDao::Update(article, db)) {
-            result->setResult(500, "update article fail");
+            result->setErrno(errcode::ARTICLE_UPDATE_FAILED);
             break;
         }
         ArticleMgr::GetInstance()->add(article);

@@ -26,14 +26,14 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
 
         if (state != OrganizationUserRelManager::Status::REJECTED
                 && state != OrganizationUserRelManager::Status::APPROVED) {
-            result->setResult(400, "invalid state");
+            result->setErrno(errcode::PARAM_INVALID, "invalid state");
             break;
         }
 
         auto user = blog::UserMgr::GetInstance()->get(user_id);
         auto org = blog::OrganizationMgr::GetInstance()->get(org_id);
         if (!user || !org) {
-            result->setResult(404, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 
@@ -45,18 +45,18 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
         int32_t org_role = rel->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         // update user organization relation
         rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, user_id);
         if (!rel) {
-            result->setResult(404, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
         if (rel->getStatus() != OrganizationUserRelManager::Status::PENDING) {
-            result->setResult(403, "invalid state");
+            result->setErrno(errcode::ORG_INVALID_STATE);
             break;
         }
         rel->setStatus(state);
@@ -64,12 +64,12 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
-            result->setResult(500, "insert or update organization user rel fail");
+            result->setErrno(errcode::ORG_USER_REL_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                           << ", errstr=" << db->getErrStr();
             break;
