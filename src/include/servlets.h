@@ -6,6 +6,7 @@
 #include "../servlets/article/admin_comment_stats_servlet.h"                // IWYU pragma: keep
 #include "../servlets/article/article_admin_lists_servlet.h"                // IWYU pragma: keep
 #include "../servlets/article/article_admin_stats_servlet.h"                // IWYU pragma: keep
+#include "../servlets/article/article_ai_summary_servlet.h"               // IWYU pragma: keep
 #include "../servlets/article/article_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_detail_servlet.h"                     // IWYU pragma: keep

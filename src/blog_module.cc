@@ -212,6 +212,7 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
         dp->addServlet("/api/v1/article/praise", XX(ArticlePraiseServlet));
         dp->addServlet("/api/v1/article/praise/list", XX(ArticlePraiseListServlet));
         dp->addServlet("/api/v1/article/view", XX(ArticleViewServlet));
+        dp->addServlet("/api/v1/article/ai-summary", XX(ArticleAISummaryServlet));
         // 文章评论相关
         dp->addServlet("/api/v1/article/comment/list", XX(CommentListServlet));
         dp->addServlet("/api/v1/article/comment/replies", XX(CommentRepliesServlet));
