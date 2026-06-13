@@ -4,6 +4,7 @@
 #include <chen/http/http_connection.h>
 #include <chen/http/session_data.h>
 #include <chen/ds/lru_cache.h>
+#include <chen/config/config.h>
 
 #include "../../ai/ai_provider.h"
 #include "../../ai/sse_stream_parser.h"
@@ -17,6 +18,14 @@ namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 static const char* SYSTEM_PROMPT = "你是一个专业的文章总结助手。";
+
+// 系统默认 AI 配置 — 作为用户未配置时的兜底
+static chen::ConfigVar<std::string>::ptr g_ai_type =
+    chen::Config::Lookup("ai.type", std::string(""), "default AI provider type");
+static chen::ConfigVar<std::string>::ptr g_ai_model =
+    chen::Config::Lookup("ai.model", std::string(""), "default AI model");
+static chen::ConfigVar<std::string>::ptr g_ai_api_key =
+    chen::Config::Lookup("ai.api_key", std::string(""), "default AI API key");
 
 // LRU 缓存：key=article_id，value=总结文本，16 桶，最多 500 条
 static chen::ds::HashLruCache<int64_t, std::string> s_summary_cache(16, 500, 50);
@@ -73,20 +82,41 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
 
     {
         auto config = UserAIConfigMgr::GetInstance()->getByUserId(uid);
-        if (!config) {
-            session->sendEvent(R"({"type":"error","message":"AI config not found"})");
-            return -1;
+        if (config) {
+            ai_type = config->getType();
+            ai_url  = config->getUrl();
+            ai_key  = DecryptApiKey(config->getApiKey());
+            ai_model = config->getModel();
+            ai_max_tokens = config->getMaxTokens();
+        } else {
+            // 用户未配置 AI，使用系统默认值
+            ai_type = g_ai_type->getValue();
+            ai_model = g_ai_model->getValue();
+            ai_key  = g_ai_api_key->getValue();
+            if (ai_type.empty() || ai_key.empty()) {
+                session->sendEvent(R"({"type":"error","message":"AI config not found"})");
+                return -1;
+            }
+            // 根据类型推导默认 base URL
+            if (ai_type == "claude") {
+                ai_url = "https://api.anthropic.com";
+            } else if (ai_type == "glm") {
+                ai_url = "https://open.bigmodel.cn";
+            } else {
+                ai_url = "https://api.openai.com";
+            }
         }
-        ai_type = config->getType();
-        ai_url  = config->getUrl();
-        ai_key  = DecryptApiKey(config->getApiKey());
-        ai_model = config->getModel();
-        ai_max_tokens = config->getMaxTokens();
         if (ai_max_tokens <= 0) {
             ai_max_tokens = 4096;
         }
         if (ai_model.empty()) {
-            ai_model = (ai_type == "claude") ? "claude-sonnet-4-6" : "gpt-4o";
+            if (ai_type == "claude") {
+                ai_model = "claude-sonnet-4-6";
+            } else if (ai_type == "glm") {
+                ai_model = "glm-4.7-flash";
+            } else {
+                ai_model = "gpt-4o";
+            }
         }
     }
 
@@ -148,7 +178,9 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         SendSSEJson(session, "start", "message", "开始生成总结...");
 
         ai::SSEStreamParser parser(session, provider);
-        auto callback = [&parser](const char* data, size_t len) {
+        std::string raw_body;  // 累积原始响应数据，用于错误日志
+        auto callback = [&parser, &raw_body](const char* data, size_t len) {
+            raw_body.append(data, len);
             return parser(data, len);
         };
 
@@ -169,7 +201,8 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
 
         int status = static_cast<int>(ai_response->getStatus());
         if (status != 200) {
-            ERROR(logger) << "AI service returned status " << status;
+            ERROR(logger) << "AI service returned status " << status
+                          << " body=" << raw_body;
             SendSSEJson(session, "error", "message", "AI service returned error");
             return -1;
         }

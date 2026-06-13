@@ -52,7 +52,7 @@ bool BlogModule::onServerReady() {
     // 初始化错误码管理器
     {
         std::string workPath = chen::Config::Lookup<std::string>("server.work_path")->getValue();
-        std::string errorsPath = workPath + "/bin/conf/errors.json";
+        std::string errorsPath = workPath + "/errors.json";
         if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
             ERROR(logger) << "Failed to load error codes from " << errorsPath;
             // 不阻止启动，使用空错误码表（兜底）

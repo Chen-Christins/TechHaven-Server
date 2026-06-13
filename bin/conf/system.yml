@@ -93,3 +93,9 @@ redis:
       pool: 1
       timeout: 100
   desc: "type: redis,redis_cluster,fox_redis,fox_redis_cluster"
+
+# system default ai model for article summmary
+ai:
+  type: glm
+  model: glm-4.7-flash
+  api_key: # system default AI API key, used when user has not configured their own AI settings

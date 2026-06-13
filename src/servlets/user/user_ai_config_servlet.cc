@@ -51,8 +51,8 @@ int32_t UserAIConfigServlet::handle(chen::http::HttpRequest::ptr request, chen::
             DEFINE_AND_CHECK_STRING(result, api_key, "api_key");
 
             // 校验type值
-            if (type != "openai" && type != "claude") {
-                result->setErrno(errcode::PARAM_INVALID, "type must be openai or claude");
+            if (type != "openai" && type != "claude" && type != "glm") {
+                result->setErrno(errcode::PARAM_INVALID, "type must be openai, claude or glm");
                 break;
             }
 
