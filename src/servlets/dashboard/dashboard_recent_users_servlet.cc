@@ -41,12 +41,12 @@ int32_t DashboardRecentUsersServlet::handle(chen::http::HttpRequest::ptr request
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -84,7 +84,7 @@ int32_t DashboardRecentUsersServlet::handle(chen::http::HttpRequest::ptr request
         }
 
         result->jsondata["list"] = list;
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

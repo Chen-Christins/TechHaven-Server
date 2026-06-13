@@ -25,12 +25,12 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         auto org = OrganizationMgr::GetInstance()->get(id);
         if (!org || org->getIsDeleted()) {
-            result->setResult(404, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 
         if (org->getStatus() == OrganizationManager::Status::INACTIVE) {
-            result->setResult(403, "organization is disabled");
+            result->setErrno(errcode::ORG_DISABLED);
             break;
         }
 
@@ -41,10 +41,10 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
             info->setUserId(uid);
             info->setCreateTime(time(0));
         } else if (info->getStatus() == OrganizationUserRelManager::Status::APPROVED) {
-            result->setResult(403, "you have joined this organization");
+            result->setErrno(errcode::ORG_ALREADY_JOINED);
             break;
         } else if (info->getStatus() == OrganizationUserRelManager::Status::PENDING) {
-            result->setResult(403, "you have applied to join this organization");
+            result->setErrno(errcode::ORG_ALREADY_APPLIED);
             break;
         }
         info->setRole(OrganizationManager::Role::MEMBER); // 普通成员
@@ -53,12 +53,12 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update organization fail");
+            result->setErrno(errcode::ORG_UPDATE_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

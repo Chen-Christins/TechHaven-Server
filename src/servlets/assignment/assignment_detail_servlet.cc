@@ -19,7 +19,7 @@ int32_t AssignmentDetailServlet::handle(chen::http::HttpRequest::ptr request, ch
         auto assignment = AssignmentMgr::GetInstance()->get(id);
 
         if (!assignment || assignment->getIsDeleted()) {
-            result->setResult(404, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 

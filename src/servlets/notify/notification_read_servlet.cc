@@ -15,7 +15,7 @@ int32_t NotificationReadServlet::handle(chen::http::HttpRequest::ptr request, ch
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -32,7 +32,7 @@ int32_t NotificationReadServlet::handle(chen::http::HttpRequest::ptr request, ch
         } else {
             int64_t single_id = request->getParamAs<int64_t>("id", 0);
             if (!single_id) {
-                result->setResult(400, "param id or ids is required");
+                result->setErrno(errcode::PARAM_MISSING, "id or ids is required");
                 break;
             }
             ids.push_back(single_id);
@@ -40,7 +40,7 @@ int32_t NotificationReadServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         NotificationMgr::GetInstance()->markRead(ids);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

@@ -21,13 +21,13 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
         if (uid != info->getUserId()) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
         int32_t state = info->getState();
@@ -43,11 +43,11 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
         if (data::ArticleInfoDao::Update(info, db)) {
-            result->setResult(500, "update article fail");
+            result->setErrno(errcode::ARTICLE_UPDATE_FAILED);
             ERROR(logger) << "db error errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

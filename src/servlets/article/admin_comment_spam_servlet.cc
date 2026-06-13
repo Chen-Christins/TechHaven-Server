@@ -18,12 +18,12 @@ int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, ch
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -47,7 +47,7 @@ int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, ch
         }
         result->set("ids", idList);
         result->set("affected", affected);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
 
         // Notify comment authors
         for (auto& cid : ids) {

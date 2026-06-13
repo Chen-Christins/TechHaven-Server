@@ -23,13 +23,13 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
 
         int64_t user_id = getUserId(request);
         if (!user_id) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto uinfo = UserMgr::GetInstance()->get(user_id);
         if (!uinfo) {
-            result->setResult(420, "user not exist");
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
 
@@ -44,12 +44,12 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::OrganizationApplyInfoDao::Insert(info, db)) {
-            result->setResult(500, "insert organization apply fail");
+            result->setErrno(errcode::ORG_APPLY_INSERT_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

@@ -29,13 +29,13 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
         // [0]:dir_name  [1]:biz_type|biz_id  [2...]:files
         if (data.size() < 3) {
-            result->setResult(400, "protocol error");
+            result->setErrno(errcode::FILE_PROTOCOL_ERROR);
             break;
         }
 
         auto biz_info = chen::split(data[1].content, "|");
         if (biz_info.size() != 2) {
-            result->setResult(400, "protocol error");
+            result->setErrno(errcode::FILE_PROTOCOL_ERROR);
             break;
         }
 
@@ -69,7 +69,7 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
 
             std::string path = "/uploads/" + dir_name + "/" + data[i].filename;
             if (!dumpToResource(biz_type, biz_id, path, hash_key, uid, size)) {
-                result->setResult(500, "Dump to resource fail");
+                result->setErrno(errcode::FILE_DUMP_FAILED);
                 break;
             }
         }
@@ -78,7 +78,7 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         auto db = getDB();
         if (!db) {
             ERROR(logger) << "Get SQLite3 connection fail";
-            result->setResult(500, "Get DB connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
         // 查找是否已存在该用户该作业的记录
@@ -93,14 +93,14 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             info->setUpdateTime(now);
             if (blog::data::AssignmentUserRelInfoDao::Update(info, db)) {
                 ERROR(logger) << "AssignmentUserRelInfo Update fail";
-                result->setResult(500, "Database error");
+                result->setErrno(errcode::DB_OPERATION_FAILED);
                 break;
             }
         } else {
             info->setCreateTime(now);
             if (blog::data::AssignmentUserRelInfoDao::Insert(info, db)) {
                 ERROR(logger) << "AssignmentUserRelInfo Insert fail";
-                result->setResult(500, "Database error");
+                result->setErrno(errcode::DB_OPERATION_FAILED);
                 break;
             }
         }

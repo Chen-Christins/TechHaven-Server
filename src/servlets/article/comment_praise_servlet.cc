@@ -18,7 +18,7 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -27,7 +27,7 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // check comment exists
         auto comment = CommentMgr::GetInstance()->get(comment_id);
         if (!comment || comment->getIsDeleted()) {
-            result->setResult(404, "comment not found");
+            result->setErrno(errcode::COMMENT_NOT_FOUND);
             break;
         }
 
@@ -36,7 +36,7 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
         if (already_praising) {
             // unlike
             if (!CommentPraiseRelMgr::GetInstance()->unpraise(uid, comment_id)) {
-                result->setResult(500, "unpraise failed");
+                result->setErrno(errcode::COMMENT_UNPRAISE_FAILED);
                 break;
             }
             result->set("is_praising", false);
@@ -44,7 +44,7 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
             // like
             auto info = CommentPraiseRelMgr::GetInstance()->praise(uid, comment_id);
             if (!info) {
-                result->setResult(500, "praise failed");
+                result->setErrno(errcode::COMMENT_PRAISE_FAILED);
                 break;
             }
             result->set("is_praising", true);
@@ -78,7 +78,7 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         int64_t praise_count = CommentPraiseRelMgr::GetInstance()->countByComment(comment_id);
         result->set("praise_count", praise_count);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

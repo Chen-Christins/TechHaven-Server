@@ -25,18 +25,18 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
         if (id) {
             auto info = RequirementMgr::GetInstance()->get(id);
             if (!info || info->getIsDeleted()) {
-                result->setResult(404, "requirement not exist");
+                result->setErrno(errcode::REQUIREMENT_NOT_FOUND);
                 break;
             }
             int64_t info_org_id = info->getOrgId();
             if (!is_platform_admin) {
                 auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
                 if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                    result->setResult(403, "Access Denied");
+                    result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
                 if (!permission::CanViewRequirement(rel->getRole(), uid, info->getCreatorId())) {
-                    result->setResult(403, "Access Denied");
+                    result->setErrno(errcode::ACCESS_DENIED);
                     break;
                 }
             }

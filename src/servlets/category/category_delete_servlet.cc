@@ -44,13 +44,13 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         std::vector<data::CategoryInfo::ptr> infos;
         CategoryMgr::GetInstance()->listAll(infos);
         if (infos.empty()) {
-            result->setResult(400, "no categories");
+            result->setErrno(errcode::PARAM_MISSING, "no categories");
             break;
         }
         std::map<int64_t, std::map<int64_t, data::CategoryInfo::ptr>> parent_map;
@@ -69,7 +69,7 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
         auto db = getDB();
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -80,7 +80,7 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
 
             for (auto& i : del_cats) {
                 i->setIsDeleted(0);

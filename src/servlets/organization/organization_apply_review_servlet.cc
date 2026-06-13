@@ -27,41 +27,41 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
         try {
             apply_id = std::stoll(apply_id_str);
         } catch (...) {
-            result->setResult(400, "invalid apply_id");
+            result->setErrno(errcode::PARAM_INVALID, "invalid apply_id");
             break;
         }
 
         if (action != "approve" && action != "reject") {
-            result->setResult(400, "action must be approve or reject");
+            result->setErrno(errcode::PARAM_INVALID, "action must be approve or reject");
             break;
         }
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         auto uinfo = UserMgr::GetInstance()->get(uid);
         if (!uinfo || uinfo->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto apply = OrganizationApplyMgr::GetInstance()->get(apply_id);
         if (!apply) {
-            result->setResult(404, "apply not exist");
+            result->setErrno(errcode::ORG_APPLY_NOT_FOUND);
             break;
         }
 
         if (apply->getStatus() != OrganizationApplyManager::Status::PENDING) {
-            result->setResult(400, "apply has already been reviewed");
+            result->setErrno(errcode::ORG_APPLY_ALREADY_REVIEWED);
             break;
         }
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
@@ -78,7 +78,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
             org->setUpdateTime(time(0));
 
             if (data::OrganizationInfoDao::Insert(org, db)) {
-                result->setResult(500, "insert organization fail");
+                result->setErrno(errcode::ORG_INSERT_FAILED);
                 ERROR(logger) << "db error, errno=" << db->getErrno()
                     << " errstr=" << db->getErrStr();
                 break;
@@ -96,7 +96,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
             rel->setUpdateTime(time(0));
 
             if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
-                result->setResult(500, "insert organization user rel fail");
+                result->setErrno(errcode::ORG_USER_REL_FAILED);
                 ERROR(logger) << "db error, errno=" << db->getErrno()
                     << " errstr=" << db->getErrStr();
                 break;
@@ -110,7 +110,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
             apply->setReviewedAt(time(0));
 
             if (data::OrganizationApplyInfoDao::Update(apply, db)) {
-                result->setResult(500, "update apply fail");
+                result->setErrno(errcode::ORG_APPLY_UPDATE_FAILED);
                 ERROR(logger) << "db error, errno=" << db->getErrno()
                     << " errstr=" << db->getErrStr();
                 break;
@@ -148,7 +148,7 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
             apply->setReviewedAt(time(0));
 
             if (data::OrganizationApplyInfoDao::Update(apply, db)) {
-                result->setResult(500, "update apply fail");
+                result->setErrno(errcode::ORG_APPLY_UPDATE_FAILED);
                 ERROR(logger) << "db error, errno=" << db->getErrno()
                     << " errstr=" << db->getErrStr();
                 break;

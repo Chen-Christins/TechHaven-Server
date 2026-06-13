@@ -26,12 +26,12 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         int64_t cur_uid = getUserId(request);
         if (!cur_uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
         if (!info) {
-            result->setResult(404, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
         int32_t state = info->getState();
@@ -39,18 +39,18 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         int32_t role = UserMgr::GetInstance()->get(cur_uid)->getRole();
         bool is_author = (cur_uid == info->getUserId());
         if (is_deleted) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
         if (state != ArticleManager::Status::PUBLISHED
                 && role != UserManager::Role::ADMIN
                 && !is_author) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
         int64_t uid = info->getUserId();
         if (type == 1 && cur_uid != uid) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
         auto author_info = UserMgr::GetInstance()->get(uid);

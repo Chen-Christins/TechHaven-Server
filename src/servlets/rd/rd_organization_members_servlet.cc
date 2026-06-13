@@ -18,7 +18,7 @@ int32_t RdOrganizationMembersServlet::handle(chen::http::HttpRequest::ptr reques
         int64_t uid = getUserId(request);
         auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
         if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-            result->setResult(403, "not a member of this organization");
+            result->setErrno(errcode::ORG_NOT_MEMBER);
             break;
         }
 

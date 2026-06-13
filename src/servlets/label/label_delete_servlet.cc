@@ -26,7 +26,7 @@ int32_t LabelDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         std::vector<data::LabelInfo::ptr> infos;
@@ -43,13 +43,13 @@ int32_t LabelDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -60,7 +60,7 @@ int32_t LabelDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
 
             for (auto& i : del_labels) {
                 i->setIsDeleted(0);

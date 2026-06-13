@@ -29,8 +29,8 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         DEFINE_AND_CHECK_TYPE(result, int64_t, id, "id");
-        DEFINE_AND_CHECK_STRING(result, idsStr, "ids");
         DEFINE_AND_CHECK_TYPE(result, int64_t, org_id, "org_id");
+        std::string idsStr = request->getParam("ids");
 
         std::set<int64_t> delIds;
         if (id) {
@@ -50,7 +50,7 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
         if (!is_platform_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             org_role = rel->getRole();
@@ -72,13 +72,13 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
 
@@ -92,7 +92,7 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
             for (auto& i : delItems) {
                 i->setIsDeleted(0);
             }
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
         }
 

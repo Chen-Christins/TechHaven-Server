@@ -17,7 +17,7 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         int64_t user_id = request->getParamAs<int64_t>("user_id");
         std::string ids = request->getParam("ids");
         if (user_id == 0 && ids.empty()) {
-            result->setResult(400, "get user_id and ids is null");
+            result->setErrno(errcode::PARAM_MISSING);
             break;
         }
 

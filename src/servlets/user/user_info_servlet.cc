@@ -18,7 +18,7 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
         auto sdata = getSessionData(request, response);
         int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -29,10 +29,10 @@ int32_t UserInfoServlet::handle(chen::http::HttpRequest::ptr request, chen::http
 
         data::UserInfo::ptr info = UserMgr::GetInstance()->get(uid);
         if (!info) {
-            result->setResult(403, "invalid account");
+            result->setErrno(errcode::ACCOUNT_INVALID);
             break;
         }
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("id", info->getId());
         result->set("name", info->getName());
         result->set("account", info->getAccount());

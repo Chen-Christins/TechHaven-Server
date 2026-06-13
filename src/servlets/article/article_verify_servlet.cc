@@ -25,29 +25,29 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // 传入参数state，决定文章的去留
         if (state != ArticleManager::Status::PUBLISHED
                 && state != ArticleManager::Status::REJECTED) {
-            result->setResult(401, "invalid state");
+            result->setErrno(errcode::ARTICLE_INVALID_STATE);
             break;
         }
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
         data::ArticleInfo::ptr info = ArticleMgr::GetInstance()->get(id);
         if (!info) {
-            result->setResult(401, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 
         if (info->getIsDeleted()) {
-            result->setResult(401, "invalid article");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 
         if (info->getState() != ArticleManager::Status::CHECKING) {
-            result->setResult(401, "invalid article state");
+            result->setErrno(errcode::ARTICLE_INVALID_STATE);
             break;
         }
 
@@ -64,7 +64,7 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         auto db = getDB();
         if (data::ArticleInfoDao::Update(info, db)) {
-            result->setResult(500, "update article fail");
+            result->setErrno(errcode::ARTICLE_UPDATE_FAILED);
             info->setState(ArticleManager::Status::CHECKING);
 
             ERROR(logger) << "db error errno=" << db->getErrno()

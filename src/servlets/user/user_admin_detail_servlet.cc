@@ -18,19 +18,19 @@ int32_t UserAdminDetailServlet::handle(chen::http::HttpRequest::ptr request, che
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto info = UserMgr::GetInstance()->get(user_id);
         if (!info) {
-            result->setResult(404, "user not found");
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
 

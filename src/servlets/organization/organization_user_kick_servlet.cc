@@ -32,14 +32,14 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
         int32_t org_role = rel->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         // 踢出用户
         rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, user_id);
         if (!rel) {
-            result->setResult(404, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 
@@ -48,12 +48,12 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
-            result->setResult(500, "insert or update organization user rel fail");
+            result->setErrno(errcode::ORG_USER_REL_FAILED);
             ERROR(logger) << "db error, errno=" << db->getErrno()
                           << ", errstr=" << db->getErrStr();
             break;

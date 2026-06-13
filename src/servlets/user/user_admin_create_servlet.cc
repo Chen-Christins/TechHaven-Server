@@ -23,52 +23,52 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (user_role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         if (account.empty() || passwd.empty()) {
-            result->setResult(400, "param account passwd empty");
+            result->setErrno(errcode::PARAM_MISSING, "account and password required");
             break;
         }
         if (passwd.length() < 6) {
-            result->setResult(400, "passwd must be at least 6 characters");
+            result->setErrno(errcode::USER_INVALID_PASSWORD);
             break;
         }
         if (blog::UserMgr::GetInstance()->getByAccount(account)) {
-            result->setResult(401, "account exists");
+            result->setErrno(errcode::USER_ACCOUNT_EXISTS);
             break;
         }
         if (blog::UserMgr::GetInstance()->getByEmail(email)) {
-            result->setResult(401, "email exists");
+            result->setErrno(errcode::USER_EMAIL_EXISTS);
             break;
         }
         if (!IsEmail(email)) {
-            result->setResult(402, "invalid email format");
+            result->setErrno(errcode::USER_INVALID_EMAIL);
             break;
         }
         if (!IsValidAccount(account)) {
-            result->setResult(402, "invalid account");
+            result->setErrno(errcode::USER_INVALID_ACCOUNT);
             break;
         }
         if (role < 1 || role > 4) {
-            result->setResult(400, "invalid role");
+            result->setErrno(errcode::PARAM_INVALID, "invalid role");
             break;
         }
         if (state < 1 || state > 2) {
-            result->setResult(400, "invalid state");
+            result->setErrno(errcode::PARAM_INVALID, "invalid state");
             break;
         }
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
         chen::ITransaction::ptr trans = db->openTransaction();
@@ -81,7 +81,7 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
         info->setName(account);
 
         if (data::UserInfoDao::Insert(info, db)) {
-            result->setResult(500, "insert user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");
             break;
         }
         trans->commit();

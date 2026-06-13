@@ -22,29 +22,29 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         if (passwd_f.empty() || passwd_s.empty()) {
-            result->setResult(400, "param passwd empty");
+            result->setErrno(errcode::PARAM_MISSING, "password required");
             break;
         }
 
         if (passwd_f != passwd_s) {
-            result->setResult(400, "the passwords is different");
+            result->setErrno(errcode::USER_PASSWORDS_DIFFER);
             break;
         }
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
 
@@ -53,7 +53,7 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
         info->setPasswd(chen::md5(passwd_s));
 
         if (data::UserInfoDao::Update(info, db)) {
-            result->setResult(500, "insert user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");
             break;
         }
         trans->commit();

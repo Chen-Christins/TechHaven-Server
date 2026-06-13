@@ -20,7 +20,7 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -29,7 +29,7 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
         // check article exists
         auto article = ArticleMgr::GetInstance()->get(article_id);
         if (!article || article->getIsDeleted()) {
-            result->setResult(404, "article not found");
+            result->setErrno(errcode::ARTICLE_NOT_FOUND);
             break;
         }
 
@@ -38,7 +38,7 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
         if (already_praising) {
             // unlike
             if (!ArticlePraiseRelMgr::GetInstance()->unpraise(uid, article_id)) {
-                result->setResult(500, "unpraise failed");
+                result->setErrno(errcode::ARTICLE_UNPRAISE_FAILED);
                 break;
             }
             ArticleMgr::GetInstance()->decPraiseCount(article_id);
@@ -47,7 +47,7 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
             // like
             auto info = ArticlePraiseRelMgr::GetInstance()->praise(uid, article_id);
             if (!info) {
-                result->setResult(500, "praise failed");
+                result->setErrno(errcode::ARTICLE_PRAISE_FAILED);
                 break;
             }
             ArticleMgr::GetInstance()->incPraiseCount(article_id);
@@ -83,7 +83,7 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         result->set("praise_count", (int64_t)article->getPraise());
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

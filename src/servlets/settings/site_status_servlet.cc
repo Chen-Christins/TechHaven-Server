@@ -15,7 +15,7 @@ int32_t SiteStatusServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
     do {
         auto settings = SystemSettingsMgr::GetInstance()->get();
         if (!settings) {
-            result->setResult(500, "system settings not loaded");
+            result->setErrno(errcode::SETTINGS_NOT_LOADED);
             break;
         }
         result->set("maintenanceMode", settings->getMaintenanceMode() ? true : false);

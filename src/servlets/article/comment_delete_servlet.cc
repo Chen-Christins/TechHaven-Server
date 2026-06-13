@@ -14,7 +14,7 @@ int32_t CommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
     do {
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(410, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -22,22 +22,22 @@ int32_t CommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         auto comment = CommentMgr::GetInstance()->get(id);
         if (!comment || comment->getIsDeleted()) {
-            result->setResult(404, "comment not found");
+            result->setErrno(errcode::COMMENT_NOT_FOUND);
             break;
         }
 
         // only the comment author can delete
         if (comment->getUserId() != uid) {
-            result->setResult(403, "permission denied");
+            result->setErrno(errcode::COMMENT_PERMISSION_DENIED);
             break;
         }
 
         if (!CommentMgr::GetInstance()->del(id)) {
-            result->setResult(500, "delete comment failed");
+            result->setErrno(errcode::COMMENT_DELETE_FAILED);
             break;
         }
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

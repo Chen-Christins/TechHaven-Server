@@ -17,7 +17,7 @@ int32_t RdBugDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::h
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         if (!id) {
-            result->setResult(400, "param id is required");
+            result->setErrno(errcode::PARAM_MISSING, "id is required");
             break;
         }
 
@@ -27,7 +27,7 @@ int32_t RdBugDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         auto info = BugMgr::GetInstance()->get(id);
         if (!info || info->getIsDeleted()) {
-            result->setResult(404, "bug not exist");
+            result->setErrno(errcode::BUG_NOT_FOUND);
             break;
         }
 
@@ -35,11 +35,11 @@ int32_t RdBugDetailServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         if (!is_platform_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             if (!permission::CanViewBug(rel->getRole(), uid, info->getCreatorId())) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         }

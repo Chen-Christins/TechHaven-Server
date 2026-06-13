@@ -24,30 +24,30 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         DEFINE_AND_CHECK_STRING(result, auth_code, "auth_code");
 
         if (account.empty() || passwd.empty()) {
-            result->setResult(400, "param account passwd empty");
+            result->setErrno(errcode::PARAM_MISSING, "account and password required");
             break;
         }
 
         if (blog::UserMgr::GetInstance()->getByAccount(account)) {
-            result->setResult(401, "account exists");
+            result->setErrno(errcode::USER_ACCOUNT_EXISTS);
             break;
         }
         if (blog::UserMgr::GetInstance()->getByEmail(email)) {
-            result->setResult(401, "email exists");
+            result->setErrno(errcode::USER_EMAIL_EXISTS);
             break;
         }
         if (!IsEmail(email)) {
-            result->setResult(402, "invalid email format");
+            result->setErrno(errcode::USER_INVALID_EMAIL);
             break;
         }
         if (!IsValidAccount(account)) {
-            result->setResult(402, "invalid account");
+            result->setErrno(errcode::USER_INVALID_ACCOUNT);
             break;
         }
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db connection fail");
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
             break;
         }
 
@@ -59,7 +59,7 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         }
         if (require_verification) {
             if (!verificationEmailCode(email, auth_code)) {
-                result->setResult(403, "invalid auth_code");
+                result->setErrno(errcode::AUTH_CODE_INVALID);
                 break;
             }
         }
@@ -74,7 +74,7 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         info->setName(account);
 
         if (data::UserInfoDao::Insert(info, db)) {
-            result->setResult(500, "insert user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");
             break;
         }
         trans->commit();

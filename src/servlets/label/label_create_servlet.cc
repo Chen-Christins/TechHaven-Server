@@ -22,7 +22,7 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
 
@@ -31,11 +31,11 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         if (lid) {
             info = LabelMgr::GetInstance()->get(lid);
             if (!info) {
-                result->setResult(401, "invalid lid");
+                result->setErrno(errcode::PARAM_INVALID, "invalid lid");
                 break;
             }
             if (info->getUserId() != uid) {
-                result->setResult(402, "no permission");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             info->setName(name);
@@ -58,12 +58,12 @@ int32_t LabelCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         if (data::LabelInfoDao::InsertOrUpdate(info, db)) {
-            result->setResult(500, "insert or update label fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "label operation failed");
             ERROR(logger) << "db error, errno=" << db->getErrno()
                 << " errstr=" << db->getErrStr();
             break;

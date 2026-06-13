@@ -24,7 +24,7 @@ int32_t CommentRepliesServlet::handle(chen::http::HttpRequest::ptr request, chen
         // check parent comment exists
         auto parent = CommentMgr::GetInstance()->get(comment_id);
         if (!parent || parent->getIsDeleted()) {
-            result->setResult(404, "comment not found");
+            result->setErrno(errcode::COMMENT_NOT_FOUND);
             break;
         }
 
@@ -65,7 +65,7 @@ int32_t CommentRepliesServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         result->set("total", total);
         result->set("list", list);
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

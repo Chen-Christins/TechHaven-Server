@@ -25,7 +25,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
         int64_t uid = getUserId(request);
         data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
         if (!uinfo || uinfo->getRole() != UserManager::ADMIN) {
-            result->setResult(403, "permission denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
@@ -35,11 +35,11 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
         DEFINE_AND_CHECK_STRING(result, target, "target");
 
         if (title.size() > 100) {
-            result->setResult(400, "title too long (max 100)");
+            result->setErrno(errcode::NOTIFICATION_TITLE_TOO_LONG);
             break;
         }
         if (content.size() > 2000) {
-            result->setResult(400, "content too long (max 2000)");
+            result->setErrno(errcode::NOTIFICATION_CONTENT_TOO_LONG);
             break;
         }
 
@@ -80,7 +80,7 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
         } else if (target == "users") {
             std::string user_ids_str = request->getParam("user_ids");
             if (user_ids_str.empty()) {
-                result->setResult(400, "user_ids required when target=users");
+                result->setErrno(errcode::NOTIFICATION_USERS_REQUIRED);
                 break;
             }
 
@@ -102,11 +102,11 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             INFO(logger) << "[NOTIFY] send to users: count=" << ids.size()
                 << " sent=" << sent << " type=" << type << " title=" << title;
         } else {
-            result->setResult(400, "invalid target, must be 'all' or 'users'");
+            result->setErrno(errcode::NOTIFICATION_INVALID_TARGET);
             break;
         }
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
     } while (0);
 
     response->setBody(result->toJsonString());

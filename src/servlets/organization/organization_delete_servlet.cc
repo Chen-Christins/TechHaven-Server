@@ -29,11 +29,11 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
         std::vector<data::OrganizationInfo::ptr> infos;
@@ -48,7 +48,7 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
             }
         }
         if (del_organizations.empty()) {
-            result->setResult(404, "no valid organizations found");
+            result->setErrno(errcode::ORG_NO_VALID_ORGS);
             break;
         }
 
@@ -64,13 +64,13 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -86,7 +86,7 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
 
             for (auto& i : del_organizations) {
                 i->setIsDeleted(0);

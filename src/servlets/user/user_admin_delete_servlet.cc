@@ -20,30 +20,30 @@ int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, che
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
 
         if (role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto info = UserMgr::GetInstance()->get(user_id);
         if (!info) {
-            result->setResult(404, "user not found");
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
         if (info->getIsDeleted()) {
-            result->setResult(400, "user already deleted");
+            result->setErrno(errcode::USER_ALREADY_DELETED);
             break;
         }
 
         auto db = getDB();
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -52,13 +52,13 @@ int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, che
         info->setUpdateTime(now);
         if (data::UserInfoDao::Update(info, db)) {
             ERROR(logger) << "update user fail";
-            result->setResult(500, "delete user fail");
+            result->setErrno(errcode::DB_OPERATION_FAILED, "delete user failed");
             break;
         }
         if (!trans->commit()) {
             ERROR(logger) << "commit fail";
             info->setIsDeleted(0);
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
         }
         result->set("user_id", user_id);

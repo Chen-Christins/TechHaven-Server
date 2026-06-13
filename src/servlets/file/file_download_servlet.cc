@@ -60,32 +60,32 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         // 安全处理文件名
         std::string safe_file_name = SanitizeFileName(fileName);
         if (safe_file_name.empty()) {
-            result->setResult(400, "Invalid file name");
+            result->setErrno(errcode::FILE_INVALID_NAME);
             break;
         }
 
         auto res_info = ResourceMgr::GetInstance()->getByPath(url);
         if (!res_info) {
-            result->setResult(404, "resource not found");
+            result->setErrno(errcode::FILE_NOT_FOUND);
             break;
         }
 
         // 验证路径安全性
         if (!IsPathSafe(res_info->getPath())) {
-            result->setResult(400, "Invalid file path");
+            result->setErrno(errcode::FILE_INVALID_PATH);
             break;
         }
 
         // 检查文件大小限制
         if (res_info->getSize() > MAX_FILE_SIZE) {
-            result->setResult(413, "File too large");
+            result->setErrno(errcode::FILE_TOO_LARGE);
             break;
         }
 
         int64_t uid = getUserId(request);
         int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
         if (!checkPermission(system_role) || res_info->getOwnerId() != uid) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
         INFO(logger) << "File download: " << res_info->getPath();
@@ -105,7 +105,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         // 使用流式读取，避免内存问题
         std::ifstream ifs(filepath, std::ios::binary);
         if (!ifs) {
-            result->setResult(404, "file not found");
+            result->setErrno(errcode::FILE_NOT_FOUND);
             break;
         }
 
@@ -128,7 +128,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
             }
 
             if (ifs.bad()) {
-                result->setResult(500, "file read error");
+                result->setErrno(errcode::FILE_READ_ERROR);
                 break;
             }
 
@@ -147,7 +147,7 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
             }
 
             if (ifs.bad()) {
-                result->setResult(500, "file read error");
+                result->setErrno(errcode::FILE_READ_ERROR);
                 break;
             }
 

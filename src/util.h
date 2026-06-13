@@ -13,6 +13,8 @@
 
 #include <regex>
 
+#include "error_codes.h"
+
 namespace blog {
 
 chen::IDB::ptr GetDB();
@@ -97,7 +99,7 @@ inline void SendWX(const std::string& group, const std::string& msg) {
 #define DEFINE_AND_CHECK_STRING(result, var, param)         \
     std::string var = request->getParam(param);             \
     if (var.empty()) {                                      \
-        result->setResult(400, "param " param " is null" ); \
+        result->setErrno(errcode::PARAM_MISSING, "param " param " is required"); \
         break;                                              \
     }
 
@@ -107,7 +109,7 @@ inline void SendWX(const std::string& group, const std::string& msg) {
 #define DEFINE_AND_CHECK_TYPE(result, type, var, param)    \
     type var;                                              \
     if (!request->checkGetParamAs(param, var)) {           \
-        result->setResult(400, "param " param " is null"); \
+        result->setErrno(errcode::PARAM_MISSING, "param " param " is required"); \
         break;                                             \
     }
 

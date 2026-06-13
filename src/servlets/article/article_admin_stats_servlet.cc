@@ -19,18 +19,18 @@ int32_t ArticleAdminStatsServlet::handle(chen::http::HttpRequest::ptr request, c
 
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(401, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
         if (user_role != UserManager::Role::ADMIN) {
-            result->setResult(403, "Access Denied");
+            result->setErrno(errcode::ACCESS_DENIED);
             break;
         }
 
         auto stats = ArticleMgr::GetInstance()->getStats(category, role, days, keyword);
 
-        result->setResult(200, "ok");
+        result->setErrno(errcode::SUCCESS);
         result->set("total_articles", stats.total);
         result->set("pending_articles", stats.pending);
         result->set("published_articles", stats.published);

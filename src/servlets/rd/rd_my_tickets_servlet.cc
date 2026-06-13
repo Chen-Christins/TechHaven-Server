@@ -17,7 +17,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         int64_t uid = getUserId(request);
         std::string type = request->getParam("type");
         if (type.empty()) {
-            result->setResult(400, "param type is required");
+            result->setErrno(errcode::PARAM_MISSING, "type is required");
             break;
         }
 
@@ -168,7 +168,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
                 arr.append(item);
             }
         } else {
-            result->setResult(400, "invalid type");
+            result->setErrno(errcode::RD_INVALID_TYPE);
             break;
         }
 

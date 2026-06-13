@@ -22,22 +22,22 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
         std::string dels = request->getParam("del_category_ids");
 
         if (adds.empty() && dels.empty()) {
-            result->setResult(400, "add_category_ids and del_category_ids is null");
+            result->setErrno(errcode::ARTICLE_CATEGORY_EMPTY);
             break;
         }
 
         auto ainfo = ArticleMgr::GetInstance()->get(id);
         if (!ainfo) {
-            result->setResult(401, "invalid id");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
         int64_t uid = getUserId(request);
         if (!uid) {
-            result->setResult(500, "not login");
+            result->setErrno(errcode::NOT_LOGIN);
             break;
         }
         if (ainfo->getUserId() != uid) {
-            result->setResult(401, "invalid article");
+            result->setErrno(errcode::ARTICLE_INVALID_ID);
             break;
         }
 
@@ -48,13 +48,13 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
 
@@ -124,7 +124,7 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
             for (auto& i : update_del_infos) {
                 i->setIsDeleted(0);
             }
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
         }
 

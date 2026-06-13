@@ -17,7 +17,7 @@ int32_t RdRequirementDetailServlet::handle(chen::http::HttpRequest::ptr request,
     do {
         int64_t id = request->getParamAs<int64_t>("id", 0);
         if (!id) {
-            result->setResult(400, "param id is required");
+            result->setErrno(errcode::PARAM_MISSING, "id is required");
             break;
         }
 
@@ -27,7 +27,7 @@ int32_t RdRequirementDetailServlet::handle(chen::http::HttpRequest::ptr request,
 
         auto info = RequirementMgr::GetInstance()->get(id);
         if (!info || info->getIsDeleted()) {
-            result->setResult(404, "requirement not exist");
+            result->setErrno(errcode::REQUIREMENT_NOT_FOUND);
             break;
         }
 
@@ -35,11 +35,11 @@ int32_t RdRequirementDetailServlet::handle(chen::http::HttpRequest::ptr request,
         if (!is_platform_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(info_org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             if (!permission::CanViewRequirement(rel->getRole(), uid, info->getCreatorId())) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         }

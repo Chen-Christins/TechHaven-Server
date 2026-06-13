@@ -38,7 +38,7 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         if (!is_platform_admin) {
             auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
             if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
             org_role = rel->getRole();
@@ -59,12 +59,12 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
 
         auto db = getDB();
         if (!db) {
-            result->setResult(500, "get db error");
+            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
         auto trans = db->openTransaction();
         if (!trans) {
-            result->setResult(500, "open transaction fail");
+            result->setErrno(errcode::DB_TRANSACTION_FAILED);
             break;
         }
         time_t now = time(0);
@@ -77,7 +77,7 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
             for (auto& i : delItems) {
                 i->setIsDeleted(0);
             }
-            result->setResult(500, "commit fail");
+            result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
         }
         if (!delItems.empty()) {

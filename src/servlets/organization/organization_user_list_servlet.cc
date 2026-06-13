@@ -28,7 +28,7 @@ int32_t OrganizationUserListServlet::handle(chen::http::HttpRequest::ptr request
             if (info->getRole() != OrganizationManager::Role::ORG_ADMIN
                     && info->getRole() != OrganizationManager::Role::DEV_LEAD
                     && UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
-                result->setResult(403, "Access Denied");
+                result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }
         }
