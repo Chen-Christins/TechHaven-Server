@@ -201,8 +201,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
 
         int status = static_cast<int>(ai_response->getStatus());
         if (status != 200) {
-            ERROR(logger) << "AI service returned status " << status
-                          << " body=" << raw_body;
+            ERROR(logger) << "AI service returned status " << status << " body=" << raw_body;
             SendSSEJson(session, "error", "message", "AI service returned error");
             return -1;
         }

@@ -31,7 +31,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         } else if (IsValidAccount(auth_id)) {
             info = UserMgr::GetInstance()->getByAccount(auth_id);
         } else {
-            result->setErrno(errcode::AUTH_CODE_INVALID);
+            result->setErrno(errcode::USER_INVALID_ACCOUNT);
             break;
         }
 
