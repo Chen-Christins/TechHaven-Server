@@ -9,7 +9,7 @@
  *   XX  = 模块号 (00=成功, 01=通用, 02=用户, 03=文章, ...)
  *   YYY = 模块内错误序号 (001-999)
  *
- * 与 bin/conf/errors.json 保持同步
+ * 与 errors.json 保持同步
  */
 #ifndef __BLOG_ERROR_CODES_H__
 #define __BLOG_ERROR_CODES_H__

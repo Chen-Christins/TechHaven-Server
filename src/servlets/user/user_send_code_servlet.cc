@@ -46,7 +46,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         // 生成验证码并写入 Redis，10分钟过期
-        std::string code = chen::random_string(8);
+        std::string code = chen::RandomUtil::RandString(6);
         auto rpy = chen::RedisUtil::Cmd("blog", "SETEX email:verify:%s:%s 600 %s", type.c_str(), email.c_str(), code.c_str());
         if (!rpy) {
             result->setErrno(errcode::REDIS_OPERATION_FAILED);
