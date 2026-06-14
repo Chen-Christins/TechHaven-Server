@@ -1,6 +1,5 @@
 #include "chunk_upload.h"
 
-#include <chen/iomanager/iomanager.h>
 #include <chen/log/log.h>
 #include <chen/util/util.h>
 
@@ -26,11 +25,6 @@ ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upl
 
     m_sessions[upload_id] = session;
 
-    // 首次创建时启动过期清理定时器
-    if (!m_cleanup_timer) {
-        startCleanupTimer();
-    }
-
     return session;
 }
 
@@ -46,11 +40,6 @@ ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload
 void ChunkUploadManager::removeSession(const std::string& upload_id) {
     std::lock_guard<std::shared_mutex> lock(m_mtx);
     m_sessions.erase(upload_id);
-}
-
-void ChunkUploadManager::startCleanupTimer() {
-    m_cleanup_timer = chen::IOManager::GetThis()->addTimer(60 * 1000
-        , [this]() { cleanupExpiredSessions(); }, true);
 }
 
 void ChunkUploadManager::cleanupExpiredSessions() {

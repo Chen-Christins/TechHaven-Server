@@ -34,6 +34,17 @@ public:
     bool onUnload() override;
 
     /**
+     * @brief 定时器回调
+     */
+    void onTick() override;
+
+    /**
+     * @brief 设置定时器间隔
+     * @return uint64_t 
+     */
+    uint64_t getTickIntervalMs() override;
+
+    /**
      * @brief 服务器就绪
      * @return bool
      */
@@ -55,12 +66,28 @@ private:
     /**
      * @brief 注册Servlet
      */
-    void registerServlets(std::vector<chen::TcpServer::ptr>& servers);
+    void registerServlets();
 
     /**
      * @brief 注册WebSocket Servlet
      */
-    void registerWSServlets(std::vector<chen::TcpServer::ptr>& servers);
+    void registerWSServlets();
+
+    /**
+     * @brief 清空所有已注册的 HTTP Servlet 路由
+     */
+    void unregisterServlets();
+
+    /**
+     * @brief 清空所有已注册的 WebSocket Servlet 路由
+     */
+    void unregisterWSServlets();
+
+private:
+    /// 持有的 HTTP Server 列表（用于 onUnload 中注销 Servlet）
+    std::vector<chen::TcpServer::ptr> m_httpServers;
+    /// 持有的 WebSocket Server 列表（用于 onUnload 中注销 WS Servlet）
+    std::vector<chen::TcpServer::ptr> m_wsServers;
 };
 
 }

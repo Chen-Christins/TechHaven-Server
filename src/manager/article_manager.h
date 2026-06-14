@@ -4,9 +4,7 @@
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
 #include <chen/singleton.h>
-#include <chen/timer/timer.h>   
 #include <map>
-#include <mutex>
 #include <set>
 #include <shared_mutex>
 
@@ -50,6 +48,16 @@ public:
     void start();
     void stop();
 
+    /**
+     * @brief 定时发布已到发布时间的文章（由 BlogModule::onTick 调用）
+     */
+    void onTimer();
+
+    /**
+     * @brief 定时 flush 脏数据（浏览/点赞/收藏数）到数据库（由 BlogModule::onTick 调用）
+     */
+    void onUpdateTimer();
+
     bool incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id);
     bool incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id);
     bool incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id);
@@ -78,16 +86,12 @@ public:
     int64_t getTotalVisitors();
 
 private:
-    void onTimer();
-    void onUpdateTimer();
     bool addViews(uint64_t id, const std::string& cookie_id);
     void addUpdate(int64_t id);
 
     static data::ArticleInfo::ptr parseRow(chen::ISQLData::ptr rt);
 
 private:
-    /// 定时器锁
-    std::mutex m_mutex;
     /// 文章浏览数锁
     std::shared_mutex m_viewsMutex;
     /// LRU 文章缓存（最多 1000 条）
@@ -96,10 +100,6 @@ private:
     std::map<int64_t, std::map<std::string, int64_t>> m_viewsCache;
     /// 待更新到 DB 的文章 ID 集合
     std::set<int64_t> m_updates;
-    /// 定时发布文章定时器
-    chen::Timer::ptr m_timer;
-    /// 定时 flush 脏数据定时器
-    chen::Timer::ptr m_updateTimer;
 };
 
 typedef chen::Singleton<ArticleManager> ArticleMgr;
