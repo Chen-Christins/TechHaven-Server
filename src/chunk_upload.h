@@ -16,7 +16,6 @@
 #include <vector>
 
 #include <chen/singleton.h>
-#include <chen/timer/timer.h>
 
 /**
  * @brief 管理每个上传会话的状态
@@ -85,12 +84,7 @@ public:
     void removeSession(const std::string& upload_id);
 
     /**
-     * @brief 启动过期会话清理定时器（首次 createSession 时自动调用）
-     */
-    void startCleanupTimer();
-
-    /**
-     * @brief 清理所有过期会话及其临时文件
+     * @brief 清理所有过期会话及其临时文件（由 BlogModule::onTick 调用）
      */
     void cleanupExpiredSessions();
 private:
@@ -98,8 +92,6 @@ private:
     std::unordered_map<std::string, ChunkUploadSession::ptr> m_sessions;
     // 保护 m_sessions 的读写锁
     std::shared_mutex m_mtx;
-    // 过期清理定时器
-    chen::Timer::ptr m_cleanup_timer;
     // 会话 TTL（秒），默认 30 分钟
     static constexpr time_t k_session_ttl = 30 * 60;
 };

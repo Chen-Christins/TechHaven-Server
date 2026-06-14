@@ -536,26 +536,11 @@ std::string ArticleManager::statusString() {
 }
 
 void ArticleManager::start() {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    if (m_timer) {
-        return;
-    }
-    m_timer = chen::IOManager::GetThis()->addTimer(60 * 1000
-            ,std::bind(&ArticleManager::onTimer, this), true);
-    m_updateTimer = chen::IOManager::GetThis()->addTimer(60 * 1000
-            ,std::bind(&ArticleManager::onUpdateTimer, this), true);
+    // 定时任务已迁移至 BlogModule::onTick() 统一调度
 }
 
 void ArticleManager::stop() {
-    std::unique_lock<std::mutex> lock(m_mutex);
-    if (!m_timer) {
-        return;
-    }
-    m_timer->cancel();
-    m_timer = nullptr;
-
-    m_updateTimer->cancel();
-    m_updateTimer = nullptr;
+    // 定时任务已迁移至 BlogModule::onTick() 统一调度
 }
 
 bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id) {

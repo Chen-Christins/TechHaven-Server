@@ -16,6 +16,7 @@
 #include "./include/tables.h"
 #include "./include/managers.h"
 #include "./include/servlets.h"
+#include "./chunk_upload.h"
 
 namespace blog {
 
@@ -24,7 +25,7 @@ static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
 BlogModule::BlogModule()
-    :chen::Module("Blog", "1.0", "") {
+    :chen::Module("Blog", "1.0", "blog_module") {
 }
 
 bool BlogModule::onLoad() {
@@ -36,7 +37,25 @@ bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
     ArticleMgr::GetInstance()->stop();
     NotificationMgr::GetInstance()->closeAllConnections();
+    unregisterWSServlets();
+    unregisterServlets();
     return true;
+}
+
+void BlogModule::onTick() {
+    // 1. 定时发布已到发布时间的文章
+    ArticleMgr::GetInstance()->onTimer();
+
+    // 2. 定时 flush 脏数据（浏览/点赞/收藏数）到数据库
+    ArticleMgr::GetInstance()->onUpdateTimer();
+
+    // 3. 清理过期的分块上传会话及临时文件
+    ::ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
+}
+
+uint64_t BlogModule::getTickIntervalMs() {
+    // 设置定时器间隔为1分钟
+    return 60 * 1000;
 }
 
 bool BlogModule::onServerReady() {
@@ -59,17 +78,14 @@ bool BlogModule::onServerReady() {
         }
     }
 
-    std::vector<chen::TcpServer::ptr> servers;
-    if (chen::Application::GetInstance()->getServer("http", servers)) {
-        registerServlets(servers);
-    } else {
+    if (!chen::Application::GetInstance()->getServer("http", m_httpServers)) {
         ERROR(logger) << "http_server not open";
         return false;
     }
+    registerServlets();
 
-    std::vector<chen::TcpServer::ptr> wsservers;
-    if (chen::Application::GetInstance()->getServer("ws", wsservers)) {
-        registerWSServlets(wsservers);
+    if (chen::Application::GetInstance()->getServer("ws", m_wsServers)) {
+        registerWSServlets();
     } else {
         INFO(logger) << "ws_server not open, skip WebSocket servlets";
     }
@@ -162,10 +178,10 @@ bool BlogModule::initMySQL() {
     return true;
 }
 
-void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
+void BlogModule::registerServlets() {
     INFO(logger) << "registerServlets";
 
-    for (auto& i : servers) {
+    for (auto& i : m_httpServers) {
         auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         auto dp = hs->getServletDispatch();
 
@@ -317,10 +333,10 @@ void BlogModule::registerServlets(std::vector<chen::TcpServer::ptr>& servers) {
 
 }
 
-void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) {
+void BlogModule::registerWSServlets() {
     INFO(logger) << "registerWSServlets";
 
-    for (auto& i : servers) {
+    for (auto& i : m_wsServers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
         ASSERT(ws);
 
@@ -333,6 +349,26 @@ void BlogModule::registerWSServlets(std::vector<chen::TcpServer::ptr>& servers) 
         servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
         dp->addServlet("/ws/v1/presence", presence_servlet);
     }
+}
+
+void BlogModule::unregisterServlets() {
+    for (auto& s : m_httpServers) {
+        auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(s);
+        if (hs) {
+            hs->getServletDispatch()->clear();
+        }
+    }
+    m_httpServers.clear();
+}
+
+void BlogModule::unregisterWSServlets() {
+    for (auto& s : m_wsServers) {
+        auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(s);
+        if (ws) {
+            ws->getWSServletDispatch()->clear();
+        }
+    }
+    m_wsServers.clear();
 }
 
 }
