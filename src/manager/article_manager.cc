@@ -894,21 +894,17 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     }
 
     // 缓存未命中：查数据库
-    // 计算该月起始和结束的时间戳
-    struct tm tm_begin = {};
-    tm_begin.tm_year = year - 1900;
-    tm_begin.tm_mon = month - 1;
-    tm_begin.tm_mday = 1;
-    tm_begin.tm_hour = 0;
-    tm_begin.tm_min = 0;
-    tm_begin.tm_sec = 0;
-    tm_begin.tm_isdst = -1;
-    time_t start_ts = mktime(&tm_begin);
-
-    struct tm tm_end = tm_begin;
-    tm_end.tm_mon = month;  // 下个月（month 是 0-based，month=12 会自动滚到次年1月）
-    tm_end.tm_isdst = -1;
-    time_t end_ts = mktime(&tm_end);
+    // 直接用日期字符串比较，避免 mktime/localtime_r 与 MySQL UNIX_TIMESTAMP() 之间
+    // 的时区不一致问题（前者用服务器本地时区，后者用 MySQL session 时区）
+    char start_str[20], end_str[20];
+    snprintf(start_str, sizeof(start_str), "%04d-%02d-01 00:00:00", year, month);
+    int next_month = month + 1;
+    int next_year = year;
+    if (next_month > 12) {
+        next_month = 1;
+        next_year++;
+    }
+    snprintf(end_str, sizeof(end_str), "%04d-%02d-01 00:00:00", next_year, next_month);
 
     auto db = GetDB();
     if (!db) {
@@ -917,13 +913,13 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     }
 
     auto qb = chen::QueryBuilder::Create("article");
-    qb->select("UNIX_TIMESTAMP(publish_time)");
+    qb->select("DISTINCT DAY(publish_time) as d");
     qb->where("user_id", "=", user_id);
     qb->where("state", "=", (int64_t)Status::PUBLISHED);
     qb->where("is_deleted", "=", (int64_t)0);
-    qb->whereSQL("UNIX_TIMESTAMP(publish_time) >= ?", (int64_t)start_ts);
-    qb->whereSQL("UNIX_TIMESTAMP(publish_time) < ?", (int64_t)end_ts);
-    qb->orderBy("publish_time", "ASC");
+    qb->where("publish_time", ">=", std::string(start_str));
+    qb->where("publish_time", "<", std::string(end_str));
+    qb->orderBy("d", "ASC");
 
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
@@ -939,15 +935,9 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
         return;
     }
 
-    std::set<int32_t> daySet;
     while (rt->next()) {
-        time_t publish_time = static_cast<time_t>(rt->getInt64(0));
-        struct tm tm_pt = {};
-        localtime_r(&publish_time, &tm_pt);
-        daySet.insert(tm_pt.tm_mday);
+        days.push_back(static_cast<int32_t>(rt->getInt64(0)));
     }
-
-    days.assign(daySet.begin(), daySet.end());
 
     // 写入 Redis 缓存（TTL 5 分钟），空结果不缓存，避免因首次查询无数据而导致
     // 后续文章发布后仍返回空
