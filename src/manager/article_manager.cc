@@ -5,6 +5,9 @@
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>
 
+#include <ctime>
+#include <set>
+
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
@@ -754,6 +757,8 @@ void ArticleManager::onTimer() {
                 << " data=" << i->toJsonString();
         }
         m_cache.set(i->getId(), i);
+        // 文章定时发布后，清除对应月份的日历缓存
+        clearCalendarCache(i->getUserId(), i->getPublishTime());
     }
     trans->commit();
 }
@@ -871,6 +876,98 @@ int64_t ArticleManager::getTotalVisitors() {
         return rpy->integer;
     }
     return 0;
+}
+
+void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t month, std::vector<int32_t>& days) {
+    // 先查 Redis 缓存
+    {
+        auto rpy = chen::RedisUtil::Cmd("blog", "GET calendar:%lld:%d:%d", user_id, year, month);
+        if (rpy && rpy->str && strlen(rpy->str) > 0) {
+            Json::Value cached;
+            if (chen::JsonUtil::FromString(cached, rpy->str) && cached.isArray() && cached.size() > 0) {
+                for (auto& v : cached) {
+                    days.push_back(v.asInt());
+                }
+                return;
+            }
+        }
+    }
+
+    // 缓存未命中：查数据库
+    // 计算该月起始和结束的时间戳
+    struct tm tm_begin = {};
+    tm_begin.tm_year = year - 1900;
+    tm_begin.tm_mon = month - 1;
+    tm_begin.tm_mday = 1;
+    tm_begin.tm_hour = 0;
+    tm_begin.tm_min = 0;
+    tm_begin.tm_sec = 0;
+    tm_begin.tm_isdst = -1;
+    time_t start_ts = mktime(&tm_begin);
+
+    struct tm tm_end = tm_begin;
+    tm_end.tm_mon = month;  // 下个月（month 是 0-based，month=12 会自动滚到次年1月）
+    tm_end.tm_isdst = -1;
+    time_t end_ts = mktime(&tm_end);
+
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "getCalendarDays: Get DB connection fail";
+        return;
+    }
+
+    auto qb = chen::QueryBuilder::Create("article");
+    qb->select("UNIX_TIMESTAMP(publish_time)");
+    qb->where("user_id", "=", user_id);
+    qb->where("state", "=", (int64_t)Status::PUBLISHED);
+    qb->where("is_deleted", "=", (int64_t)0);
+    qb->whereSQL("UNIX_TIMESTAMP(publish_time) >= ?", (int64_t)start_ts);
+    qb->whereSQL("UNIX_TIMESTAMP(publish_time) < ?", (int64_t)end_ts);
+    qb->orderBy("publish_time", "ASC");
+
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "getCalendarDays: stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        ERROR(logger) << "getCalendarDays: query returned null";
+        return;
+    }
+
+    std::set<int32_t> daySet;
+    while (rt->next()) {
+        time_t publish_time = static_cast<time_t>(rt->getInt64(0));
+        struct tm tm_pt = {};
+        localtime_r(&publish_time, &tm_pt);
+        daySet.insert(tm_pt.tm_mday);
+    }
+
+    days.assign(daySet.begin(), daySet.end());
+
+    // 写入 Redis 缓存（TTL 5 分钟），空结果不缓存，避免因首次查询无数据而导致
+    // 后续文章发布后仍返回空
+    if (!days.empty()) {
+        Json::Value daysJson(Json::arrayValue);
+        for (auto d : days) {
+            daysJson.append(d);
+        }
+        std::string jsonStr = chen::JsonUtil::ToString(daysJson);
+        chen::RedisUtil::Cmd("blog", "SETEX calendar:%lld:%d:%d 300 %s", user_id, year, month, jsonStr.c_str());
+    }
+}
+
+void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime) {
+    time_t pt = static_cast<time_t>(publishTime);
+    struct tm tm_pt = {};
+    localtime_r(&pt, &tm_pt);
+    int32_t year = tm_pt.tm_year + 1900;
+    int32_t month = tm_pt.tm_mon + 1;
+    chen::RedisUtil::Cmd("blog", "DEL calendar:%lld:%d:%d", user_id, year, month);
 }
 
 }

@@ -85,6 +85,20 @@ public:
     int64_t getTotalViews();
     int64_t getTotalVisitors();
 
+    /**
+     * @brief 获取指定月份中有已发布文章的日期列表
+     * @param[in] year 年份
+     * @param[in] month 月份（1-12）
+     * @param[out] days 输出：该月中有文章的日期（1-31），去重后升序排列
+     */
+    void getCalendarDays(int64_t user_id, int32_t year, int32_t month, std::vector<int32_t>& days);
+
+    /**
+     * @brief 清除指定时间戳对应月份的日历缓存
+     * @param publishTime 文章发布时间戳（Unix timestamp）
+     */
+    void clearCalendarCache(int64_t user_id, int64_t publishTime);
+
 private:
     bool addViews(uint64_t id, const std::string& cookie_id);
     void addUpdate(int64_t id);

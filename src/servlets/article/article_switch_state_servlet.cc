@@ -32,6 +32,9 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
 
+        // 保存旧的 publish_time 用于清除日历缓存
+        int64_t oldPublishTime = article->getPublishTime();
+
         int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
         if (role != UserManager::Role::ADMIN) {
             if (article->getUserId() != uid) {
@@ -57,6 +60,15 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
         ArticleMgr::GetInstance()->add(article);
+
+        // 清除旧发布时间对应月份的日历缓存
+        if (oldPublishTime > 0) {
+            ArticleMgr::GetInstance()->clearCalendarCache(article->getUserId(), oldPublishTime);
+        }
+        // 如果新状态是已发布且有新的发布时间，也清除对应月份缓存
+        if (new_state == ArticleManager::Status::PUBLISHED && article->getPublishTime() > 0) {
+            ArticleMgr::GetInstance()->clearCalendarCache(article->getUserId(), article->getPublishTime());
+        }
 
         // Notify article author if admin changed state
         if (role == UserManager::Role::ADMIN && article->getUserId() != uid) {
