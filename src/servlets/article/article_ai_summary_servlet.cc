@@ -128,39 +128,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
 
     std::string api_body_str = provider->buildRequest(ai_model, ai_max_tokens, SYSTEM_PROMPT, prompt);
 
-    {
-        auto uri = chen::Uri::Create(ai_url);
-        std::string scheme = uri->getScheme();
-        std::string host   = uri->getHost();
-        int32_t port = uri->getPort();
-        std::string path = uri->getPath();
-        if (path.empty()) {
-            path = "/";
-        }
-
-        std::string suffix = provider->endpointSuffix();
-        if (path.size() < suffix.size() ||
-            path.compare(path.size() - suffix.size(), suffix.size(), suffix) != 0) {
-            if (path == "/") {
-                path = suffix;
-            } else {
-                if (path.back() == '/') {
-                    path.pop_back();
-                }
-                path += suffix;
-            }
-        }
-
-        if (port == 0) {
-            port = (scheme == "https") ? 443 : 80;
-        }
-        ai_url = scheme + "://" + host;
-        if ((scheme == "https" && port != 443) || (scheme == "http" && port != 80)) {
-            ai_url += ":" + std::to_string(port);
-        }
-        ai_url += path;
-    }
-
+    auto uri = chen::Uri::Create(ai_url + provider->endpointSuffix());
     {
         std::string cached;
         if (s_summary_cache.get(article_id, cached)) {
@@ -185,7 +153,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         };
 
         auto http_result = chen::http::HttpConnection::DoRequestStreaming(
-            chen::http::HttpMethod::POST, ai_url, 60000, callback, headers, api_body_str);
+            chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
 
         if (!http_result || http_result->result != 0) {
             ERROR(logger) << "AI API call failed: " << (http_result ? http_result->error : "null result");
