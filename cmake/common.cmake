@@ -20,7 +20,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # AddressSanitizer 选项
-option(ENABLE_ASAN "Enable AddressSanitizer for memory error detection" ON)
+option(ENABLE_ASAN "Enable AddressSanitizer for memory error detection" OFF)
 if(ENABLE_ASAN)
     set(ASAN_FLAGS "-fsanitize=address -fno-omit-frame-pointer -g")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${ASAN_FLAGS}")

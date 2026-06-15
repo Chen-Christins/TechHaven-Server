@@ -42,6 +42,21 @@ bool BlogModule::onUnload() {
     return true;
 }
 
+bool BlogModule::onDrain() {
+    INFO(logger) << "onDrain";
+    ArticleMgr::GetInstance()->stop();
+    NotificationMgr::GetInstance()->closeAllConnections();
+    // 注意：不调用 unregisterServlets/unregisterWSServlets
+    // dispatch 已被框架 clearServlets() 清理，新模块已重新注册
+    return true;
+}
+
+bool BlogModule::onGracefulUnload() {
+    INFO(logger) << "onGracefulUnload";
+    // dispatch 已被 clearServlets() 清理，无需再 clear
+    return true;
+}
+
 void BlogModule::onTick() {
     // 1. 定时发布已到发布时间的文章
     ArticleMgr::GetInstance()->onTimer();
@@ -221,6 +236,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));
         // 文章相关
+        dp->addServlet("/api/v1/article/calendar", XX(ArticleCalendarServlet));
         dp->addServlet("/api/v1/article/admin/lists", XX(ArticleAdminListsServlet));
         dp->addServlet("/api/v1/article/admin/stats", XX(ArticleAdminStatsServlet));
         dp->addServlet("/api/v1/article/create", XX(ArticleCreateServlet));

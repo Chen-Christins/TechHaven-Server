@@ -52,6 +52,11 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 << " errstr=" << db->getErrStr();
             break;
         }
+
+        // 如果从已发布变为审核中，清除对应月份的日历缓存
+        if (state == ArticleManager::Status::PUBLISHED && info->getPublishTime() > 0) {
+            ArticleMgr::GetInstance()->clearCalendarCache(info->getUserId(), info->getPublishTime());
+        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

@@ -5,8 +5,9 @@
 #include "../servlets/article/admin_comment_spam_servlet.h"                 // IWYU pragma: keep
 #include "../servlets/article/admin_comment_stats_servlet.h"                // IWYU pragma: keep
 #include "../servlets/article/article_admin_lists_servlet.h"                // IWYU pragma: keep
+#include "../servlets/article/article_calendar_servlet.h"                 // IWYU pragma: keep
 #include "../servlets/article/article_admin_stats_servlet.h"                // IWYU pragma: keep
-#include "../servlets/article/article_ai_summary_servlet.h"               // IWYU pragma: keep
+#include "../servlets/article/article_ai_summary_servlet.h"                 // IWYU pragma: keep
 #include "../servlets/article/article_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_detail_servlet.h"                     // IWYU pragma: keep
@@ -56,11 +57,10 @@
 #include "../servlets/notify/notify_servlet.h"                              // IWYU pragma: keep
 #include "../servlets/notify/presence_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/organization/organization_admin_lists_servlet.h"      // IWYU pragma: keep
+#include "../servlets/organization/organization_admin_stats_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_apply_create_servlet.h"     // IWYU pragma: keep
 #include "../servlets/organization/organization_apply_list_servlet.h"       // IWYU pragma: keep
 #include "../servlets/organization/organization_apply_review_servlet.h"     // IWYU pragma: keep
-#include "../servlets/organization/organization_my_applies_servlet.h"       // IWYU pragma: keep
-#include "../servlets/organization/organization_admin_stats_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_assignment_list_servlet.h"  // IWYU pragma: keep
 #include "../servlets/organization/organization_create_servlet.h"           // IWYU pragma: keep
 #include "../servlets/organization/organization_delete_servlet.h"           // IWYU pragma: keep
@@ -68,6 +68,7 @@
 #include "../servlets/organization/organization_join_check_servlet.h"       // IWYU pragma: keep
 #include "../servlets/organization/organization_join_servlet.h"             // IWYU pragma: keep
 #include "../servlets/organization/organization_list_servlet.h"             // IWYU pragma: keep
+#include "../servlets/organization/organization_my_applies_servlet.h"       // IWYU pragma: keep
 #include "../servlets/organization/organization_user_kick_servlet.h"        // IWYU pragma: keep
 #include "../servlets/organization/organization_user_list_servlet.h"        // IWYU pragma: keep
 #include "../servlets/organization/organization_user_switch_role_servlet.h" // IWYU pragma: keep
@@ -88,13 +89,12 @@
 #include "../servlets/rd/rd_task_detail_servlet.h"                          // IWYU pragma: keep
 #include "../servlets/rd/rd_task_edit_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/rd/rd_task_servlet.h"                                 // IWYU pragma: keep
-#include "../servlets/settings/error_codes_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/settings/error_codes_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/settings/site_settings_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/settings/site_status_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/settings/system_settings_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/settings/system_settings_upload_servlet.h"            // IWYU pragma: keep
 #include "../servlets/stats/stats_servlet.h"                                // IWYU pragma: keep
-#include "../servlets/user/user_ai_config_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_create_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_delete_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_admin_detail_servlet.h"                     // IWYU pragma: keep
@@ -103,6 +103,7 @@
 #include "../servlets/user/user_admin_reset_passwd_servlet.h"               // IWYU pragma: keep
 #include "../servlets/user/user_admin_stats_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_admin_update_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/user/user_ai_config_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_exists_servlet.h"                           // IWYU pragma: keep

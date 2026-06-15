@@ -62,6 +62,9 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
         }
         ArticleMgr::GetInstance()->add(info);
 
+        // 清除对应月份的日历缓存
+        ArticleMgr::GetInstance()->clearCalendarCache(info->getUserId(), info->getPublishTime());
+
         // 异步通知管理员和审核员有新文章待审核
         {
             std::string article_title = info->getTitle();
