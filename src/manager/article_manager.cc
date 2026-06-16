@@ -890,18 +890,7 @@ int64_t ArticleManager::getTotalVisitors() {
 }
 
 void ArticleManager::syncStatsFromDB() {
-    // 启动时从 DB（唯一权威数据源）同步统计计数到 Redis，
-    // 覆盖上一个实例残留在 Redis 中的过期数据。
-    //
-    // 策略：直接删除 Redis 中的统计 key，然后调用 getTotalViews()，
-    // 它会自动从 DB 计算 SUM(views) 并回填到 Redis。
-
-    // 1. 删除所有统计 key，让它们从 DB 重建
     chen::RedisUtil::Cmd("blog", "del blog:total_visits");
-    chen::RedisUtil::Cmd("blog", "del blog:today_visits");
-    chen::RedisUtil::Cmd("blog", "del blog:visitors");
-
-    // 2. 触发 getTotalViews() 从 DB 计算 SUM(views) 并回填 Redis
     int64_t total = getTotalViews();
     INFO(logger) << "syncStatsFromDB: blog:total_visits recalculated from DB = " << total;
 }
