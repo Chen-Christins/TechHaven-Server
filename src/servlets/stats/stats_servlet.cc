@@ -2,8 +2,12 @@
 #include "../../manager/article_manager.h"
 #include "../../manager/notification_manager.h"
 
+#include <chen/log/log.h>
+
 namespace blog {
 namespace servlet {
+
+static chen::Logger::ptr logger = LOG_ROOT();
 
 StatsServlet::StatsServlet()
     :BlogServlet("StatsServlet") {

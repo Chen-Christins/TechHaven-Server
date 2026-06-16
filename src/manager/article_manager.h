@@ -58,6 +58,12 @@ public:
      */
     void onUpdateTimer();
 
+    /**
+     * @brief 将脏数据（浏览/点赞/收藏数）刷新到数据库
+     * @note 由 onUpdateTimer 定期调用，也在 stop 时调用以避免 reload/stop 时丢失增量
+     */
+    void flushDirty();
+
     bool incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id);
     bool incPraise(uint64_t id, const std::string& cookie_id, uint64_t user_id);
     bool incFavorites(uint64_t id, const std::string& cookie_id, uint64_t user_id);
@@ -84,6 +90,11 @@ public:
     int64_t getTodayViews();
     int64_t getTotalViews();
     int64_t getTotalVisitors();
+
+    /**
+     * @brief 启动时从 DB 同步统计数到 Redis，覆盖可能存在的旧实例残留数据
+     */
+    void syncStatsFromDB();
 
     /**
      * @brief 获取指定月份中有已发布文章的日期列表
