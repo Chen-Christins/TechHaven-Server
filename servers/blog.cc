@@ -1,10 +1,19 @@
 #include <chen/application.h>
+#include <chen/log/log.h>
+
+static chen::Logger::ptr logger = LOG_ROOT();
 
 int main(int argc, char** argv) {
-    srand(time(0));
-    chen::Application app;
-    if (app.init(argc, argv)) {
-        return app.run();
+    int ret = 0;
+    try {
+        srand(time(0));
+        chen::Application app;
+        if (app.init(argc, argv)) {
+            ret = app.run();
+        }
+    } catch (const std::exception& e) {
+        ERROR(logger) << "Exception: " << e.what();
     }
-    return 0;
+
+    std::_Exit(ret);
 }
