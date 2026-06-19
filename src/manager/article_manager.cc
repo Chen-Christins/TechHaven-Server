@@ -543,7 +543,41 @@ void ArticleManager::start() {
 }
 
 void ArticleManager::stop() {
-    // 定时任务已迁移至 BlogModule::onTick() 统一调度
+    // 停止前将脏数据（浏览/点赞/收藏数）刷新到 DB，避免 reload/stop 时丢失
+    flushDirty();
+}
+
+void ArticleManager::flushDirty() {
+    std::set<int64_t> updates;
+    {
+        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        updates.swap(m_updates);
+    }
+
+    if (updates.empty()) {
+        return;
+    }
+    auto conn = GetDB();
+    if (!conn) {
+        ERROR(logger) << "flushDirty: get db connect fail";
+
+        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
+        for (auto& i : updates) {
+            m_updates.insert(i);
+        }
+        return;
+    }
+    auto trans = conn->openTransaction();
+    for (auto& i : updates) {
+        auto info = get(i);
+        if (info) {
+            if (data::ArticleInfoDao::Update(info, conn)) {
+                addUpdate(i);
+            }
+        }
+    }
+    trans->commit();
+    INFO(logger) << "flushDirty: flushed " << updates.size() << " articles";
 }
 
 bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_t user_id) {
@@ -739,7 +773,11 @@ void ArticleManager::onTimer() {
 
     std::vector<data::ArticleInfo::ptr> infos;
     while (rt->next()) {
-        auto info = parseRow(rt);
+        auto row = parseRow(rt);
+        // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数），
+        // 避免用 DB 中的旧值覆盖内存中的正确计数
+        auto cached = m_cache.get(row->getId());
+        auto info = cached ? cached : row;
         info->setState(Status::PUBLISHED);
         info->setUpdateTime(now);
         infos.push_back(info);
@@ -764,35 +802,7 @@ void ArticleManager::onTimer() {
 }
 
 void ArticleManager::onUpdateTimer() {
-    std::set<int64_t> updates;
-    {
-        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
-        updates.swap(m_updates);
-    }
-
-    if (updates.empty()) {
-        return;
-    }
-    auto conn = GetDB();
-    if (!conn) {
-        ERROR(logger) << "get db connect fail";
-
-        std::unique_lock<std::shared_mutex> lock(m_viewsMutex);
-        for (auto& i : updates) {
-            m_updates.insert(i);
-        }
-        return;
-    }
-    auto trans = conn->openTransaction();
-    for (auto& i : updates) {
-        auto info = get(i);
-        if (info) {
-            if (data::ArticleInfoDao::Update(info, conn)) {
-                addUpdate(i);
-            }
-        }
-    }
-    trans->commit();
+    flushDirty();
 }
 
 bool ArticleManager::addViews(uint64_t id, const std::string& cookie_id) {
@@ -853,7 +863,8 @@ int64_t ArticleManager::getTotalViews() {
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("article");
-    qb->select("COALESCE(SUM(views), 0)");
+    qb->select("CAST(COALESCE(SUM(views), 0) AS SIGNED)");
+    qb->where("state", "=", (int64_t)Status::PUBLISHED);
     qb->where("is_deleted", "=", (int64_t)0);
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
@@ -876,6 +887,12 @@ int64_t ArticleManager::getTotalVisitors() {
         return rpy->integer;
     }
     return 0;
+}
+
+void ArticleManager::syncStatsFromDB() {
+    chen::RedisUtil::Cmd("blog", "del blog:total_visits");
+    int64_t total = getTotalViews();
+    INFO(logger) << "syncStatsFromDB: blog:total_visits recalculated from DB = " << total;
 }
 
 void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t month, std::vector<int32_t>& days) {

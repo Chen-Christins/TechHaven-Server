@@ -2,6 +2,7 @@
 
 #include <chen/http/http_server.h>
 #include <chen/log/log.h>
+#include <chen/db/query_builder.h>
 #include <chen/db/sqlite3.h>
 #include <chen/db/mysql.h>
 #include <chen/config/config.h>
@@ -80,6 +81,9 @@ bool BlogModule::onServerReady() {
         ERROR(logger) << "initDB failed";
         return false;
     }
+
+    // 启动时从 DB 同步统计计数到 Redis，覆盖旧实例可能残留的数据
+    ArticleMgr::GetInstance()->syncStatsFromDB();
 
     ArticleMgr::GetInstance()->start();
 
