@@ -145,18 +145,33 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
 
         SendSSEJson(session, "start", "message", "开始生成总结...");
 
+        const int MAX_RETRIES = 5;
+        chen::http::HttpResult::ptr http_result;
         ai::SSEStreamParser parser(session, provider);
-        std::string raw_body;  // 累积原始响应数据，用于错误日志
-        auto callback = [&parser, &raw_body](const char* data, size_t len) {
-            raw_body.append(data, len);
-            return parser(data, len);
-        };
+        std::string raw_body;
 
-        auto http_result = chen::http::HttpConnection::DoRequestStreaming(
-            chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
+        for (int attempt = 1; attempt <= MAX_RETRIES; ++attempt) {
+            if (attempt > 1) {
+                parser = ai::SSEStreamParser(session, provider);
+                raw_body.clear();
+            }
+            auto callback = [&parser, &raw_body](const char* data, size_t len) {
+                raw_body.append(data, len);
+                return parser(data, len);
+            };
+
+            http_result = chen::http::HttpConnection::DoRequestStreaming(
+                chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
+
+            if (http_result && http_result->result == 0) {
+                break;
+            }
+            ERROR(logger) << "AI API call failed (attempt " << attempt << "/" << MAX_RETRIES << "): "
+                << (http_result ? http_result->error : "null result");
+        }
 
         if (!http_result || http_result->result != 0) {
-            ERROR(logger) << "AI API call failed: " << (http_result ? http_result->error : "null result");
+            ERROR(logger) << "AI API call failed after " << MAX_RETRIES << " attempts";
             SendSSEJson(session, "error", "message", "AI service call failed");
             return -1;
         }
