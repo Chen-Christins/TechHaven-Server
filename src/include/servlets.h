@@ -70,6 +70,7 @@
 #include "../servlets/organization/organization_list_servlet.h"             // IWYU pragma: keep
 #include "../servlets/organization/organization_my_applies_servlet.h"       // IWYU pragma: keep
 #include "../servlets/organization/organization_repos_add_servlet.h"        // IWYU pragma: keep
+#include "../servlets/organization/organization_repos_token_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_stats_servlet.h"           // IWYU pragma: keep
 #include "../servlets/organization/organization_repos_delete_servlet.h"     // IWYU pragma: keep
 #include "../servlets/organization/organization_repos_list_servlet.h"       // IWYU pragma: keep

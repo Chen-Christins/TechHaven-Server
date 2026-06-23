@@ -21,11 +21,12 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
     v->setName(rt->getString(2));
     v->setDescription(rt->getString(3));
     v->setUrl(rt->getString(4));
-    v->setLanguage(rt->getString(5));
-    v->setStarsCount(rt->getInt32(6));
-    v->setSortOrder(rt->getInt32(7));
-    v->setCreateTime(rt->getTime(8));
-    v->setUpdateTime(rt->getTime(9));
+    v->setToken(rt->getString(5));
+    v->setLanguage(rt->getString(6));
+    v->setStarsCount(rt->getInt32(7));
+    v->setSortOrder(rt->getInt32(8));
+    v->setCreateTime(rt->getTime(9));
+    v->setUpdateTime(rt->getTime(10));
     return v;
 }
 

@@ -23,6 +23,7 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
         DEFINE_AND_CHECK_STRING(result, url, "url");
         std::string language = request->getParamAs<std::string>("language");
         std::string description = request->getParamAs<std::string>("description");
+        std::string token = request->getParamAs<std::string>("token");
 
         // 校验 name 长度
         if (name.size() > 128) {
@@ -95,6 +96,7 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
         info->setUrl(url);
         info->setLanguage(language);
         info->setDescription(description);
+        info->setToken(token);
         info->setStarsCount(0);
         info->setSortOrder(0);
         info->setCreateTime(time(0));

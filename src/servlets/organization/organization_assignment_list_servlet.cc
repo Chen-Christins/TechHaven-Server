@@ -37,16 +37,18 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
             break;
         }
         int32_t system_role = user->getRole();
-        auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
-        if (!rel) {
-            result->setErrno(errcode::ORG_NOT_MEMBER);
-            break;
-        }
-        int32_t org_role = rel->getRole();
+        if (system_role != UserManager::Role::ADMIN) {
+            auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+            if (!rel) {
+                result->setErrno(errcode::ORG_NOT_MEMBER);
+                break;
+            }
 
-        if (!permission::CanManageMembers(system_role, org_role)) {
-            result->setErrno(errcode::ACCESS_DENIED);
-            break;
+            int32_t org_role = rel->getRole();
+            if (!permission::CanManageMembers(system_role, org_role)) {
+                result->setErrno(errcode::ACCESS_DENIED);
+                break;
+            }
         }
 
         uint64_t offset = (page_num - 1) * page_size;
