@@ -36,6 +36,9 @@ public:
     const std::string& getUrl() { return m_url; }
     void setUrl(const std::string& v);
 
+    const std::string& getToken() { return m_token; }
+    void setToken(const std::string& v);
+
     const std::string& getLanguage() { return m_language; }
     void setLanguage(const std::string& v);
 
@@ -61,6 +64,7 @@ private:
     std::string m_name;
     std::string m_description;
     std::string m_url;
+    std::string m_token;
     std::string m_language;
     int64_t m_createTime;
     int64_t m_updateTime;

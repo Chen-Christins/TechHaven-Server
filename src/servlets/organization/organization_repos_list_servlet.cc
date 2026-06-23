@@ -67,6 +67,7 @@ int32_t OrganizationReposListServlet::handle(chen::http::HttpRequest::ptr reques
             item["sort_order"] = repo->getSortOrder();
             item["created_at"] = (Json::Int64)repo->getCreateTime();
             item["updated_at"] = (Json::Int64)repo->getUpdateTime();
+            item["has_token"] = !repo->getToken().empty();
             list.append(item);
         }
     } while (0);
