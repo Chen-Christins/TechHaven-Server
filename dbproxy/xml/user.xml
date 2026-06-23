@@ -1,4 +1,4 @@
-<table name="user" namespace="blog.data">
+<table name="user" namespace="blog.data" desc="用户表">
     <columns>
         <column name="id" type="int64" auto_increment="true" desc="主键id"/>
         <column name="name" type="string" desc="用户名"/>

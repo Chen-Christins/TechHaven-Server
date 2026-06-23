@@ -1,4 +1,4 @@
-<table name="label" namespace="blog.data">
+<table name="label" namespace="blog.data" desc="文章标签表">
     <columns>
         <column name="id" type="int64" auto_increment="true"/>
         <column name="user_id" type="int64"/>

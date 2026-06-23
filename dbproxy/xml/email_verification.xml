@@ -1,4 +1,4 @@
-<table name="email_verification" namespace="blog.data">
+<table name="email_verification" namespace="blog.data" desc="邮箱验证表">
     <columns>
         <column name="id" type="int64" auto_increment="true" desc="主键id"/>
         <column name="email" type="string" desc="用户邮箱地址"/>

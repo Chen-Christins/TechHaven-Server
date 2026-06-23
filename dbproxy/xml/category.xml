@@ -1,4 +1,4 @@
-<table name="category" namespace="blog.data">
+<table name="category" namespace="blog.data" desc="文章分类表">
     <columns>
         <column name="id" type="int64" auto_increment="true"/>
         <column name="name" type="string" length="50"/>
