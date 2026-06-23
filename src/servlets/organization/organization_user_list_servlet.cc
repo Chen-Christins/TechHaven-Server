@@ -25,9 +25,18 @@ int32_t OrganizationUserListServlet::handle(chen::http::HttpRequest::ptr request
         if (status == OrganizationUserRelManager::Status::PENDING) {
             int64_t uid = getUserId(request);
             auto info = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(id, uid);
+            if (!info) {
+                result->setErrno(errcode::ORG_NOT_MEMBER);
+                break;
+            }
+            auto current_user = UserMgr::GetInstance()->get(uid);
+            if (!current_user) {
+                result->setErrno(errcode::USER_NOT_FOUND);
+                break;
+            }
             if (info->getRole() != OrganizationManager::Role::ORG_ADMIN
                     && info->getRole() != OrganizationManager::Role::DEV_LEAD
-                    && UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
+                    && current_user->getRole() != UserManager::Role::ADMIN) {
                 result->setErrno(errcode::ACCESS_DENIED);
                 break;
             }

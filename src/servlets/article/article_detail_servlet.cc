@@ -36,7 +36,12 @@ int32_t ArticleDetailServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
         int32_t state = info->getState();
         bool is_deleted = info->getIsDeleted();
-        int32_t role = UserMgr::GetInstance()->get(cur_uid)->getRole();
+        auto current_user = UserMgr::GetInstance()->get(cur_uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t role = current_user->getRole();
         bool is_author = (cur_uid == info->getUserId());
         if (is_deleted) {
             result->setErrno(errcode::ACCESS_DENIED);

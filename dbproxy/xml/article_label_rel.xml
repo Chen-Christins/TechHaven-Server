@@ -1,4 +1,4 @@
-<table name="article_label_rel" namespace="blog.data">
+<table name="article_label_rel" namespace="blog.data" desc="文章-标签关联表">
     <columns>
         <column name="id" type="int64" auto_increment="true"/>
         <column name="article_id" type="int64"/>

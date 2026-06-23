@@ -25,7 +25,12 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
-        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t role = current_user->getRole();
         if (role != UserManager::Role::ADMIN) {
             result->setErrno(errcode::ACCESS_DENIED);
             break;
@@ -43,14 +48,16 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
             Json::Value item;
             item["id"] = atc->getId();
             item["user_id"] = atc->getUserId();
-            item["author"] = user->getName();
-            item["email"] = user->getEmail();
+            if (user) {
+                item["author"] = user->getName();
+                item["email"] = user->getEmail();
+                item["author_role"] = user->getRole();
+            }
             item["title"] = atc->getTitle();
             item["state"] = atc->getState();
             item["views"] = atc->getViews();
             item["praise"] = atc->getPraise();
             item["favorites"] = atc->getFavorites();
-            item["author_role"] = user->getRole();
             item["publish_time"] = atc->getPublishTime();
             item["summary"] = atc->getContent().substr(0, 100);
             list.append(item);

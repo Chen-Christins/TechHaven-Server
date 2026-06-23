@@ -17,7 +17,12 @@ int32_t AssignmentAdminStatsServlet::handle(chen::http::HttpRequest::ptr request
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
-        if (UserMgr::GetInstance()->get(uid)->getRole() != UserManager::Role::ADMIN) {
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        if (current_user->getRole() != UserManager::Role::ADMIN) {
             result->setErrno(errcode::ACCESS_DENIED);
             break;
         }

@@ -26,7 +26,12 @@ int32_t OrganizationAdminListsServlet::handle(chen::http::HttpRequest::ptr reque
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
-        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t role = current_user->getRole();
         if (role != UserManager::Role::ADMIN) {
             result->setErrno(errcode::ACCESS_DENIED);
             break;

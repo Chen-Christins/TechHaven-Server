@@ -1,4 +1,4 @@
-<table name="user_ai_config" namespace="blog.data">
+<table name="user_ai_config" namespace="blog.data" desc="用户AI配置表">
     <columns>
         <column name="id" type="int64" auto_increment="true" desc="主键id"/>
         <column name="user_id" type="int64" desc="用户ID"/>

@@ -1,6 +1,6 @@
 ---
 name: cpp-code-style
-description: C++ 代码规范 — 本项目的 C++ 编码风格、命名约定、注释规范等详细说明。编写或修改任何 C++ 代码时遵循此规范。
+description: C++ 代码规范 — 本项目的 C++ 编码风格、命名约定、注释规范、空指针防护等详细说明。编写或修改任何 C++ 代码时必须遵循此规范。
 ---
 
 # C++ 代码规范
@@ -13,7 +13,7 @@ description: C++ 代码规范 — 本项目的 C++ 编码风格、命名约定�
 
 ### 1.1 文件头注释
 
-每个头文件和源文件必须以 Doxygen 风格的文件头注释开始：
+每个头文件必须以 Doxygen 风格的文件头注释开始，源文件不要这个：
 
 ```cpp
 /**
@@ -21,9 +21,11 @@ description: C++ 代码规范 — 本项目的 C++ 编码风格、命名约定�
  * @brief 模块简要说明
  * @author Christins
  * @date YYYY-MM-DD
- * @copyright Apache 2.0
+ * @copyright <询问用户使用什么协议>
  */
 ```
+
+> **注意：** `@copyright` 字段不要自行决定，必须询问用户希望使用什么开源协议。
 
 ### 1.2 Include Guard
 
@@ -710,7 +712,104 @@ BinPackParameters: true
 
 ---
 
-## 11. 速查表
+## 11. 空指针防护
+
+**原则：任何来自外部调用的指针（包括 `std::shared_ptr`），在使用其成员前必须判空。**
+
+### 11.1 需要判空的所有场景
+
+```cpp
+// ❌ Manager::get() 返回值
+auto info = SomeMgr::GetInstance()->get(id);
+info->getName();  // 危险
+
+// ❌ DAO::Query() 返回值
+auto user = UserInfoDao::Query(uid, db);
+user->getRole();  // 危险
+
+// ❌ 从容器/缓存取值
+auto v = m_cache.get(key);
+v->doSomething();  // 危险
+
+// ❌ getByXxx / findByXxx 等查询方法
+auto rel = RelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+rel->getRole();  // 危险
+
+// ❌ 从 request 解析出的 ID 直接查询
+int64_t id = request->getParamAs<int64_t>("id", 0);
+auto obj = Mgr::GetInstance()->get(id);
+// id 可能是 0，obj 可能是 nullptr
+
+// ❌ 链式调用
+UserMgr::GetInstance()->get(uid)->getRole();  // 中间任何一步都可能为空
+```
+
+### 11.2 修复模板
+
+```cpp
+// ✅ Manager get 判空
+auto info = SomeMgr::GetInstance()->get(id);
+if (!info) {
+    result->setErrno(errcode::SOME_NOT_FOUND);
+    break;
+}
+info->getName();
+
+// ✅ 登录校验（uid 为 0 即未登录）
+int64_t uid = getUserId(request);
+if (!uid) {
+    result->setErrno(errcode::NOT_LOGIN);
+    break;
+}
+
+// ✅ 多重指针链式判空
+auto current_user = UserMgr::GetInstance()->get(uid);
+if (!current_user) {
+    result->setErrno(errcode::USER_NOT_FOUND);
+    break;
+}
+int32_t role = current_user->getRole();
+
+// ✅ 关系表查成员
+auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+if (!rel) {
+    result->setErrno(errcode::ORG_NOT_MEMBER);
+    break;
+}
+int32_t org_role = rel->getRole();
+
+// ✅ DB 查询返回值
+auto db = getDB();
+if (!db) {
+    result->setErrno(errcode::DB_CONNECTION_FAILED);
+    break;
+}
+
+// ✅ stmt / rt 查询中间结果
+auto stmt = db->prepare(sql);
+if (!stmt) { ... break; }
+auto rt = stmt->query();
+if (!rt) { ... break; }
+while (rt->next()) { ... }
+```
+
+### 11.3 常见需判空的方法速查表
+
+| 方法 | 空指针场景 |
+|------|-----------|
+| `*Mgr::GetInstance()->get(id)` | ID 不存在或缓存过期 |
+| `*Mgr::GetInstance()->getByXxx(...)` | 查询结果不存在 |
+| `*Dao::Query(id, db)` | 记录不存在 |
+| `*Dao::Insert/Update/Delete(...)` | 返回非 0 表示失败 |
+| `GetDB()` | 数据库连接获取失败 |
+| `getUserId(request)` | 返回 0 表示未登录 |
+| `db->prepare(sql)` | SQL 语法错误，返回 nullptr |
+| `stmt->query()` | 查询执行失败，返回 nullptr |
+| `request->getParam("key")` | 参数不存在返回空字符串 |
+| `m_cache.get(key)` | 缓存未命中返回默认值 |
+
+---
+## 12. 速查表
 
 | 元素 | 约定 | 示例 |
 |------|------|------|

@@ -9,7 +9,8 @@
 #define __BLOG_MY_MODULE_H__
 
 #include <chen/module.h>
-#include <chen/tcp/tcp_server.h>
+#include <chen/http/http_server.h>
+#include <chen/http/ws_server.h>
 
 namespace blog {
 
@@ -97,9 +98,9 @@ private:
 
 private:
     /// 持有的 HTTP Server 列表（用于 onUnload 中注销 Servlet）
-    std::vector<chen::TcpServer::ptr> m_httpServers;
+    std::vector<chen::http::HttpServer::ptr> m_httpServers;
     /// 持有的 WebSocket Server 列表（用于 onUnload 中注销 WS Servlet）
-    std::vector<chen::TcpServer::ptr> m_wsServers;
+    std::vector<chen::http::WSServer::ptr> m_wsServers;
 };
 
 }

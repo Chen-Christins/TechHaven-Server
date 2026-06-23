@@ -30,7 +30,16 @@ int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         int64_t uid = getUserId(request);
-        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        if (!uid) {
+            result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        auto user = UserMgr::GetInstance()->get(uid);
+        if (!user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t system_role = user->getRole();
         bool is_platform_admin = (system_role == UserManager::Role::ADMIN);
 
         int32_t org_role = 0;

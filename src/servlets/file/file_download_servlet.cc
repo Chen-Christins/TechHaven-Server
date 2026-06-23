@@ -83,7 +83,16 @@ int32_t FileDownloadServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         int64_t uid = getUserId(request);
-        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        if (!uid) {
+            result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t system_role = current_user->getRole();
         if (!checkPermission(system_role) || res_info->getOwnerId() != uid) {
             result->setErrno(errcode::ACCESS_DENIED);
             break;

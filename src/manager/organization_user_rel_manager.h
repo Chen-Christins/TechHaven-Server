@@ -29,6 +29,14 @@ public:
 
     int64_t getMemberCount(int64_t o_id, int32_t status, bool isValid);
 
+    struct Stats {
+        int64_t total_members = 0;
+        int64_t active_members = 0;
+        int64_t org_admin_count = 0;
+        int64_t regular_count = 0;
+    };
+    Stats getStats(int64_t org_id);
+
 private:
     static data::OrganizationUserRelInfo::ptr parseRow(chen::ISQLData::ptr rt);
 

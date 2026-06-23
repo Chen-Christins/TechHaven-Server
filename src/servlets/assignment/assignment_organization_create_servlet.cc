@@ -34,9 +34,23 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
 
         // check operator permission
         auto uid = getUserId(request);
-        std::string oper_name = UserMgr::GetInstance()->get(uid)->getName();
-        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
-        int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
+        if (!uid) {
+            result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        std::string oper_name = current_user->getName();
+        int32_t system_role = current_user->getRole();
+        auto org_rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+        if (!org_rel) {
+            result->setErrno(errcode::ACCESS_DENIED);
+            break;
+        }
+        int32_t org_role = org_rel->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {
             result->setErrno(errcode::ACCESS_DENIED);
