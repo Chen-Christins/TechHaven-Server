@@ -34,19 +34,27 @@ int32_t OrganizationReposDeleteServlet::handle(chen::http::HttpRequest::ptr requ
             break;
         }
 
-        // 检查用户权限：需要研发主管及以上（role >= 4）
-        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
-        auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
-        if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-            result->setErrno(errcode::ACCESS_DENIED, "无权访问该组织");
+        // 检查用户权限：需要研发主管及以上（role >= 4），系统管理员可管理任意组织仓库
+        auto user = UserMgr::GetInstance()->get(uid);
+        if (!user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
-        int32_t org_role = rel->getRole();
-        if (system_role != UserManager::Role::ADMIN
-                && org_role != OrganizationManager::Role::ORG_ADMIN
-                && org_role != OrganizationManager::Role::DEV_LEAD) {
-            result->setErrno(errcode::ACCESS_DENIED, "仅研发主管及以上角色可删除仓库");
-            break;
+        int32_t system_role = user->getRole();
+        bool is_admin = (system_role == UserManager::Role::ADMIN);
+
+        if (!is_admin) {
+            auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+            if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
+                result->setErrno(errcode::ACCESS_DENIED, "无权访问该组织");
+                break;
+            }
+            int32_t org_role = rel->getRole();
+            if (org_role != OrganizationManager::Role::ORG_ADMIN
+                    && org_role != OrganizationManager::Role::DEV_LEAD) {
+                result->setErrno(errcode::ACCESS_DENIED, "仅研发主管及以上角色可删除仓库");
+                break;
+            }
         }
 
         auto db = getDB();
@@ -61,6 +69,8 @@ int32_t OrganizationReposDeleteServlet::handle(chen::http::HttpRequest::ptr requ
                 << " errstr=" << db->getErrStr();
             break;
         }
+
+        OrganizationRepoMgr::GetInstance()->del(id);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

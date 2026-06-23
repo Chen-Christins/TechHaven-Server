@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**When writing or modifying C++ code, invoke the `/cpp-code-style` skill for full naming, formatting, and null-safety conventions.**
+
 ## Build Commands
 
 ```sh
@@ -96,7 +98,15 @@ Bitmap-based multi-index for article search. Indexes articles by user, category,
 
 - **In-memory reads, write-through**: All reads hit the manager's in-memory map. Writes go to SQLite first, then update the in-memory cache on success.
 - **Include aggregation**: `src/include/tables.h`, `managers.h`, `servlets.h` aggregate all headers. Source files typically include these aggregates plus `chen/` framework headers and `src/util.h`.
-- **Error handling**: Servlets use `do { ... } while (0)` + `break` pattern for flow control. Errors are reported via `result->setResult(code, msg)`. Logging uses `chen::Logger` with `LOG_ROOT()`-created loggers.
+- **Error handling**: Servlets use `do { ... } while (0)` + `break` pattern for flow control. Errors are reported via `result->setErrno(errcode::XXX)` or `result->setErrno(errcode::XXX, "custom message")`. Logging uses `chen::Logger` with `LOG_ROOT()`-created loggers.
+- **Null pointer safety**: Any pointer from external calls (`std::shared_ptr` included) must be null-checked before use. Key rules:
+  - `*Mgr::GetInstance()->get(id)` — always check `if (!ptr)` before dereferencing
+  - `getUserId(request)` — returns 0 if not logged in, must check `if (!uid)`
+  - `GetDB()` — can return nullptr, must check `if (!db)`
+  - `db->prepare(sql)` / `stmt->query()` — can return nullptr
+  - `*Mgr::getByXxx(...)` — can return nullptr if no match
+  - `*Dao::Query(...)` — can return nullptr if record not found
+  - **Never chain**: `get(uid)->getRole()` is unsafe. Store, check, then use.
 - **File uploads**: Supports chunked upload via `ChunkUploadServlet` (`/upload/init`, `/upload/chunk`, `/upload/complete`, `/upload/cancel`, `/upload/status`).
 
 ## Configuration

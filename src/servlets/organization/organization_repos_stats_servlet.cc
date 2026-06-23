@@ -32,13 +32,6 @@ int32_t OrganizationReposStatsServlet::handle(chen::http::HttpRequest::ptr reque
             break;
         }
 
-        // 检查用户是否是该组织成员
-        auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
-        if (!rel || rel->getStatus() != OrganizationUserRelManager::Status::APPROVED) {
-            result->setErrno(errcode::ACCESS_DENIED, "无权访问该组织");
-            break;
-        }
-
         int64_t total = OrganizationRepoMgr::GetInstance()->getCountByOrg(org_id);
 
         result->set("total_repos", total);

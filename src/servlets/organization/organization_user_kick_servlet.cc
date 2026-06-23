@@ -26,9 +26,22 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
 
         // 操作者权限检查
         int64_t uid = getUserId(request);
-        int32_t system_role = blog::UserMgr::GetInstance()->get(uid)->getRole();
+        if (!uid) {
+            result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        auto user = blog::UserMgr::GetInstance()->get(uid);
+        if (!user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t system_role = user->getRole();
 
         auto rel = blog::OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+        if (!rel) {
+            result->setErrno(errcode::ORG_NOT_MEMBER);
+            break;
+        }
         int32_t org_role = rel->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {

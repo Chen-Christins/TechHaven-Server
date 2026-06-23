@@ -19,7 +19,16 @@ int32_t ResourceListServlet::handle(chen::http::HttpRequest::ptr request, chen::
         DEFINE_AND_CHECK_STRING(result, folder, "folder");
 
         int64_t uid = getUserId(request);
-        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
+        if (!uid) {
+            result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t system_role = current_user->getRole();
         if (!checkPermession(system_role)) {
             result->setErrno(errcode::ACCESS_DENIED);
             break;

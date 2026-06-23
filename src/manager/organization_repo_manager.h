@@ -12,6 +12,7 @@ public:
     OrganizationRepoManager();
 
     void add(data::OrganizationReposInfo::ptr info);
+    void del(int64_t id);
     data::OrganizationReposInfo::ptr get(int64_t id);
     data::OrganizationReposInfo::ptr getByOrgAndName(int64_t org_id, const std::string& name);
     int64_t listByOrgPages(std::vector<data::OrganizationReposInfo::ptr>& repos
@@ -20,6 +21,7 @@ public:
 
 private:
     static data::OrganizationReposInfo::ptr parseRow(chen::ISQLData::ptr rt);
+    void invalidateCountCache(int64_t org_id);
 
     chen::ds::HashLruCache<int64_t, data::OrganizationReposInfo::ptr> m_cache;
 };

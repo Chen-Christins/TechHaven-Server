@@ -30,7 +30,12 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
-        int32_t role = UserMgr::GetInstance()->get(uid)->getRole();
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t role = current_user->getRole();
 
         if (role != UserManager::Role::ADMIN) {
             result->setErrno(errcode::ACCESS_DENIED);
@@ -40,7 +45,7 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
         std::vector<data::UserInfo::ptr> infos;
         for (const int64_t& id : user_ids) {
             auto info = UserMgr::GetInstance()->get(id);
-            if (!info->getIsDeleted()) {
+            if (!info || !info->getIsDeleted()) {
                 continue;
             }
             infos.emplace_back(info);

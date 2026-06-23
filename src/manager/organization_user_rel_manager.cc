@@ -1,4 +1,5 @@
 #include "organization_user_rel_manager.h"
+#include "organization_manager.h"
 #include "cache_util.h"
 #include <chen/log/log.h>
 #include "../util.h"
@@ -162,6 +163,61 @@ int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status,
         return 0;
     }
     return total;
+}
+
+OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t org_id) {
+    Stats stats;
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return stats;
+    }
+
+    // total_members: 所有已批准且未删除的成员
+    stats.total_members = getMemberCount(org_id, Status::APPROVED, true);
+
+    // 按角色 GROUP BY 拿到 org_admin_count 和 regular_count
+    {
+        auto qb = chen::QueryBuilder::Create("organization_user_rel");
+        qb->select("role, COUNT(*) as cnt");
+        qb->where("org_id", "=", org_id);
+        qb->where("status", "=", (int64_t)Status::APPROVED);
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->groupBy("role");
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (!stmt) {
+            ERROR(logger) << "stmt=" << sql
+                     << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        } else {
+            qb->bindParams(stmt);
+            auto rt = stmt->query();
+            if (rt) {
+                while (rt->next()) {
+                    int32_t role = rt->getInt32(0);
+                    int64_t cnt = rt->getInt64(1);
+                    if (role == OrganizationManager::Role::ORG_ADMIN) {
+                        stats.org_admin_count = cnt;
+                    } else if (role == OrganizationManager::Role::MEMBER) {
+                        stats.regular_count = cnt;
+                    }
+                }
+            }
+        }
+    }
+
+    // active_members: 已批准成员中，其用户账号状态为正常的数量
+    {
+        auto qb = chen::QueryBuilder::Create("organization_user_rel r");
+        qb->join("INNER", "user u", "r.user_id = u.id");
+        qb->where("r.org_id", "=", org_id);
+        qb->where("r.status", "=", (int64_t)Status::APPROVED);
+        qb->where("r.is_deleted", "=", (int64_t)0);
+        qb->where("u.state", "=", (int64_t)1);
+        qb->executeCount(stats.active_members, db);
+    }
+
+    return stats;
 }
 
 }

@@ -336,6 +336,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/organization/apply-list", XX(OrganizationApplyListServlet));
         dp->addServlet("/api/v1/organization/apply-review", XX(OrganizationApplyReviewServlet));
         dp->addServlet("/api/v1/organization/my-applies", XX(OrganizationMyAppliesServlet));
+        dp->addServlet("/api/v1/organization/stats", XX(OrganizationStatsServlet));
         dp->addServlet("/api/v1/organization/repos/stats", XX(OrganizationReposStatsServlet));
         dp->addServlet("/api/v1/organization/repos", XX(OrganizationReposListServlet));
         dp->addServlet("/api/v1/organization/repos/add", XX(OrganizationReposAddServlet));

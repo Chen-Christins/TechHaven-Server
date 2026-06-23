@@ -26,7 +26,12 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
-        int32_t user_role = UserMgr::GetInstance()->get(uid)->getRole();
+        auto current_user = UserMgr::GetInstance()->get(uid);
+        if (!current_user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t user_role = current_user->getRole();
 
         if (user_role != UserManager::Role::ADMIN) {
             result->setErrno(errcode::ACCESS_DENIED);

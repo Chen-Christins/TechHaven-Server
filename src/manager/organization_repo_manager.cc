@@ -1,6 +1,7 @@
 #include "organization_repo_manager.h"
 #include "cache_util.h"
 #include <chen/log/log.h>
+#include <chen/db/redis.h>
 #include "../util.h"
 
 namespace blog {
@@ -30,6 +31,15 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
 
 void OrganizationRepoManager::add(data::OrganizationReposInfo::ptr info) {
     m_cache.set(info->getId(), info);
+    invalidateCountCache(info->getOrgId());
+}
+
+void OrganizationRepoManager::del(int64_t id) {
+    auto info = m_cache.get(id);
+    if (info) {
+        invalidateCountCache(info->getOrgId());
+    }
+    m_cache.del(id);
 }
 
 data::OrganizationReposInfo::ptr OrganizationRepoManager::get(int64_t id) {
@@ -72,8 +82,7 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
 
     auto qb = chen::QueryBuilder::Create("organization_repos");
     qb->where("org_id", "=", org_id);
-    qb->orderBy("sort_order", "DESC");
-    qb->orderBy("id", "DESC");
+    qb->orderBy("sort_order DESC, id", "DESC");
 
     std::stringstream ck;
     ck << "org_repo:list:" << org_id;
@@ -90,7 +99,7 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     auto stmt = db->prepare(sql);
     if (!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -121,6 +130,19 @@ int64_t OrganizationRepoManager::getCountByOrg(int64_t org_id) {
     std::stringstream ck;
     ck << "org_repo:count:" << org_id;
     return executeCountCached(qb, db, ck.str());
+}
+
+void OrganizationRepoManager::invalidateCountCache(int64_t org_id) {
+    {
+        std::stringstream key;
+        key << "cache:count:org_repo:count:" << org_id;
+        chen::RedisUtil::Cmd("blog", "del %s", key.str().c_str());
+    }
+    {
+        std::stringstream key;
+        key << "cache:count:org_repo:list:" << org_id;
+        chen::RedisUtil::Cmd("blog", "del %s", key.str().c_str());
+    }
 }
 
 }

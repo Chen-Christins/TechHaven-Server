@@ -27,8 +27,22 @@ int32_t OrganizationAssignmentListServlet::handle(chen::http::HttpRequest::ptr r
 
         // check operator permission
         auto uid = getUserId(request);
-        int32_t system_role = UserMgr::GetInstance()->get(uid)->getRole();
-        int32_t org_role = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid)->getRole();
+        if (!uid) {
+            result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        auto user = UserMgr::GetInstance()->get(uid);
+        if (!user) {
+            result->setErrno(errcode::USER_NOT_FOUND);
+            break;
+        }
+        int32_t system_role = user->getRole();
+        auto rel = OrganizationUserRelMgr::GetInstance()->getByOrgAndUser(org_id, uid);
+        if (!rel) {
+            result->setErrno(errcode::ORG_NOT_MEMBER);
+            break;
+        }
+        int32_t org_role = rel->getRole();
 
         if (!permission::CanManageMembers(system_role, org_role)) {
             result->setErrno(errcode::ACCESS_DENIED);
