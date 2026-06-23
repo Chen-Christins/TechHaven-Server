@@ -80,6 +80,8 @@
     { "errno": 5015,  "key": "ORG_APPLY_INSERT_FAILED",     "zh": "提交申请失败",              "en": "Failed to submit application" },
     { "errno": 5016,  "key": "ORG_APPLY_UPDATE_FAILED",     "zh": "更新申请失败",              "en": "Failed to update application" },
     { "errno": 5017,  "key": "ORG_USER_REL_FAILED",         "zh": "组织成员操作失败",           "en": "Organization member operation failed" },
+    { "errno": 5018,  "key": "ORG_REPO_NOT_FOUND",          "zh": "仓库不存在",               "en": "Repository not found" },
+    { "errno": 5019,  "key": "ORG_REPO_NAME_EXISTS",        "zh": "该组织下已存在同名仓库",      "en": "Repository name already exists in this organization" },
 
     { "errno": 6001,  "key": "ASSIGNMENT_NOT_FOUND",        "zh": "作业不存在",               "en": "Assignment not found" },
     { "errno": 6002,  "key": "ASSIGNMENT_INVALID_ID",       "zh": "作业ID无效",              "en": "Invalid assignment ID" },

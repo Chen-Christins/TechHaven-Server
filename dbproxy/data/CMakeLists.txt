@@ -19,6 +19,7 @@ set(LIB_SRC
     blog/data/notification_info.cc
     blog/data/organization_info.cc
     blog/data/organization_apply_info.cc
+    blog/data/organization_repos_info.cc
     blog/data/organization_user_rel_info.cc
     blog/data/requirement_info.cc
     blog/data/resource_info.cc

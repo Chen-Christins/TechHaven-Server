@@ -1,0 +1,847 @@
+#include "organization_repos_info.h"
+#include "chen/log/log.h"
+#include <map>
+
+namespace blog {
+namespace data {
+
+static chen::Logger::ptr logger = LOG_NAME("orm");
+
+OrganizationReposInfo::OrganizationReposInfo()
+    :m_starsCount(0)
+    ,m_sortOrder(0)
+    ,m_id()
+    ,m_orgId()
+    ,m_name()
+    ,m_description()
+    ,m_url()
+    ,m_language()
+    ,m_createTime(time(0))
+    ,m_updateTime() {
+}
+
+std::string OrganizationReposInfo::toJsonString() const {
+    Json::Value v;
+    v["id"] = std::to_string(m_id);
+    v["org_id"] = std::to_string(m_orgId);
+    v["name"] = m_name;
+    v["description"] = m_description;
+    v["url"] = m_url;
+    v["language"] = m_language;
+    v["stars_count"] = m_starsCount;
+    v["sort_order"] = m_sortOrder;
+    v["create_time"] = chen::Time2Str(m_createTime);
+    v["update_time"] = chen::Time2Str(m_updateTime);
+    return chen::JsonUtil::ToString(v);
+}
+
+void OrganizationReposInfo::setId(const int64_t& v) {
+    m_id = v;
+}
+
+void OrganizationReposInfo::setOrgId(const int64_t& v) {
+    m_orgId = v;
+}
+
+void OrganizationReposInfo::setName(const std::string& v) {
+    m_name = v;
+}
+
+void OrganizationReposInfo::setDescription(const std::string& v) {
+    m_description = v;
+}
+
+void OrganizationReposInfo::setUrl(const std::string& v) {
+    m_url = v;
+}
+
+void OrganizationReposInfo::setLanguage(const std::string& v) {
+    m_language = v;
+}
+
+void OrganizationReposInfo::setStarsCount(const int32_t& v) {
+    m_starsCount = v;
+}
+
+void OrganizationReposInfo::setSortOrder(const int32_t& v) {
+    m_sortOrder = v;
+}
+
+void OrganizationReposInfo::setCreateTime(const int64_t& v) {
+    m_createTime = v;
+}
+
+void OrganizationReposInfo::setUpdateTime(const int64_t& v) {
+    m_updateTime = v;
+}
+
+
+int OrganizationReposInfoDao::Update(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
+    std::string sql = "update organization_repos set org_id = ?, name = ?, description = ?, url = ?, language = ?, stars_count = ?, sort_order = ?, create_time = ?, update_time = ? where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_orgId);
+    stmt->bindString(2, info->m_name);
+    stmt->bindString(3, info->m_description);
+    stmt->bindString(4, info->m_url);
+    stmt->bindString(5, info->m_language);
+    stmt->bindInt32(6, info->m_starsCount);
+    stmt->bindInt32(7, info->m_sortOrder);
+    stmt->bindTime(8, info->m_createTime);
+    stmt->bindTime(9, info->m_updateTime);
+    stmt->bindInt64(10, info->m_id);
+    return stmt->execute();
+}
+
+int OrganizationReposInfoDao::Insert(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
+    std::string sql = "insert into organization_repos (org_id, name, description, url, language, stars_count, sort_order, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_orgId);
+    stmt->bindString(2, info->m_name);
+    stmt->bindString(3, info->m_description);
+    stmt->bindString(4, info->m_url);
+    stmt->bindString(5, info->m_language);
+    stmt->bindInt32(6, info->m_starsCount);
+    stmt->bindInt32(7, info->m_sortOrder);
+    stmt->bindTime(8, info->m_createTime);
+    stmt->bindTime(9, info->m_updateTime);
+    int rt = stmt->execute();
+    if(rt == 0) {
+        info->m_id = conn->getLastInsertId();
+    }
+    return rt;
+}
+
+int OrganizationReposInfoDao::InsertOrUpdate(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
+    if(info->m_id == 0) {
+        return Insert(info, conn);
+    }
+    std::string sql = "replace into organization_repos (id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_id);
+    stmt->bindInt64(2, info->m_orgId);
+    stmt->bindString(3, info->m_name);
+    stmt->bindString(4, info->m_description);
+    stmt->bindString(5, info->m_url);
+    stmt->bindString(6, info->m_language);
+    stmt->bindInt32(7, info->m_starsCount);
+    stmt->bindInt32(8, info->m_sortOrder);
+    stmt->bindTime(9, info->m_createTime);
+    stmt->bindTime(10, info->m_updateTime);
+    return stmt->execute();
+}
+
+int OrganizationReposInfoDao::Delete(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
+    std::string sql = "delete from organization_repos where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, info->m_id);
+    return stmt->execute();
+}
+
+int OrganizationReposInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
+    std::string sql = "delete from organization_repos where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, id);
+    return stmt->execute();
+}
+
+int OrganizationReposInfoDao::DeleteByOrgId( const int64_t& org_id, chen::IDB::ptr conn) {
+    std::string sql = "delete from organization_repos where org_id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, org_id);
+    return stmt->execute();
+}
+
+int OrganizationReposInfoDao::DeleteByOrgIdName( const int64_t& org_id,  const std::string& name, chen::IDB::ptr conn) {
+    std::string sql = "delete from organization_repos where org_id = ? and name = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, org_id);
+    stmt->bindString(1, name);
+    return stmt->execute();
+}
+
+int OrganizationReposInfoDao::QueryAll(std::vector<OrganizationReposInfo::ptr>& results, chen::IDB::ptr conn) {
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time from organization_repos";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        OrganizationReposInfo::ptr v(new OrganizationReposInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_name = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_url = rt->getString(4);
+        v->m_language = rt->getString(5);
+        v->m_starsCount = rt->getInt32(6);
+        v->m_sortOrder = rt->getInt32(7);
+        v->m_createTime = rt->getTime(8);
+        v->m_updateTime = rt->getTime(9);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+OrganizationReposInfo::ptr OrganizationReposInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time from organization_repos where id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return nullptr;
+    }
+    stmt->bindInt64(1, id);
+    auto rt = stmt->query();
+    if(!rt) {
+        return nullptr;
+    }
+    if(!rt->next()) {
+        return nullptr;
+    }
+    OrganizationReposInfo::ptr v(new OrganizationReposInfo);
+    v->m_id = rt->getInt64(0);
+    v->m_orgId = rt->getInt64(1);
+    v->m_name = rt->getString(2);
+    v->m_description = rt->getString(3);
+    v->m_url = rt->getString(4);
+    v->m_language = rt->getString(5);
+    v->m_starsCount = rt->getInt32(6);
+    v->m_sortOrder = rt->getInt32(7);
+    v->m_createTime = rt->getTime(8);
+    v->m_updateTime = rt->getTime(9);
+    return v;
+}
+
+int OrganizationReposInfoDao::QueryByOrgId(std::vector<OrganizationReposInfo::ptr>& results,  const int64_t& org_id, chen::IDB::ptr conn) {
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time from organization_repos where org_id = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, org_id);
+    auto rt = stmt->query();
+    if(!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationReposInfo::ptr v(new OrganizationReposInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_name = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_url = rt->getString(4);
+        v->m_language = rt->getString(5);
+        v->m_starsCount = rt->getInt32(6);
+        v->m_sortOrder = rt->getInt32(7);
+        v->m_createTime = rt->getTime(8);
+        v->m_updateTime = rt->getTime(9);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+int OrganizationReposInfoDao::QueryByOrgIdPages(std::vector<OrganizationReposInfo::ptr>& results, int64_t& total,  const int64_t& org_id, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    std::string countSql = "select count(*) from organization_repos where org_id = ?";
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    countStmt->bindInt64(1, org_id);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time from organization_repos where org_id = ? order by id desc limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    stmt->bindInt64(1, org_id);
+    stmt->bindInt32(2, limit);
+    stmt->bindInt32(3, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationReposInfo::ptr v(new OrganizationReposInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_name = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_url = rt->getString(4);
+        v->m_language = rt->getString(5);
+        v->m_starsCount = rt->getInt32(6);
+        v->m_sortOrder = rt->getInt32(7);
+        v->m_createTime = rt->getTime(8);
+        v->m_updateTime = rt->getTime(9);
+        results.push_back(v);
+    };
+    return 0;
+}
+
+OrganizationReposInfo::ptr OrganizationReposInfoDao::QueryByOrgIdName( const int64_t& org_id,  const std::string& name, chen::IDB::ptr conn) {
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time from organization_repos where org_id = ? and name = ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return nullptr;
+    }
+    stmt->bindInt64(1, org_id);
+    stmt->bindString(2, name);
+    auto rt = stmt->query();
+    if(!rt) {
+        return nullptr;
+    }
+    if(!rt->next()) {
+        return nullptr;
+    }
+    OrganizationReposInfo::ptr v(new OrganizationReposInfo);
+    v->m_id = rt->getInt64(0);
+    v->m_orgId = rt->getInt64(1);
+    v->m_name = rt->getString(2);
+    v->m_description = rt->getString(3);
+    v->m_url = rt->getString(4);
+    v->m_language = rt->getString(5);
+    v->m_starsCount = rt->getInt32(6);
+    v->m_sortOrder = rt->getInt32(7);
+    v->m_createTime = rt->getTime(8);
+    v->m_updateTime = rt->getTime(9);
+    return v;
+}
+
+int OrganizationReposInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
+    return conn->execute("CREATE TABLE IF NOT EXISTS organization_repos("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "org_id INTEGER NOT NULL DEFAULT 0,"
+            "name TEXT NOT NULL DEFAULT '',"
+            "description TEXT NOT NULL DEFAULT '',"
+            "url TEXT NOT NULL DEFAULT '',"
+            "language TEXT NOT NULL DEFAULT '',"
+            "stars_count INTEGER NOT NULL DEFAULT 0,"
+            "sort_order INTEGER NOT NULL DEFAULT 0,"
+            "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
+            "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
+            "CREATE INDEX IF NOT EXISTS organization_repos_org_id ON organization_repos(org_id);"
+            "CREATE UNIQUE INDEX IF NOT EXISTS organization_repos_org_id_name ON organization_repos(org_id,name);"
+            );
+}
+
+int OrganizationReposInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
+    return conn->execute("CREATE TABLE IF NOT EXISTS organization_repos("
+            "`id` bigint AUTO_INCREMENT COMMENT '主键',"
+            "`org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织 ID，关联 organizations 表',"
+            "`name` varchar(128) NOT NULL DEFAULT '' COMMENT '仓库名称，同一组织内不可重复',"
+            "`description` varchar(1024) NOT NULL DEFAULT '' COMMENT '仓库描述',"
+            "`url` varchar(512) NOT NULL DEFAULT '' COMMENT '仓库地址',"
+            "`language` varchar(64) NOT NULL DEFAULT '' COMMENT '主要编程语言',"
+            "`stars_count` int NOT NULL DEFAULT 0 COMMENT 'Star 数量（可定时同步）',"
+            "`sort_order` int NOT NULL DEFAULT 0 COMMENT '排序权重，越大越靠前',"
+            "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
+            "`update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' ON UPDATE current_timestamp  COMMENT '更新时间',"
+            "PRIMARY KEY(`id`),"
+            "KEY `organization_repos_org_id` (`org_id`),"
+            "UNIQUE KEY `organization_repos_org_id_name` (`org_id`,`name`)) COMMENT='组织关联仓库表'");
+}
+
+int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
+    auto data = conn->query("PRAGMA table_info(organization_repos)");
+    if (!data) {
+        ERROR(logger) << "PRAGMA table_info(organization_repos) errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::map<std::string, std::string> existing_cols;  // name -> type
+    while (data->next()) {
+        existing_cols[data->getString(1)] = data->getString(2);
+    }
+
+    bool need_recreate = false;
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_repos.id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_repos.org_id " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: organization_repos.name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: organization_repos.description " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("url");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: organization_repos.url " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("language");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: organization_repos.language " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("stars_count");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_repos.stars_count " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("sort_order");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: organization_repos.sort_order " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: organization_repos.create_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "TIMESTAMP") {
+            INFO(logger) << "Column type changed: organization_repos.update_time " << it->second << " -> TIMESTAMP";
+            need_recreate = true;
+        }
+    }
+    if (!need_recreate) {
+        for (auto& [name, _] : existing_cols) {
+            (void)_;  // suppress unused warning
+            bool found = false;
+            if (name == "id") found = true;
+            if (name == "org_id") found = true;
+            if (name == "name") found = true;
+            if (name == "description") found = true;
+            if (name == "url") found = true;
+            if (name == "language") found = true;
+            if (name == "stars_count") found = true;
+            if (name == "sort_order") found = true;
+            if (name == "create_time") found = true;
+            if (name == "update_time") found = true;
+            if (!found) {
+                need_recreate = true;
+                WARN(logger) << "Column organization_repos." << name << " removed, table recreate required";
+                break;
+            }
+        }
+    }
+
+    if (need_recreate) {
+        INFO(logger) << "Recreating table organization_repos";
+
+        std::vector<std::string> common_cols;
+        if (existing_cols.find("id") != existing_cols.end()) {
+            common_cols.push_back("id");
+        }
+        if (existing_cols.find("org_id") != existing_cols.end()) {
+            common_cols.push_back("org_id");
+        }
+        if (existing_cols.find("name") != existing_cols.end()) {
+            common_cols.push_back("name");
+        }
+        if (existing_cols.find("description") != existing_cols.end()) {
+            common_cols.push_back("description");
+        }
+        if (existing_cols.find("url") != existing_cols.end()) {
+            common_cols.push_back("url");
+        }
+        if (existing_cols.find("language") != existing_cols.end()) {
+            common_cols.push_back("language");
+        }
+        if (existing_cols.find("stars_count") != existing_cols.end()) {
+            common_cols.push_back("stars_count");
+        }
+        if (existing_cols.find("sort_order") != existing_cols.end()) {
+            common_cols.push_back("sort_order");
+        }
+        if (existing_cols.find("create_time") != existing_cols.end()) {
+            common_cols.push_back("create_time");
+        }
+        if (existing_cols.find("update_time") != existing_cols.end()) {
+            common_cols.push_back("update_time");
+        }
+
+        if (conn->execute("ALTER TABLE organization_repos RENAME TO organization_repos_tmp")) {
+            ERROR(logger) << "RENAME TABLE organization_repos failed";
+            return conn->getErrno();
+        }
+        CreateTableSQLite3(conn);
+        if (!common_cols.empty()) {
+            std::string cols;
+            for (size_t i = 0; i < common_cols.size(); ++i) {
+                if (i) cols += ",";
+                cols += common_cols[i];
+            }
+            std::string sql = "INSERT INTO organization_repos (" + cols + ") SELECT " + cols + " FROM organization_repos_tmp";
+            if (int rt = conn->execute(sql)) {
+                ERROR(logger) << "copy data from organization_repos_tmp to organization_repos failed, errno=" << rt;
+                // don't return; try to continue
+            }
+        }
+        conn->execute("DROP TABLE organization_repos_tmp");
+        return 0;
+    }
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.org_id";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN org_id INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.name";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN name TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.description";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN description TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("url") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.url";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN url TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN url failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("language") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.language";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN language TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN language failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("stars_count") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.stars_count";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN stars_count INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN stars_count failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("sort_order") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.sort_order";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN sort_order failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.create_time";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN create_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.update_time";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    return 0;
+}
+
+int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
+    auto data = conn->query("SHOW COLUMNS FROM organization_repos");
+    if (!data) {
+        ERROR(logger) << "SHOW COLUMNS FROM organization_repos errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    std::map<std::string, std::string> existing_cols;  // name -> type
+    while (data->next()) {
+        existing_cols[data->getString(0)] = data->getString(1);
+    }
+
+    {
+        auto it = existing_cols.find("id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column organization_repos.id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `id` bigint NOT NULL DEFAULT 0 COMMENT '主键'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("org_id");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column organization_repos.org_id " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织 ID，关联 organizations 表'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("name");
+        if (it != existing_cols.end() && it->second != "varchar(128)") {
+            INFO(logger) << "Modifying column organization_repos.name " << it->second << " -> varchar(128)";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `name` varchar(128) NOT NULL DEFAULT '' COMMENT '仓库名称，同一组织内不可重复'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("description");
+        if (it != existing_cols.end() && it->second != "varchar(1024)") {
+            INFO(logger) << "Modifying column organization_repos.description " << it->second << " -> varchar(1024)";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `description` varchar(1024) NOT NULL DEFAULT '' COMMENT '仓库描述'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("url");
+        if (it != existing_cols.end() && it->second != "varchar(512)") {
+            INFO(logger) << "Modifying column organization_repos.url " << it->second << " -> varchar(512)";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `url` varchar(512) NOT NULL DEFAULT '' COMMENT '仓库地址'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.url failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("language");
+        if (it != existing_cols.end() && it->second != "varchar(64)") {
+            INFO(logger) << "Modifying column organization_repos.language " << it->second << " -> varchar(64)";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `language` varchar(64) NOT NULL DEFAULT '' COMMENT '主要编程语言'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.language failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("stars_count");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column organization_repos.stars_count " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `stars_count` int NOT NULL DEFAULT 0 COMMENT 'Star 数量（可定时同步）'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.stars_count failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("sort_order");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column organization_repos.sort_order " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序权重，越大越靠前'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.sort_order failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("create_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column organization_repos.create_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("update_time");
+        if (it != existing_cols.end() && it->second != "timestamp") {
+            INFO(logger) << "Modifying column organization_repos.update_time " << it->second << " -> timestamp";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    for (auto& [name, _] : existing_cols) {
+        (void)_;
+        bool found = false;
+        if (name == "id") found = true;
+        if (name == "org_id") found = true;
+        if (name == "name") found = true;
+        if (name == "description") found = true;
+        if (name == "url") found = true;
+        if (name == "language") found = true;
+        if (name == "stars_count") found = true;
+        if (name == "sort_order") found = true;
+        if (name == "create_time") found = true;
+        if (name == "update_time") found = true;
+        if (!found) {
+            WARN(logger) << "Dropping column organization_repos." << name << " (not in schema, data will be lost)";
+            int rt = conn->execute("ALTER TABLE organization_repos DROP COLUMN `" + name + "`");
+            if (rt) {
+                ERROR(logger) << "DROP COLUMN organization_repos." << name << " failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+
+    if (existing_cols.find("org_id") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.org_id";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `org_id` bigint NOT NULL DEFAULT 0 COMMENT '组织 ID，关联 organizations 表'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN org_id failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("name") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.name";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `name` varchar(128) NOT NULL DEFAULT '' COMMENT '仓库名称，同一组织内不可重复'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("description") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.description";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `description` varchar(1024) NOT NULL DEFAULT '' COMMENT '仓库描述'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN description failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("url") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.url";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `url` varchar(512) NOT NULL DEFAULT '' COMMENT '仓库地址'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN url failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("language") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.language";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `language` varchar(64) NOT NULL DEFAULT '' COMMENT '主要编程语言'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN language failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("stars_count") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.stars_count";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `stars_count` int NOT NULL DEFAULT 0 COMMENT 'Star 数量（可定时同步）'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN stars_count failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("sort_order") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.sort_order";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序权重，越大越靠前'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN sort_order failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("create_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.create_time";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN create_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("update_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.update_time";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' COMMENT '更新时间'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    return 0;
+}
+
+
+} //namespace data
+} //namespace blog

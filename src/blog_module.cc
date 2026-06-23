@@ -97,17 +97,21 @@ bool BlogModule::onServerReady() {
         }
     }
 
-    if (!chen::Application::GetInstance()->getServer("http", m_httpServers)) {
-        ERROR(logger) << "http_server not open";
+    getAllHttpServer(m_httpServers);
+    if (m_httpServers.empty()) {
+        ERROR(logger) << "no http server, cannot register servlets";
         return false;
     }
+    
     registerServlets();
 
-    if (chen::Application::GetInstance()->getServer("ws", m_wsServers)) {
-        registerWSServlets();
-    } else {
-        INFO(logger) << "ws_server not open, skip WebSocket servlets";
+    getAllWSServer(m_wsServers);
+    if (m_wsServers.empty()) {
+        ERROR(logger) << "no ws server, cannot register ws servlets";
+        return false;
     }
+
+    registerWSServlets();
 
     return true;
 }
@@ -143,6 +147,7 @@ bool BlogModule::initMySQL() {
     XX(AssignmentInfoDao, "assignment")
     XX(OrganizationApplyInfoDao, "organization_apply")
     XX(OrganizationInfoDao, "organization")
+    XX(OrganizationReposInfoDao, "organization_repos")
     XX(OrganizationUserRelInfoDao, "organization_user_rel")
     XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
     XX(AssignmentUserRelInfoDao, "assignment_user_rel")
@@ -174,6 +179,7 @@ bool BlogModule::initMySQL() {
         XX(AssignmentInfoDao)
         XX(OrganizationApplyInfoDao)
         XX(OrganizationInfoDao)
+        XX(OrganizationReposInfoDao)
         XX(OrganizationUserRelInfoDao)
         XX(AssignmentOrganizationRelInfoDao)
         XX(AssignmentUserRelInfoDao)
@@ -330,6 +336,10 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/organization/apply-list", XX(OrganizationApplyListServlet));
         dp->addServlet("/api/v1/organization/apply-review", XX(OrganizationApplyReviewServlet));
         dp->addServlet("/api/v1/organization/my-applies", XX(OrganizationMyAppliesServlet));
+        dp->addServlet("/api/v1/organization/repos/stats", XX(OrganizationReposStatsServlet));
+        dp->addServlet("/api/v1/organization/repos", XX(OrganizationReposListServlet));
+        dp->addServlet("/api/v1/organization/repos/add", XX(OrganizationReposAddServlet));
+        dp->addServlet("/api/v1/organization/repos/delete", XX(OrganizationReposDeleteServlet));
         // R&D 平台相关（新版统一 API）
         dp->addServlet("/api/v1/rd/check_access", XX(RdCheckAccessServlet));
         dp->addServlet("/api/v1/rd/requirements", XX(RdRequirementServlet));

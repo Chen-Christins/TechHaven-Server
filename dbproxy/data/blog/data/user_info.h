@@ -48,6 +48,9 @@ public:
     const std::string& getWebsite() { return m_website; }
     void setWebsite(const std::string& v);
 
+    const std::string& getGithub() { return m_github; }
+    void setGithub(const std::string& v);
+
     const std::string& getLocation() { return m_location; }
     void setLocation(const std::string& v);
 
@@ -84,6 +87,7 @@ private:
     std::string m_passwd;
     std::string m_bio;
     std::string m_website;
+    std::string m_github;
     std::string m_location;
     std::string m_token;
     int64_t m_loginTime;

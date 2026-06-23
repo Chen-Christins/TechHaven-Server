@@ -22,6 +22,9 @@ servers:
     process_worker: io
     type: ws
 
+fiber:
+  stack_size: 65536
+
 # Worker threads configuration, defining the number of threads for IO and accept workers.
 workers:
   io:

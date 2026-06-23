@@ -21,6 +21,7 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         std::string passwd = request->getParam("passwd");
         std::string bio = request->getParam("bio");
         std::string website = request->getParam("website");
+        std::string github = request->getParam("github");
         std::string avatar = request->getParam("avatar");
         std::string old_passwd = request->getParam("old_passwd");
 
@@ -73,6 +74,9 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         }
         if (!avatar.empty()) {
             info->setAvatar(avatar);
+        }
+        if (!github.empty()) {
+            info->setGithub(github);
         }
         info->setUpdateTime(time(0));
 

@@ -106,6 +106,8 @@ constexpr int32_t ORG_NO_VALID_ORGS = 5014;          // 没有有效的组织
 constexpr int32_t ORG_APPLY_INSERT_FAILED = 5015;    // 提交申请失败
 constexpr int32_t ORG_APPLY_UPDATE_FAILED = 5016;    // 更新申请失败
 constexpr int32_t ORG_USER_REL_FAILED = 5017;        // 组织成员操作失败
+constexpr int32_t ORG_REPO_NOT_FOUND = 5018;         // 仓库不存在
+constexpr int32_t ORG_REPO_NAME_EXISTS = 5019;       // 同组织下仓库名已存在
 
 // ==================== 模块06: 作业模块 (06001-06999) ====================
 constexpr int32_t ASSIGNMENT_NOT_FOUND = 6001;       // 作业不存在
