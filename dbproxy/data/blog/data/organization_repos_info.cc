@@ -24,6 +24,7 @@ OrganizationReposInfo::OrganizationReposInfo()
     ,m_url()
     ,m_token()
     ,m_language()
+    ,m_syncStatus()
     ,m_createTime(time(0))
     ,m_updateTime() {
 }
@@ -39,6 +40,7 @@ std::string OrganizationReposInfo::toJsonString() const {
     v["language"] = m_language;
     v["stars_count"] = m_starsCount;
     v["sort_order"] = m_sortOrder;
+    v["sync_status"] = m_syncStatus;
     v["create_time"] = chen::Time2Str(m_createTime);
     v["update_time"] = chen::Time2Str(m_updateTime);
     return chen::JsonUtil::ToString(v);
@@ -80,6 +82,10 @@ void OrganizationReposInfo::setSortOrder(const int32_t& v) {
     m_sortOrder = v;
 }
 
+void OrganizationReposInfo::setSyncStatus(const std::string& v) {
+    m_syncStatus = v;
+}
+
 void OrganizationReposInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
 }
@@ -90,7 +96,7 @@ void OrganizationReposInfo::setUpdateTime(const int64_t& v) {
 
 
 int OrganizationReposInfoDao::Update(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update organization_repos set org_id = ?, name = ?, description = ?, url = ?, token = ?, language = ?, stars_count = ?, sort_order = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update organization_repos set org_id = ?, name = ?, description = ?, url = ?, token = ?, language = ?, stars_count = ?, sort_order = ?, sync_status = ?, create_time = ?, update_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -105,14 +111,15 @@ int OrganizationReposInfoDao::Update(OrganizationReposInfo::ptr info, chen::IDB:
     stmt->bindString(6, info->m_language);
     stmt->bindInt32(7, info->m_starsCount);
     stmt->bindInt32(8, info->m_sortOrder);
-    stmt->bindTime(9, info->m_createTime);
-    stmt->bindTime(10, info->m_updateTime);
-    stmt->bindInt64(11, info->m_id);
+    stmt->bindString(9, info->m_syncStatus);
+    stmt->bindTime(10, info->m_createTime);
+    stmt->bindTime(11, info->m_updateTime);
+    stmt->bindInt64(12, info->m_id);
     return stmt->execute();
 }
 
 int OrganizationReposInfoDao::Insert(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into organization_repos (org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into organization_repos (org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -127,8 +134,9 @@ int OrganizationReposInfoDao::Insert(OrganizationReposInfo::ptr info, chen::IDB:
     stmt->bindString(6, info->m_language);
     stmt->bindInt32(7, info->m_starsCount);
     stmt->bindInt32(8, info->m_sortOrder);
-    stmt->bindTime(9, info->m_createTime);
-    stmt->bindTime(10, info->m_updateTime);
+    stmt->bindString(9, info->m_syncStatus);
+    stmt->bindTime(10, info->m_createTime);
+    stmt->bindTime(11, info->m_updateTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -140,7 +148,7 @@ int OrganizationReposInfoDao::InsertOrUpdate(OrganizationReposInfo::ptr info, ch
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into organization_repos (id, org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into organization_repos (id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -156,8 +164,9 @@ int OrganizationReposInfoDao::InsertOrUpdate(OrganizationReposInfo::ptr info, ch
     stmt->bindString(7, info->m_language);
     stmt->bindInt32(8, info->m_starsCount);
     stmt->bindInt32(9, info->m_sortOrder);
-    stmt->bindTime(10, info->m_createTime);
-    stmt->bindTime(11, info->m_updateTime);
+    stmt->bindString(10, info->m_syncStatus);
+    stmt->bindTime(11, info->m_createTime);
+    stmt->bindTime(12, info->m_updateTime);
     return stmt->execute();
 }
 
@@ -211,7 +220,7 @@ int OrganizationReposInfoDao::DeleteByOrgIdName( const int64_t& org_id,  const s
 }
 
 int OrganizationReposInfoDao::QueryAll(std::vector<OrganizationReposInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time from organization_repos";
+    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time from organization_repos";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -233,15 +242,16 @@ int OrganizationReposInfoDao::QueryAll(std::vector<OrganizationReposInfo::ptr>& 
         v->m_language = rt->getString(6);
         v->m_starsCount = rt->getInt32(7);
         v->m_sortOrder = rt->getInt32(8);
-        v->m_createTime = rt->getTime(9);
-        v->m_updateTime = rt->getTime(10);
+        v->m_syncStatus = rt->getString(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
         results.push_back(v);
     }
     return 0;
 }
 
 OrganizationReposInfo::ptr OrganizationReposInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time from organization_repos where id = ?";
+    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time from organization_repos where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -266,13 +276,14 @@ OrganizationReposInfo::ptr OrganizationReposInfoDao::Query( const int64_t& id, c
     v->m_language = rt->getString(6);
     v->m_starsCount = rt->getInt32(7);
     v->m_sortOrder = rt->getInt32(8);
-    v->m_createTime = rt->getTime(9);
-    v->m_updateTime = rt->getTime(10);
+    v->m_syncStatus = rt->getString(9);
+    v->m_createTime = rt->getTime(10);
+    v->m_updateTime = rt->getTime(11);
     return v;
 }
 
 int OrganizationReposInfoDao::QueryByOrgId(std::vector<OrganizationReposInfo::ptr>& results,  const int64_t& org_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time from organization_repos where org_id = ?";
+    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time from organization_repos where org_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -295,8 +306,9 @@ int OrganizationReposInfoDao::QueryByOrgId(std::vector<OrganizationReposInfo::pt
         v->m_language = rt->getString(6);
         v->m_starsCount = rt->getInt32(7);
         v->m_sortOrder = rt->getInt32(8);
-        v->m_createTime = rt->getTime(9);
-        v->m_updateTime = rt->getTime(10);
+        v->m_syncStatus = rt->getString(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
         results.push_back(v);
     };
     return 0;
@@ -321,7 +333,7 @@ int OrganizationReposInfoDao::QueryByOrgIdPages(std::vector<OrganizationReposInf
     if (total == 0) {
         return 0;
     }
-    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time from organization_repos where org_id = ? order by id desc limit ? offset ?";
+    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time from organization_repos where org_id = ? order by id desc limit ? offset ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -346,15 +358,16 @@ int OrganizationReposInfoDao::QueryByOrgIdPages(std::vector<OrganizationReposInf
         v->m_language = rt->getString(6);
         v->m_starsCount = rt->getInt32(7);
         v->m_sortOrder = rt->getInt32(8);
-        v->m_createTime = rt->getTime(9);
-        v->m_updateTime = rt->getTime(10);
+        v->m_syncStatus = rt->getString(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
         results.push_back(v);
     };
     return 0;
 }
 
 OrganizationReposInfo::ptr OrganizationReposInfoDao::QueryByOrgIdName( const int64_t& org_id,  const std::string& name, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, create_time, update_time from organization_repos where org_id = ? and name = ?";
+    std::string sql = "select id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time from organization_repos where org_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -380,8 +393,9 @@ OrganizationReposInfo::ptr OrganizationReposInfoDao::QueryByOrgIdName( const int
     v->m_language = rt->getString(6);
     v->m_starsCount = rt->getInt32(7);
     v->m_sortOrder = rt->getInt32(8);
-    v->m_createTime = rt->getTime(9);
-    v->m_updateTime = rt->getTime(10);
+    v->m_syncStatus = rt->getString(9);
+    v->m_createTime = rt->getTime(10);
+    v->m_updateTime = rt->getTime(11);
     return v;
 }
 
@@ -396,6 +410,7 @@ int OrganizationReposInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "language TEXT NOT NULL DEFAULT '',"
             "stars_count INTEGER NOT NULL DEFAULT 0,"
             "sort_order INTEGER NOT NULL DEFAULT 0,"
+            "sync_status TEXT NOT NULL DEFAULT '',"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00');"
             "CREATE INDEX IF NOT EXISTS organization_repos_org_id ON organization_repos(org_id);"
@@ -414,6 +429,7 @@ int OrganizationReposInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`language` varchar(64) NOT NULL DEFAULT '' COMMENT '主要编程语言',"
             "`stars_count` int NOT NULL DEFAULT 0 COMMENT 'Star 数量（可定时同步）',"
             "`sort_order` int NOT NULL DEFAULT 0 COMMENT '排序权重，越大越靠前',"
+            "`sync_status` varchar(16) NOT NULL DEFAULT '' COMMENT '同步状态: idle/syncing/success/failed',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
             "`update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' ON UPDATE current_timestamp  COMMENT '更新时间',"
             "PRIMARY KEY(`id`),"
@@ -497,6 +513,13 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
     }
     {
+        auto it = existing_cols.find("sync_status");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: organization_repos.sync_status " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
         auto it = existing_cols.find("create_time");
         if (it != existing_cols.end() && it->second != "TIMESTAMP") {
             INFO(logger) << "Column type changed: organization_repos.create_time " << it->second << " -> TIMESTAMP";
@@ -523,6 +546,7 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             if (name == "language") found = true;
             if (name == "stars_count") found = true;
             if (name == "sort_order") found = true;
+            if (name == "sync_status") found = true;
             if (name == "create_time") found = true;
             if (name == "update_time") found = true;
             if (!found) {
@@ -563,6 +587,9 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
         if (existing_cols.find("sort_order") != existing_cols.end()) {
             common_cols.push_back("sort_order");
+        }
+        if (existing_cols.find("sync_status") != existing_cols.end()) {
+            common_cols.push_back("sync_status");
         }
         if (existing_cols.find("create_time") != existing_cols.end()) {
             common_cols.push_back("create_time");
@@ -653,6 +680,14 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
         if (rt) {
             ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN sort_order failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("sync_status") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.sync_status";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN sync_status TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN sync_status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 
@@ -777,6 +812,16 @@ int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         }
     }
     {
+        auto it = existing_cols.find("sync_status");
+        if (it != existing_cols.end() && it->second != "varchar(16)") {
+            INFO(logger) << "Modifying column organization_repos.sync_status " << it->second << " -> varchar(16)";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `sync_status` varchar(16) NOT NULL DEFAULT '' COMMENT '同步状态: idle/syncing/success/failed'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.sync_status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
         auto it = existing_cols.find("create_time");
         if (it != existing_cols.end() && it->second != "timestamp") {
             INFO(logger) << "Modifying column organization_repos.create_time " << it->second << " -> timestamp";
@@ -809,6 +854,7 @@ int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         if (name == "language") found = true;
         if (name == "stars_count") found = true;
         if (name == "sort_order") found = true;
+        if (name == "sync_status") found = true;
         if (name == "create_time") found = true;
         if (name == "update_time") found = true;
         if (!found) {
@@ -881,6 +927,14 @@ int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序权重，越大越靠前'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN sort_order failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("sync_status") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.sync_status";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `sync_status` varchar(16) NOT NULL DEFAULT '' COMMENT '同步状态: idle/syncing/success/failed'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN sync_status failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 

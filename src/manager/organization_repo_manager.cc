@@ -2,6 +2,9 @@
 #include "cache_util.h"
 #include <chen/log/log.h>
 #include <chen/db/redis.h>
+#include <chen/http/http_connection.h>
+#include <chen/http/uri.h>
+#include <json/json.h>
 #include "../util.h"
 
 namespace blog {
@@ -25,8 +28,9 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
     v->setLanguage(rt->getString(6));
     v->setStarsCount(rt->getInt32(7));
     v->setSortOrder(rt->getInt32(8));
-    v->setCreateTime(rt->getTime(9));
-    v->setUpdateTime(rt->getTime(10));
+    v->setSyncStatus(rt->getString(9));
+    v->setCreateTime(rt->getTime(10));
+    v->setUpdateTime(rt->getTime(11));
     return v;
 }
 
@@ -82,6 +86,7 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     }
 
     auto qb = chen::QueryBuilder::Create("organization_repos");
+    qb->select("id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time");
     qb->where("org_id", "=", org_id);
     qb->orderBy("sort_order DESC, id", "DESC");
 
@@ -144,6 +149,105 @@ void OrganizationRepoManager::invalidateCountCache(int64_t org_id) {
         key << "cache:count:org_repo:list:" << org_id;
         chen::RedisUtil::Cmd("blog", "del %s", key.str().c_str());
     }
+}
+
+static std::string extractGithubRepo(const std::string& url) {
+    auto uri = chen::Uri::Create(url);
+    if (!uri) {
+        return "";
+    }
+    std::string path = uri->getPath();
+    if (!path.empty() && path[0] == '/') {
+        path = path.substr(1);
+    }
+    if (path.size() > 4 && path.substr(path.size() - 4) == ".git") {
+        path = path.substr(0, path.size() - 4);
+    }
+    return path;
+}
+
+static void markSyncFailed(int64_t repo_id) {
+    auto repo = OrganizationRepoMgr::GetInstance()->get(repo_id);
+    if (!repo) {
+        return;
+    }
+    auto db = GetDB();
+    if (!db) {
+        return;
+    }
+    repo->setSyncStatus("failed");
+    repo->setUpdateTime(time(0));
+    data::OrganizationReposInfoDao::Update(repo, db);
+}
+
+void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string& url, const std::string& token) {
+    std::string repo_path = extractGithubRepo(url);
+    if (repo_path.empty()) {
+        ERROR(logger) << "SyncFromGitHub: invalid repo url=" << url;
+        markSyncFailed(repo_id);
+        return;
+    }
+
+    std::string api_url = "https://api.github.com/repos/" + repo_path;
+    std::map<std::string, std::string> headers;
+    headers["Accept"] = "application/vnd.github.v3+json";
+    headers["Accept-Encoding"] = "identity";
+    headers["User-Agent"] = "Blog-Server/1.0";
+    if (!token.empty()) {
+        headers["Authorization"] = "Bearer " + token;
+    }
+
+    INFO(logger) << "SyncFromGitHub: calling " << api_url;
+    auto result = chen::http::HttpConnection::DoGet(api_url, 15000, headers);
+    if (!result || result->result != 0 || !result->response
+            || result->response->getStatus() != chen::http::HttpStatus::OK) {
+        ERROR(logger) << "SyncFromGitHub: HTTP request failed"
+            << " result=" << (result ? result->result : -1)
+            << " status=" << (result && result->response ? (int)result->response->getStatus() : 0)
+            << " body=" << (result && result->response ? result->response->getBody() : "");
+        markSyncFailed(repo_id);
+        return;
+    }
+
+    Json::Value json;
+    Json::Reader reader;
+    if (!reader.parse(result->response->getBody(), json)) {
+        ERROR(logger) << "SyncFromGitHub: parse JSON failed";
+        markSyncFailed(repo_id);
+        return;
+    }
+
+    auto repo = OrganizationRepoMgr::GetInstance()->get(repo_id);
+    if (!repo) {
+        ERROR(logger) << "SyncFromGitHub: repo " << repo_id << " not found";
+        return;
+    }
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "SyncFromGitHub: GetDB failed";
+        return;
+    }
+
+    if (json.isMember("stargazers_count")) {
+        repo->setStarsCount(json["stargazers_count"].asInt());
+    }
+    if (json.isMember("language") && !json["language"].isNull()) {
+        repo->setLanguage(json["language"].asString());
+    }
+    if (json.isMember("description") && !json["description"].isNull()) {
+        repo->setDescription(json["description"].asString());
+    }
+    repo->setSyncStatus("success");
+    repo->setUpdateTime(time(0));
+
+    if (data::OrganizationReposInfoDao::Update(repo, db)) {
+        ERROR(logger) << "SyncFromGitHub: DB update failed";
+        repo->setSyncStatus("failed");
+        data::OrganizationReposInfoDao::Update(repo, db);
+        return;
+    }
+
+    INFO(logger) << "SyncFromGitHub: success for repo " << repo_id;
 }
 
 }

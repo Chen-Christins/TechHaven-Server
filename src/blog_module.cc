@@ -341,6 +341,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/organization/repos/token", XX(OrganizationReposTokenServlet));
         dp->addServlet("/api/v1/organization/repos", XX(OrganizationReposListServlet));
         dp->addServlet("/api/v1/organization/repos/add", XX(OrganizationReposAddServlet));
+        dp->addServlet("/api/v1/organization/repos/sync", XX(OrganizationReposSyncServlet));
         dp->addServlet("/api/v1/organization/repos/delete", XX(OrganizationReposDeleteServlet));
         // R&D 平台相关（新版统一 API）
         dp->addServlet("/api/v1/rd/check_access", XX(RdCheckAccessServlet));

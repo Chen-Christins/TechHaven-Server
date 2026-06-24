@@ -35,6 +35,11 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
             result->setErrno(errcode::PARAM_INVALID, "仓库地址最长512字符");
             break;
         }
+        // 仅支持 GitHub 仓库
+        if (url.find("github.com") == std::string::npos) {
+            result->setErrno(errcode::PARAM_INVALID, "仅支持 GitHub 仓库");
+            break;
+        }
         // 校验 language 长度
         if (language.size() > 64) {
             result->setErrno(errcode::PARAM_INVALID, "编程语言最长64字符");
@@ -99,6 +104,7 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
         info->setToken(token);
         info->setStarsCount(0);
         info->setSortOrder(0);
+        info->setSyncStatus("idle");
         info->setCreateTime(time(0));
         info->setUpdateTime(time(0));
 
