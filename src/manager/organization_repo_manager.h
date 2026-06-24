@@ -19,6 +19,9 @@ public:
         , int64_t org_id, uint64_t offset, uint64_t limit);
     int64_t getCountByOrg(int64_t org_id);
 
+    /// 获取所有含有 token 的仓库信息
+    void getAllWithToken(std::vector<data::OrganizationReposInfo::ptr>& repos);
+
     /// 从 GitHub API 异步同步仓库数据（stars_count、language、description）
     static void SyncFromGitHub(int64_t repo_id, const std::string& url, const std::string& token);
 

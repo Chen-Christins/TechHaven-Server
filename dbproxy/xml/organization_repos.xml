@@ -5,13 +5,13 @@
         <column name="name" type="string" length="128" desc="仓库名称，同一组织内不可重复"/>
         <column name="description" type="string" length="1024" desc="仓库描述"/>
         <column name="url" type="string" length="512" desc="仓库地址"/>
-        <column name="token" type="string" length="512" desc="仓库访问令牌, 用于 API 访问"/>
         <column name="language" type="string" length="64" desc="主要编程语言"/>
         <column name="stars_count" type="int32" default="0" desc="Star 数量（可定时同步）"/>
         <column name="sort_order" type="int32" default="0" desc="排序权重，越大越靠前"/>
-        <column name="sync_status" type="string" length="16" default="" desc="同步状态: idle/syncing/success/failed"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
         <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间"/>
+        <column name="token" type="string" length="512" desc="仓库访问令牌, 用于 API 访问"/>
+        <column name="sync_status" type="string" length="16" default="" desc="同步状态: idle/syncing/success/failed"/>
     </columns>
     <indexs>
         <index name="pk" cols="id" type="pk"/>

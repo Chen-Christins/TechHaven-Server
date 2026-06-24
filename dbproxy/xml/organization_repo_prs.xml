@@ -1,0 +1,29 @@
+<table name="organization_repo_prs" namespace="blog.data" desc="组织仓库 PR 表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键"/>
+        <column name="repo_id" type="int64" desc="仓库 ID，关联 organization_repos 表"/>
+        <column name="github_pr_id" type="int32" desc="GitHub PR 编号，用于幂等去重"/>
+        <column name="title" type="string" length="256" desc="PR 标题"/>
+        <column name="description" type="string" length="4096" desc="PR 描述"/>
+        <column name="state" type="string" length="16" desc="状态: open/closed/merged"/>
+        <column name="priority" type="string" length="16" desc="优先级: low/medium/high/critical"/>
+        <column name="author" type="string" length="128" desc="作者 GitHub 用户名"/>
+        <column name="head_branch" type="string" length="256" desc="源分支"/>
+        <column name="base_branch" type="string" length="256" desc="目标分支"/>
+        <column name="commit_sha" type="string" length="64" desc="最新 Commit SHA"/>
+        <column name="changed_files" type="int32" default="0" desc="变更文件数"/>
+        <column name="additions" type="int32" default="0" desc="新增行数"/>
+        <column name="deletions" type="int32" default="0" desc="删除行数"/>
+        <column name="reviewers" type="string" length="1024" desc="审核人信息 JSON 数组"/>
+        <column name="review_status" type="string" length="32" desc="审核状态: pending/approved/changes_requested"/>
+        <column name="closed_at" type="datetime" desc="关闭时间"/>
+        <column name="merged_at" type="datetime" desc="合并时间"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="记录创建时间"/>
+        <column name="update_time" type="datetime" update="current_timestamp" desc="记录更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="idx_repo_id" cols="repo_id" type="index"/>
+        <index name="uniq_repo_pr" cols="repo_id,github_pr_id" type="uniq"/>
+    </indexs>
+</table>

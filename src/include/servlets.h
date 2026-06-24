@@ -69,6 +69,9 @@
 #include "../servlets/organization/organization_join_servlet.h"             // IWYU pragma: keep
 #include "../servlets/organization/organization_list_servlet.h"             // IWYU pragma: keep
 #include "../servlets/organization/organization_my_applies_servlet.h"       // IWYU pragma: keep
+#include "../servlets/organization/organization_repo_prs_delete_servlet.h"  // IWYU pragma: keep
+#include "../servlets/organization/organization_repo_prs_list_servlet.h"    // IWYU pragma: keep
+#include "../servlets/organization/organization_repo_prs_sync_servlet.h"    // IWYU pragma: keep
 #include "../servlets/organization/organization_repos_add_servlet.h"        // IWYU pragma: keep
 #include "../servlets/organization/organization_repos_token_servlet.h"      // IWYU pragma: keep
 #include "../servlets/organization/organization_stats_servlet.h"           // IWYU pragma: keep
