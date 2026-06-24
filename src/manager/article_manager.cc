@@ -913,7 +913,7 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     // 缓存未命中：查数据库
     // 直接用日期字符串比较，避免 mktime/localtime_r 与 MySQL UNIX_TIMESTAMP() 之间
     // 的时区不一致问题（前者用服务器本地时区，后者用 MySQL session 时区）
-    char start_str[20], end_str[20];
+    char start_str[32], end_str[32];
     snprintf(start_str, sizeof(start_str), "%04d-%02d-01 00:00:00", year, month);
     int next_month = month + 1;
     int next_year = year;

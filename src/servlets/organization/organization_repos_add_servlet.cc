@@ -99,6 +99,7 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
         info->setToken(token);
         info->setStarsCount(0);
         info->setSortOrder(0);
+        info->setSyncStatus("idle");
         info->setCreateTime(time(0));
         info->setUpdateTime(time(0));
 

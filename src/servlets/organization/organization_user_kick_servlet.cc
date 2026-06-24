@@ -67,8 +67,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
 
         if (data::OrganizationUserRelInfoDao::InsertOrUpdate(rel, db)) {
             result->setErrno(errcode::ORG_USER_REL_FAILED);
-            ERROR(logger) << "db error, errno=" << db->getErrno()
-                          << ", errstr=" << db->getErrStr();
+            ERROR(logger) << "db error, errno=" << db->getErrno() << ", errstr=" << db->getErrStr();
             break;
         }
 

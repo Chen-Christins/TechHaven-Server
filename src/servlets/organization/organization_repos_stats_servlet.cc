@@ -2,7 +2,6 @@
 #include <chen/log/log.h>
 #include "../../util.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_repo_manager.h"
 
 namespace blog {

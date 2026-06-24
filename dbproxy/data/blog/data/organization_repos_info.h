@@ -48,6 +48,9 @@ public:
     const int32_t& getSortOrder() { return m_sortOrder; }
     void setSortOrder(const int32_t& v);
 
+    const std::string& getSyncStatus() { return m_syncStatus; }
+    void setSyncStatus(const std::string& v);
+
     const int64_t& getCreateTime() { return m_createTime; }
     void setCreateTime(const int64_t& v);
 
@@ -66,6 +69,7 @@ private:
     std::string m_url;
     std::string m_token;
     std::string m_language;
+    std::string m_syncStatus;
     int64_t m_createTime;
     int64_t m_updateTime;
 };
