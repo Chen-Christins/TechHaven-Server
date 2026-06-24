@@ -57,6 +57,12 @@ public:
     const std::string& getSyncStatus() { return m_syncStatus; }
     void setSyncStatus(const std::string& v);
 
+    const std::string& getPrSyncStatus() { return m_prSyncStatus; }
+    void setPrSyncStatus(const std::string& v);
+
+    const int64_t& getPrSyncedAt() { return m_prSyncedAt; }
+    void setPrSyncedAt(const int64_t& v);
+
     std::string toJsonString() const;
 
 private:
@@ -64,12 +70,14 @@ private:
     int32_t m_sortOrder;
     int64_t m_id;
     int64_t m_orgId;
+    int64_t m_prSyncedAt;
     std::string m_name;
     std::string m_description;
     std::string m_url;
     std::string m_language;
     std::string m_token;
     std::string m_syncStatus;
+    std::string m_prSyncStatus;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

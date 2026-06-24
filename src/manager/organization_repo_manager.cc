@@ -31,6 +31,8 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
     v->setUpdateTime(rt->getTime(9));
     v->setToken(rt->getString(10));
     v->setSyncStatus(rt->getString(11));
+    v->setPrSyncStatus(rt->getString(12));
+    v->setPrSyncedAt(rt->getInt64(13));
     return v;
 }
 

@@ -12,6 +12,8 @@
         <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间"/>
         <column name="token" type="string" length="512" desc="仓库访问令牌, 用于 API 访问"/>
         <column name="sync_status" type="string" length="16" default="" desc="同步状态: idle/syncing/success/failed"/>
+        <column name="pr_sync_status" type="string" length="16" default="" desc="PR 同步状态: idle/syncing/success/failed"/>
+        <column name="pr_synced_at" type="int64" default="0" desc="上次 PR 同步时间戳"/>
     </columns>
     <indexs>
         <index name="pk" cols="id" type="pk"/>

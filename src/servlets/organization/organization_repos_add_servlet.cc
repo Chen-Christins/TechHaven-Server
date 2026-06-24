@@ -105,6 +105,8 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
         info->setStarsCount(0);
         info->setSortOrder(0);
         info->setSyncStatus("idle");
+        info->setPrSyncStatus("idle");
+        info->setPrSyncedAt(0);
         info->setCreateTime(time(0));
         info->setUpdateTime(time(0));
 

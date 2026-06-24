@@ -7,6 +7,7 @@
  */
 #include "organization_repo_pr_manager.h"
 #include "cache_util.h"
+#include "organization_repo_manager.h"
 #include "organization_user_rel_manager.h"
 #include <chen/log/log.h>
 #include <chen/worker.h>
@@ -428,6 +429,17 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
         headers["Authorization"] = "Bearer " + token;
     }
 
+    {
+        auto repo = OrganizationRepoMgr::GetInstance()->get(repo_id);
+        if (repo) {
+            auto db2 = GetDB();
+            if (db2) {
+                repo->setPrSyncStatus("syncing");
+                data::OrganizationReposInfoDao::Update(repo, db2);
+            }
+        }
+    }
+
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "SyncPrFromGitHub: GetDB failed";
@@ -481,6 +493,19 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
             break;
         }
         api_url = getNextPageUrl(link);
+    }
+
+    // 更新仓库的 PR 同步状态
+    {
+        auto repo = OrganizationRepoMgr::GetInstance()->get(repo_id);
+        if (repo) {
+            auto repoDb = GetDB();
+            if (repoDb) {
+                repo->setPrSyncStatus(total_synced >= 0 ? "success" : "failed");
+                repo->setPrSyncedAt(time(0));
+                data::OrganizationReposInfoDao::Update(repo, repoDb);
+            }
+        }
     }
 
     INFO(logger) << "SyncPrFromGitHub: synced " << total_synced << " PRs across "
