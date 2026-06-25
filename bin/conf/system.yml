@@ -36,11 +36,6 @@ workers:
 server:
   work_path: /home/chen/workspace/Blog
   pid_file: blog.pid
-  email_service: 
-    host: smtp.163.com
-    port: 465
-    address: 17354303956@163.com
-    token: ASVbGLfbcJSz7JAy
 
 # Logging configuration, defining different loggers for root, system, and access logs with their respective levels, formatters, and appenders.
 logs:
@@ -66,13 +61,7 @@ logs:
         file: /home/chen/workspace/Blog/logs/access.log
       - type: StdoutLogAppender
 
-# Database configuration for SQLite3, defining the database path and SQL settings for the blog database.
-sqlite3:
-  dbs:
-    blog:
-      path: /home/chen/workspace/Blog/blog.db
-      sql: PRAGMA synchronous = OFF
-
+# Database configuration for MySQL, defining the database path and SQL settings for the blog database.
 mysql:
   dbs:
     techhaven:
