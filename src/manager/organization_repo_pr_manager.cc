@@ -291,6 +291,8 @@ struct SyncPrItem {
     bool merged;
     int64_t closed_at;
     int64_t merged_at;
+    std::string review_status;
+    std::string reviewers;
 };
 
 static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& repo_path
@@ -309,6 +311,8 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         si.commit_sha = item["head"]["sha"].asString();
         si.merged = item["merged"].asBool();
         si.closed_at = 0;
+        si.review_status = "pending";
+        si.reviewers = "[]";
         si.merged_at = 0;
         if (item.isMember("closed_at") && !item["closed_at"].isNull()) {
             si.closed_at = chen::Str2Time(item["closed_at"].asString().c_str());
@@ -319,39 +323,71 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         items.push_back(si);
     }
 
-    // 并行拉详情补全 additions/deletions/changed_files
+    // 并行拉详情 + 审查数据
     std::map<int, int> additions, deletions, changed_files;
+    std::map<int, std::string> review_statuses, reviewers_json;
     {
         auto wg = chen::WorkerGroup::Create(5);
         for (auto& si : items) {
             int num = si.number;
-            wg->schedule([repo_path, &headers, num, &additions, &deletions, &changed_files]() {
-                std::string detail_url = "https://api.github.com/repos/" + repo_path + "/pulls/" + std::to_string(num);
-                chen::http::HttpResult::ptr detail;
-                for (int retry = 0; retry <= 3; ++retry) {
-                    detail = chen::http::HttpConnection::DoGet(detail_url, 15000, headers);
+            wg->schedule([repo_path, &headers, num, &additions, &deletions, &changed_files
+                    , &review_statuses, &reviewers_json]() {
+                // 1. 拉详情补全 additions/deletions/changed_files
+                {
+                    std::string detail_url = "https://api.github.com/repos/" + repo_path + "/pulls/" + std::to_string(num);
+                    chen::http::HttpResult::ptr detail;
+                    for (int retry = 0; retry <= 3; ++retry) {
+                        detail = chen::http::HttpConnection::DoGet(detail_url, 15000, headers);
+                        if (detail && detail->result == 0 && detail->response
+                                && detail->response->getStatus() == chen::http::HttpStatus::OK) {
+                            break;
+                        }
+                    }
                     if (detail && detail->result == 0 && detail->response
                             && detail->response->getStatus() == chen::http::HttpStatus::OK) {
-                        break;
+                        Json::Value detailJson;
+                        Json::Reader reader;
+                        if (reader.parse(detail->response->getBody(), detailJson)) {
+                            if (detailJson.isMember("additions")) additions[num] = detailJson["additions"].asInt();
+                            if (detailJson.isMember("deletions")) deletions[num] = detailJson["deletions"].asInt();
+                            if (detailJson.isMember("changed_files")) changed_files[num] = detailJson["changed_files"].asInt();
+                        }
                     }
                 }
-                if (!detail || detail->result != 0 || !detail->response
-                        || detail->response->getStatus() != chen::http::HttpStatus::OK) {
-                    return;
-                }
-                Json::Value detailJson;
-                Json::Reader reader;
-                if (!reader.parse(detail->response->getBody(), detailJson)) {
-                    return;
-                }
-                if (detailJson.isMember("additions")) {
-                    additions[num] = detailJson["additions"].asInt();
-                }
-                if (detailJson.isMember("deletions")) {
-                    deletions[num] = detailJson["deletions"].asInt();
-                }
-                if (detailJson.isMember("changed_files")) {
-                    changed_files[num] = detailJson["changed_files"].asInt();
+                // 2. 拉审查数据
+                {
+                    std::string reviews_url = "https://api.github.com/repos/" + repo_path + "/pulls/" + std::to_string(num) + "/reviews";
+                    chen::http::HttpResult::ptr reviews;
+                    for (int retry = 0; retry <= 3; ++retry) {
+                        reviews = chen::http::HttpConnection::DoGet(reviews_url, 15000, headers);
+                        if (reviews && reviews->result == 0 && reviews->response
+                                && reviews->response->getStatus() == chen::http::HttpStatus::OK) {
+                            break;
+                        }
+                    }
+                    if (reviews && reviews->result == 0 && reviews->response
+                            && reviews->response->getStatus() == chen::http::HttpStatus::OK) {
+                        Json::Value arr;
+                        Json::Reader reader;
+                        if (reader.parse(reviews->response->getBody(), arr) && arr.isArray()) {
+                            bool has_approved = false;
+                            bool has_changes = false;
+                            Json::Value reviewerArr(Json::arrayValue);
+                            for (auto& rv : arr) {
+                                std::string state = rv["state"].asString();
+                                if (state == "APPROVED") has_approved = true;
+                                else if (state == "CHANGES_REQUESTED") has_changes = true;
+                                Json::Value reviewer;
+                                reviewer["reviewer"] = rv["user"]["login"].asString();
+                                reviewer["status"] = state;
+                                reviewerArr.append(reviewer);
+                            }
+                            if (has_approved) review_statuses[num] = "approved";
+                            else if (has_changes) review_statuses[num] = "changes_requested";
+                            else review_statuses[num] = "pending";
+                            reviewers_json[num] = chen::JsonUtil::ToString(reviewerArr);
+                        }
+                    }
                 }
             });
         }
@@ -369,6 +405,7 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
             info.reset(new data::OrganizationRepoPrsInfo);
             info->setRepoId(repo_id);
             info->setGithubPrId(si.number);
+            info->setCreateTime(time(0));
         }
 
         info->setTitle(si.title);
@@ -390,11 +427,16 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         auto it_c = changed_files.find(si.number);
         if (it_c != changed_files.end()) info->setChangedFiles(it_c->second);
 
-        info->setReviewers("[]");
-        info->setReviewStatus("pending");
+        {
+            auto it = review_statuses.find(si.number);
+            info->setReviewStatus(it != review_statuses.end() ? it->second : "pending");
+        }
+        {
+            auto it = reviewers_json.find(si.number);
+            info->setReviewers(it != reviewers_json.end() ? it->second : "[]");
+        }
         info->setClosedAt(si.closed_at);
         info->setMergedAt(si.merged_at);
-        info->setCreateTime(time(0));
         info->setUpdateTime(time(0));
 
         if (existing) {
