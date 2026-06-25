@@ -96,7 +96,7 @@ int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::Organizatio
     auto qb = chen::QueryBuilder::Create("organization_repo_prs");
     qb->where("repo_id", "=", repo_id);
     qb->whereIf(!state.empty(), "state", "=", state);
-    qb->orderBy("id", "DESC");
+    qb->orderBy("github_pr_id", "DESC");
 
     int64_t total = executeCountCached(qb, db, "org_pr:list:" + std::to_string(repo_id) + ":" + state);
     if (total == 0) {
@@ -157,7 +157,7 @@ int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::Organization
     qb->join("organization_repos repos", "prs.repo_id = repos.id");
     qb->where("repos.org_id", "=", org_id);
     qb->whereIf(!state.empty(), "prs.state", "=", state);
-    qb->orderBy("prs.id", "DESC");
+    qb->orderBy("prs.github_pr_id", "DESC");
 
     std::string cache_key = "org_pr:org:" + std::to_string(org_id) + ":" + state;
     int64_t total = executeCountCached(qb, db, cache_key);
@@ -207,7 +207,7 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
     qb->where("rel.status", "=", (int64_t)OrganizationUserRelManager::Status::APPROVED);
     qb->where("rel.is_deleted", "=", (int64_t)0);
     qb->whereIf(!state.empty(), "prs.state", "=", state);
-    qb->orderBy("prs.id", "DESC");
+    qb->orderBy("prs.github_pr_id", "DESC");
 
     int64_t total = executeCountCached(qb, db, "org_pr:user:" + std::to_string(uid) + ":" + state);
     if (total == 0) {
