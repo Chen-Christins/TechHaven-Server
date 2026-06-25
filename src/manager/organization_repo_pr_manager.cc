@@ -96,7 +96,7 @@ int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::Organizatio
     auto qb = chen::QueryBuilder::Create("organization_repo_prs");
     qb->where("repo_id", "=", repo_id);
     qb->whereIf(!state.empty(), "state", "=", state);
-    qb->orderBy("github_pr_id", "DESC");
+    qb->orderBy("create_time", "DESC");
 
     int64_t total = executeCountCached(qb, db, "org_pr:list:" + std::to_string(repo_id) + ":" + state);
     if (total == 0) {
@@ -157,7 +157,7 @@ int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::Organization
     qb->join("organization_repos repos", "prs.repo_id = repos.id");
     qb->where("repos.org_id", "=", org_id);
     qb->whereIf(!state.empty(), "prs.state", "=", state);
-    qb->orderBy("prs.github_pr_id", "DESC");
+    qb->orderBy("prs.create_time", "DESC");
 
     std::string cache_key = "org_pr:org:" + std::to_string(org_id) + ":" + state;
     int64_t total = executeCountCached(qb, db, cache_key);
@@ -207,7 +207,7 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
     qb->where("rel.status", "=", (int64_t)OrganizationUserRelManager::Status::APPROVED);
     qb->where("rel.is_deleted", "=", (int64_t)0);
     qb->whereIf(!state.empty(), "prs.state", "=", state);
-    qb->orderBy("prs.github_pr_id", "DESC");
+    qb->orderBy("prs.create_time", "DESC");
 
     int64_t total = executeCountCached(qb, db, "org_pr:user:" + std::to_string(uid) + ":" + state);
     if (total == 0) {
@@ -289,6 +289,7 @@ struct SyncPrItem {
     std::string base_branch;
     std::string commit_sha;
     bool merged;
+    int64_t created_at;
     int64_t closed_at;
     int64_t merged_at;
     std::string review_status;
@@ -310,15 +311,29 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         si.base_branch = item["base"]["ref"].asString();
         si.commit_sha = item["head"]["sha"].asString();
         si.merged = item["merged"].asBool();
+        si.created_at = 0;
         si.closed_at = 0;
         si.review_status = "pending";
         si.reviewers = "[]";
         si.merged_at = 0;
+        if (item.isMember("created_at") && !item["created_at"].isNull()) {
+            std::string ts = item["created_at"].asString();
+            // GitHub ISO 8601: "2024-06-25T10:30:00Z" → "2024-06-25 10:30:00"
+            for (auto& c : ts) if (c == 'T') c = ' ';
+            if (!ts.empty() && ts.back() == 'Z') ts.pop_back();
+            si.created_at = chen::Str2Time(ts.c_str());
+        }
         if (item.isMember("closed_at") && !item["closed_at"].isNull()) {
-            si.closed_at = chen::Str2Time(item["closed_at"].asString().c_str());
+            std::string ts = item["closed_at"].asString();
+            for (auto& c : ts) if (c == 'T') c = ' ';
+            if (!ts.empty() && ts.back() == 'Z') ts.pop_back();
+            si.closed_at = chen::Str2Time(ts.c_str());
         }
         if (item.isMember("merged_at") && !item["merged_at"].isNull()) {
-            si.merged_at = chen::Str2Time(item["merged_at"].asString().c_str());
+            std::string ts = item["merged_at"].asString();
+            for (auto& c : ts) if (c == 'T') c = ' ';
+            if (!ts.empty() && ts.back() == 'Z') ts.pop_back();
+            si.merged_at = chen::Str2Time(ts.c_str());
         }
         items.push_back(si);
     }
@@ -405,7 +420,9 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
             info.reset(new data::OrganizationRepoPrsInfo);
             info->setRepoId(repo_id);
             info->setGithubPrId(si.number);
-            info->setCreateTime(time(0));
+        }
+        if (si.created_at) {
+            info->setCreateTime(si.created_at);
         }
 
         info->setTitle(si.title);
