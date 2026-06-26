@@ -18,7 +18,7 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> art_ids;
-        auto tmp = chen::split(ids, ',');
+        auto tmp = chen::StringUtil::Split(ids, ',');
         for (auto& i : tmp) {
             art_ids.insert(chen::TypeUtil::Atoi(i));
         }

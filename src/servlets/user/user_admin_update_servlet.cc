@@ -82,7 +82,7 @@ int32_t UserAdminUpdateServlet::handle(chen::http::HttpRequest::ptr request, che
                 result->setErrno(errcode::USER_INVALID_PASSWORD);
                 break;
             }
-            info->setPasswd(chen::md5(passwd));
+            info->setPasswd(chen::EncryptorUtil::MD5(passwd));
         }
         if (has_role) {
             if (role < 1 || role > 4) {

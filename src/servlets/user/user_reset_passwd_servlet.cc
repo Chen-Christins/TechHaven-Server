@@ -48,7 +48,7 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
 
         chen::ITransaction::ptr trans = db->openTransaction();
         data::UserInfo::ptr info = UserMgr::GetInstance()->getByEmail(email);
-        info->setPasswd(chen::md5(passwd));
+        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
 
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");

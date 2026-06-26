@@ -59,7 +59,7 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
             result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
-        info->setPasswd(chen::md5(passwd_s));
+        info->setPasswd(chen::EncryptorUtil::MD5(passwd_s));
 
         if (data::UserInfoDao::Update(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "insert user failed");

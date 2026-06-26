@@ -80,7 +80,7 @@ int32_t UserAdminCreateServlet::handle(chen::http::HttpRequest::ptr request, che
         data::UserInfo::ptr info(new data::UserInfo);
         info->setAccount(account);
         info->setEmail(email);
-        info->setPasswd(chen::md5(passwd));
+        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
         info->setRole(role);
         info->setState(state);
         info->setName(account);

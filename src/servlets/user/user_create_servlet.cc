@@ -69,7 +69,7 @@ int32_t UserCreateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         data::UserInfo::ptr info(new data::UserInfo);
         info->setAccount(account);
         info->setEmail(email);
-        info->setPasswd(chen::md5(passwd));
+        info->setPasswd(chen::EncryptorUtil::MD5(passwd));
         info->setState(UserManager::Status::ACTIVE);
         info->setName(account);
 

@@ -19,7 +19,7 @@ int32_t LabelDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> label_ids;
-        auto tmp = chen::split(ids, ",");
+        auto tmp = chen::StringUtil::Split(ids, ",");
         for (auto& i : tmp) {
             label_ids.insert(chen::TypeUtil::Atoi(i));
         }

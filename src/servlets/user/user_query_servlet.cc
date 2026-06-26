@@ -18,7 +18,7 @@ int32_t UserQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
     do {
         DEFINE_AND_CHECK_STRING(result, user_ids, "user_ids");
 
-        auto ids = chen::split(user_ids, ',');
+        auto ids = chen::StringUtil::Split(user_ids, ',');
         std::vector<data::UserInfo::ptr> infos;
 
         for (auto& i : ids) {

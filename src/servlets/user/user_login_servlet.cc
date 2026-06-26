@@ -39,7 +39,7 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             result->setErrno(errcode::AUTH_CODE_INVALID);
             break;
         }
-        if (info->getPasswd() != chen::md5(passwd)) {
+        if (info->getPasswd() != chen::EncryptorUtil::MD5(passwd)) {
             result->setErrno(errcode::USER_PASSWORD_WRONG);
             break;
         }

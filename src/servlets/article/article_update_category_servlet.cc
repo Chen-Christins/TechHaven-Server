@@ -43,7 +43,7 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
 
         std::vector<std::string> tmps;
         if (!adds.empty()) {
-            tmps = chen::split(adds, ',');
+            tmps = chen::StringUtil::Split(adds, ',');
         }
 
         auto db = getDB();
@@ -94,7 +94,7 @@ int32_t ArticleUpdateCategoryServlet::handle(chen::http::HttpRequest::ptr reques
         }
         tmps.clear();
         if (!dels.empty()) {
-            tmps = chen::split(dels, ',');
+            tmps = chen::StringUtil::Split(dels, ',');
         }
         for (auto& i : tmps) {
             int64_t cid = chen::TypeUtil::Atoi(i);

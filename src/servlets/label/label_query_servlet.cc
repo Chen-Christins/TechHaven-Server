@@ -25,7 +25,7 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         if (user_id) {
             LabelMgr::GetInstance()->listByUserId(infos, user_id, true);
         } else {
-            auto tmp = chen::split(ids, ",");
+            auto tmp = chen::StringUtil::Split(ids, ",");
             for (auto& i : tmp) {
                 auto id = chen::TypeUtil::Atoi(i);
                 if (id) {

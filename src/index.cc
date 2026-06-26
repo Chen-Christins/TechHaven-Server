@@ -7,7 +7,7 @@
 #include "manager/article_label_rel_manager.h"
 #include "manager/category_manager.h"
 #include "manager/label_manager.h"
-#include <chen/util/hash_util.h>
+#include <chen/util/util.h>
 
 namespace blog {
 
@@ -120,7 +120,7 @@ int32_t Index::property(std::map<uint64_t, std::map<uint64_t, uint64_t>>& props
 }
 
 uint64_t Index::StrHash(const std::string& str) {
-    return chen::murmur3_hash64(chen::ToLower(str).c_str());
+    return chen::EncryptorUtil::Murmur3_64(chen::StringUtil::ToLower(str).c_str());
 }
 
 std::string Index::toString() {

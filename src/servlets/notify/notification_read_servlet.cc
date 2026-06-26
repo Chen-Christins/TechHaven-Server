@@ -23,7 +23,7 @@ int32_t NotificationReadServlet::handle(chen::http::HttpRequest::ptr request, ch
         std::vector<int64_t> ids;
         std::string ids_str = request->getParam("ids");
         if (!ids_str.empty()) {
-            for (auto& s : chen::split(ids_str, ',')) {
+            for (auto& s : chen::StringUtil::Split(ids_str, ',')) {
                 auto trimmed = chen::StringUtil::Trim(s);
                 if (!trimmed.empty()) {
                     ids.push_back(std::stoll(trimmed));
