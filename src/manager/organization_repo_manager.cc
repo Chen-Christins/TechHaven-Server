@@ -24,13 +24,16 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
     v->setName(rt->getString(2));
     v->setDescription(rt->getString(3));
     v->setUrl(rt->getString(4));
-    v->setToken(rt->getString(5));
-    v->setLanguage(rt->getString(6));
-    v->setStarsCount(rt->getInt32(7));
-    v->setSortOrder(rt->getInt32(8));
-    v->setSyncStatus(rt->getString(9));
-    v->setCreateTime(rt->getTime(10));
-    v->setUpdateTime(rt->getTime(11));
+    v->setLanguage(rt->getString(5));
+    v->setStarsCount(rt->getInt32(6));
+    v->setSortOrder(rt->getInt32(7));
+    v->setCreateTime(rt->getTime(8));
+    v->setUpdateTime(rt->getTime(9));
+    v->setToken(rt->getString(10));
+    v->setSyncStatus(rt->getString(11));
+    v->setPrSyncStatus(rt->getString(12));
+    v->setPrSyncedAt(rt->getInt64(13));
+    v->setGithubFullName(rt->getString(14));
     return v;
 }
 
@@ -86,7 +89,6 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     }
 
     auto qb = chen::QueryBuilder::Create("organization_repos");
-    qb->select("id, org_id, name, description, url, token, language, stars_count, sort_order, sync_status, create_time, update_time");
     qb->where("org_id", "=", org_id);
     qb->orderBy("sort_order DESC, id", "DESC");
 
@@ -136,6 +138,31 @@ int64_t OrganizationRepoManager::getCountByOrg(int64_t org_id) {
     std::stringstream ck;
     ck << "org_repo:count:" << org_id;
     return executeCountCached(qb, db, ck.str());
+}
+
+void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationReposInfo::ptr>& repos) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return;
+    }
+    auto qb = chen::QueryBuilder::Create("organization_repos");
+    qb->where("token", "!=", "");
+    std::string sql = qb->buildQuerySQL();
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        ERROR(logger) << "stmt=" << sql
+                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if (!rt) {
+        return;
+    }
+    while (rt->next()) {
+        repos.push_back(parseRow(rt));
+    }
 }
 
 void OrganizationRepoManager::invalidateCountCache(int64_t org_id) {
@@ -236,6 +263,10 @@ void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string&
     }
     if (json.isMember("description") && !json["description"].isNull()) {
         repo->setDescription(json["description"].asString());
+    }
+    // 从 API 响应设置 github_full_name（如果尚未设置或与 URL 提取一致）
+    if (json.isMember("full_name") && !json["full_name"].isNull()) {
+        repo->setGithubFullName(json["full_name"].asString());
     }
     repo->setSyncStatus("success");
     repo->setUpdateTime(time(0));

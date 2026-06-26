@@ -25,7 +25,7 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
             delIds.insert(id);
         }
         if (!idsStr.empty()) {
-            for (auto& s : chen::split(idsStr, ",")) {
+            for (auto& s : chen::StringUtil::Split(idsStr, ",")) {
                 delIds.insert(chen::TypeUtil::Atoi(s));
             }
         }

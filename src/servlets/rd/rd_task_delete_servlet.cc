@@ -24,7 +24,7 @@ int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::
             delIds.insert(id);
         }
         if (!idsStr.empty()) {
-            for (auto& s : chen::split(idsStr, ",")) {
+            for (auto& s : chen::StringUtil::Split(idsStr, ",")) {
                 delIds.insert(chen::TypeUtil::Atoi(s));
             }
         }

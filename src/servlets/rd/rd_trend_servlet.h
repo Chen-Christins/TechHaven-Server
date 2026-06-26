@@ -1,0 +1,65 @@
+/**
+ * @file rd_trend_servlet.h
+ * @brief 研发平台趋势分析接口
+ * @author Christins
+ * @date 2026-06-25
+ * @copyright Apache 2.0
+ */
+#ifndef __BLOG_SERVLETS_RD_TREND_SERVLET_H__
+#define __BLOG_SERVLETS_RD_TREND_SERVLET_H__
+
+#include "../../struct.h"
+#include <json/json.h>
+#include <ctime>
+#include <map>
+#include <string>
+#include <vector>
+
+namespace blog {
+namespace servlet {
+
+struct TrendContext {
+    chen::IDB::ptr db;
+    std::vector<int64_t> target_orgs;
+    time_t start_date = 0;
+    time_t end_date = 0;
+    std::string granularity;
+
+    // 统计中间结果
+    int64_t new_req = 0, bug_total = 0, new_task = 0;
+    int64_t done_req = 0, done_bug = 0, done_task = 0;
+    int64_t total_completed = 0;
+    int64_t review_pass_rate = 0;
+    double avg_cycle_time = 0.0;
+    int64_t task_delta = 0;
+    double cycle_delta = 0.0;
+
+    // 趋势序列
+    std::map<std::string, Json::Value> series_map;
+};
+
+class RdTrendServlet : public BlogLoginedServlet {
+public:
+    typedef std::shared_ptr<RdTrendServlet> ptr;
+    RdTrendServlet();
+    virtual int32_t handle(chen::http::HttpRequest::ptr request
+                    ,chen::http::HttpResponse::ptr response
+                    ,chen::http::HttpSession::ptr session
+                    ,Result::ptr result) override;
+
+private:
+    static time_t parseDate(const std::string& date_str);
+    static std::string formatDate(time_t t);
+    static std::string formatGroupKey(time_t t, const std::string& granularity);
+    static std::string buildTimeCond(time_t start, time_t end);
+    static std::string buildPRTimeCond(time_t start, time_t end);
+
+    int64_t countBySql(const TrendContext& ctx, const std::string& table, const std::string& extra_cond);
+    double avgCycleTime(const TrendContext& ctx, const std::string& table, const std::string& status_cond);
+    void addSeriesBySql(TrendContext& ctx, const std::string& table, const std::string& extra_cond, const std::string& field_name);
+};
+
+}
+}
+
+#endif // __BLOG_SERVLETS_RD_TREND_SERVLET_H__

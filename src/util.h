@@ -9,7 +9,7 @@
 
 #include <chen/db/mysql.h>
 #include <chen/http/sse_session.h>
-#include <chen/util/hash_util.h>
+#include <chen/util/util.h>
 
 #include <regex>
 
@@ -31,14 +31,14 @@ inline std::string EncryptUserId(int64_t uid) {
     for (size_t i = 0; i < plain.size(); i++) {
         plain[i] ^= s_uid_secret[i % s_uid_secret.size()];
     }
-    return chen::base64encode(plain);
+    return chen::StringUtil::Base64Encode(plain);
 }
 
 inline int64_t DecryptUserId(const std::string& encrypted) {
     if (encrypted.empty()) {
         return 0;
     }
-    std::string data = chen::base64decode(encrypted);
+    std::string data = chen::StringUtil::Base64Decode(encrypted);
     if (data.empty()) {
         return 0;
     }
@@ -67,14 +67,14 @@ inline std::string EncryptApiKey(const std::string& api_key) {
     for (size_t i = 0; i < data.size(); i++) {
         data[i] ^= s_api_key_secret[i % s_api_key_secret.size()];
     }
-    return chen::base64encode(data);
+    return chen::StringUtil::Base64Encode(data);
 }
 
 inline std::string DecryptApiKey(const std::string& encrypted) {
     if (encrypted.empty()) {
         return "";
     }
-    std::string data = chen::base64decode(encrypted);
+    std::string data = chen::StringUtil::Base64Decode(encrypted);
     if (data.empty()) {
         return "";
     }

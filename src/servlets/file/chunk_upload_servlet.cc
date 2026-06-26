@@ -4,7 +4,7 @@
 #include <chen/util/util.h>
 #include <fstream>
 #include <vector>
-#include <openssl/md5.h>
+#include <chen/util/encryptor_util.h>
 
 #include "../../chunk_upload.h"
 #include "../../manager/resource_manager.h"
@@ -67,9 +67,9 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
         , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         std::string type = request->getHeader("X-Upload-Type");
-        std::string file_name = chen::URLDecode(request->getHeader("X-Upload-Filename"));
-        std::string dir_name = chen::URLDecode(request->getHeader("X-Upload-Dir-Name"));
-        std::string biz_info = chen::URLDecode(request->getHeader("X-Upload-Biz-Info"));
+        std::string file_name = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Filename"));
+        std::string dir_name = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Dir-Name"));
+        std::string biz_info = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Biz-Info"));
         uint64_t total_size = std::stoull(request->getHeader("X-Upload-Total-Size"));
         uint64_t total_chunks = std::stoull(request->getHeader("X-Upload-Total-Chunks"));
         uint32_t chunk_size = std::stoul(request->getHeader("X-Upload-Chunk-Size"));
@@ -91,8 +91,8 @@ int32_t ChunkUploadServlet::handleInit(chen::http::HttpRequest::ptr request
 
         // 生成 uploadId
         time_t now = time(0);
-        std::string upload_id = chen::md5(std::to_string(now) + "|"
-            + file_name + "|" + std::to_string(uid) + chen::random_string(6));
+        std::string upload_id = chen::EncryptorUtil::MD5(std::to_string(now) + "|"
+            + file_name + "|" + std::to_string(uid) + chen::RandomUtil::RandString(6));
 
         auto session = ChunkUploadMgr::GetInstance()->createSession(upload_id, file_name
             , total_size, chunk_size, total_chunks, biz_type, std::stoll(biz_id), dir_name);
@@ -109,7 +109,7 @@ int32_t ChunkUploadServlet::handleComplete(chen::http::HttpRequest::ptr request
     bool assembly_ok = false;
     do {
         std::string type = request->getHeader("X-Upload-Type");
-        upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
+        upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
             result->setErrno(errcode::UPLOAD_INVALID_TYPE);
@@ -191,28 +191,11 @@ assembly_done:
                 << " kb -- " << (1.0 * upload_session->total_size / (1024 * 1024)) << " mb)";
 
         // 流式 MD5 计算，避免全量读入内存
-        std::string hash_key;
-        {
-            std::ifstream final_file(filename, std::ios::binary);
-            if (!final_file.is_open()) {
-                ERROR(logger) << "Failed to open final file for hash calculation: " << filename;
-                result->setErrno(errcode::UPLOAD_FILE_HASH_FAILED);
-                break;
-            }
-            MD5_CTX md5_ctx;
-            MD5_Init(&md5_ctx);
-            while (final_file.read(buffer.data(), buffer.size())) {
-                MD5_Update(&md5_ctx, buffer.data(), final_file.gcount());
-            }
-            if (final_file.gcount() > 0) {
-                MD5_Update(&md5_ctx, buffer.data(), final_file.gcount());
-            }
-            unsigned char digest[MD5_DIGEST_LENGTH];
-            MD5_Final(digest, &md5_ctx);
-            char hex_output[MD5_DIGEST_LENGTH * 2 + 1];
-            chen::hexstring_from_data(digest, MD5_DIGEST_LENGTH, hex_output);
-            hash_key.assign(hex_output, MD5_DIGEST_LENGTH * 2);
-            final_file.close();
+        std::string hash_key = chen::EncryptorUtil::MD5File(filename);
+        if (hash_key.empty()) {
+            ERROR(logger) << "Failed to open final file for hash calculation: " << filename;
+            result->setErrno(errcode::UPLOAD_FILE_HASH_FAILED);
+            break;
         }
 
         std::string path = "/uploads/" + dir_name + "/" + upload_session->file_name;
@@ -303,7 +286,7 @@ int32_t ChunkUploadServlet::handleCancel(chen::http::HttpRequest::ptr request
         , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         std::string type = request->getHeader("X-Upload-Type");
-        std::string upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
+        std::string upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
             result->setErrno(errcode::UPLOAD_INVALID_TYPE);
@@ -340,7 +323,7 @@ int32_t ChunkUploadServlet::handleUpload(chen::http::HttpRequest::ptr request
         , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         std::string type = request->getHeader("X-Upload-Type");
-        std::string upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
+        std::string upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
         uint64_t chunk_index = std::stoul(request->getHeader("X-Upload-Chunk-Index"));
         // uint64_t offset = std::stoull(request->getHeader("X-Upload-Offset"));
         uint64_t chunk_size = std::stoul(request->getHeader("X-Upload-Chunk-Size"));
@@ -406,7 +389,7 @@ int32_t ChunkUploadServlet::handleStatus(chen::http::HttpRequest::ptr request
         , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
         std::string type = request->getHeader("X-Upload-Type");
-        std::string upload_id = chen::URLDecode(request->getHeader("X-Upload-Id"));
+        std::string upload_id = chen::StringUtil::URLDecode(request->getHeader("X-Upload-Id"));
 
         if (type != "chunked") {
             result->setErrno(errcode::UPLOAD_INVALID_TYPE);

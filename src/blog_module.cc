@@ -18,6 +18,7 @@
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./chunk_upload.h"
+#include "protocol_ss_github.h"
 
 namespace blog {
 
@@ -40,6 +41,7 @@ bool BlogModule::onUnload() {
     NotificationMgr::GetInstance()->closeAllConnections();
     unregisterWSServlets();
     unregisterServlets();
+    unregisterRPCMethods();
     return true;
 }
 
@@ -67,6 +69,22 @@ void BlogModule::onTick() {
 
     // 3. 清理过期的分块上传会话及临时文件
     ::ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
+
+    // 4. 定时同步有 token 的仓库 PR（每 30 分钟）
+    static int s_pr_sync_tick = 0;
+    if (++s_pr_sync_tick >= 30) {
+        s_pr_sync_tick = 0;
+        std::vector<data::OrganizationReposInfo::ptr> repos;
+        OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
+        for (auto& repo : repos) {
+            int64_t repo_id = repo->getId();
+            std::string url = repo->getUrl();
+            std::string token = repo->getToken();
+            chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
+                OrganizationRepoPrManager::SyncFromGitHub(repo_id, url, token);
+            });
+        }
+    }
 }
 
 uint64_t BlogModule::getTickIntervalMs() {
@@ -113,6 +131,18 @@ bool BlogModule::onServerReady() {
 
     registerWSServlets();
 
+    // 注册 RPC 方法
+    {
+        std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
+        getAllRpcServer(rpc_servers);
+        for (auto& s : rpc_servers) {
+            if (!s) continue;
+            s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
+            s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
+            INFO(logger) << "registered RPC methods on " << s->getName();
+        }
+    }
+
     return true;
 }
 
@@ -147,6 +177,7 @@ bool BlogModule::initMySQL() {
     XX(AssignmentInfoDao, "assignment")
     XX(OrganizationApplyInfoDao, "organization_apply")
     XX(OrganizationInfoDao, "organization")
+    XX(OrganizationRepoPrsInfoDao, "organization_repo_prs")
     XX(OrganizationReposInfoDao, "organization_repos")
     XX(OrganizationUserRelInfoDao, "organization_user_rel")
     XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
@@ -179,6 +210,7 @@ bool BlogModule::initMySQL() {
         XX(AssignmentInfoDao)
         XX(OrganizationApplyInfoDao)
         XX(OrganizationInfoDao)
+        XX(OrganizationRepoPrsInfoDao)
         XX(OrganizationReposInfoDao)
         XX(OrganizationUserRelInfoDao)
         XX(AssignmentOrganizationRelInfoDao)
@@ -337,6 +369,9 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/organization/apply-review", XX(OrganizationApplyReviewServlet));
         dp->addServlet("/api/v1/organization/my-applies", XX(OrganizationMyAppliesServlet));
         dp->addServlet("/api/v1/organization/stats", XX(OrganizationStatsServlet));
+        dp->addServlet("/api/v1/organization/repos/prs", XX(OrganizationRepoPrsListServlet));
+        dp->addServlet("/api/v1/organization/repos/prs/delete", XX(OrganizationRepoPrsDeleteServlet));
+        dp->addServlet("/api/v1/organization/repos/prs/sync", XX(OrganizationRepoPrsSyncServlet));
         dp->addServlet("/api/v1/organization/repos/stats", XX(OrganizationReposStatsServlet));
         dp->addServlet("/api/v1/organization/repos/token", XX(OrganizationReposTokenServlet));
         dp->addServlet("/api/v1/organization/repos", XX(OrganizationReposListServlet));
@@ -357,6 +392,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/rd/tasks/edit", XX(RdTaskEditServlet));
         dp->addServlet("/api/v1/rd/tasks/detail", XX(RdTaskDetailServlet));
         dp->addServlet("/api/v1/rd/tasks/delete", XX(RdTaskDeleteServlet));
+        dp->addServlet("/api/v1/rd/trends", XX(RdTrendServlet));
         dp->addServlet("/api/v1/rd/stats", XX(RdStatsServlet));
         dp->addServlet("/api/v1/rd/my-tickets", XX(RdMyTicketsServlet));
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
@@ -402,6 +438,19 @@ void BlogModule::unregisterWSServlets() {
         }
     }
     m_wsServers.clear();
+}
+
+void BlogModule::unregisterRPCMethods() {
+    std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
+    getAllRpcServer(rpc_servers);
+    for (auto& s : rpc_servers) {
+        if (!s) {
+            continue;
+        }
+        s->unregisterMethod("GithubPRWebhook");
+        s->unregisterMethod("GithubPRReviewWebhook");
+        s->clearRegistrations();
+    }
 }
 
 }

@@ -22,7 +22,7 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> assignment_ids;
-        auto tmp = chen::split(ids, ",");
+        auto tmp = chen::StringUtil::Split(ids, ",");
         for (auto& i : tmp) {
             assignment_ids.insert(chen::TypeUtil::Atoi(i));
         }

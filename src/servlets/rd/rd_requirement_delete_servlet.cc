@@ -37,7 +37,7 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
             delIds.insert(id);
         }
         if (!idsStr.empty()) {
-            for (auto& s : chen::split(idsStr, ",")) {
+            for (auto& s : chen::StringUtil::Split(idsStr, ",")) {
                 delIds.insert(chen::TypeUtil::Atoi(s));
             }
         }

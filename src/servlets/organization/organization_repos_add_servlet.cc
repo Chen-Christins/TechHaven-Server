@@ -105,8 +105,33 @@ int32_t OrganizationReposAddServlet::handle(chen::http::HttpRequest::ptr request
         info->setStarsCount(0);
         info->setSortOrder(0);
         info->setSyncStatus("idle");
+        info->setPrSyncStatus("idle");
+        info->setPrSyncedAt(0);
         info->setCreateTime(time(0));
         info->setUpdateTime(time(0));
+
+        // 自动从 URL 提取 github_full_name（owner/repo）
+        {
+            std::string full_name;
+            std::string marker = "github.com/";
+            auto pos = url.find(marker);
+            if (pos != std::string::npos) {
+                full_name = url.substr(pos + marker.size());
+            } else {
+                marker = "github.com:";
+                pos = url.find(marker);
+                if (pos != std::string::npos) {
+                    full_name = url.substr(pos + marker.size());
+                }
+            }
+            if (!full_name.empty()) {
+                // 去掉尾部 .git
+                if (full_name.size() > 4 && full_name.substr(full_name.size() - 4) == ".git") {
+                    full_name = full_name.substr(0, full_name.size() - 4);
+                }
+                info->setGithubFullName(full_name);
+            }
+        }
 
         if (data::OrganizationReposInfoDao::Insert(info, db)) {
             result->setErrno(errcode::DB_OPERATION_FAILED, "添加仓库失败");

@@ -54,7 +54,7 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 result->setErrno(errcode::PARAM_MISSING, "old password required");
                 break;
             }
-            if (info->getPasswd() != chen::md5(old_passwd)) {
+            if (info->getPasswd() != chen::EncryptorUtil::MD5(old_passwd)) {
                 result->setErrno(errcode::USER_OLD_PASSWORD_WRONG);
                 break;
             }
@@ -64,7 +64,7 @@ int32_t UserUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             info->setName(name);
         }
         if (!passwd.empty()) {
-            info->setPasswd(chen::md5(passwd));
+            info->setPasswd(chen::EncryptorUtil::MD5(passwd));
         }
         if (!bio.empty()) {
             info->setBio(bio);

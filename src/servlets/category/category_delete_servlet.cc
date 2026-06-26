@@ -37,7 +37,7 @@ int32_t CategoryDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen
     do {
         DEFINE_AND_CHECK_STRING(result, ids, "ids");
         std::set<int64_t> cat_ids;
-        auto tmp = chen::split(ids, ",");
+        auto tmp = chen::StringUtil::Split(ids, ",");
         for (auto& i : tmp) {
             cat_ids.insert(chen::TypeUtil::Atoi(i));
         }

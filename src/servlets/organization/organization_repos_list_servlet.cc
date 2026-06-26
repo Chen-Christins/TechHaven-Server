@@ -69,6 +69,8 @@ int32_t OrganizationReposListServlet::handle(chen::http::HttpRequest::ptr reques
             item["updated_at"] = (Json::Int64)repo->getUpdateTime();
             item["has_token"] = !repo->getToken().empty();
             item["sync_status"] = repo->getSyncStatus();
+            item["pr_sync_status"] = repo->getPrSyncStatus();
+            item["pr_synced_at"] = (Json::Int64)repo->getPrSyncedAt();
             list.append(item);
         }
     } while (0);

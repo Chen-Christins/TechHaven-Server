@@ -69,7 +69,7 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         std::vector<data::ArticleCategoryRelInfo::ptr> new_cat_rels;
         std::vector<data::ArticleLabelRelInfo::ptr> new_label_rels;
         if (!category.empty()) {
-            auto cat_ids = chen::split(category, ',');
+            auto cat_ids = chen::StringUtil::Split(category, ',');
             for (auto& s : cat_ids) {
                 int64_t cid = chen::TypeUtil::Atoi(s);
                 auto cinfo = CategoryMgr::GetInstance()->get(cid);
@@ -90,7 +90,7 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         // 处理标签关联
         if (!label.empty()) {
-            auto label_ids = chen::split(label, ',');
+            auto label_ids = chen::StringUtil::Split(label, ',');
             for (auto& s : label_ids) {
                 int64_t lid = chen::TypeUtil::Atoi(s);
                 auto linfo = LabelMgr::GetInstance()->get(lid);

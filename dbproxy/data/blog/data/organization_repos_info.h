@@ -36,9 +36,6 @@ public:
     const std::string& getUrl() { return m_url; }
     void setUrl(const std::string& v);
 
-    const std::string& getToken() { return m_token; }
-    void setToken(const std::string& v);
-
     const std::string& getLanguage() { return m_language; }
     void setLanguage(const std::string& v);
 
@@ -48,14 +45,26 @@ public:
     const int32_t& getSortOrder() { return m_sortOrder; }
     void setSortOrder(const int32_t& v);
 
-    const std::string& getSyncStatus() { return m_syncStatus; }
-    void setSyncStatus(const std::string& v);
-
     const int64_t& getCreateTime() { return m_createTime; }
     void setCreateTime(const int64_t& v);
 
     const int64_t& getUpdateTime() { return m_updateTime; }
     void setUpdateTime(const int64_t& v);
+
+    const std::string& getToken() { return m_token; }
+    void setToken(const std::string& v);
+
+    const std::string& getSyncStatus() { return m_syncStatus; }
+    void setSyncStatus(const std::string& v);
+
+    const std::string& getPrSyncStatus() { return m_prSyncStatus; }
+    void setPrSyncStatus(const std::string& v);
+
+    const int64_t& getPrSyncedAt() { return m_prSyncedAt; }
+    void setPrSyncedAt(const int64_t& v);
+
+    const std::string& getGithubFullName() { return m_githubFullName; }
+    void setGithubFullName(const std::string& v);
 
     std::string toJsonString() const;
 
@@ -64,12 +73,15 @@ private:
     int32_t m_sortOrder;
     int64_t m_id;
     int64_t m_orgId;
+    int64_t m_prSyncedAt;
     std::string m_name;
     std::string m_description;
     std::string m_url;
-    std::string m_token;
     std::string m_language;
+    std::string m_token;
     std::string m_syncStatus;
+    std::string m_prSyncStatus;
+    std::string m_githubFullName;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

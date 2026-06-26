@@ -33,7 +33,7 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             break;
         }
 
-        auto biz_info = chen::split(data[1].content, "|");
+        auto biz_info = chen::StringUtil::Split(data[1].content, "|");
         if (biz_info.size() != 2) {
             result->setErrno(errcode::FILE_PROTOCOL_ERROR);
             break;
@@ -64,7 +64,7 @@ int32_t FileUploadServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                     << " kb -- " << (1.0 * data[i].content.size() / (1024 * 1024)) << " mb)";
 
             // generate hash key
-            std::string hash_key = chen::md5(data[i].content);
+            std::string hash_key = chen::EncryptorUtil::MD5(data[i].content);
             size_t size = data[i].content.size();
 
             std::string path = "/uploads/" + dir_name + "/" + data[i].filename;
