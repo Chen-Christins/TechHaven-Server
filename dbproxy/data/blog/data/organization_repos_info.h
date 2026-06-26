@@ -63,6 +63,9 @@ public:
     const int64_t& getPrSyncedAt() { return m_prSyncedAt; }
     void setPrSyncedAt(const int64_t& v);
 
+    const std::string& getGithubFullName() { return m_githubFullName; }
+    void setGithubFullName(const std::string& v);
+
     std::string toJsonString() const;
 
 private:
@@ -78,6 +81,7 @@ private:
     std::string m_token;
     std::string m_syncStatus;
     std::string m_prSyncStatus;
+    std::string m_githubFullName;
     int64_t m_createTime;
     int64_t m_updateTime;
 };

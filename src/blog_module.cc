@@ -18,6 +18,7 @@
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./chunk_upload.h"
+#include "protocol_ss_github.h"
 
 namespace blog {
 
@@ -40,6 +41,7 @@ bool BlogModule::onUnload() {
     NotificationMgr::GetInstance()->closeAllConnections();
     unregisterWSServlets();
     unregisterServlets();
+    unregisterRPCMethods();
     return true;
 }
 
@@ -128,6 +130,18 @@ bool BlogModule::onServerReady() {
     }
 
     registerWSServlets();
+
+    // 注册 RPC 方法
+    {
+        std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
+        getAllRpcServer(rpc_servers);
+        for (auto& s : rpc_servers) {
+            if (!s) continue;
+            s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
+            s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
+            INFO(logger) << "registered RPC methods on " << s->getName();
+        }
+    }
 
     return true;
 }
@@ -424,6 +438,19 @@ void BlogModule::unregisterWSServlets() {
         }
     }
     m_wsServers.clear();
+}
+
+void BlogModule::unregisterRPCMethods() {
+    std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
+    getAllRpcServer(rpc_servers);
+    for (auto& s : rpc_servers) {
+        if (!s) {
+            continue;
+        }
+        s->unregisterMethod("GithubPRWebhook");
+        s->unregisterMethod("GithubPRReviewWebhook");
+        s->clearRegistrations();
+    }
 }
 
 }

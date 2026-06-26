@@ -33,6 +33,7 @@ data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLDat
     v->setSyncStatus(rt->getString(11));
     v->setPrSyncStatus(rt->getString(12));
     v->setPrSyncedAt(rt->getInt64(13));
+    v->setGithubFullName(rt->getString(14));
     return v;
 }
 
@@ -262,6 +263,10 @@ void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string&
     }
     if (json.isMember("description") && !json["description"].isNull()) {
         repo->setDescription(json["description"].asString());
+    }
+    // 从 API 响应设置 github_full_name（如果尚未设置或与 URL 提取一致）
+    if (json.isMember("full_name") && !json["full_name"].isNull()) {
+        repo->setGithubFullName(json["full_name"].asString());
     }
     repo->setSyncStatus("success");
     repo->setUpdateTime(time(0));

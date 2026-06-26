@@ -27,6 +27,7 @@ OrganizationReposInfo::OrganizationReposInfo()
     ,m_token()
     ,m_syncStatus()
     ,m_prSyncStatus()
+    ,m_githubFullName()
     ,m_createTime(time(0))
     ,m_updateTime() {
 }
@@ -47,6 +48,7 @@ std::string OrganizationReposInfo::toJsonString() const {
     v["sync_status"] = m_syncStatus;
     v["pr_sync_status"] = m_prSyncStatus;
     v["pr_synced_at"] = std::to_string(m_prSyncedAt);
+    v["github_full_name"] = m_githubFullName;
     return chen::JsonUtil::ToString(v);
 }
 
@@ -106,9 +108,13 @@ void OrganizationReposInfo::setPrSyncedAt(const int64_t& v) {
     m_prSyncedAt = v;
 }
 
+void OrganizationReposInfo::setGithubFullName(const std::string& v) {
+    m_githubFullName = v;
+}
+
 
 int OrganizationReposInfoDao::Update(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update organization_repos set org_id = ?, name = ?, description = ?, url = ?, language = ?, stars_count = ?, sort_order = ?, create_time = ?, update_time = ?, token = ?, sync_status = ?, pr_sync_status = ?, pr_synced_at = ? where id = ?";
+    std::string sql = "update organization_repos set org_id = ?, name = ?, description = ?, url = ?, language = ?, stars_count = ?, sort_order = ?, create_time = ?, update_time = ?, token = ?, sync_status = ?, pr_sync_status = ?, pr_synced_at = ?, github_full_name = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -128,12 +134,13 @@ int OrganizationReposInfoDao::Update(OrganizationReposInfo::ptr info, chen::IDB:
     stmt->bindString(11, info->m_syncStatus);
     stmt->bindString(12, info->m_prSyncStatus);
     stmt->bindInt64(13, info->m_prSyncedAt);
-    stmt->bindInt64(14, info->m_id);
+    stmt->bindString(14, info->m_githubFullName);
+    stmt->bindInt64(15, info->m_id);
     return stmt->execute();
 }
 
 int OrganizationReposInfoDao::Insert(OrganizationReposInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into organization_repos (org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into organization_repos (org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -153,6 +160,7 @@ int OrganizationReposInfoDao::Insert(OrganizationReposInfo::ptr info, chen::IDB:
     stmt->bindString(11, info->m_syncStatus);
     stmt->bindString(12, info->m_prSyncStatus);
     stmt->bindInt64(13, info->m_prSyncedAt);
+    stmt->bindString(14, info->m_githubFullName);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -164,7 +172,7 @@ int OrganizationReposInfoDao::InsertOrUpdate(OrganizationReposInfo::ptr info, ch
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into organization_repos (id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into organization_repos (id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -185,6 +193,7 @@ int OrganizationReposInfoDao::InsertOrUpdate(OrganizationReposInfo::ptr info, ch
     stmt->bindString(12, info->m_syncStatus);
     stmt->bindString(13, info->m_prSyncStatus);
     stmt->bindInt64(14, info->m_prSyncedAt);
+    stmt->bindString(15, info->m_githubFullName);
     return stmt->execute();
 }
 
@@ -238,7 +247,7 @@ int OrganizationReposInfoDao::DeleteByOrgIdName( const int64_t& org_id,  const s
 }
 
 int OrganizationReposInfoDao::QueryAll(std::vector<OrganizationReposInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at from organization_repos";
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name from organization_repos";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -265,13 +274,14 @@ int OrganizationReposInfoDao::QueryAll(std::vector<OrganizationReposInfo::ptr>& 
         v->m_syncStatus = rt->getString(11);
         v->m_prSyncStatus = rt->getString(12);
         v->m_prSyncedAt = rt->getInt64(13);
+        v->m_githubFullName = rt->getString(14);
         results.push_back(v);
     }
     return 0;
 }
 
 OrganizationReposInfo::ptr OrganizationReposInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at from organization_repos where id = ?";
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name from organization_repos where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -301,11 +311,12 @@ OrganizationReposInfo::ptr OrganizationReposInfoDao::Query( const int64_t& id, c
     v->m_syncStatus = rt->getString(11);
     v->m_prSyncStatus = rt->getString(12);
     v->m_prSyncedAt = rt->getInt64(13);
+    v->m_githubFullName = rt->getString(14);
     return v;
 }
 
 int OrganizationReposInfoDao::QueryByOrgId(std::vector<OrganizationReposInfo::ptr>& results,  const int64_t& org_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at from organization_repos where org_id = ?";
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name from organization_repos where org_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -333,6 +344,7 @@ int OrganizationReposInfoDao::QueryByOrgId(std::vector<OrganizationReposInfo::pt
         v->m_syncStatus = rt->getString(11);
         v->m_prSyncStatus = rt->getString(12);
         v->m_prSyncedAt = rt->getInt64(13);
+        v->m_githubFullName = rt->getString(14);
         results.push_back(v);
     };
     return 0;
@@ -357,7 +369,7 @@ int OrganizationReposInfoDao::QueryByOrgIdPages(std::vector<OrganizationReposInf
     if (total == 0) {
         return 0;
     }
-    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at from organization_repos where org_id = ? order by id desc limit ? offset ?";
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name from organization_repos where org_id = ? order by id desc limit ? offset ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -387,13 +399,14 @@ int OrganizationReposInfoDao::QueryByOrgIdPages(std::vector<OrganizationReposInf
         v->m_syncStatus = rt->getString(11);
         v->m_prSyncStatus = rt->getString(12);
         v->m_prSyncedAt = rt->getInt64(13);
+        v->m_githubFullName = rt->getString(14);
         results.push_back(v);
     };
     return 0;
 }
 
 OrganizationReposInfo::ptr OrganizationReposInfoDao::QueryByOrgIdName( const int64_t& org_id,  const std::string& name, chen::IDB::ptr conn) {
-    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at from organization_repos where org_id = ? and name = ?";
+    std::string sql = "select id, org_id, name, description, url, language, stars_count, sort_order, create_time, update_time, token, sync_status, pr_sync_status, pr_synced_at, github_full_name from organization_repos where org_id = ? and name = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -424,6 +437,7 @@ OrganizationReposInfo::ptr OrganizationReposInfoDao::QueryByOrgIdName( const int
     v->m_syncStatus = rt->getString(11);
     v->m_prSyncStatus = rt->getString(12);
     v->m_prSyncedAt = rt->getInt64(13);
+    v->m_githubFullName = rt->getString(14);
     return v;
 }
 
@@ -442,7 +456,8 @@ int OrganizationReposInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "token TEXT NOT NULL DEFAULT '',"
             "sync_status TEXT NOT NULL DEFAULT '',"
             "pr_sync_status TEXT NOT NULL DEFAULT '',"
-            "pr_synced_at INTEGER NOT NULL DEFAULT 0);"
+            "pr_synced_at INTEGER NOT NULL DEFAULT 0,"
+            "github_full_name TEXT NOT NULL DEFAULT '');"
             "CREATE INDEX IF NOT EXISTS organization_repos_org_id ON organization_repos(org_id);"
             "CREATE UNIQUE INDEX IF NOT EXISTS organization_repos_org_id_name ON organization_repos(org_id,name);"
             );
@@ -464,6 +479,7 @@ int OrganizationReposInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`sync_status` varchar(16) NOT NULL DEFAULT '' COMMENT '同步状态: idle/syncing/success/failed',"
             "`pr_sync_status` varchar(16) NOT NULL DEFAULT '' COMMENT 'PR 同步状态: idle/syncing/success/failed',"
             "`pr_synced_at` bigint NOT NULL DEFAULT 0 COMMENT '上次 PR 同步时间戳',"
+            "`github_full_name` varchar(256) NOT NULL DEFAULT '' COMMENT 'GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找',"
             "PRIMARY KEY(`id`),"
             "KEY `organization_repos_org_id` (`org_id`),"
             "UNIQUE KEY `organization_repos_org_id_name` (`org_id`,`name`)) COMMENT='组织关联仓库表'");
@@ -579,6 +595,13 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             need_recreate = true;
         }
     }
+    {
+        auto it = existing_cols.find("github_full_name");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: organization_repos.github_full_name " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
     if (!need_recreate) {
         for (auto& [name, _] : existing_cols) {
             (void)_;  // suppress unused warning
@@ -597,6 +620,7 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             if (name == "sync_status") found = true;
             if (name == "pr_sync_status") found = true;
             if (name == "pr_synced_at") found = true;
+            if (name == "github_full_name") found = true;
             if (!found) {
                 need_recreate = true;
                 WARN(logger) << "Column organization_repos." << name << " removed, table recreate required";
@@ -650,6 +674,9 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
         if (existing_cols.find("pr_synced_at") != existing_cols.end()) {
             common_cols.push_back("pr_synced_at");
+        }
+        if (existing_cols.find("github_full_name") != existing_cols.end()) {
+            common_cols.push_back("github_full_name");
         }
 
         if (conn->execute("ALTER TABLE organization_repos RENAME TO organization_repos_tmp")) {
@@ -774,6 +801,14 @@ int OrganizationReposInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN pr_synced_at INTEGER NOT NULL DEFAULT 0");
         if (rt) {
             ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN pr_synced_at failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("github_full_name") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.github_full_name";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN github_full_name TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN github_full_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 
@@ -931,6 +966,16 @@ int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
             }
         }
     }
+    {
+        auto it = existing_cols.find("github_full_name");
+        if (it != existing_cols.end() && it->second != "varchar(256)") {
+            INFO(logger) << "Modifying column organization_repos.github_full_name " << it->second << " -> varchar(256)";
+            int rt = conn->execute("ALTER TABLE organization_repos MODIFY COLUMN `github_full_name` varchar(256) NOT NULL DEFAULT '' COMMENT 'GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN organization_repos.github_full_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     for (auto& [name, _] : existing_cols) {
         (void)_;
@@ -949,6 +994,7 @@ int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         if (name == "sync_status") found = true;
         if (name == "pr_sync_status") found = true;
         if (name == "pr_synced_at") found = true;
+        if (name == "github_full_name") found = true;
         if (!found) {
             WARN(logger) << "Dropping column organization_repos." << name << " (not in schema, data will be lost)";
             int rt = conn->execute("ALTER TABLE organization_repos DROP COLUMN `" + name + "`");
@@ -1059,6 +1105,14 @@ int OrganizationReposInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `pr_synced_at` bigint NOT NULL DEFAULT 0 COMMENT '上次 PR 同步时间戳'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN pr_synced_at failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("github_full_name") == existing_cols.end()) {
+        INFO(logger) << "Adding column organization_repos.github_full_name";
+        int rt = conn->execute("ALTER TABLE organization_repos ADD COLUMN `github_full_name` varchar(256) NOT NULL DEFAULT '' COMMENT 'GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE organization_repos ADD COLUMN github_full_name failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 

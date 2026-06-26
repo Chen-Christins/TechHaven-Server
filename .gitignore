@@ -21,3 +21,6 @@ lib*.so
 *.pyc
 dataset
 models
+protocol/include
+orm
+tools
