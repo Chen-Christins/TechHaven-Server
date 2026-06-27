@@ -142,6 +142,6 @@ function(create_server_module module_name source_dir module_output_dir server_ou
     chen_set_target_output_dir(${module_name} "${module_output_dir}")
 
     # 服务器程序
-    chen_add_executable(${module_name}_server "servers/${module_name}.cc" "" "${libs}")
-    chen_set_target_output_dir(${module_name}_server "${server_output_dir}")
+    # chen_add_executable(${module_name}_server "servers/${module_name}.cc" "" "${libs}")
+    # chen_set_target_output_dir(${module_name}_server "${server_output_dir}")
 endfunction()

@@ -18,7 +18,7 @@
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./chunk_upload.h"
-#include "protocol_ss_github.h"
+#include "protocol_ss_github.h" // IWYU pragma: keep
 
 namespace blog {
 
@@ -49,14 +49,11 @@ bool BlogModule::onDrain() {
     INFO(logger) << "onDrain";
     ArticleMgr::GetInstance()->stop();
     NotificationMgr::GetInstance()->closeAllConnections();
-    // 注意：不调用 unregisterServlets/unregisterWSServlets
-    // dispatch 已被框架 clearServlets() 清理，新模块已重新注册
     return true;
 }
 
 bool BlogModule::onGracefulUnload() {
     INFO(logger) << "onGracefulUnload";
-    // dispatch 已被 clearServlets() 清理，无需再 clear
     return true;
 }
 
@@ -133,10 +130,11 @@ bool BlogModule::onServerReady() {
 
     // 注册 RPC 方法
     {
-        std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
-        getAllRpcServer(rpc_servers);
-        for (auto& s : rpc_servers) {
-            if (!s) continue;
+        getAllRpcServer(m_rpcServers);
+        for (auto& s : m_rpcServers) {
+            if (!s) {
+                continue;
+            }
             s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
             s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
             INFO(logger) << "registered RPC methods on " << s->getName();
@@ -447,10 +445,9 @@ void BlogModule::unregisterRPCMethods() {
         if (!s) {
             continue;
         }
-        s->unregisterMethod("GithubPRWebhook");
-        s->unregisterMethod("GithubPRReviewWebhook");
         s->clearRegistrations();
     }
+    m_rpcServers.clear();
 }
 
 }
@@ -459,12 +456,10 @@ extern "C" {
 
 chen::Module* CreateModule() {
     chen::Module* module = new blog::BlogModule;
-    INFO(blog::logger) << "CreateModule " << module;
     return module;
 }
 
 void DestroyModule(chen::Module* module) {
-    INFO(blog::logger) << "DestroyModule " << module;
     delete module;
 }
 

@@ -430,7 +430,7 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
 
         info->setTitle(si.title);
         info->setDescription(si.description);
-        if (si.merged) {
+        if (si.merged || si.merged_at > 0) {
             info->setState("merged");
         } else {
             info->setState(si.state);

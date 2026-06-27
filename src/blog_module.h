@@ -106,6 +106,8 @@ private:
     std::vector<chen::http::HttpServer::ptr> m_httpServers;
     /// 持有的 WebSocket Server 列表（用于 onUnload 中注销 WS Servlet）
     std::vector<chen::http::WSServer::ptr> m_wsServers;
+    /// 持有的 RPC Server 列表（用于 onUnload 中注销 RPC 方法）
+    std::vector<chen::rpc::RpcServer::ptr> m_rpcServers;
 };
 
 }
