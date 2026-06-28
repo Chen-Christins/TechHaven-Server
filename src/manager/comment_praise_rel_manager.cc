@@ -26,7 +26,6 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData
     return v;
 }
 
-
 void CommentPraiseRelManager::add(data::CommentPraiseRelInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }

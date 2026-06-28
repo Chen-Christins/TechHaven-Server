@@ -95,8 +95,7 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -108,7 +107,7 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
         auto info = parseRow(rt);
         orgs.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;

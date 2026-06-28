@@ -97,8 +97,7 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -110,7 +109,7 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
@@ -131,8 +130,7 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return nullptr;
     }
     qb->bindParams(stmt);
@@ -162,8 +160,7 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return nullptr;
     }
     qb->bindParams(stmt);
@@ -176,5 +173,4 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
     }
     return nullptr;
 }
-
 }

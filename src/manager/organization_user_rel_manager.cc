@@ -95,8 +95,7 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -108,7 +107,7 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
@@ -130,8 +129,7 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -143,7 +141,7 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return results.size();
@@ -189,8 +187,7 @@ OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t o
         std::string sql = qb->buildQuerySQL();
         auto stmt = db->prepare(sql);
         if (!stmt) {
-            ERROR(logger) << "stmt=" << sql
-                     << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         } else {
             qb->bindParams(stmt);
             auto rt = stmt->query();

@@ -29,7 +29,6 @@ data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLDa
     return v;
 }
 
-
 void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }

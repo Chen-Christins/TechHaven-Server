@@ -28,7 +28,6 @@ data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parse
     return v;
 }
 
-
 void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }
@@ -80,8 +79,7 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -93,7 +91,7 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return results.size();
@@ -125,8 +123,7 @@ int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::Assignmen
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -138,10 +135,10 @@ int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::Assignmen
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
 }
 
-}
+} // namespace blog

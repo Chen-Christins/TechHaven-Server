@@ -75,8 +75,7 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
     qb->bindParams(stmt);
@@ -98,7 +97,7 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
 }
 
 int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& infos, int64_t id
-        ,int32_t offset, int32_t size, bool valid, int state) {
+        , int32_t offset, int32_t size, bool valid, int state) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -175,12 +174,10 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
                 infos.push_back(info);
             }
         }
-        return executeCountCached(qb, db,
-            "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
+        return executeCountCached(qb, db, "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
     }
 
-    int64_t total = executeCountCached(qb, db,
-        "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
+    int64_t total = executeCountCached(qb, db, "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
     if (total == 0) {
         return 0;
     }
@@ -188,8 +185,7 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -236,12 +232,10 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
                 infos.push_back(info);
             }
         }
-        return executeCountCached(qb, db,
-            "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
+        return executeCountCached(qb, db, "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
     }
 
-    int64_t total = executeCountCached(qb, db,
-        "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
+    int64_t total = executeCountCached(qb, db, "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
     if (total == 0) {
         return 0;
     }
@@ -249,8 +243,7 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -310,8 +303,7 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         std::string sql = qb->buildQuerySQL();
         auto stmt = db->prepare(sql);
         if (!stmt) {
-            ERROR(logger) << "stmt=" << sql
-                     << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             return 0;
         }
         qb->bindParams(stmt);
@@ -361,8 +353,7 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -497,8 +488,7 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return stats;
     }
     qb->bindParams(stmt);
@@ -720,16 +710,15 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
 }
 
 bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles) {
-#define PROC(id, mask, articles)                               \
-    auto rpy = chen::RedisUtil::Cmd("blog", mask, id);        \
-    if (!rpy) {                                                \
-        ERROR(logger) << "hgetall fail";                       \
-        return false;                                          \
-    }                                                          \
-    for (size_t i = 0; i < rpy->elements; i += 2) {            \
-        articles[chen::TypeUtil::Atoi(rpy->element[i]->str)]  \
-            = chen::TypeUtil::Atoi(rpy->element[i + 1]->str); \
-    }                                                          \
+#define PROC(id, mask, articles)                                                                               \
+    auto rpy = chen::RedisUtil::Cmd("blog", mask, id);                                                         \
+    if (!rpy) {                                                                                                \
+        ERROR(logger) << "hgetall fail";                                                                       \
+        return false;                                                                                          \
+    }                                                                                                          \
+    for (size_t i = 0; i < rpy->elements; i += 2) {                                                            \
+        articles[chen::TypeUtil::Atoi(rpy->element[i]->str)] = chen::TypeUtil::Atoi(rpy->element[i + 1]->str); \
+    }                                                                                                          \
     return true;
 
     PROC(id, "hgetall fav_u2a:%lld", articles);
@@ -763,8 +752,7 @@ void ArticleManager::onTimer() {
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -943,8 +931,7 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "getCalendarDays: stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "getCalendarDays: stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -979,4 +966,4 @@ void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime) {
     chen::RedisUtil::Cmd("blog", "DEL calendar:%lld:%d:%d", user_id, year, month);
 }
 
-}
+} // namespace blog

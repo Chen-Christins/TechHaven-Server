@@ -26,7 +26,6 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData
     return v;
 }
 
-
 void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }
@@ -48,8 +47,7 @@ data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::get(int64_t id) {
     return v;
 }
 
-data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(
-    int64_t user_id, int64_t article_id) {
+data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::getByUserAndArticle(int64_t user_id, int64_t article_id) {
     std::string ck = "pra:" + std::to_string(user_id) + ":" + std::to_string(article_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -138,8 +136,8 @@ bool ArticlePraiseRelManager::isPraising(int64_t user_id, int64_t article_id) {
     return info && !info->getIsDeleted();
 }
 
-void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelInfo::ptr>& results,
-    int64_t article_id, uint64_t offset, uint64_t size) {
+void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t article_id
+        , uint64_t offset, uint64_t size) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -154,8 +152,7 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -167,13 +164,13 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
 
-void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo::ptr>& results,
-    int64_t user_id, uint64_t offset, uint64_t size) {
+void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo::ptr>& results, int64_t user_id
+        , uint64_t offset, uint64_t size) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -188,8 +185,7 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -201,7 +197,7 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
@@ -240,4 +236,4 @@ int64_t ArticlePraiseRelManager::countByUser(int64_t user_id) {
     return total;
 }
 
-}
+} // namespace blog

@@ -49,7 +49,7 @@ data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::get(int64_t id) {
 }
 
 bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
-        ,int64_t id, bool valid) {
+        , int64_t id, bool valid) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -62,8 +62,7 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
     qb->bindParams(stmt);
@@ -82,7 +81,7 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
 }
 
 bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo::ptr>& infos
-        ,int64_t label_id, bool valid) {
+        , int64_t label_id, bool valid) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -95,8 +94,7 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
     qb->bindParams(stmt);
@@ -108,14 +106,13 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return true;
 }
 
-data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int64_t article_id
-        ,int64_t label_id) {
+data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::getByArticleIdLabelId(int64_t article_id, int64_t label_id) {
     std::string ck = "alr:" + std::to_string(article_id) + ":" + std::to_string(label_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {

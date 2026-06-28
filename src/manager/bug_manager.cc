@@ -35,7 +35,6 @@ data::BugInfo::ptr BugManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-
 void BugManager::add(data::BugInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }
@@ -82,8 +81,7 @@ uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -95,7 +93,7 @@ uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
@@ -127,8 +125,7 @@ uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -140,10 +137,10 @@ uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos,
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
 }
 
-}
+} // namespace blog

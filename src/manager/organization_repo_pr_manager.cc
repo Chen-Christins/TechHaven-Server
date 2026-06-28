@@ -108,8 +108,7 @@ int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::Organizatio
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -170,8 +169,7 @@ int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::Organization
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -219,8 +217,7 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -260,9 +257,13 @@ static std::string getNextPageUrl(const std::string& linkHeader) {
     size_t pos = 0;
     while (pos < linkHeader.size()) {
         auto start = linkHeader.find('<', pos);
-        if (start == std::string::npos) break;
+        if (start == std::string::npos) {
+            break;
+        }
         auto end = linkHeader.find('>', start);
-        if (end == std::string::npos) break;
+        if (end == std::string::npos) {
+            break;
+        }
         std::string url = linkHeader.substr(start + 1, end - start - 1);
         auto relPos = linkHeader.find("rel=\"", end);
         if (relPos != std::string::npos) {
@@ -315,23 +316,13 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         si.reviewers = "[]";
         si.merged_at = 0;
         if (item.isMember("created_at") && !item["created_at"].isNull()) {
-            std::string ts = item["created_at"].asString();
-            // GitHub ISO 8601: "2024-06-25T10:30:00Z" → "2024-06-25 10:30:00"
-            for (auto& c : ts) if (c == 'T') c = ' ';
-            if (!ts.empty() && ts.back() == 'Z') ts.pop_back();
-            si.created_at = chen::Str2Time(ts.c_str());
+            si.created_at = chen::Str2Time(item["created_at"].asCString());
         }
         if (item.isMember("closed_at") && !item["closed_at"].isNull()) {
-            std::string ts = item["closed_at"].asString();
-            for (auto& c : ts) if (c == 'T') c = ' ';
-            if (!ts.empty() && ts.back() == 'Z') ts.pop_back();
-            si.closed_at = chen::Str2Time(ts.c_str());
+            si.closed_at = chen::Str2Time(item["closed_at"].asCString());
         }
         if (item.isMember("merged_at") && !item["merged_at"].isNull()) {
-            std::string ts = item["merged_at"].asString();
-            for (auto& c : ts) if (c == 'T') c = ' ';
-            if (!ts.empty() && ts.back() == 'Z') ts.pop_back();
-            si.merged_at = chen::Str2Time(ts.c_str());
+            si.merged_at = chen::Str2Time(item["merged_at"].asCString());
         }
         items.push_back(si);
     }
@@ -361,9 +352,15 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
                         Json::Value detailJson;
                         Json::Reader reader;
                         if (reader.parse(detail->response->getBody(), detailJson)) {
-                            if (detailJson.isMember("additions")) additions[num] = detailJson["additions"].asInt();
-                            if (detailJson.isMember("deletions")) deletions[num] = detailJson["deletions"].asInt();
-                            if (detailJson.isMember("changed_files")) changed_files[num] = detailJson["changed_files"].asInt();
+                            if (detailJson.isMember("additions")) {
+                                additions[num] = detailJson["additions"].asInt();
+                            }
+                            if (detailJson.isMember("deletions")) {
+                                deletions[num] = detailJson["deletions"].asInt();
+                            }
+                            if (detailJson.isMember("changed_files")) {
+                                changed_files[num] = detailJson["changed_files"].asInt();
+                            }
                         }
                     }
                 }
@@ -388,16 +385,23 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
                             Json::Value reviewerArr(Json::arrayValue);
                             for (auto& rv : arr) {
                                 std::string state = rv["state"].asString();
-                                if (state == "APPROVED") has_approved = true;
-                                else if (state == "CHANGES_REQUESTED") has_changes = true;
+                                if (state == "APPROVED") {
+                                    has_approved = true;
+                                } else if (state == "CHANGES_REQUESTED") {
+                                    has_changes = true;
+                                }
                                 Json::Value reviewer;
                                 reviewer["reviewer"] = rv["user"]["login"].asString();
                                 reviewer["status"] = state;
                                 reviewerArr.append(reviewer);
                             }
-                            if (has_approved) review_statuses[num] = "approved";
-                            else if (has_changes) review_statuses[num] = "changes_requested";
-                            else review_statuses[num] = "pending";
+                            if (has_approved) {
+                                review_statuses[num] = "approved";
+                            } else if (has_changes) {
+                                review_statuses[num] = "changes_requested";
+                            } else {
+                                review_statuses[num] = "pending";
+                            }
                             reviewers_json[num] = chen::JsonUtil::ToString(reviewerArr);
                         }
                     }
@@ -436,11 +440,17 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
         info->setCommitSha(si.commit_sha);
 
         auto it_a = additions.find(si.number);
-        if (it_a != additions.end()) info->setAdditions(it_a->second);
+        if (it_a != additions.end()) {
+            info->setAdditions(it_a->second);
+        }
         auto it_d = deletions.find(si.number);
-        if (it_d != deletions.end()) info->setDeletions(it_d->second);
+        if (it_d != deletions.end()) {
+            info->setDeletions(it_d->second);
+        }
         auto it_c = changed_files.find(si.number);
-        if (it_c != changed_files.end()) info->setChangedFiles(it_c->second);
+        if (it_c != changed_files.end()) {
+            info->setChangedFiles(it_c->second);
+        }
 
         {
             auto it = review_statuses.find(si.number);

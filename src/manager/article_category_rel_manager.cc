@@ -50,7 +50,7 @@ data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::get(int64_t id) {
 }
 
 bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos
-        ,int64_t id, bool valid) {
+        , int64_t id, bool valid) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -63,8 +63,7 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
     qb->bindParams(stmt);
@@ -76,14 +75,14 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return true;
 }
 
 bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCategoryRelInfo::ptr>& infos
-        ,int64_t category_id, bool valid) {
+        , int64_t category_id, bool valid) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -96,8 +95,7 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
     qb->bindParams(stmt);
@@ -109,14 +107,14 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return true;
 }
 
 data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::getByArticleIdCategoryId(int64_t article_id
-        ,int64_t category_id) {
+        , int64_t category_id) {
     std::string ck = "acr:" + std::to_string(article_id) + ":" + std::to_string(category_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
