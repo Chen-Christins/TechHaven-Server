@@ -10,6 +10,7 @@
 #include <chen/db/query_builder.h>
 #include <chen/db/redis.h>
 #include <chen/util/util.h>
+
 #include <sstream>
 
 namespace blog {

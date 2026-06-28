@@ -6,8 +6,10 @@
  * @copyright Apache 2.0
  */
 #include "organization_repo_prs_sync_servlet.h"
+
 #include <chen/log/log.h>
-#include <chen/worker.h>
+#include <chen/iomanager/worker.h>
+
 #include "../../util.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"

@@ -10,7 +10,9 @@
 
 #include <memory>
 #include <string>
+
 #include <chen/http/sse_session.h>
+
 #include "ai_provider.h"
 
 namespace blog {

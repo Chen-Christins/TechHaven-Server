@@ -1,10 +1,12 @@
 #include "organization_repo_manager.h"
-#include "cache_util.h"
+
 #include <chen/log/log.h>
 #include <chen/db/redis.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
 #include <json/json.h>
+
+#include "cache_util.h"
 #include "../util.h"
 
 namespace blog {
@@ -106,8 +108,7 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-            << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -151,8 +152,7 @@ void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationRepo
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);

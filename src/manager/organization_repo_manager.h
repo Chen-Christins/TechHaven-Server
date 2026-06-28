@@ -1,9 +1,10 @@
 #pragma once
 
 #include "blog/data/organization_repos_info.h"
+
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
-#include <chen/singleton.h>
+#include <chen/util/singleton.h>
 
 namespace blog {
 

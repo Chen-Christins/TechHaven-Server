@@ -5,7 +5,6 @@
  * @date 2026-06-03
  * @copyright Apache 2.0
  */
-
 #pragma once
 
 #include <memory>
@@ -15,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <chen/singleton.h>
+#include <chen/util/singleton.h>
 
 /**
  * @brief 管理每个上传会话的状态

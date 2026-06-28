@@ -1,6 +1,8 @@
 #include "user_admin_lists_servlet.h"
+
 #include "../../util.h"
 #include "../../manager/user_manager.h"
+
 #include <chen/util/json_util.h>
 #include <chen/db/query_builder.h>
 

@@ -1,6 +1,8 @@
 #include "category_manager.h"
-#include "cache_util.h"
+
 #include <chen/log/log.h>
+
+#include "cache_util.h"
 #include "../util.h"
 
 namespace blog {
@@ -63,8 +65,7 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -76,7 +77,7 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
@@ -101,4 +102,4 @@ blog::data::CategoryInfo::ptr CategoryManager::getByName(const std::string& name
     return info;
 }
 
-}
+} // namespace blog

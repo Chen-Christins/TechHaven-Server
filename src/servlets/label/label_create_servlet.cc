@@ -1,7 +1,9 @@
 #include "label_create_servlet.h"
+
 #include "../../manager/label_manager.h"
-#include <chen/log/log.h>
 #include "../../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 namespace servlet {

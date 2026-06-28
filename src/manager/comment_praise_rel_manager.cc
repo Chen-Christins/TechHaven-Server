@@ -1,7 +1,9 @@
 #include "comment_praise_rel_manager.h"
+
 #include "cache_util.h"
-#include <chen/log/log.h>
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 
@@ -23,7 +25,6 @@ data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData
     v->setUpdateTime(rt->getTime(5));
     return v;
 }
-
 
 void CommentPraiseRelManager::add(data::CommentPraiseRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

@@ -1,9 +1,12 @@
 #include "file_download_servlet.h"
+
 #include <chen/log/log.h>
 #include <chen/config/config.h>
+
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/resource_manager.h"
+
 #include <fstream>
 
 namespace blog {

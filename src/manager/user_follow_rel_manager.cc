@@ -1,7 +1,9 @@
 #include "user_follow_rel_manager.h"
+
 #include "cache_util.h"
-#include <chen/log/log.h>
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 
@@ -46,8 +48,7 @@ data::UserFollowRelInfo::ptr UserFollowRelManager::get(int64_t id) {
     return v;
 }
 
-data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(
-    int64_t follower_id, int64_t following_id) {
+data::UserFollowRelInfo::ptr UserFollowRelManager::getByFollowerAndFollowing(int64_t follower_id, int64_t following_id) {
     std::string ck = "flw:" + std::to_string(follower_id) + ":" + std::to_string(following_id);
     int64_t cachedId = getCachedIdMapping(ck);
     if (cachedId > 0) {
@@ -136,8 +137,8 @@ bool UserFollowRelManager::isFollowing(int64_t follower_id, int64_t following_id
     return info && !info->getIsDeleted();
 }
 
-void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::ptr>& results,
-    int64_t follower_id, uint64_t offset, uint64_t size) {
+void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::ptr>& results
+        , int64_t follower_id, uint64_t offset, uint64_t size) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -152,8 +153,7 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -165,13 +165,13 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
 
-void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results,
-    int64_t following_id, uint64_t offset, uint64_t size) {
+void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results, int64_t following_id
+        , uint64_t offset, uint64_t size) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -186,8 +186,7 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -199,7 +198,7 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
@@ -238,4 +237,4 @@ int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
     return total;
 }
 
-}
+} // namespace blog

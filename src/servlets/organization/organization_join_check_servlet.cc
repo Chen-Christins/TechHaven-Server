@@ -1,6 +1,8 @@
 #include "organization_join_check_servlet.h"
+
 #include <chen/log/log.h>
 #include <json/json.h>
+
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"

@@ -1,8 +1,11 @@
 #include "user_admin_recover_servlet.h"
-#include <chen/log/log.h>
+
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+
+#include <chen/log/log.h>
+
 #include <set>
 
 namespace blog {

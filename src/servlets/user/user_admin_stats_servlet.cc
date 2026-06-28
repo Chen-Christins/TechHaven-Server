@@ -1,6 +1,6 @@
 #include "user_admin_stats_servlet.h"
+
 #include "../../manager/user_manager.h"
-#include "../../util.h"
 
 namespace blog {
 namespace servlet {

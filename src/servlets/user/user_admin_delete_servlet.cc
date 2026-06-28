@@ -1,5 +1,7 @@
 #include "user_admin_delete_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"

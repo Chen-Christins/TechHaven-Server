@@ -9,9 +9,11 @@
 #define __BLOG_INDEX_H__
 
 #include <memory>
-#include <chen/ds/bitmap.h>
 #include <set>
 #include <map>
+
+#include <chen/ds/bitmap.h>
+
 #include "blog/data/article_info.h"
 
 namespace blog {

@@ -8,7 +8,7 @@
 #ifndef __BLOG_MY_MODULE_H__
 #define __BLOG_MY_MODULE_H__
 
-#include <chen/module.h>
+#include <chen/module/module.h>
 #include <chen/http/http_server.h>
 #include <chen/http/ws_server.h>
 

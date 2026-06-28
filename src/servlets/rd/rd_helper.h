@@ -5,7 +5,6 @@
  * @date 2026-06-03
  * @copyright Apache 2.0
  */
-
 #pragma once
 
 #include "blog/data/requirement_info.h"

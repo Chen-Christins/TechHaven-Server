@@ -1,6 +1,8 @@
 #include "comment_manager.h"
-#include "cache_util.h"
+
 #include <chen/log/log.h>
+
+#include "cache_util.h"
 #include "../util.h"
 
 namespace blog {
@@ -31,7 +33,6 @@ data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt) {
     return v;
 }
 
-
 void CommentManager::add(data::CommentInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }
@@ -53,9 +54,8 @@ data::CommentInfo::ptr CommentManager::get(int64_t id) {
     return v;
 }
 
-data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_id,
-    const std::string& content, int64_t parent_id,
-    const std::string& ip, const std::string& user_agent) {
+data::CommentInfo::ptr CommentManager::create(int64_t article_id, int64_t user_id, const std::string& content
+        , int64_t parent_id, const std::string& ip, const std::string& user_agent) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -141,8 +141,7 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -154,13 +153,12 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
 
-void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
-    int64_t article_id, uint64_t offset, uint64_t size) {
+void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results, int64_t article_id, uint64_t offset, uint64_t size) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -176,7 +174,8 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     qb->offset((int32_t)offset);
 
     // 结果缓存：仅对首页做缓存
-    std::string listKey = "cmt:art:" + std::to_string(article_id) + ":" + std::to_string(offset) + ":" + std::to_string(size);
+    std::string listKey =
+        "cmt:art:" + std::to_string(article_id) + ":" + std::to_string(offset) + ":" + std::to_string(size);
     std::vector<int64_t> cachedIds;
     if (getCachedListResult(listKey, cachedIds)) {
         for (auto id : cachedIds) {
@@ -191,8 +190,7 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -206,14 +204,13 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
         ids.push_back(info->getId());
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     cacheListResult(listKey, ids);
 }
 
-void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
-    int64_t parent_id, uint64_t offset, uint64_t size) {
+void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, int64_t parent_id, uint64_t offset, uint64_t size) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -229,8 +226,7 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
     qb->bindParams(stmt);
@@ -242,7 +238,7 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results,
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
 }
@@ -258,8 +254,7 @@ int64_t CommentManager::countByArticle(int64_t article_id) {
     qb->where("parent_id", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
-    return executeCountCached(qb, db,
-        "cmt:cnt:" + std::to_string(article_id));
+    return executeCountCached(qb, db, "cmt:cnt:" + std::to_string(article_id));
 }
 
 int64_t CommentManager::countReplies(int64_t parent_id) {
@@ -272,14 +267,11 @@ int64_t CommentManager::countReplies(int64_t parent_id) {
     qb->where("parent_id", "=", parent_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
-    return executeCountCached(qb, db,
-        "cmt:reply:" + std::to_string(parent_id));
+    return executeCountCached(qb, db, "cmt:reply:" + std::to_string(parent_id));
 }
 
-int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results,
-    int64_t page_num, int64_t page_size,
-    int32_t status, const std::string& keyword,
-    int64_t article_id, int32_t is_reported) {
+int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results, int64_t page_num, int64_t page_size
+        , int32_t status, const std::string& keyword, int64_t article_id, int32_t is_reported) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -304,8 +296,7 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -317,7 +308,7 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
         auto info = parseRow(rt);
         results.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
@@ -454,4 +445,4 @@ CommentManager::CommentStats CommentManager::getStats() {
     return stats;
 }
 
-}
+} // namespace blog

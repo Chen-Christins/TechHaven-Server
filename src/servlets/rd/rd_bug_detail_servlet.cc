@@ -1,4 +1,5 @@
 #include "rd_bug_detail_servlet.h"
+
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/bug_manager.h"

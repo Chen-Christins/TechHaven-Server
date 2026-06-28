@@ -1,5 +1,7 @@
 #include "article_query_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/article_category_rel_manager.h"

@@ -1,7 +1,10 @@
 #include "user_stats_servlet.h"
+
 #include "../../include/managers.h"
 #include "../../util.h"
+
 #include <chen/db/query_builder.h>
+
 #include <set>
 
 namespace blog {

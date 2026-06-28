@@ -1,4 +1,5 @@
 #include "dashboard_activities_servlet.h"
+
 #include "../../manager/article_manager.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"

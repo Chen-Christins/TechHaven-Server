@@ -1,4 +1,5 @@
 #include "article_is_praising_servlet.h"
+
 #include "../../manager/article_praise_rel_manager.h"
 #include "../../util.h"
 

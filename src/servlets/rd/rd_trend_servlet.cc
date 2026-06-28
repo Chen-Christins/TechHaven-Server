@@ -1,13 +1,9 @@
-/**
- * @file rd_trend_servlet.cc
- * @brief 研发平台趋势分析接口实现
- * @author Christins
- * @date 2026-06-25
- * @copyright Apache 2.0
- */
 #include "rd_trend_servlet.h"
+
 #include <chen/log/log.h>
+
 #include <cmath>
+
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"

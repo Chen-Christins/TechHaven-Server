@@ -1,6 +1,8 @@
 #include "organization_user_kick_servlet.h"
+
 #include <chen/log/log.h>
 #include <json/json.h>
+
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"

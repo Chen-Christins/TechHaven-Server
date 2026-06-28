@@ -1,13 +1,16 @@
 #include "index.h"
 #include "blog/data/article_category_rel_info.h"
+
 #include <chen/log/log.h>
+#include <chen/util/util.h>
+
 #include <algorithm>
+
 #include "manager/article_manager.h"
 #include "manager/article_category_rel_manager.h"
 #include "manager/article_label_rel_manager.h"
 #include "manager/category_manager.h"
 #include "manager/label_manager.h"
-#include <chen/util/util.h>
 
 namespace blog {
 

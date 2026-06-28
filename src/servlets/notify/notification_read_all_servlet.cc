@@ -1,4 +1,5 @@
 #include "notification_read_all_servlet.h"
+
 #include "../../manager/notification_manager.h"
 
 namespace blog {

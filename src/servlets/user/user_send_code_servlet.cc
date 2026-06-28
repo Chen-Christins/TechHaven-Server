@@ -1,8 +1,10 @@
 #include "user_send_code_servlet.h"
+
 #include <chen/log/log.h>
 #include <chen/db/redis.h>
 #include <chen/email/email.h>
 #include <chen/email/smtp.h>
+
 #include "../../manager/user_manager.h"
 #include "../../manager/system_settings_manager.h"
 #include "../../util.h"

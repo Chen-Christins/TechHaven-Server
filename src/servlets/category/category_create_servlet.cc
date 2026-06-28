@@ -1,7 +1,9 @@
 #include "category_create_servlet.h"
+
 #include "../../manager/category_manager.h"
-#include <chen/log/log.h>
 #include "../../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 namespace servlet {

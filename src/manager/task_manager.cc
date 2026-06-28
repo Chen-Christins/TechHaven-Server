@@ -1,6 +1,8 @@
 #include "task_manager.h"
-#include <chen/log/log.h>
+
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 
@@ -79,8 +81,7 @@ uint64_t TaskManager::listByPages(std::vector<data::TaskInfo::ptr>& infos,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -92,7 +93,7 @@ uint64_t TaskManager::listByPages(std::vector<data::TaskInfo::ptr>& infos,
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
@@ -124,8 +125,7 @@ uint64_t TaskManager::listByOrg(std::vector<data::TaskInfo::ptr>& infos,
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return 0;
     }
     qb->bindParams(stmt);
@@ -137,10 +137,9 @@ uint64_t TaskManager::listByOrg(std::vector<data::TaskInfo::ptr>& infos,
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return total;
 }
-
 }

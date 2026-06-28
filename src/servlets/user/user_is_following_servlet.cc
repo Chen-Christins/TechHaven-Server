@@ -1,4 +1,5 @@
 #include "user_is_following_servlet.h"
+
 #include "../../manager/user_follow_rel_manager.h"
 #include "../../util.h"
 

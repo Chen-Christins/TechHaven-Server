@@ -1,6 +1,8 @@
 #include "assignment_user_rel_manager.h"
-#include "cache_util.h"
+
 #include <chen/log/log.h>
+
+#include "cache_util.h"
 #include "../util.h"
 
 namespace blog {
@@ -26,7 +28,6 @@ data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLDa
     v->setUpdateTime(rt->getTime(8));
     return v;
 }
-
 
 void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info) {
     m_cache.set(info->getId(), info);

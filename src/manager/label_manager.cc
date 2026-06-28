@@ -1,7 +1,9 @@
 #include "label_manager.h"
+
 #include "cache_util.h"
-#include <chen/log/log.h>
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 
@@ -79,8 +81,7 @@ bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);
     if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return false;
     }
     qb->bindParams(stmt);
@@ -92,10 +93,10 @@ bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_
         auto info = parseRow(rt);
         infos.push_back(info);
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return true;
 }
 
-}
+} // namespace blog

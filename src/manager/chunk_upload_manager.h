@@ -2,7 +2,8 @@
 
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
-#include <chen/singleton.h>
+#include <chen/util/singleton.h>
+
 #include "blog/data/chunk_upload_info.h"
 
 namespace blog {

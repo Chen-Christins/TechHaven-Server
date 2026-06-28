@@ -1,5 +1,7 @@
 #include "user_logout_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "../../manager/user_manager.h"
 #include "../../include/tables.h"
 

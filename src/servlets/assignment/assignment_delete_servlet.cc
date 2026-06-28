@@ -1,11 +1,14 @@
 #include "assignment_delete_servlet.h"
+
 #include "../../manager/assignment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
+#include "../../util.h"
 #include "blog/data/assignment_info.h"
+
 #include <chen/log/log.h>
 #include <chen/db/query_builder.h>
-#include "../../util.h"
+
 #include <set>
 
 namespace blog {

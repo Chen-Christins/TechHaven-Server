@@ -8,8 +8,9 @@
 #pragma once
 
 #include "blog/data/user_ai_config_info.h"
+
 #include <chen/ds/lru_cache.h>
-#include <chen/singleton.h>
+#include <chen/util/singleton.h>
 
 namespace blog {
 

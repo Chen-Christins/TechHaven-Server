@@ -1,8 +1,11 @@
 #include "category_delete_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "blog/data/category_info.h"
 #include "../../manager/category_manager.h"
 #include "../../util.h"
+
 #include <set>
 
 namespace blog {
