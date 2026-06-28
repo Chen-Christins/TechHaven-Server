@@ -13,8 +13,6 @@
 
 #include <regex>
 
-#include "error_codes.h"
-
 namespace blog {
 
 chen::IDB::ptr GetDB();

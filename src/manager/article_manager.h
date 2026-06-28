@@ -1,9 +1,11 @@
 #pragma once
 
 #include "blog/data/article_info.h"
+
 #include <chen/ds/lru_cache.h>
 #include <chen/db/query_builder.h>
-#include <chen/singleton.h>
+#include <chen/util/singleton.h>
+
 #include <map>
 #include <set>
 #include <shared_mutex>

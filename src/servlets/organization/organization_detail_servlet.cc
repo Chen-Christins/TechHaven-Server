@@ -1,5 +1,7 @@
 #include "organization_detail_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "../../util.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"

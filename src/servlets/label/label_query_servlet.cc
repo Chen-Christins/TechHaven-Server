@@ -1,5 +1,7 @@
 #include "label_query_servlet.h"
+
 #include "../../manager/label_manager.h"
+
 #include <chen/log/log.h>
 
 namespace blog {

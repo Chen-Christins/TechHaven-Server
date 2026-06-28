@@ -1,10 +1,13 @@
 #include "article_praise_servlet.h"
+
 #include "../../manager/article_praise_rel_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+
 #include <chen/iomanager/iomanager.h>
+
 #include <json/json.h>
 
 namespace blog {

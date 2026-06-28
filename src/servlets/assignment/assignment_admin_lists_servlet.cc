@@ -1,9 +1,11 @@
 #include "assignment_admin_lists_servlet.h"
+
 #include "../../manager/user_manager.h"
 #include "../../manager/assignment_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../util.h"
+
 #include <chen/log/log.h>
 
 namespace blog {

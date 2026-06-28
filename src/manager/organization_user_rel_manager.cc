@@ -1,8 +1,10 @@
 #include "organization_user_rel_manager.h"
+
 #include "organization_manager.h"
 #include "cache_util.h"
-#include <chen/log/log.h>
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 

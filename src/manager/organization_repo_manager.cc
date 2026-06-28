@@ -1,10 +1,12 @@
 #include "organization_repo_manager.h"
-#include "cache_util.h"
+
 #include <chen/log/log.h>
 #include <chen/db/redis.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
 #include <json/json.h>
+
+#include "cache_util.h"
 #include "../util.h"
 
 namespace blog {

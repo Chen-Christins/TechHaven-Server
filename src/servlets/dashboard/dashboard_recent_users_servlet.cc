@@ -1,4 +1,5 @@
 #include "dashboard_recent_users_servlet.h"
+
 #include "../../manager/user_manager.h"
 
 namespace blog {

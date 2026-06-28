@@ -1,6 +1,8 @@
 #include "article_manager.h"
+
 #include "cache_util.h"
 #include "../util.h"
+
 #include <chen/log/log.h>
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>

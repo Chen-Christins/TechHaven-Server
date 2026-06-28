@@ -1,23 +1,18 @@
-/**
- * @file organization_repo_pr_manager.cc
- * @brief 组织仓库 PR 管理器实现
- * @author Christins
- * @date 2026-06-24
- * @copyright Apache 2.0
- */
 #include "organization_repo_pr_manager.h"
+
 #include "cache_util.h"
 #include "organization_repo_manager.h"
 #include "organization_user_rel_manager.h"
+#include "protocol_ss_github.h"
+#include "../util.h"
+
 #include <chen/log/log.h>
-#include <chen/worker.h>
+#include <chen/iomanager/worker.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
 #include <json/json.h>
 #include <json/reader.h>
 #include <json/writer.h>
-#include "../util.h"
-#include "protocol_ss_github.h"
 
 namespace blog {
 

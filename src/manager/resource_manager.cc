@@ -1,9 +1,11 @@
 #include "resource_manager.h"
+
 #include "cache_util.h"
+#include "../util.h"
+
 #include <chen/config/config.h>
 #include <chen/util/util.h>
 #include <chen/log/log.h>
-#include "../util.h"
 
 namespace blog {
 

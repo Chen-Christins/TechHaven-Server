@@ -1,6 +1,8 @@
 #include "requirement_manager.h"
-#include <chen/log/log.h>
+
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 

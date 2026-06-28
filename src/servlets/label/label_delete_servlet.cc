@@ -1,8 +1,11 @@
 #include "label_delete_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "blog/data/label_info.h"
 #include "../../manager/label_manager.h"
 #include "../../util.h"
+
 #include <set>
 
 namespace blog {

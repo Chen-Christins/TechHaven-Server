@@ -9,6 +9,7 @@
 #define __BLOG_AI_PROVIDER_H__
 
 #include <json/json.h>
+
 #include <memory>
 #include <string>
 

@@ -1,7 +1,9 @@
 #include "article_category_rel_manager.h"
+
 #include "cache_util.h"
-#include <chen/log/log.h>
 #include "../util.h"
+
+#include <chen/log/log.h>
 
 namespace blog {
 

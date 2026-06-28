@@ -1,6 +1,8 @@
 #include "assignment_organization_rel_manager.h"
-#include "cache_util.h"
+
 #include <chen/log/log.h>
+
+#include "cache_util.h"
 #include "../util.h"
 
 namespace blog {

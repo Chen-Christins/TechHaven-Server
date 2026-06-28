@@ -1,5 +1,7 @@
 #include "organization_assignment_list_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/assignment_organization_rel_manager.h"

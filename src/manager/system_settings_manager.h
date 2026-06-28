@@ -1,8 +1,10 @@
 #pragma once
 
-#include <mutex>
 #include "blog/data/system_settings_info.h"
-#include <chen/singleton.h>
+
+#include <mutex>
+
+#include <chen/util/singleton.h>
 
 namespace blog {
 

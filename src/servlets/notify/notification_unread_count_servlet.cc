@@ -1,4 +1,5 @@
 #include "notification_unread_count_servlet.h"
+
 #include "../../manager/notification_manager.h"
 
 namespace blog {

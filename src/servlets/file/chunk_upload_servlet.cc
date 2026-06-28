@@ -1,10 +1,12 @@
 #include "chunk_upload_servlet.h"
+
 #include <chen/log/log.h>
 #include <chen/config/config.h>
 #include <chen/util/util.h>
+#include <chen/util/encryptor_util.h>
+
 #include <fstream>
 #include <vector>
-#include <chen/util/encryptor_util.h>
 
 #include "../../chunk_upload.h"
 #include "../../manager/resource_manager.h"

@@ -1,8 +1,9 @@
 #include "article_praise_list_servlet.h"
+
 #include "../../manager/article_praise_rel_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../util.h"
+
 #include <json/json.h>
 
 namespace blog {

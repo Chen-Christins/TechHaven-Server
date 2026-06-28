@@ -1,5 +1,7 @@
 #include "resource_list_servlet.h"
+
 #include <chen/log/log.h>
+
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 

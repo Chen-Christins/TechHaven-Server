@@ -1,6 +1,9 @@
 #include "user_organization_list_servlet.h"
+
 #include <chen/log/log.h>
+
 #include <algorithm>
+
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 

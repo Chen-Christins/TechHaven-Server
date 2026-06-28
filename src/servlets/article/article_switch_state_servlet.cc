@@ -1,8 +1,10 @@
 #include "article_switch_state_servlet.h"
+
 #include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+
 #include <chen/log/log.h>
 
 namespace blog {

@@ -1,8 +1,10 @@
 #include "user_follow_servlet.h"
+
 #include "../../manager/user_follow_rel_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+
 #include <json/json.h>
 
 namespace blog {

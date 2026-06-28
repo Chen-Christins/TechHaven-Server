@@ -1,9 +1,12 @@
 #include "admin_comment_reject_servlet.h"
+
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
+
 #include <json/json.h>
+
 #include <sstream>
 
 namespace blog {

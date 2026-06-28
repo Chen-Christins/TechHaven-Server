@@ -11,7 +11,8 @@
 #include <string>
 #include <map>
 #include <memory>
-#include <chen/singleton.h>
+
+#include <chen/util/singleton.h>
 
 namespace blog {
 
