@@ -74,6 +74,10 @@ int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request
     Result::ptr result = std::make_shared<Result>();
     // response->setHeader("Access-Control-Allow-Origin", "*");
     // response->setHeader("Access-Control-Allow-Credentials", "true");
+
+    TRACE(logger) << "path=" << request->getPath() << " - query=" << request->getQuery()
+        << " - method=" << chen::http::HttpMethodToString(request->getMethod()) << " - body=" << request->getBody();
+
     if (handlePre(request, response, session, result)) {
         handle(request, response, session, result);
     } else {
