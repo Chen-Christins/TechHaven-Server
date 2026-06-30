@@ -60,11 +60,15 @@ public:
     const int64_t& getUpdateTime() { return m_updateTime; }
     void setUpdateTime(const int64_t& v);
 
+    const int32_t& getIsBroadcast() { return m_isBroadcast; }
+    void setIsBroadcast(const int32_t& v);
+
     std::string toJsonString() const;
 
 private:
     int32_t m_isRead;
     int32_t m_isDeleted;
+    int32_t m_isBroadcast;
     int64_t m_id;
     int64_t m_userId;
     int64_t m_senderId;

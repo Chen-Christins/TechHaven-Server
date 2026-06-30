@@ -13,8 +13,7 @@ NotifyServlet::NotifyServlet()
     : chen::http::WSServlet("Notify") {
 }
 
-int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header
-                                ,chen::http::WSSession::ptr session) {
+int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) {
     std::string uid_str = header->getParam("uid");
     std::string token = header->getParam("token");
     std::string token_time_str = header->getParam("token_time");
@@ -69,8 +68,7 @@ int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header
     return 0;
 }
 
-int32_t NotifyServlet::onClose(chen::http::HttpRequest::ptr header
-                               ,chen::http::WSSession::ptr session) {
+int32_t NotifyServlet::onClose(chen::http::HttpRequest::ptr header, chen::http::WSSession::ptr session) {
     std::string uid_str = header->getParam("uid");
     if (!uid_str.empty()) {
         int64_t uid = std::stoll(uid_str);
@@ -81,8 +79,7 @@ int32_t NotifyServlet::onClose(chen::http::HttpRequest::ptr header
 }
 
 int32_t NotifyServlet::handle(chen::http::HttpRequest::ptr header
-                              ,chen::http::WSFrameMessage::ptr msg
-                              ,chen::http::WSSession::ptr session) {
+        , chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session) {
     INFO(logger) << "[WS] handle: opcode=" << msg->getOpcode()
         << " data=" << msg->getData();
 
