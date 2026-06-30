@@ -3,6 +3,7 @@
 #include <chen/log/log.h>
 
 #include "blog/data/user_info.h"
+#include "manager/session_manager.h"
 #include "manager/user_manager.h"
 #include "manager/error_code_manager.h"
 #include "error_codes.h"
@@ -19,8 +20,7 @@ const std::string CookieKey::TOKEN_TIME = "S_TOKEN_TIME";
 const std::string CookieKey::IS_AUTH = "IS_AUTH";
 const std::string CookieKey::EMAIL_LAST_TIME = "EMAIL_LAST_TIME";
 
-std::string GetRemoteIP(chen::http::HttpRequest::ptr request
-                        ,chen::http::HttpSession::ptr session) {
+std::string GetRemoteIP(chen::http::HttpRequest::ptr request, chen::http::HttpSession::ptr session) {
     auto rt = request->getHeader("X-Real-IP");
     if (!rt.empty()) {
         return rt;
@@ -64,12 +64,10 @@ std::string Result::toJsonString() const {
     return chen::JsonUtil::ToString(v);
 }
 
-BlogServlet::BlogServlet(const std::string& name)
-    :chen::http::Servlet(name) {
-}
+BlogServlet::BlogServlet(const std::string& name) : chen::http::Servlet(name) {}
 
 int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request
-        ,chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
+        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
     uint64_t ts = chen::GetCurrentUs();
     Result::ptr result = std::make_shared<Result>();
     // response->setHeader("Access-Control-Allow-Origin", "*");
@@ -90,7 +88,7 @@ int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request
 }
 
 bool BlogServlet::handlePre(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     if (request->getPath() != "/user/login" && request->getPath() != "/user/logout") {
         initLogin(request, response, session);
     }
@@ -103,7 +101,7 @@ bool BlogServlet::handlePre(chen::http::HttpRequest::ptr request, chen::http::Ht
 }
 
 bool BlogServlet::handlePost(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
-        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+        , chen::http::HttpSession::ptr session, Result::ptr result) {
     INFO(logger)
         << GetRemoteIP(request, session) << "\t"
         << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
@@ -115,10 +113,15 @@ bool BlogServlet::handlePost(chen::http::HttpRequest::ptr request, chen::http::H
 }
 
 chen::http::SessionData::ptr BlogServlet::getSessionData(chen::http::HttpRequest::ptr request
-        ,chen::http::HttpResponse::ptr response) {
+        , chen::http::HttpResponse::ptr response) {
     std::string sid = request->getCookie(CookieKey::SESSION_KEY);
     if (!sid.empty()) {
         auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
+        if (data) {
+            return data;
+        }
+        // 内存未命中，尝试从 Redis 恢复（进程重启后内存清空，但 Redis 中仍有会话）
+        data = LoadSessionFromRedis(sid);
         if (data) {
             return data;
         }
@@ -132,7 +135,7 @@ chen::http::SessionData::ptr BlogServlet::getSessionData(chen::http::HttpRequest
 }
 
 bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
-        ,chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
+        , chen::http::HttpResponse::ptr response, chen::http::HttpSession::ptr session) {
     auto data = getSessionData(request, response);
     int64_t uid = data->getData<int64_t>(CookieKey::USER_ID);
     if (uid) {
@@ -150,6 +153,8 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
                 }
             }
         }
+        // 刷新 Redis 会话持久化
+        SaveSessionToRedis(data->getId(), uid, 1);
         return true;
     }
     int32_t is_auth = data->getData<int32_t>(CookieKey::IS_AUTH);
@@ -201,6 +206,7 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
             break;
         }
         data->setData(CookieKey::USER_ID, uid);
+        SaveSessionToRedis(data->getId(), uid, 1);
         is_login = true;
         INFO(logger)
             << GetRemoteIP(request, session) << "\t"
@@ -221,9 +227,7 @@ chen::IDB::ptr BlogServlet::getDB() {
     return GetDB();
 }
 
-BlogLoginedServlet:: BlogLoginedServlet(const std::string& name)
-    :BlogServlet(name) {
-}
+BlogLoginedServlet:: BlogLoginedServlet(const std::string& name) : BlogServlet(name) {}
 
 bool BlogLoginedServlet::handlePre(chen::http::HttpRequest::ptr request
         ,chen::http::HttpResponse::ptr response
@@ -240,6 +244,10 @@ int64_t BlogServlet::getUserId(chen::http::HttpRequest::ptr request) {
     std::string sid = request->getCookie(CookieKey::SESSION_KEY);
     if (!sid.empty()) {
         auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
+        if (!data) {
+            // 内存未命中，尝试从 Redis 恢复
+            data = LoadSessionFromRedis(sid);
+        }
         if (data) {
             return data->getData<int64_t>(CookieKey::USER_ID);
         }

@@ -3,6 +3,7 @@
 #include "../../ai/ai_provider.h"
 #include "../../ai/sse_stream_parser.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/session_manager.h"
 #include "../../manager/user_ai_config_manager.h"
 #include "../../struct.h"
 #include "../../util.h"
@@ -42,6 +43,10 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         std::string sid = request->getCookie(CookieKey::SESSION_KEY);
         if (!sid.empty()) {
             auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
+            if (!data) {
+                // 内存未命中，尝试从 Redis 恢复（进程重启后自动恢复会话）
+                data = LoadSessionFromRedis(sid);
+            }
             if (data) {
                 uid = data->getData<int64_t>(CookieKey::USER_ID);
             }

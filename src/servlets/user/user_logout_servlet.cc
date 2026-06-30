@@ -2,6 +2,7 @@
 
 #include <chen/log/log.h>
 
+#include "../../manager/session_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../include/tables.h"
 
@@ -44,6 +45,7 @@ int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
         sdata->setData(CookieKey::USER_ID, (int64_t)0);
         std::string id = sdata->getId();
         chen::http::SessionDataMgr::GetInstance()->del(id);
+        DeleteSessionFromRedis(id);
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
