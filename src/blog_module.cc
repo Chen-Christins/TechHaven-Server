@@ -18,6 +18,7 @@
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./chunk_upload.h"
+#include "./index.h"
 #include "protocol_ss_github.h" // IWYU pragma: keep
 
 namespace blog {
@@ -101,6 +102,9 @@ bool BlogModule::onServerReady() {
     ArticleMgr::GetInstance()->syncStatsFromDB();
 
     ArticleMgr::GetInstance()->start();
+
+    // 构建搜索索引
+    IndexMgr::GetInstance()->build();
 
     // 初始化错误码管理器
     {
@@ -283,6 +287,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/article/detail", XX(ArticleDetailServlet));
         dp->addServlet("/api/v1/article/publish", XX(ArticlePublishServlet));
         dp->addServlet("/api/v1/article/query", XX(ArticleQueryServlet));
+        dp->addServlet("/api/v1/article/search", XX(ArticleSearchServlet));
         dp->addServlet("/api/v1/article/list_by_label", XX(ArticleListByLabelServlet));
         dp->addServlet("/api/v1/article/list_by_category", XX(ArticleListByCategoryServlet));
         dp->addServlet("/api/v1/article/delete", XX(ArticleDeleteServlet));

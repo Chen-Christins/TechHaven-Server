@@ -4,6 +4,7 @@
 #include <chen/iomanager/iomanager.h>
 #include <json/json.h>
 
+#include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
@@ -63,6 +64,7 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
             break;
         }
         ArticleMgr::GetInstance()->add(info);
+        IndexMgr::GetInstance()->updateArticle(info);
 
         // 清除对应月份的日历缓存
         ArticleMgr::GetInstance()->clearCalendarCache(info->getUserId(), info->getPublishTime());

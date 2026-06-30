@@ -3,6 +3,7 @@
 #include <chen/log/log.h>
 
 #include "blog/data/article_info.h"
+#include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../util.h"
 
@@ -63,6 +64,8 @@ int32_t ArticleDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen:
             auto& jids = result->jsondata["ids"];
             for (auto& i : infos) {
                 jids.append(i->getId());
+                // 从搜索索引中移除
+                IndexMgr::GetInstance()->removeArticle(i->getId());
                 // 删除的文章如果是已发布状态，清除对应月份的日历缓存
                 if (i->getState() == ArticleManager::Status::PUBLISHED && i->getPublishTime() > 0) {
                     ArticleMgr::GetInstance()->clearCalendarCache(i->getUserId(), i->getPublishTime());

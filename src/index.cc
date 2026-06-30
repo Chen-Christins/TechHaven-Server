@@ -58,10 +58,12 @@ void Index::build() {
         return a->getId() > b->getId();
     });
     m_docs.reserve(infos.size());
+    m_docMap.clear();
     for (auto& info : infos) {
         m_docs.emplace_back(info->getId());
     }
     for (size_t i = 0; i < infos.size(); ++i) {
+        m_docMap[infos[i]->getId()] = i;
         buildIdx(infos[i], i);
     }
     m_endTime = time(0);
@@ -75,7 +77,9 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
     set((uint64_t)IndexType::YEAR_MON, hash(chen::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
     set((uint64_t)IndexType::CHANNEL, info->getChannel(), idx, true);
 
-    // TODO: 根据文章内容和文章标题建立索引
+    // TODO: 用 jiebacpp 对文章标题和正文做中文分词后建 WORD 索引
+    // buildWordIdx(info->getTitle(), idx);
+    // buildWordIdx(info->getContent(), idx);
 
     std::vector<data::ArticleCategoryRelInfo::ptr> cats;
     ArticleCategoryRelMgr::GetInstance()->listByArticleId(cats, info->getId(), true);
@@ -137,8 +141,48 @@ std::string Index::getStr(uint64_t id) {
 }
 
 chen::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>& params) {
-    // TODO: Index::query
-    return nullptr;
+    if (params.empty()) {
+        return nullptr;
+    }
+
+    chen::ds::Bitmap::ptr result;
+
+    for (auto& [type, keys] : params) {
+        if (keys.empty()) {
+            continue;
+        }
+
+        // 同 type 内：各 key 的 Bitmap 做 OR
+        chen::ds::Bitmap::ptr type_result;
+        for (auto key : keys) {
+            auto b = get(type, key);
+            if (!b) {
+                continue;
+            }
+            if (!type_result) {
+                type_result.reset(new chen::ds::Bitmap(*b));
+            } else {
+                *type_result |= *b;
+            }
+        }
+
+        if (!type_result) {
+            // 该 type 下无任何命中，整体无结果
+            return nullptr;
+        }
+
+        // 不同 type 间：做 AND
+        if (!result) {
+            result = type_result;
+        } else {
+            *result &= *type_result;
+            if (!result->any()) {
+                return nullptr;
+            }
+        }
+    }
+
+    return result;
 }
 
 uint64_t Index::hash(const std::string& str, bool save) {
@@ -150,7 +194,55 @@ uint64_t Index::hash(const std::string& str, bool save) {
 }
 
 void Index::buildWordIdx(const std::string& str, uint32_t idx) {
-    // TODO: Index::buildWordIdx
+    // TODO: 后续用 jiebacpp 做中文分词
+    (void)str;
+    (void)idx;
+}
+
+int32_t Index::getIdx(uint64_t article_id) {
+    auto it = m_docMap.find(article_id);
+    return it == m_docMap.end() ? -1 : static_cast<int32_t>(it->second);
+}
+
+void Index::addArticle(data::ArticleInfo::ptr info) {
+    if (!info) {
+        return;
+    }
+
+    // 已存在则先移除旧索引
+    int32_t old = getIdx(info->getId());
+    if (old >= 0) {
+        removeArticle(info->getId());
+    }
+
+    uint32_t idx = m_docs.size();
+    m_docs.push_back(info->getId());
+    m_docMap[info->getId()] = idx;
+    buildIdx(info, idx);
+}
+
+void Index::removeArticle(uint64_t article_id) {
+    int32_t idx = getIdx(article_id);
+    if (idx < 0) {
+        return;
+    }
+
+    // 遍历所有类型的位图，将该文章对应的 bit 置为 false
+    for (auto& [type, keyMap] : m_indexs) {
+        for (auto& [key, bitmap] : keyMap) {
+            bitmap->set(idx, false);
+        }
+    }
+
+    m_docMap.erase(article_id);
+}
+
+void Index::updateArticle(data::ArticleInfo::ptr info) {
+    if (!info) {
+        return;
+    }
+    removeArticle(info->getId());
+    addArticle(info);
 }
 
 }

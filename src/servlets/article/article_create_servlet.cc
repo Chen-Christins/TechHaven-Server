@@ -2,6 +2,7 @@
 
 #include <chen/log/log.h>
 
+#include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/category_manager.h"
 #include "../../manager/label_manager.h"
@@ -121,6 +122,7 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
 
         ArticleMgr::GetInstance()->add(info);
+        IndexMgr::GetInstance()->addArticle(info);
         for (auto& rel : new_cat_rels) {
             ArticleCategoryRelMgr::GetInstance()->add(rel);
         }

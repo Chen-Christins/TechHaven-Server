@@ -2,6 +2,7 @@
 
 #include <chen/log/log.h>
 
+#include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../util.h"
 
@@ -54,6 +55,8 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 << " errstr=" << db->getErrStr();
             break;
         }
+
+        IndexMgr::GetInstance()->updateArticle(info);
 
         // 如果从已发布变为审核中，清除对应月份的日历缓存
         if (state == ArticleManager::Status::PUBLISHED && info->getPublishTime() > 0) {

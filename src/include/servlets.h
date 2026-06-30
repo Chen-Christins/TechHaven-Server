@@ -18,6 +18,7 @@
 #include "../servlets/article/article_praise_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_publish_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/article/article_query_servlet.h"                      // IWYU pragma: keep
+#include "../servlets/article/article_search_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/article/article_switch_state_servlet.h"               // IWYU pragma: keep
 #include "../servlets/article/article_update_category_servlet.h"            // IWYU pragma: keep
 #include "../servlets/article/article_update_servlet.h"                     // IWYU pragma: keep
