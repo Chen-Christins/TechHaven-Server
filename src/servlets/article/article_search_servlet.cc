@@ -56,8 +56,17 @@ int32_t ArticleSearchServlet::handle(chen::http::HttpRequest::ptr request, chen:
             params[(uint64_t)IndexType::YEAR_MON].insert(Index::StrHash(year_month));
         }
 
-        // keyword 预留：等 jiebacpp 接入后对 keyword 分词并加入 params[WORD]
-        (void)keyword;
+        // keyword 分词后加入 WORD 索引
+        if (!keyword.empty()) {
+            std::vector<std::string> words;
+            IndexMgr::GetInstance()->cutWord(keyword, words);
+            auto& wordKeys = params[(uint64_t)IndexType::WORD];
+            for (auto& w : words) {
+                if (w.size() >= 2) {
+                    wordKeys.insert(Index::StrHash(w));
+                }
+            }
+        }
 
         auto index = IndexMgr::GetInstance();
 

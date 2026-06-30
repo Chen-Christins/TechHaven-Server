@@ -1,8 +1,10 @@
 #include "index.h"
 #include "blog/data/article_category_rel_info.h"
 
+#include <chen/config/config.h>
 #include <chen/log/log.h>
 #include <chen/util/util.h>
+#include <cppjieba/Jieba.hpp>
 
 #include <algorithm>
 
@@ -16,6 +18,9 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static chen::ConfigVar<std::string>::ptr g_jieba_dict_path =
+    chen::Config::Lookup("search.jieba_dict_path", std::string(""), "jieba dict directory path");
+
 struct ParamArgsInfo {
     std::string name;
     uint64_t key;
@@ -26,6 +31,8 @@ Index::Index()
     :m_createTime(0)
     ,m_endTime(0) {
 }
+
+Index::~Index() = default;
 
 bool Index::set(uint64_t type, uint64_t key, uint32_t idx, bool v) {
     auto b = m_indexs[type][key];
@@ -48,6 +55,26 @@ chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
 
 void Index::build() {
     INFO(logger) << "Index build begin...";
+
+    // 初始化 jieba 分词器
+    if (!m_jieba) {
+        std::string dict_path = g_jieba_dict_path->getValue();
+        if (dict_path.empty()) {
+            dict_path = CPPJIEBA_DICT_PATH;  // 编译期默认路径
+        }
+        try {
+            m_jieba.reset(new cppjieba::Jieba(
+                dict_path + "/jieba.dict.utf8",
+                dict_path + "/hmm_model.utf8",
+                dict_path + "/user.dict.utf8",
+                dict_path + "/idf.utf8",
+                dict_path + "/stop_words.utf8"));
+            INFO(logger) << "jieba initialized, dict_path=" << dict_path;
+        } catch (const std::exception& e) {
+            ERROR(logger) << "jieba init failed: " << e.what();
+        }
+    }
+
     m_createTime = time(0);
     std::vector<data::ArticleInfo::ptr> infos;
     ArticleMgr::GetInstance()->listByUserIdPages(infos, 0, 0, 0x7FFFFFFF, true, 0);
@@ -77,9 +104,9 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
     set((uint64_t)IndexType::YEAR_MON, hash(chen::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
     set((uint64_t)IndexType::CHANNEL, info->getChannel(), idx, true);
 
-    // TODO: 用 jiebacpp 对文章标题和正文做中文分词后建 WORD 索引
-    // buildWordIdx(info->getTitle(), idx);
-    // buildWordIdx(info->getContent(), idx);
+    // 中文分词全文索引
+    buildWordIdx(info->getTitle(), idx);
+    buildWordIdx(info->getContent(), idx);
 
     std::vector<data::ArticleCategoryRelInfo::ptr> cats;
     ArticleCategoryRelMgr::GetInstance()->listByArticleId(cats, info->getId(), true);
@@ -194,9 +221,27 @@ uint64_t Index::hash(const std::string& str, bool save) {
 }
 
 void Index::buildWordIdx(const std::string& str, uint32_t idx) {
-    // TODO: 后续用 jiebacpp 做中文分词
-    (void)str;
-    (void)idx;
+    if (!m_jieba || str.empty()) {
+        return;
+    }
+    std::vector<std::string> words;
+    m_jieba->Cut(str, words, true);
+    std::set<uint64_t> seen;
+    for (auto& w : words) {
+        if (w.size() < 2) {
+            continue;
+        }
+        auto h = hash(w, true);
+        if (seen.insert(h).second) {
+            set((uint64_t)IndexType::WORD, h, idx, true);
+        }
+    }
+}
+
+void Index::cutWord(const std::string& str, std::vector<std::string>& words) {
+    if (m_jieba) {
+        m_jieba->Cut(str, words, true);
+    }
 }
 
 int32_t Index::getIdx(uint64_t article_id) {

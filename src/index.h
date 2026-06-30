@@ -11,11 +11,15 @@
 #include <memory>
 #include <set>
 #include <map>
+#include <string>
+#include <vector>
 
 #include <chen/ds/bitmap.h>
 #include <chen/util/singleton.h>
 
 #include "blog/data/article_info.h"
+
+namespace cppjieba { class Jieba; }
 
 namespace blog {
 
@@ -35,6 +39,8 @@ class Index {
 public:
     typedef std::shared_ptr<Index> ptr;
     Index();
+    ~Index();
+
     bool set(uint64_t type, uint64_t key, uint32_t idx, bool v);
     chen::ds::Bitmap::ptr get(uint64_t type, uint64_t key);
     void build();
@@ -65,6 +71,12 @@ public:
 
     static uint64_t StrHash(const std::string& str);
 
+    /// 分词器是否就绪
+    bool hasJieba() const { return m_jieba != nullptr; }
+
+    /// 对输入做中文分词
+    void cutWord(const std::string& str, std::vector<std::string>& words);
+
     std::string toString();
     std::string getStr(uint64_t id);
 private:
@@ -83,6 +95,8 @@ private:
     std::unordered_map<uint64_t, uint32_t> m_docMap;
     std::map<uint64_t, std::map<uint64_t, chen::ds::Bitmap::ptr>> m_indexs;
     std::unordered_map<uint64_t, std::string> m_strings;
+    /// jieba 分词器（PIMPL，避免头文件污染）
+    std::unique_ptr<cppjieba::Jieba> m_jieba;
 };
 
 typedef chen::Singleton<Index> IndexMgr;
