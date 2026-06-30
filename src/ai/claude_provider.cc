@@ -6,12 +6,14 @@ namespace blog {
 namespace ai {
 
 std::string ClaudeProvider::buildRequest(const std::string& model, int32_t maxTokens, const std::string& systemPrompt
-        , const std::string& prompt) {
+        , const std::string& prompt, bool stream) {
     Json::Value body;
     body["model"] = model;
-    body["stream"] = true;
     body["max_tokens"] = maxTokens;
     body["system"] = systemPrompt;
+    if (stream) {
+        body["stream"] = true;
+    }
 
     Json::Value messages(Json::arrayValue);
     Json::Value usr;
@@ -47,6 +49,23 @@ std::string ClaudeProvider::getError(const Json::Value& parsed) {
         return parsed["error"]["message"].asString();
     }
     return "";
+}
+
+std::string ClaudeProvider::extractNonStreamingContent(const Json::Value& parsed) {
+    auto& content = parsed["content"];
+    if (content.isArray()) {
+        for (const auto& block : content) {
+            if (block["type"].asString() == "text") {
+                return block["text"].asString();
+            }
+        }
+    }
+    return "";
+}
+
+void ClaudeProvider::authHeaders(const std::string& apiKey, std::map<std::string, std::string>& outHeaders) {
+    outHeaders["x-api-key"] = apiKey;
+    outHeaders["anthropic-version"] = "2023-06-01";
 }
 
 }  // namespace ai
