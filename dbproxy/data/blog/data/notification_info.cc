@@ -17,6 +17,7 @@ static chen::Logger::ptr logger = LOG_NAME("orm");
 NotificationInfo::NotificationInfo()
     :m_isRead(0)
     ,m_isDeleted(0)
+    ,m_isBroadcast(0)
     ,m_id()
     ,m_userId()
     ,m_senderId()
@@ -45,6 +46,7 @@ std::string NotificationInfo::toJsonString() const {
     v["is_deleted"] = m_isDeleted;
     v["create_time"] = chen::Time2Str(m_createTime);
     v["update_time"] = chen::Time2Str(m_updateTime);
+    v["is_broadcast"] = m_isBroadcast;
     return chen::JsonUtil::ToString(v);
 }
 
@@ -100,9 +102,13 @@ void NotificationInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
 }
 
+void NotificationInfo::setIsBroadcast(const int32_t& v) {
+    m_isBroadcast = v;
+}
+
 
 int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, article_id = ?, comment_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, article_id = ?, comment_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ?, is_broadcast = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -121,12 +127,13 @@ int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindInt32(10, info->m_isDeleted);
     stmt->bindTime(11, info->m_createTime);
     stmt->bindTime(12, info->m_updateTime);
-    stmt->bindInt64(13, info->m_id);
+    stmt->bindInt32(13, info->m_isBroadcast);
+    stmt->bindInt64(14, info->m_id);
     return stmt->execute();
 }
 
 int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into notification (user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into notification (user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -145,6 +152,7 @@ int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindInt32(10, info->m_isDeleted);
     stmt->bindTime(11, info->m_createTime);
     stmt->bindTime(12, info->m_updateTime);
+    stmt->bindInt32(13, info->m_isBroadcast);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -156,7 +164,7 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into notification (id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into notification (id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -176,6 +184,7 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     stmt->bindInt32(11, info->m_isDeleted);
     stmt->bindTime(12, info->m_createTime);
     stmt->bindTime(13, info->m_updateTime);
+    stmt->bindInt32(14, info->m_isBroadcast);
     return stmt->execute();
 }
 
@@ -229,7 +238,7 @@ int NotificationInfoDao::DeleteByUserIdIsRead( const int64_t& user_id,  const in
 }
 
 int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -255,13 +264,14 @@ int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, c
         v->m_isDeleted = rt->getInt32(10);
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
         results.push_back(v);
     }
     return 0;
 }
 
 NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where id = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -290,11 +300,12 @@ NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::
     v->m_isDeleted = rt->getInt32(10);
     v->m_createTime = rt->getTime(11);
     v->m_updateTime = rt->getTime(12);
+    v->m_isBroadcast = rt->getInt32(13);
     return v;
 }
 
 int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -321,6 +332,7 @@ int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& resul
         v->m_isDeleted = rt->getInt32(10);
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
         results.push_back(v);
     };
     return 0;
@@ -345,7 +357,7 @@ int NotificationInfoDao::QueryByUserIdPages(std::vector<NotificationInfo::ptr>& 
     if (total == 0) {
         return 0;
     }
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? order by id desc limit ? offset ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ? order by id desc limit ? offset ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -374,13 +386,14 @@ int NotificationInfoDao::QueryByUserIdPages(std::vector<NotificationInfo::ptr>& 
         v->m_isDeleted = rt->getInt32(10);
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
         results.push_back(v);
     };
     return 0;
 }
 
 int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id,  const int32_t& is_read, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? and is_read = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ? and is_read = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -408,6 +421,7 @@ int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>&
         v->m_isDeleted = rt->getInt32(10);
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
         results.push_back(v);
     };
     return 0;
@@ -433,7 +447,7 @@ int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::
     if (total == 0) {
         return 0;
     }
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time from notification where user_id = ? and is_read = ? order by id desc limit ? offset ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ? and is_read = ? order by id desc limit ? offset ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -463,6 +477,7 @@ int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::
         v->m_isDeleted = rt->getInt32(10);
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
         results.push_back(v);
     };
     return 0;
@@ -482,7 +497,8 @@ int NotificationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "read_time TIMESTAMP NOT NULL DEFAULT '1980-01-01 00:00:00',"
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
-            "update_time TIMESTAMP NOT NULL DEFAULT current_timestamp);"
+            "update_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
+            "is_broadcast INTEGER NOT NULL DEFAULT 0);"
             "CREATE INDEX IF NOT EXISTS notification_user_id ON notification(user_id);"
             "CREATE INDEX IF NOT EXISTS notification_user_id_is_read ON notification(user_id,is_read);"
             );
@@ -503,6 +519,7 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`is_deleted` int NOT NULL DEFAULT 0 COMMENT '是否删除',"
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
             "`update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间',"
+            "`is_broadcast` int NOT NULL DEFAULT 0 COMMENT '是否广播: 0否 1是',"
             "PRIMARY KEY(`id`),"
             "KEY `notification_user_id` (`user_id`),"
             "KEY `notification_user_id_is_read` (`user_id`,`is_read`)) COMMENT='用户通知'");
@@ -611,6 +628,13 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             need_recreate = true;
         }
     }
+    {
+        auto it = existing_cols.find("is_broadcast");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.is_broadcast " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
     if (!need_recreate) {
         for (auto& [name, _] : existing_cols) {
             (void)_;  // suppress unused warning
@@ -628,6 +652,7 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             if (name == "is_deleted") found = true;
             if (name == "create_time") found = true;
             if (name == "update_time") found = true;
+            if (name == "is_broadcast") found = true;
             if (!found) {
                 need_recreate = true;
                 WARN(logger) << "Column notification." << name << " removed, table recreate required";
@@ -678,6 +703,9 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
         if (existing_cols.find("update_time") != existing_cols.end()) {
             common_cols.push_back("update_time");
+        }
+        if (existing_cols.find("is_broadcast") != existing_cols.end()) {
+            common_cols.push_back("is_broadcast");
         }
 
         if (conn->execute("ALTER TABLE notification RENAME TO notification_tmp")) {
@@ -794,6 +822,14 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE notification ADD COLUMN update_time TIMESTAMP NOT NULL DEFAULT current_timestamp");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_broadcast") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.is_broadcast";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN is_broadcast INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_broadcast failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 
@@ -941,6 +977,16 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
             }
         }
     }
+    {
+        auto it = existing_cols.find("is_broadcast");
+        if (it != existing_cols.end() && it->second != "int") {
+            INFO(logger) << "Modifying column notification.is_broadcast " << it->second << " -> int";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `is_broadcast` int NOT NULL DEFAULT 0 COMMENT '是否广播: 0否 1是'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.is_broadcast failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     for (auto& [name, _] : existing_cols) {
         (void)_;
@@ -958,6 +1004,7 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         if (name == "is_deleted") found = true;
         if (name == "create_time") found = true;
         if (name == "update_time") found = true;
+        if (name == "is_broadcast") found = true;
         if (!found) {
             WARN(logger) << "Dropping column notification." << name << " (not in schema, data will be lost)";
             int rt = conn->execute("ALTER TABLE notification DROP COLUMN `" + name + "`");
@@ -1060,6 +1107,14 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE notification ADD COLUMN `update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN update_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("is_broadcast") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.is_broadcast";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `is_broadcast` int NOT NULL DEFAULT 0 COMMENT '是否广播: 0否 1是'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_broadcast failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 

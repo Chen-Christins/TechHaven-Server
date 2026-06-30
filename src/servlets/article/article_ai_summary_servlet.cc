@@ -1,25 +1,25 @@
 #include "article_ai_summary_servlet.h"
 
-#include <chen/log/log.h>
-#include <chen/http/http_connection.h>
-#include <chen/http/session_data.h>
-#include <chen/ds/lru_cache.h>
-#include <chen/config/config.h>
-
 #include "../../ai/ai_provider.h"
 #include "../../ai/sse_stream_parser.h"
-#include "../../util.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/session_manager.h"
 #include "../../manager/user_ai_config_manager.h"
 #include "../../struct.h"
+#include "../../util.h"
+
+#include <chen/config/config.h>
+#include <chen/ds/lru_cache.h>
+#include <chen/http/http_connection.h>
+#include <chen/http/session_data.h>
+#include <chen/log/log.h>
 
 namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
-static const char* SYSTEM_PROMPT = "你是一个专业的文章总结助手。";
 
-// 系统默认 AI 配置 — 作为用户未配置时的兜底
+// 系统默认 AI 配置 — 用户未配置时的兜底
 static chen::ConfigVar<std::string>::ptr g_ai_type =
     chen::Config::Lookup("ai.type", std::string(""), "default AI provider type");
 static chen::ConfigVar<std::string>::ptr g_ai_model =
@@ -27,23 +27,29 @@ static chen::ConfigVar<std::string>::ptr g_ai_model =
 static chen::ConfigVar<std::string>::ptr g_ai_api_key =
     chen::Config::Lookup("ai.api_key", std::string(""), "default AI API key");
 
-// LRU 缓存：key=article_id，value=总结文本，16 桶，最多 500 条
-static chen::ds::HashLruCache<int64_t, std::string> s_summary_cache(16, 500, 50);
+static const char* SYSTEM_PROMPT = "你是一个专业的文章总结助手。";
 
-ArticleAISummaryServlet::ArticleAISummaryServlet()
-    : chen::http::SSEServlet("ArticleAISummaryServlet") {
-}
+// LRU 缓存：key=article_id，value=总结文本，16 桶，最多 500 条
+static chen::ds::HashLruCache<int64_t, std::string> g_summary_cache(16, 500, 50);
+
+ArticleAISummaryServlet::ArticleAISummaryServlet() : chen::http::SSEServlet("ArticleAISummaryServlet") {}
 
 int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session) {
+    // ================================================================
+    // 1. 认证
+    // ================================================================
     int64_t uid = 0;
-    std::string ai_type, ai_url, ai_key, ai_model;
-    int32_t ai_max_tokens = 4096;
-
     {
         std::string sid = request->getCookie(CookieKey::SESSION_KEY);
         if (!sid.empty()) {
             auto data = chen::http::SessionDataMgr::GetInstance()->get(sid);
-            if (data) uid = data->getData<int64_t>(CookieKey::USER_ID);
+            if (!data) {
+                // 内存未命中，尝试从 Redis 恢复（进程重启后自动恢复会话）
+                data = LoadSessionFromRedis(sid);
+            }
+            if (data) {
+                uid = data->getData<int64_t>(CookieKey::USER_ID);
+            }
         }
         if (!uid) {
             session->sendEvent(R"({"type":"error","message":"not login"})");
@@ -51,8 +57,12 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         }
     }
 
+    // ================================================================
+    // 2. 获取文章
+    // ================================================================
     int64_t article_id = 0;
-    std::string article_title, article_content;
+    std::string article_title;
+    std::string article_content;
     {
         auto article_id_str = request->getParam("article_id");
         if (article_id_str.empty()) {
@@ -80,121 +90,169 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
         }
     }
 
+    // ================================================================
+    // 3. 解析 AI 配置（用户配置优先，系统默认兜底）
+    // ================================================================
+    std::string ai_type;
+    std::string ai_url;
+    std::string ai_key;
+    std::string ai_model;
+    int32_t ai_max_tokens = 4096;
     {
         auto config = UserAIConfigMgr::GetInstance()->getByUserId(uid);
         if (config) {
+            // 用户配置：API key 是加密存储的，需要解密
+            std::string encrypted_key = config->getApiKey();
+            ai_key = DecryptApiKey(encrypted_key);
             ai_type = config->getType();
-            ai_url  = config->getUrl();
-            ai_key  = DecryptApiKey(config->getApiKey());
+            ai_url = config->getUrl();
             ai_model = config->getModel();
             ai_max_tokens = config->getMaxTokens();
+
+            TRACE(logger) << "AI config source=user, type=" << ai_type
+                << ", model=" << ai_model << ", encrypted_key_len=" << encrypted_key.size()
+                << ", decrypted_key_len=" << ai_key.size();
+
+            if (ai_key.empty() && !encrypted_key.empty()) {
+                ERROR(logger) << "DecryptApiKey returned empty for non-empty encrypted key "
+                    << "(len=" << encrypted_key.size() << "), " << "possible Base64Decode failure or raw key stored in DB";
+            }
         } else {
-            // 用户未配置 AI，使用系统默认值
+            // 系统默认配置：API key 是明文，无需解密
             ai_type = g_ai_type->getValue();
             ai_model = g_ai_model->getValue();
-            ai_key  = g_ai_api_key->getValue();
-            if (ai_type.empty() || ai_key.empty()) {
-                session->sendEvent(R"({"type":"error","message":"AI config not found"})");
-                return -1;
-            }
-            // 根据类型推导默认 base URL
+            ai_key = g_ai_api_key->getValue();
+
+            INFO(logger) << "AI config source=system, type=" << ai_type
+                << ", model=" << ai_model << ", key_len=" << ai_key.size();
+        }
+
+        if (ai_type.empty() || ai_key.empty()) {
+            session->sendEvent(R"({"type":"error","message":"AI config not found"})");
+            return -1;
+        }
+
+        // 推导默认 base URL（用户未配置 URL 时，根据厂商类型自动补全，默认 GLM）
+        if (ai_url.empty()) {
             if (ai_type == "claude") {
                 ai_url = "https://api.anthropic.com";
-            } else if (ai_type == "glm") {
-                ai_url = "https://open.bigmodel.cn";
-            } else {
+            } else if (ai_type == "openai") {
                 ai_url = "https://api.openai.com";
-            }
-        }
-        if (ai_max_tokens <= 0) {
-            ai_max_tokens = 4096;
-        }
-        if (ai_model.empty()) {
-            if (ai_type == "claude") {
-                ai_model = "claude-sonnet-4-6";
-            } else if (ai_type == "glm") {
-                ai_model = "glm-4.7-flash";
             } else {
-                ai_model = "gpt-4o";
+                ai_url = "https://open.bigmodel.cn";
             }
         }
+
+        TRACE(logger) << "AI final config: type=" << ai_type
+            << ", url=" << ai_url << ", model=" << ai_model << ", max_tokens=" << ai_max_tokens;
     }
 
+    // ================================================================
+    // 4. 创建 AI provider
+    // ================================================================
     auto provider = ai::createProvider(ai_type);
+    if (!provider) {
+        ERROR(logger) << "failed to create AI provider for type: " << ai_type;
+        session->sendEvent(R"({"type":"error","message":"unsupported AI provider"})");
+        return -1;
+    }
 
+    // ================================================================
+    // 5. 构建请求体
+    // ================================================================
     std::string prompt =
         "请用简洁的中文总结以下文章的核心内容，控制在200字以内：\n\n"
         "标题：" + article_title + "\n\n" + article_content;
 
-    std::string api_body_str = provider->buildRequest(ai_model, ai_max_tokens, SYSTEM_PROMPT, prompt);
+    std::string api_body_str = provider->buildRequest(ai_model, ai_max_tokens, SYSTEM_PROMPT, prompt, true);
 
-    auto uri = chen::Uri::Create(ai_url + provider->endpointSuffix());
+    // ================================================================
+    // 6. 缓存命中 — 直接返回已缓存的总结
+    // ================================================================
     {
         std::string cached;
-        if (s_summary_cache.get(article_id, cached)) {
+        if (g_summary_cache.get(article_id, cached)) {
             INFO(logger) << "summary cache hit for article " << article_id;
             SendSSEJson(session, "start", "message", "开始生成总结...");
             SendSSEJson(session, "chunk", "content", cached);
             SendSSEJson(session, "done", "message", "总结生成完成");
             return 0;
         }
+    }
 
-        std::map<std::string, std::string> headers;
-        headers["Content-Type"] = "application/json";
-        headers["Authorization"] = "Bearer " + ai_key;
+    // ================================================================
+    // 7. 构建请求头 — Content-Type + 厂商认证头
+    // ================================================================
+    auto uri = chen::Uri::Create(ai_url + provider->endpointSuffix());
+    std::map<std::string, std::string> headers;
+    headers["Content-Type"] = "application/json";
+    provider->authHeaders(ai_key, headers);
 
-        SendSSEJson(session, "start", "message", "开始生成总结...");
+    // ================================================================
+    // 8. 流式调用 AI 服务（带有限重试）
+    // ================================================================
+    SendSSEJson(session, "start", "message", "开始生成总结...");
 
-        const int MAX_RETRIES = 5;
-        chen::http::HttpResult::ptr http_result;
-        ai::SSEStreamParser parser(session, provider);
-        std::string raw_body;
+    const int MAX_RETRIES = 3;
+    chen::http::HttpResult::ptr http_result;
+    ai::SSEStreamParser parser(session, provider);
+    std::string raw_body;
 
-        for (int attempt = 1; attempt <= MAX_RETRIES; ++attempt) {
-            if (attempt > 1) {
-                parser = ai::SSEStreamParser(session, provider);
-                raw_body.clear();
-            }
-            auto callback = [&parser, &raw_body](const char* data, size_t len) {
-                raw_body.append(data, len);
-                return parser(data, len);
-            };
-
-            http_result = chen::http::HttpConnection::DoRequestStreaming(
-                chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
-
-            if (http_result && http_result->result == 0) {
-                break;
-            }
-            ERROR(logger) << "AI API call failed (attempt " << attempt << "/" << MAX_RETRIES << "): "
-                << (http_result ? http_result->error : "null result");
+    for (int attempt = 1; attempt <= MAX_RETRIES; ++attempt) {
+        if (attempt > 1) {
+            WARN(logger) << "retrying AI API call, attempt " << attempt << "/" << MAX_RETRIES;
+            // 重置 parser，丢弃上一次的不完整数据
+            parser = ai::SSEStreamParser(session, provider);
+            raw_body.clear();
         }
 
-        if (!http_result || http_result->result != 0) {
-            ERROR(logger) << "AI API call failed after " << MAX_RETRIES << " attempts";
-            SendSSEJson(session, "error", "message", "AI service call failed");
-            return -1;
+        auto callback = [&parser, &raw_body](const char* data, size_t len) {
+            raw_body.append(data, len);
+            return parser(data, len);
+        };
+
+        http_result = chen::http::HttpConnection::DoRequestStreaming(
+            chen::http::HttpMethod::POST, uri, 60000, callback, headers, api_body_str);
+
+        if (http_result && http_result->result == 0) {
+            break;
         }
 
-        auto ai_response = http_result->response;
-        if (!ai_response) {
-            SendSSEJson(session, "error", "message", "no response from AI service");
-            return -1;
-        }
+        ERROR(logger) << "AI API call failed (attempt " << attempt << "/" << MAX_RETRIES << "): "
+            << (http_result ? http_result->error : "null result");
+    }
 
-        int status = static_cast<int>(ai_response->getStatus());
-        if (status != 200) {
-            ERROR(logger) << "AI service returned status " << status << " body=" << raw_body;
-            SendSSEJson(session, "error", "message", "AI service returned error");
-            return -1;
-        }
+    if (!http_result || http_result->result != 0) {
+        ERROR(logger) << "AI API call failed after " << MAX_RETRIES << " attempts";
+        SendSSEJson(session, "error", "message", "AI service call failed");
+        return -1;
+    }
 
-        SendSSEJson(session, "done", "message", "总结生成完成");
+    // ================================================================
+    // 9. 校验 HTTP 响应
+    // ================================================================
+    auto ai_response = http_result->response;
+    if (!ai_response) {
+        SendSSEJson(session, "error", "message", "no response from AI service");
+        return -1;
+    }
 
-        if (!parser.full_text.empty()) {
-            s_summary_cache.set(article_id, parser.full_text);
-            INFO(logger) << "summary cached for article " << article_id;
-        }
+    int status = static_cast<int>(ai_response->getStatus());
+    if (status != 200) {
+        ERROR(logger) << "AI service returned status " << status << " body=" << raw_body;
+        SendSSEJson(session, "error", "message", "AI service returned error");
+        return -1;
+    }
+
+    // ================================================================
+    // 10. 写缓存（注意：SSE 流结束后 parser 已在 processEvent 中发送过 "done" 事件，
+    //     此处再次发送作为兜底，确保客户端不会因缺失结束标记而挂起）
+    // ================================================================
+    SendSSEJson(session, "done", "message", "总结生成完成");
+
+    if (!parser.full_text.empty()) {
+        g_summary_cache.set(article_id, parser.full_text);
+        INFO(logger) << "summary cached for article " << article_id;
     }
 
     return 0;

@@ -56,7 +56,7 @@ logs:
         file: /home/chen/workspace/Blog/logs/root.log
       - type: StdoutLogAppender
   - name: system
-    level: info
+    level: debug
     formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender

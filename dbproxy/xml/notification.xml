@@ -13,6 +13,7 @@
         <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
         <column name="update_time" type="datetime" default="current_timestamp" desc="更新时间"/>
+        <column name="is_broadcast" type="int32" default="0" desc="是否广播: 0否 1是"/>
     </columns>
     <indexs>
         <index name="pk" cols="id" type="pk"/>

@@ -6,11 +6,13 @@ namespace blog {
 namespace ai {
 
 std::string OpenAIProvider::buildRequest(const std::string& model, int32_t maxTokens, const std::string& systemPrompt
-        , const std::string& prompt) {
+        , const std::string& prompt, bool stream) {
     Json::Value body;
     body["model"] = model;
-    body["stream"] = true;
     body["max_tokens"] = maxTokens;
+    if (stream) {
+        body["stream"] = true;
+    }
 
     Json::Value messages(Json::arrayValue);
     Json::Value sys;
@@ -50,6 +52,22 @@ bool OpenAIProvider::isTerminal(const Json::Value& parsed) {
 
 std::string OpenAIProvider::getError(const Json::Value& /*parsed*/) {
     return "";
+}
+
+std::string OpenAIProvider::extractNonStreamingContent(const Json::Value& parsed) {
+    auto& choices = parsed["choices"];
+    if (choices.isArray() && choices.size() > 0) {
+        return choices[0]["message"]["content"].asString();
+    }
+    auto& err = parsed["error"];
+    if (!err.isNull()) {
+        return "";
+    }
+    return "";
+}
+
+void OpenAIProvider::authHeaders(const std::string& apiKey, std::map<std::string, std::string>& outHeaders) {
+    outHeaders["Authorization"] = "Bearer " + apiKey;
 }
 
 bool OpenAIProvider::isDoneMarker(const std::string& rawData) {

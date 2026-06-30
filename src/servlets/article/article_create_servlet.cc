@@ -61,6 +61,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
 
         if (data::ArticleInfoDao::Insert(info, db)) {
+            ERROR(logger) << "insert article fail title=" << title
+                << " user_id=" << uid << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
             result->setErrno(errcode::ARTICLE_INSERT_FAILED);
             break;
         }
@@ -84,7 +86,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 rel->setUpdateTime(now);
                 if (data::ArticleCategoryRelInfoDao::Insert(rel, db)) {
                     ERROR(logger) << "insert article_category_rel fail article_id="
-                        << info->getId() << " category_id=" << cid;
+                        << info->getId() << " category_id=" << cid
+                        << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 new_cat_rels.push_back(rel);
             }
@@ -105,7 +108,8 @@ int32_t ArticleCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 rel->setUpdateTime(now);
                 if (data::ArticleLabelRelInfoDao::Insert(rel, db)) {
                     ERROR(logger) << "insert article_label_rel fail article_id="
-                        << info->getId() << " label_id=" << lid;
+                        << info->getId() << " label_id=" << lid
+                        << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
                 }
                 new_label_rels.push_back(rel);
             }
