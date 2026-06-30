@@ -218,6 +218,15 @@ void Index::addArticle(data::ArticleInfo::ptr info) {
     uint32_t idx = m_docs.size();
     m_docs.push_back(info->getId());
     m_docMap[info->getId()] = idx;
+
+    // 将已有位图全部扩容到新 m_docs.size()，避免 query() 中 &= 时 m_size 不一致崩溃
+    uint32_t new_size = m_docs.size();
+    for (auto& [type, keyMap] : m_indexs) {
+        for (auto& [key, bitmap] : keyMap) {
+            bitmap->resize(new_size, false);
+        }
+    }
+
     buildIdx(info, idx);
 }
 

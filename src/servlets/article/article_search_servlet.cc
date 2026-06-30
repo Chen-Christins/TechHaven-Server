@@ -23,7 +23,7 @@ int32_t ArticleSearchServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         int64_t category_id = request->getParamAs<int64_t>("category_id");
         int64_t label_id = request->getParamAs<int64_t>("label_id");
-        int64_t state = request->getParamAs<int64_t>("state");
+        int64_t state = request->getParamAs<int64_t>("state", 2);  // 默认只搜已发布
         int64_t channel = request->getParamAs<int64_t>("channel");
         int64_t user_id = request->getParamAs<int64_t>("user_id");
         std::string year_month = request->getParam("year_month");
