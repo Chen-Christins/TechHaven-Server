@@ -50,6 +50,7 @@
 #include "../servlets/label/label_create_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/label/label_delete_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/label/label_query_servlet.h"                          // IWYU pragma: keep
+#include "../servlets/notify/broadcast_close_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/notify/broadcast_list_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/notify/notification_list_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/notify/notification_read_all_servlet.h"               // IWYU pragma: keep

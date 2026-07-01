@@ -65,7 +65,10 @@ void BlogModule::onTick() {
     // 2. 定时 flush 脏数据（浏览/点赞/收藏数）到数据库
     ArticleMgr::GetInstance()->onUpdateTimer();
 
-    // 3. 清理过期的分块上传会话及临时文件
+    // 3. 关闭已过期的广播
+    NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
+
+    // 4. 清理过期的分块上传会话及临时文件
     ::ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
     // 4. 定时同步有 token 的仓库 PR（每 30 分钟）
@@ -282,6 +285,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
         dp->addServlet("/api/v1/broadcast/list", XX(BroadcastListServlet));
+        dp->addServlet("/api/v1/broadcast/close", XX(BroadcastCloseServlet));
         dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));

@@ -46,6 +46,7 @@ public:
     bool markRead(const std::vector<int64_t>& ids);
     int64_t markAllRead(int64_t user_id);
     int64_t markReadByType(int64_t user_id, const std::string& type);
+    void cleanupExpiredBroadcasts();
 
 private:
     static data::NotificationInfo::ptr parseRow(chen::ISQLData::ptr rt);

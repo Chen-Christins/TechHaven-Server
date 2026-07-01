@@ -374,4 +374,21 @@ data::NotificationInfo::ptr NotificationManager::get(int64_t id) {
     return v;
 }
 
+void NotificationManager::cleanupExpiredBroadcasts() {
+    auto db = GetDB();
+    if (!db) {
+        return;
+    }
+    int64_t now = time(0);
+    // 将已过期的广播的 is_broadcast 置 0，前端 /broadcast/list 不再返回
+    std::string sql = "update notification set is_broadcast=0, update_time=? where is_broadcast=1 and end_time>0 and end_time<=?";
+    auto stmt = db->prepare(sql);
+    if (!stmt) {
+        return;
+    }
+    stmt->bindTime(1, now);
+    stmt->bindInt64(2, now);
+    stmt->execute();
+}
+
 }
