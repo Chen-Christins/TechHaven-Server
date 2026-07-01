@@ -1,0 +1,73 @@
+#include "broadcast_list_servlet.h"
+
+#include "../../util.h"
+
+#include <chen/log/log.h>
+#include <chen/db/query_builder.h>
+
+namespace blog {
+namespace servlet {
+
+static chen::Logger::ptr logger = LOG_ROOT();
+
+BroadcastListServlet::BroadcastListServlet()
+    :BlogServlet("BroadcastListServlet") {
+}
+
+int32_t BroadcastListServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+        ,chen::http::HttpSession::ptr session, Result::ptr result) {
+    do {
+        int64_t offset = request->getParamAs<int64_t>("offset", 0);
+        int64_t size = request->getParamAs<int64_t>("size", 20);
+        if (size > 100) size = 100;
+
+        auto db = GetDB();
+        if (!db) {
+            result->setErrno(errcode::DB_CONNECTION_FAILED);
+            break;
+        }
+
+        // 查 is_broadcast=1 且未删除的，按创建时间倒序
+        auto qb = chen::QueryBuilder::Create("notification");
+        qb->where("is_broadcast", "=", (int64_t)1);
+        qb->where("is_deleted", "=", (int64_t)0);
+        qb->orderBy("id", "DESC");
+        qb->limit((int32_t)size);
+        qb->offset((int32_t)offset);
+
+        std::string sql = qb->buildQuerySQL();
+        auto stmt = db->prepare(sql);
+        if (!stmt) {
+            ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+            result->setErrno(errcode::DB_OPERATION_FAILED);
+            break;
+        }
+        qb->bindParams(stmt);
+        auto rt = stmt->query();
+        if (!rt) {
+            result->setErrno(errcode::DB_OPERATION_FAILED);
+            break;
+        }
+
+        Json::Value list(Json::arrayValue);
+        while (rt->next()) {
+            Json::Value item;
+            item["id"] = rt->getInt64(0);
+            item["title"] = rt->getString(2);
+            item["content"] = rt->getString(3);
+            item["type"] = rt->getString(4);
+            item["level"] = rt->getString(14);
+            item["start_time"] = rt->getInt64(15);
+            item["end_time"] = rt->getInt64(16);
+            item["create_time"] = rt->getTime(11);
+            list.append(item);
+        }
+        result->jsondata["list"] = list;
+        result->setErrno(errcode::SUCCESS);
+    } while (0);
+    response->setBody(result->toJsonString());
+    return 0;
+}
+
+}
+}

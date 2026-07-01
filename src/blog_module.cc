@@ -281,6 +281,7 @@ void BlogModule::registerServlets() {
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
+        dp->addServlet("/api/v1/broadcast/list", XX(BroadcastListServlet));
         dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));

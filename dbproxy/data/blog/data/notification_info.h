@@ -63,6 +63,15 @@ public:
     const int32_t& getIsBroadcast() { return m_isBroadcast; }
     void setIsBroadcast(const int32_t& v);
 
+    const std::string& getLevel() { return m_level; }
+    void setLevel(const std::string& v);
+
+    const int64_t& getStartTime() { return m_startTime; }
+    void setStartTime(const int64_t& v);
+
+    const int64_t& getEndTime() { return m_endTime; }
+    void setEndTime(const int64_t& v);
+
     std::string toJsonString() const;
 
 private:
@@ -74,8 +83,11 @@ private:
     int64_t m_senderId;
     int64_t m_articleId;
     int64_t m_commentId;
+    int64_t m_startTime;
+    int64_t m_endTime;
     std::string m_title;
     std::string m_type;
+    std::string m_level;
     std::string m_content;
     int64_t m_readTime;
     int64_t m_createTime;

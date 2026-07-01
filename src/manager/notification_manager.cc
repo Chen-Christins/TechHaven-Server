@@ -30,6 +30,10 @@ data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt
     v->setIsDeleted(rt->getInt32(10));
     v->setCreateTime(rt->getTime(11));
     v->setUpdateTime(rt->getTime(12));
+    v->setIsBroadcast(rt->getInt32(13));
+    v->setLevel(rt->getString(14));
+    v->setStartTime(rt->getInt64(15));
+    v->setEndTime(rt->getInt64(16));
     return v;
 }
 
@@ -126,7 +130,9 @@ int32_t NotificationManager::getPresenceOnlineCount() {
 data::NotificationInfo::ptr NotificationManager::addNotification(
     int64_t user_id, const std::string& title,
     const std::string& content, const std::string& type, int64_t sender_id,
-    int64_t article_id, int64_t comment_id) {
+    int64_t article_id, int64_t comment_id,
+    int32_t is_broadcast, const std::string& level,
+    int64_t start_time, int64_t end_time) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -144,6 +150,10 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
     info->setIsRead(0);
     info->setReadTime(0);
     info->setIsDeleted(0);
+    info->setIsBroadcast(is_broadcast);
+    info->setLevel(level);
+    info->setStartTime(start_time);
+    info->setEndTime(end_time);
     info->setCreateTime(time(0));
     info->setUpdateTime(time(0));
 

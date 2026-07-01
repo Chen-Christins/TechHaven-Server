@@ -23,8 +23,11 @@ NotificationInfo::NotificationInfo()
     ,m_senderId()
     ,m_articleId()
     ,m_commentId()
+    ,m_startTime(0)
+    ,m_endTime(0)
     ,m_title()
     ,m_type()
+    ,m_level()
     ,m_content()
     ,m_readTime()
     ,m_createTime(time(0))
@@ -47,6 +50,9 @@ std::string NotificationInfo::toJsonString() const {
     v["create_time"] = chen::Time2Str(m_createTime);
     v["update_time"] = chen::Time2Str(m_updateTime);
     v["is_broadcast"] = m_isBroadcast;
+    v["level"] = m_level;
+    v["start_time"] = std::to_string(m_startTime);
+    v["end_time"] = std::to_string(m_endTime);
     return chen::JsonUtil::ToString(v);
 }
 
@@ -106,9 +112,21 @@ void NotificationInfo::setIsBroadcast(const int32_t& v) {
     m_isBroadcast = v;
 }
 
+void NotificationInfo::setLevel(const std::string& v) {
+    m_level = v;
+}
+
+void NotificationInfo::setStartTime(const int64_t& v) {
+    m_startTime = v;
+}
+
+void NotificationInfo::setEndTime(const int64_t& v) {
+    m_endTime = v;
+}
+
 
 int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, article_id = ?, comment_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ?, is_broadcast = ? where id = ?";
+    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, article_id = ?, comment_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ?, is_broadcast = ?, level = ?, start_time = ?, end_time = ? where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -128,12 +146,15 @@ int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindTime(11, info->m_createTime);
     stmt->bindTime(12, info->m_updateTime);
     stmt->bindInt32(13, info->m_isBroadcast);
-    stmt->bindInt64(14, info->m_id);
+    stmt->bindString(14, info->m_level);
+    stmt->bindInt64(15, info->m_startTime);
+    stmt->bindInt64(16, info->m_endTime);
+    stmt->bindInt64(17, info->m_id);
     return stmt->execute();
 }
 
 int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "insert into notification (user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "insert into notification (user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -153,6 +174,9 @@ int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindTime(11, info->m_createTime);
     stmt->bindTime(12, info->m_updateTime);
     stmt->bindInt32(13, info->m_isBroadcast);
+    stmt->bindString(14, info->m_level);
+    stmt->bindInt64(15, info->m_startTime);
+    stmt->bindInt64(16, info->m_endTime);
     int rt = stmt->execute();
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
@@ -164,7 +188,7 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     if(info->m_id == 0) {
         return Insert(info, conn);
     }
-    std::string sql = "replace into notification (id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    std::string sql = "replace into notification (id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -185,6 +209,9 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     stmt->bindTime(12, info->m_createTime);
     stmt->bindTime(13, info->m_updateTime);
     stmt->bindInt32(14, info->m_isBroadcast);
+    stmt->bindString(15, info->m_level);
+    stmt->bindInt64(16, info->m_startTime);
+    stmt->bindInt64(17, info->m_endTime);
     return stmt->execute();
 }
 
@@ -238,7 +265,7 @@ int NotificationInfoDao::DeleteByUserIdIsRead( const int64_t& user_id,  const in
 }
 
 int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time from notification";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -265,13 +292,16 @@ int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, c
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
         v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
         results.push_back(v);
     }
     return 0;
 }
 
 NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where id = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time from notification where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -301,11 +331,14 @@ NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::
     v->m_createTime = rt->getTime(11);
     v->m_updateTime = rt->getTime(12);
     v->m_isBroadcast = rt->getInt32(13);
+    v->m_level = rt->getString(14);
+    v->m_startTime = rt->getInt64(15);
+    v->m_endTime = rt->getInt64(16);
     return v;
 }
 
 int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time from notification where user_id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -333,6 +366,9 @@ int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& resul
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
         v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
         results.push_back(v);
     };
     return 0;
@@ -357,7 +393,7 @@ int NotificationInfoDao::QueryByUserIdPages(std::vector<NotificationInfo::ptr>& 
     if (total == 0) {
         return 0;
     }
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ? order by id desc limit ? offset ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time from notification where user_id = ? order by id desc limit ? offset ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -387,13 +423,16 @@ int NotificationInfoDao::QueryByUserIdPages(std::vector<NotificationInfo::ptr>& 
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
         v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
         results.push_back(v);
     };
     return 0;
 }
 
 int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>& results,  const int64_t& user_id,  const int32_t& is_read, chen::IDB::ptr conn) {
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ? and is_read = ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time from notification where user_id = ? and is_read = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -422,6 +461,9 @@ int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>&
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
         v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
         results.push_back(v);
     };
     return 0;
@@ -447,7 +489,7 @@ int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::
     if (total == 0) {
         return 0;
     }
-    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast from notification where user_id = ? and is_read = ? order by id desc limit ? offset ?";
+    std::string sql = "select id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time from notification where user_id = ? and is_read = ? order by id desc limit ? offset ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
@@ -478,6 +520,9 @@ int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::
         v->m_createTime = rt->getTime(11);
         v->m_updateTime = rt->getTime(12);
         v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
         results.push_back(v);
     };
     return 0;
@@ -498,7 +543,10 @@ int NotificationInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
             "is_deleted INTEGER NOT NULL DEFAULT 0,"
             "create_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
             "update_time TIMESTAMP NOT NULL DEFAULT current_timestamp,"
-            "is_broadcast INTEGER NOT NULL DEFAULT 0);"
+            "is_broadcast INTEGER NOT NULL DEFAULT 0,"
+            "level TEXT NOT NULL DEFAULT '',"
+            "start_time INTEGER NOT NULL DEFAULT 0,"
+            "end_time INTEGER NOT NULL DEFAULT 0);"
             "CREATE INDEX IF NOT EXISTS notification_user_id ON notification(user_id);"
             "CREATE INDEX IF NOT EXISTS notification_user_id_is_read ON notification(user_id,is_read);"
             );
@@ -520,6 +568,9 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`create_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
             "`update_time` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间',"
             "`is_broadcast` int NOT NULL DEFAULT 0 COMMENT '是否广播: 0否 1是',"
+            "`level` varchar(16) NOT NULL DEFAULT '' COMMENT '广播级别: info/warning/danger',"
+            "`start_time` bigint NOT NULL DEFAULT 0 COMMENT '广播开始时间(Unix秒), 0=即时',"
+            "`end_time` bigint NOT NULL DEFAULT 0 COMMENT '广播结束时间(Unix秒), 0=手动关闭',"
             "PRIMARY KEY(`id`),"
             "KEY `notification_user_id` (`user_id`),"
             "KEY `notification_user_id_is_read` (`user_id`,`is_read`)) COMMENT='用户通知'");
@@ -635,6 +686,27 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             need_recreate = true;
         }
     }
+    {
+        auto it = existing_cols.find("level");
+        if (it != existing_cols.end() && it->second != "TEXT") {
+            INFO(logger) << "Column type changed: notification.level " << it->second << " -> TEXT";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("start_time");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.start_time " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
+    {
+        auto it = existing_cols.find("end_time");
+        if (it != existing_cols.end() && it->second != "INTEGER") {
+            INFO(logger) << "Column type changed: notification.end_time " << it->second << " -> INTEGER";
+            need_recreate = true;
+        }
+    }
     if (!need_recreate) {
         for (auto& [name, _] : existing_cols) {
             (void)_;  // suppress unused warning
@@ -653,6 +725,9 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
             if (name == "create_time") found = true;
             if (name == "update_time") found = true;
             if (name == "is_broadcast") found = true;
+            if (name == "level") found = true;
+            if (name == "start_time") found = true;
+            if (name == "end_time") found = true;
             if (!found) {
                 need_recreate = true;
                 WARN(logger) << "Column notification." << name << " removed, table recreate required";
@@ -706,6 +781,15 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         }
         if (existing_cols.find("is_broadcast") != existing_cols.end()) {
             common_cols.push_back("is_broadcast");
+        }
+        if (existing_cols.find("level") != existing_cols.end()) {
+            common_cols.push_back("level");
+        }
+        if (existing_cols.find("start_time") != existing_cols.end()) {
+            common_cols.push_back("start_time");
+        }
+        if (existing_cols.find("end_time") != existing_cols.end()) {
+            common_cols.push_back("end_time");
         }
 
         if (conn->execute("ALTER TABLE notification RENAME TO notification_tmp")) {
@@ -830,6 +914,30 @@ int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE notification ADD COLUMN is_broadcast INTEGER NOT NULL DEFAULT 0");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_broadcast failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("level") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.level";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN level TEXT NOT NULL DEFAULT ''");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN level failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("start_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.start_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN start_time INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN start_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("end_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.end_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN end_time INTEGER NOT NULL DEFAULT 0");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN end_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 
@@ -987,6 +1095,36 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
             }
         }
     }
+    {
+        auto it = existing_cols.find("level");
+        if (it != existing_cols.end() && it->second != "varchar(16)") {
+            INFO(logger) << "Modifying column notification.level " << it->second << " -> varchar(16)";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `level` varchar(16) NOT NULL DEFAULT '' COMMENT '广播级别: info/warning/danger'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.level failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("start_time");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.start_time " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `start_time` bigint NOT NULL DEFAULT 0 COMMENT '广播开始时间(Unix秒), 0=即时'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.start_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
+    {
+        auto it = existing_cols.find("end_time");
+        if (it != existing_cols.end() && it->second != "bigint") {
+            INFO(logger) << "Modifying column notification.end_time " << it->second << " -> bigint";
+            int rt = conn->execute("ALTER TABLE notification MODIFY COLUMN `end_time` bigint NOT NULL DEFAULT 0 COMMENT '广播结束时间(Unix秒), 0=手动关闭'");
+            if (rt) {
+                ERROR(logger) << "MODIFY COLUMN notification.end_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            }
+        }
+    }
 
     for (auto& [name, _] : existing_cols) {
         (void)_;
@@ -1005,6 +1143,9 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         if (name == "create_time") found = true;
         if (name == "update_time") found = true;
         if (name == "is_broadcast") found = true;
+        if (name == "level") found = true;
+        if (name == "start_time") found = true;
+        if (name == "end_time") found = true;
         if (!found) {
             WARN(logger) << "Dropping column notification." << name << " (not in schema, data will be lost)";
             int rt = conn->execute("ALTER TABLE notification DROP COLUMN `" + name + "`");
@@ -1115,6 +1256,30 @@ int NotificationInfoDao::MigrateTableMySQL(chen::IDB::ptr conn) {
         int rt = conn->execute("ALTER TABLE notification ADD COLUMN `is_broadcast` int NOT NULL DEFAULT 0 COMMENT '是否广播: 0否 1是'");
         if (rt) {
             ERROR(logger) << "ALTER TABLE notification ADD COLUMN is_broadcast failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("level") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.level";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `level` varchar(16) NOT NULL DEFAULT '' COMMENT '广播级别: info/warning/danger'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN level failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("start_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.start_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `start_time` bigint NOT NULL DEFAULT 0 COMMENT '广播开始时间(Unix秒), 0=即时'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN start_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        }
+    }
+
+    if (existing_cols.find("end_time") == existing_cols.end()) {
+        INFO(logger) << "Adding column notification.end_time";
+        int rt = conn->execute("ALTER TABLE notification ADD COLUMN `end_time` bigint NOT NULL DEFAULT 0 COMMENT '广播结束时间(Unix秒), 0=手动关闭'");
+        if (rt) {
+            ERROR(logger) << "ALTER TABLE notification ADD COLUMN end_time failed, errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         }
     }
 

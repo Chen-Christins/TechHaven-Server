@@ -49,6 +49,12 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
         int64_t comment_id = 0;
         request->checkGetParamAs("comment_id", comment_id);
 
+        // 广播参数
+        int32_t is_broadcast = request->getParamAs<int32_t>("is_broadcast", 0);
+        std::string level = request->getParam("level");
+        int64_t start_time = request->getParamAs<int64_t>("start_time", 0);
+        int64_t end_time = request->getParamAs<int64_t>("end_time", 0);
+
         // 构建通知 JSON
         Json::Value notif;
         notif["type"] = "notification";
@@ -58,6 +64,12 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
         notif["article_id"] = article_id;
         notif["comment_id"] = comment_id;
         notif["create_time"] = (int64_t)time(0);
+        if (is_broadcast) {
+            notif["is_broadcast"] = 1;
+            notif["level"] = level;
+            notif["start_time"] = start_time;
+            notif["end_time"] = end_time;
+        }
         std::string msg = chen::JsonUtil::ToString(notif);
 
         auto& notifMgr = *NotificationMgr::GetInstance();
@@ -68,10 +80,13 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             UserMgr::GetInstance()->getAllIds(user_ids, true);
 
             chen::IOManager::GetThis()->schedule(
-                [user_ids, title, content, type, sender_id = uid, article_id, comment_id, msg]() {
+                [user_ids, title, content, type, sender_id = uid, article_id, comment_id,
+                 is_broadcast, level, start_time, end_time, msg]() {
                     for (auto target_uid : user_ids) {
                         NotificationMgr::GetInstance()->addNotification(
-                            target_uid, title, content, type, sender_id, article_id, comment_id);
+                            target_uid, title, content, type, sender_id,
+                            article_id, comment_id, is_broadcast, level,
+                            start_time, end_time);
                     }
                     NotificationMgr::GetInstance()->broadcast(msg);
                 });

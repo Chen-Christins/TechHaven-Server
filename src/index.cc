@@ -8,6 +8,8 @@
 
 #include <algorithm>
 
+#include <chen/util/fs_util.h>
+
 #include "manager/article_manager.h"
 #include "manager/article_category_rel_manager.h"
 #include "manager/article_label_rel_manager.h"
@@ -365,9 +367,14 @@ bool Index::save(const std::string& path) {
 }
 
 bool Index::load(const std::string& path) {
+    // 先检查文件是否存在，避免 ByteArray::readFromFile 打 ERROR 日志
+    if (!chen::FSUtil::Exists(path)) {
+        INFO(logger) << "no index file at " << path << ", will build from scratch";
+        return false;
+    }
     chen::ByteArray::ptr ba(new chen::ByteArray);
     if (!ba->readFromFile(path)) {
-        INFO(logger) << "no index file at " << path << ", will build from scratch";
+        ERROR(logger) << "failed to read index file: " << path;
         return false;
     }
     if (ba->getSize() < 12) {
