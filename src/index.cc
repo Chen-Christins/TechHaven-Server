@@ -20,6 +20,8 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static chen::ConfigVar<std::string>::ptr g_jieba_dict_path =
     chen::Config::Lookup("search.jieba_dict_path", std::string(""), "jieba dict directory path");
+static chen::ConfigVar<std::string>::ptr g_index_path =
+    chen::Config::Lookup("search.index_path", std::string(""), "search index file path");
 
 struct ParamArgsInfo {
     std::string name;
@@ -285,6 +287,9 @@ void Index::addArticle(data::ArticleInfo::ptr info) {
     }
 
     buildIdx(info, idx);
+
+    std::string path = g_index_path->getValue();
+    if (!path.empty()) save(path);
 }
 
 void Index::removeArticle(uint64_t article_id) {
@@ -301,6 +306,9 @@ void Index::removeArticle(uint64_t article_id) {
     }
 
     m_docMap.erase(article_id);
+
+    std::string path = g_index_path->getValue();
+    if (!path.empty()) save(path);
 }
 
 void Index::updateArticle(data::ArticleInfo::ptr info) {
