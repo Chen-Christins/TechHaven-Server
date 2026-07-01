@@ -53,39 +53,46 @@ chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
     return itt == it->second.end() ? nullptr : itt->second;
 }
 
+void Index::initJieba() {
+    if (m_jieba) {
+        return;
+    }
+    std::string dict_path = g_jieba_dict_path->getValue();
+    if (dict_path.empty()) {
+        dict_path = CPPJIEBA_DICT_PATH;
+    }
+    try {
+        m_jieba.reset(new cppjieba::Jieba(
+            dict_path + "/jieba.dict.utf8",
+            dict_path + "/hmm_model.utf8",
+            dict_path + "/user.dict.utf8",
+            dict_path + "/idf.utf8",
+            dict_path + "/stop_words.utf8"));
+        INFO(logger) << "jieba initialized, dict_path=" << dict_path;
+    } catch (const std::exception& e) {
+        ERROR(logger) << "jieba init failed: " << e.what();
+    }
+}
+
 void Index::build() {
     INFO(logger) << "Index build begin...";
 
-    // 初始化 jieba 分词器
-    if (!m_jieba) {
-        std::string dict_path = g_jieba_dict_path->getValue();
-        if (dict_path.empty()) {
-            dict_path = CPPJIEBA_DICT_PATH;  // 编译期默认路径
-        }
-        try {
-            m_jieba.reset(new cppjieba::Jieba(
-                dict_path + "/jieba.dict.utf8",
-                dict_path + "/hmm_model.utf8",
-                dict_path + "/user.dict.utf8",
-                dict_path + "/idf.utf8",
-                dict_path + "/stop_words.utf8"));
-            INFO(logger) << "jieba initialized, dict_path=" << dict_path;
-        } catch (const std::exception& e) {
-            ERROR(logger) << "jieba init failed: " << e.what();
-        }
-    }
+    initJieba();
 
     m_createTime = time(0);
     std::vector<data::ArticleInfo::ptr> infos;
-    ArticleMgr::GetInstance()->listByUserIdPages(infos, 0, 0, 0x7FFFFFFF, true, 0);
+    ArticleMgr::GetInstance()->listByUserIdPages(infos, 0, 0, 0x7FFFFFFF, true, ArticleManager::PUBLISHED);
     std::sort(infos.begin(), infos.end(), [](const data::ArticleInfo::ptr a, const data::ArticleInfo::ptr b) {
         if (a->getWeight() != b->getWeight()) {
             return a->getWeight() > b->getWeight();
         }
         return a->getId() > b->getId();
     });
-    m_docs.reserve(infos.size());
+    m_docs.clear();
+    m_indexs.clear();
+    m_strings.clear();
     m_docMap.clear();
+    m_docs.reserve(infos.size());
     for (auto& info : infos) {
         m_docs.emplace_back(info->getId());
     }
@@ -94,6 +101,7 @@ void Index::build() {
         buildIdx(infos[i], i);
     }
     m_endTime = time(0);
+    m_isReady.store(true);
     INFO(logger) << "Index build over... used="
         << (m_endTime - m_createTime) << " doc.size=" << m_docs.size();
 }
@@ -136,6 +144,9 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
 
 int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params
         , uint32_t max_size) {
+    if (!m_isReady.load()) {
+        return -1;
+    }
     auto v = query(params);
     if (!v) {
         return -1;
@@ -298,6 +309,117 @@ void Index::updateArticle(data::ArticleInfo::ptr info) {
     }
     removeArticle(info->getId());
     addArticle(info);
+}
+
+bool Index::save(const std::string& path) {
+    if (!m_isReady.load()) {
+        ERROR(logger) << "index not ready, skip save";
+        return false;
+    }
+    chen::ByteArray::ptr ba(new chen::ByteArray);
+    ba->writeUint32(0x42494458);       // magic 'BIDX'
+    ba->writeUint32(1);                // version
+    ba->writeInt64(m_docs.size());
+    for (auto id : m_docs) {
+        ba->writeInt64(id);
+    }
+    ba->writeUint32(m_docMap.size());
+    for (auto& [aid, pos] : m_docMap) {
+        ba->writeStringF16(std::to_string(aid));
+        ba->writeUint32(pos);
+    }
+    ba->writeUint32(m_strings.size());
+    for (auto& [h, s] : m_strings) {
+        ba->writeInt64(h);
+        ba->writeStringF16(s);
+    }
+    ba->writeUint32(m_indexs.size());
+    for (auto& [type, keyMap] : m_indexs) {
+        ba->writeInt64(type);
+        ba->writeUint32(keyMap.size());
+        for (auto& [key, bitmap] : keyMap) {
+            ba->writeInt64(key);
+            size_t pos_before = ba->getPosition();
+            ba->writeUint32(0);  // placeholder
+            bitmap->writeTo(ba);
+            size_t pos_after = ba->getPosition();
+            ba->setPosition(pos_before);
+            ba->writeUint32(pos_after - pos_before - 4);
+            ba->setPosition(pos_after);
+        }
+    }
+    if (!ba->writeToFile(path)) {
+        ERROR(logger) << "failed to write index file: " << path;
+        return false;
+    }
+    INFO(logger) << "index saved to " << path << ", docs=" << m_docs.size();
+    return true;
+}
+
+bool Index::load(const std::string& path) {
+    chen::ByteArray::ptr ba(new chen::ByteArray);
+    if (!ba->readFromFile(path)) {
+        INFO(logger) << "no index file at " << path << ", will build from scratch";
+        return false;
+    }
+    if (ba->getSize() < 12) {
+        return false;
+    }
+    uint32_t magic = ba->readUint32();
+    if (magic != 0x42494458) {
+        ERROR(logger) << "invalid index file magic";
+        return false;
+    }
+    uint32_t version = ba->readUint32();
+    (void)version;
+
+    initJieba();
+
+    m_docs.clear();
+    m_docMap.clear();
+    m_strings.clear();
+    m_indexs.clear();
+
+    int64_t doc_count = ba->readInt64();
+    m_docs.reserve(doc_count);
+    for (int64_t i = 0; i < doc_count; ++i) {
+        m_docs.push_back(ba->readInt64());
+    }
+
+    uint32_t docmap_size = ba->readUint32();
+    for (uint32_t i = 0; i < docmap_size; ++i) {
+        std::string key_str = ba->readStringF16();
+        int64_t aid = std::stoll(key_str);
+        uint32_t pos = ba->readUint32();
+        m_docMap[aid] = pos;
+    }
+
+    uint32_t string_count = ba->readUint32();
+    for (uint32_t i = 0; i < string_count; ++i) {
+        int64_t h = ba->readInt64();
+        std::string s = ba->readStringF16();
+        m_strings[h] = s;
+    }
+
+    uint32_t type_count = ba->readUint32();
+    for (uint32_t ti = 0; ti < type_count; ++ti) {
+        uint64_t type = ba->readInt64();
+        uint32_t key_count = ba->readUint32();
+        for (uint32_t ki = 0; ki < key_count; ++ki) {
+            uint64_t key = ba->readInt64();
+            ba->readUint32();  // bm_size, consumed by readFrom below
+            auto bm = std::make_shared<chen::ds::Bitmap>(0);
+            if (!bm->readFrom(ba)) {
+                ERROR(logger) << "failed to read bitmap type=" << type << " key=" << key;
+                return false;
+            }
+            m_indexs[type][key] = bm;
+        }
+    }
+
+    m_isReady.store(true);
+    INFO(logger) << "index loaded from " << path << ", docs=" << m_docs.size();
+    return true;
 }
 
 }

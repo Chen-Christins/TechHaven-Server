@@ -8,12 +8,14 @@
 #ifndef __BLOG_INDEX_H__
 #define __BLOG_INDEX_H__
 
+#include <atomic>
 #include <memory>
 #include <set>
 #include <map>
 #include <string>
 #include <vector>
 
+#include <chen/bytearray/bytearray.h>
 #include <chen/ds/bitmap.h>
 #include <chen/util/singleton.h>
 
@@ -71,11 +73,20 @@ public:
 
     static uint64_t StrHash(const std::string& str);
 
+    /// 索引是否就绪（可搜索）
+    bool isReady() const { return m_isReady.load(); }
+
     /// 分词器是否就绪
     bool hasJieba() const { return m_jieba != nullptr; }
 
     /// 对输入做中文分词
     void cutWord(const std::string& str, std::vector<std::string>& words);
+
+    /// 持久化索引到文件
+    bool save(const std::string& path);
+
+    /// 从文件加载索引
+    bool load(const std::string& path);
 
     std::string toString();
     std::string getStr(uint64_t id);
@@ -87,6 +98,9 @@ private:
 
     /// 根据 article_id 查找在 m_docs 中的位置
     int32_t getIdx(uint64_t article_id);
+
+    /// 初始化 jieba 分词器
+    void initJieba();
 private:
     uint64_t m_createTime;
     uint64_t m_endTime;
@@ -95,6 +109,8 @@ private:
     std::unordered_map<uint64_t, uint32_t> m_docMap;
     std::map<uint64_t, std::map<uint64_t, chen::ds::Bitmap::ptr>> m_indexs;
     std::unordered_map<uint64_t, std::string> m_strings;
+    /// 索引是否已就绪
+    std::atomic<bool> m_isReady{false};
     /// jieba 分词器（PIMPL，避免头文件污染）
     std::unique_ptr<cppjieba::Jieba> m_jieba;
 };

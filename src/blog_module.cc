@@ -103,16 +103,21 @@ bool BlogModule::onServerReady() {
 
     ArticleMgr::GetInstance()->start();
 
-    // 构建搜索索引
-    IndexMgr::GetInstance()->build();
-
-    // 初始化错误码管理器
+    // 初始化搜索索引（优先从磁盘加载，失败则后台异步构建）
     {
         std::string workPath = chen::Config::Lookup<std::string>("server.work_path")->getValue();
+        std::string indexPath = workPath + "/search_index.dat";
+        if (!IndexMgr::GetInstance()->load(indexPath)) {
+            INFO(logger) << "index load failed, scheduling async build...";
+            chen::IOManager::GetThis()->schedule([indexPath]() {
+                IndexMgr::GetInstance()->build();
+                IndexMgr::GetInstance()->save(indexPath);
+            });
+        }
+
         std::string errorsPath = workPath + "/errors.json";
         if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
             ERROR(logger) << "Failed to load error codes from " << errorsPath;
-            // 不阻止启动，使用空错误码表（兜底）
         }
     }
 
