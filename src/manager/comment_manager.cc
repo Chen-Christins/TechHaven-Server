@@ -16,21 +16,7 @@ CommentManager::CommentManager()
 }
 
 data::CommentInfo::ptr CommentManager::parseRow(chen::ISQLData::ptr rt) {
-    data::CommentInfo::ptr v(new data::CommentInfo);
-    v->setId(rt->getInt64(0));
-    v->setArticleId(rt->getInt64(1));
-    v->setUserId(rt->getInt64(2));
-    v->setParentId(rt->getInt64(3));
-    v->setContent(rt->getString(4));
-    v->setIp(rt->getString(5));
-    v->setUserAgent(rt->getString(6));
-    v->setStatus(rt->getInt32(7));
-    v->setIsReported(rt->getInt32(8));
-    v->setReportCount(rt->getInt32(9));
-    v->setIsDeleted(rt->getInt32(10));
-    v->setCreateTime(rt->getTime(11));
-    v->setUpdateTime(rt->getTime(12));
-    return v;
+    return data::CommentInfoDao::ParseRow(rt);
 }
 
 void CommentManager::add(data::CommentInfo::ptr info) {

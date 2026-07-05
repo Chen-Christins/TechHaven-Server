@@ -21,23 +21,7 @@ ArticleManager::ArticleManager()
 }
 
 data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt) {
-    data::ArticleInfo::ptr v(new data::ArticleInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setTitle(rt->getString(2));
-    v->setContent(rt->getString(3));
-    v->setType(rt->getInt32(4));
-    v->setState(rt->getInt32(5));
-    v->setChannel(rt->getInt64(6));
-    v->setIsDeleted(rt->getInt32(7));
-    v->setPublishTime(rt->getTime(8));
-    v->setWeight(rt->getInt64(9));
-    v->setViews(rt->getInt64(10));
-    v->setPraise(rt->getInt64(11));
-    v->setFavorites(rt->getInt64(12));
-    v->setCreateTime(rt->getTime(13));
-    v->setUpdateTime(rt->getTime(14));
-    return v;
+    return data::ArticleInfoDao::ParseRow(rt);
 }
 
 

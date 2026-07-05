@@ -1,6 +1,7 @@
 #include "broadcast_list_servlet.h"
 
 #include "../../util.h"
+#include "blog/data/notification_info.h"
 
 #include <chen/log/log.h>
 #include <chen/db/query_builder.h>
@@ -51,15 +52,19 @@ int32_t BroadcastListServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         Json::Value list(Json::arrayValue);
         while (rt->next()) {
+            auto info = data::NotificationInfoDao::ParseRow(rt);
+            if (!info) {
+                continue;
+            }
             Json::Value item;
-            item["id"] = rt->getInt64(0);
-            item["title"] = rt->getString(2);
-            item["content"] = rt->getString(3);
-            item["type"] = rt->getString(4);
-            item["level"] = rt->getString(14);
-            item["start_time"] = rt->getInt64(15);
-            item["end_time"] = rt->getInt64(16);
-            item["create_time"] = rt->getTime(11);
+            item["id"] = info->getId();
+            item["title"] = info->getTitle();
+            item["content"] = info->getContent();
+            item["type"] = info->getType();
+            item["level"] = info->getLevel();
+            item["start_time"] = info->getStartTime();
+            item["end_time"] = info->getEndTime();
+            item["create_time"] = info->getCreateTime();
             list.append(item);
         }
         result->jsondata["list"] = list;

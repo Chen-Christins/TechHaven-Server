@@ -16,25 +16,7 @@ NotificationManager::NotificationManager()
 }
 
 data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt) {
-    data::NotificationInfo::ptr v(new data::NotificationInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setTitle(rt->getString(2));
-    v->setContent(rt->getString(3));
-    v->setType(rt->getString(4));
-    v->setSenderId(rt->getInt64(5));
-    v->setArticleId(rt->getInt64(6));
-    v->setCommentId(rt->getInt64(7));
-    v->setIsRead(rt->getInt32(8));
-    v->setReadTime(rt->getTime(9));
-    v->setIsDeleted(rt->getInt32(10));
-    v->setCreateTime(rt->getTime(11));
-    v->setUpdateTime(rt->getTime(12));
-    v->setIsBroadcast(rt->getInt32(13));
-    v->setLevel(rt->getString(14));
-    v->setStartTime(rt->getInt64(15));
-    v->setEndTime(rt->getInt64(16));
-    return v;
+    return data::NotificationInfoDao::ParseRow(rt);
 }
 
 // ========== WS connection management ==========
@@ -381,13 +363,17 @@ void NotificationManager::cleanupExpiredBroadcasts() {
     }
     int64_t now = time(0);
     // 将已过期的广播的 is_broadcast 置 0，前端 /broadcast/list 不再返回
-    std::string sql = "update notification set is_broadcast=0, update_time=? where is_broadcast=1 and end_time>0 and end_time<=?";
-    auto stmt = db->prepare(sql);
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->set("is_broadcast", (int64_t)0);
+    qb->set("update_time", now);
+    qb->where("is_broadcast", "=", (int64_t)1);
+    qb->whereSQL("end_time > ?", (int64_t)0);
+    qb->where("end_time", "<=", now);
+    auto stmt = db->prepare(qb->buildUpdateSQL());
     if (!stmt) {
         return;
     }
-    stmt->bindTime(1, now);
-    stmt->bindInt64(2, now);
+    qb->bindUpdateParams(stmt);
     stmt->execute();
 }
 

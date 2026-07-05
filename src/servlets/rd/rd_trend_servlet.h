@@ -51,12 +51,10 @@ private:
     static time_t parseDate(const std::string& date_str);
     static std::string formatDate(time_t t);
     static std::string formatGroupKey(time_t t, const std::string& granularity);
-    static std::string buildTimeCond(time_t start, time_t end);
-    static std::string buildPRTimeCond(time_t start, time_t end);
 
-    int64_t countBySql(const TrendContext& ctx, const std::string& table, const std::string& extra_cond);
-    double avgCycleTime(const TrendContext& ctx, const std::string& table, const std::string& status_cond);
-    void addSeriesBySql(TrendContext& ctx, const std::string& table, const std::string& extra_cond, const std::string& field_name);
+    int64_t countBySql(const TrendContext& ctx, const std::string& table, int32_t min_status = -1);
+    double avgCycleTime(const TrendContext& ctx, const std::string& table, int32_t min_status);
+    void addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name);
 };
 
 }

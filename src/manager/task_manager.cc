@@ -15,23 +15,7 @@ TaskManager::TaskManager()
 }
 
 data::TaskInfo::ptr TaskManager::parseRow(chen::ISQLData::ptr rt) {
-    data::TaskInfo::ptr v(new data::TaskInfo);
-    v->setId(rt->getInt64(0));
-    v->setOrgId(rt->getInt64(1));
-    v->setTitle(rt->getString(2));
-    v->setDescription(rt->getString(3));
-    v->setPriority(rt->getInt32(4));
-    v->setStatus(rt->getInt32(5));
-    v->setCreatorId(rt->getInt64(6));
-    v->setAssigneeId(rt->getInt64(7));
-    v->setRequirementId(rt->getInt64(8));
-    v->setBugId(rt->getInt64(9));
-    v->setDeadline(rt->getTime(10));
-    v->setEstimatedHours(rt->getInt32(11));
-    v->setIsDeleted(rt->getInt32(12));
-    v->setCreateTime(rt->getTime(13));
-    v->setUpdateTime(rt->getTime(14));
-    return v;
+    return data::TaskInfoDao::ParseRow(rt);
 }
 
 

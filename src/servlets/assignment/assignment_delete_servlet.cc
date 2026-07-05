@@ -5,6 +5,7 @@
 #include "../../manager/notification_manager.h"
 #include "../../util.h"
 #include "blog/data/assignment_info.h"
+#include "blog/data/assignment_user_rel_info.h"
 
 #include <chen/log/log.h>
 #include <chen/db/query_builder.h>
@@ -103,7 +104,9 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
                         auto rt = stmt->query();
                         if (rt) {
                             while (rt->next()) {
-                                int64_t submitter_id = rt->getInt64(2); // user_id column
+                                auto info = data::AssignmentUserRelInfoDao::ParseRow(rt);
+                                if (!info) continue;
+                                int64_t submitter_id = info->getUserId();
                                 if (notified.count(submitter_id)) continue;
                                 notified.insert(submitter_id);
                                 chen::IOManager::GetThis()->schedule([submitter_id, assign_name]() {

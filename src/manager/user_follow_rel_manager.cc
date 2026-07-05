@@ -16,14 +16,7 @@ UserFollowRelManager::UserFollowRelManager()
 }
 
 data::UserFollowRelInfo::ptr UserFollowRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::UserFollowRelInfo::ptr v(new data::UserFollowRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setFollowerId(rt->getInt64(1));
-    v->setFollowingId(rt->getInt64(2));
-    v->setIsDeleted(rt->getInt32(3));
-    v->setCreateTime(rt->getTime(4));
-    v->setUpdateTime(rt->getTime(5));
-    return v;
+    return data::UserFollowRelInfoDao::ParseRow(rt);
 }
 
 

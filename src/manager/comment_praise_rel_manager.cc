@@ -16,14 +16,7 @@ CommentPraiseRelManager::CommentPraiseRelManager()
 }
 
 data::CommentPraiseRelInfo::ptr CommentPraiseRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::CommentPraiseRelInfo::ptr v(new data::CommentPraiseRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setCommentId(rt->getInt64(2));
-    v->setIsDeleted(rt->getInt32(3));
-    v->setCreateTime(rt->getTime(4));
-    v->setUpdateTime(rt->getTime(5));
-    return v;
+    return data::CommentPraiseRelInfoDao::ParseRow(rt);
 }
 
 void CommentPraiseRelManager::add(data::CommentPraiseRelInfo::ptr info) {

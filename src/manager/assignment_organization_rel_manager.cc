@@ -16,16 +16,7 @@ AssignmentOrganizationRelManager::AssignmentOrganizationRelManager()
 }
 
 data::AssignmentOrganizationRelInfo::ptr AssignmentOrganizationRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::AssignmentOrganizationRelInfo::ptr v(new data::AssignmentOrganizationRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setAssignmentId(rt->getInt64(1));
-    v->setOrganizationId(rt->getInt64(2));
-    v->setAssignedBy(rt->getString(3));
-    v->setStatus(rt->getInt32(4));
-    v->setIsDeleted(rt->getInt32(5));
-    v->setCreateTime(rt->getTime(6));
-    v->setUpdateTime(rt->getTime(7));
-    return v;
+    return data::AssignmentOrganizationRelInfoDao::ParseRow(rt);
 }
 
 void AssignmentOrganizationRelManager::add(blog::data::AssignmentOrganizationRelInfo::ptr info) {

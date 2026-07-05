@@ -16,14 +16,7 @@ ArticleLabelRelManager::ArticleLabelRelManager()
 }
 
 data::ArticleLabelRelInfo::ptr ArticleLabelRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::ArticleLabelRelInfo::ptr v(new data::ArticleLabelRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setArticleId(rt->getInt64(1));
-    v->setLabelId(rt->getInt64(2));
-    v->setIsDeleted(rt->getInt32(3));
-    v->setCreateTime(rt->getTime(4));
-    v->setUpdateTime(rt->getTime(5));
-    return v;
+    return data::ArticleLabelRelInfoDao::ParseRow(rt);
 }
 
 

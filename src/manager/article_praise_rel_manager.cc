@@ -16,14 +16,7 @@ ArticlePraiseRelManager::ArticlePraiseRelManager()
 }
 
 data::ArticlePraiseRelInfo::ptr ArticlePraiseRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::ArticlePraiseRelInfo::ptr v(new data::ArticlePraiseRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setArticleId(rt->getInt64(2));
-    v->setIsDeleted(rt->getInt32(3));
-    v->setCreateTime(rt->getTime(4));
-    v->setUpdateTime(rt->getTime(5));
-    return v;
+    return data::ArticlePraiseRelInfoDao::ParseRow(rt);
 }
 
 void ArticlePraiseRelManager::add(data::ArticlePraiseRelInfo::ptr info) {

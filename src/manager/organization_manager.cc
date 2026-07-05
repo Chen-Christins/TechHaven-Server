@@ -16,17 +16,7 @@ OrganizationManager::OrganizationManager()
 }
 
 data::OrganizationInfo::ptr OrganizationManager::parseRow(chen::ISQLData::ptr rt) {
-    data::OrganizationInfo::ptr v(new data::OrganizationInfo);
-    v->setId(rt->getInt64(0));
-    v->setName(rt->getString(1));
-    v->setType(rt->getString(2));
-    v->setDescription(rt->getString(3));
-    v->setOwnerId(rt->getInt64(4));
-    v->setStatus(rt->getInt32(5));
-    v->setIsDeleted(rt->getInt32(6));
-    v->setCreateTime(rt->getTime(7));
-    v->setUpdateTime(rt->getTime(8));
-    return v;
+    return data::OrganizationInfoDao::ParseRow(rt);
 }
 
 

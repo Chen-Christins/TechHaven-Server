@@ -17,16 +17,7 @@ OrganizationUserRelManager::OrganizationUserRelManager()
 }
 
 data::OrganizationUserRelInfo::ptr OrganizationUserRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::OrganizationUserRelInfo::ptr v(new data::OrganizationUserRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setOrgId(rt->getInt64(1));
-    v->setUserId(rt->getInt64(2));
-    v->setRole(rt->getInt32(3));
-    v->setStatus(rt->getInt32(4));
-    v->setIsDeleted(rt->getInt32(5));
-    v->setCreateTime(rt->getTime(6));
-    v->setUpdateTime(rt->getTime(7));
-    return v;
+    return data::OrganizationUserRelInfoDao::ParseRow(rt);
 }
 
 

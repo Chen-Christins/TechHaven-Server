@@ -15,18 +15,7 @@ OrganizationApplyManager::OrganizationApplyManager()
 }
 
 data::OrganizationApplyInfo::ptr OrganizationApplyManager::parseRow(chen::ISQLData::ptr rt) {
-    data::OrganizationApplyInfo::ptr v(new data::OrganizationApplyInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setOrgName(rt->getString(2));
-    v->setOrgType(rt->getString(3));
-    v->setOrgDescription(rt->getString(4));
-    v->setStatus(rt->getInt32(5));
-    v->setReviewReason(rt->getString(6));
-    v->setCreatedAt(rt->getInt64(7));
-    v->setReviewedAt(rt->getInt64(8));
-    v->setIsDeleted(rt->getInt32(9));
-    return v;
+    return data::OrganizationApplyInfoDao::ParseRow(rt);
 }
 
 

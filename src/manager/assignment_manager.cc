@@ -16,20 +16,7 @@ AssignmentManager::AssignmentManager()
 }
 
 data::AssignmentInfo::ptr AssignmentManager::parseRow(chen::ISQLData::ptr rt) {
-    data::AssignmentInfo::ptr v(new data::AssignmentInfo);
-    v->setId(rt->getInt64(0));
-    v->setName(rt->getString(1));
-    v->setSubjectName(rt->getString(2));
-    v->setPriority(rt->getInt32(3));
-    v->setStatus(rt->getInt32(4));
-    v->setDescription(rt->getString(5));
-    v->setMaxSize(rt->getInt32(6));
-    v->setFileType(rt->getString(7));
-    v->setDeadline(rt->getTime(8));
-    v->setIsDeleted(rt->getInt32(9));
-    v->setCreateTime(rt->getTime(10));
-    v->setUpdateTime(rt->getTime(11));
-    return v;
+    return data::AssignmentInfoDao::ParseRow(rt);
 }
 
 

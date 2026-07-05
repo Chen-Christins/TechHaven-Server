@@ -15,24 +15,7 @@ BugManager::BugManager()
 }
 
 data::BugInfo::ptr BugManager::parseRow(chen::ISQLData::ptr rt) {
-    data::BugInfo::ptr v(new data::BugInfo);
-    v->setId(rt->getInt64(0));
-    v->setOrgId(rt->getInt64(1));
-    v->setTitle(rt->getString(2));
-    v->setDescription(rt->getString(3));
-    v->setSeverity(rt->getInt32(4));
-    v->setPriority(rt->getInt32(5));
-    v->setStatus(rt->getInt32(6));
-    v->setCreatorId(rt->getInt64(7));
-    v->setAssigneeId(rt->getInt64(8));
-    v->setRequirementId(rt->getInt64(9));
-    v->setModule(rt->getString(10));
-    v->setStepsToReproduce(rt->getString(11));
-    v->setEnvironment(rt->getString(12));
-    v->setIsDeleted(rt->getInt32(13));
-    v->setCreateTime(rt->getTime(14));
-    v->setUpdateTime(rt->getTime(15));
-    return v;
+    return data::BugInfoDao::ParseRow(rt);
 }
 
 void BugManager::add(data::BugInfo::ptr info) {
