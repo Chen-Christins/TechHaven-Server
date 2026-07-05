@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class OrganizationReposInfoDao;
+/**
+ * @brief 组织关联仓库表
+ */
 class OrganizationReposInfo {
 friend class OrganizationReposInfoDao;
 public:
@@ -21,52 +25,184 @@ public:
 
     OrganizationReposInfo();
 
+    /**
+     * @brief 获取主键
+     * @return 主键
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置主键
+     * @param v 主键
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取组织 ID，关联 organizations 表
+     * @return 组织 ID，关联 organizations 表
+     */
     const int64_t& getOrgId() { return m_orgId; }
+    /**
+     * @brief 设置组织 ID，关联 organizations 表
+     * @param v 组织 ID，关联 organizations 表
+     */
     void setOrgId(const int64_t& v);
 
+    /**
+     * @brief 获取仓库名称，同一组织内不可重复
+     * @return 仓库名称，同一组织内不可重复
+     */
     const std::string& getName() { return m_name; }
+    /**
+     * @brief 设置仓库名称，同一组织内不可重复
+     * @param v 仓库名称，同一组织内不可重复
+     */
     void setName(const std::string& v);
 
+    /**
+     * @brief 获取仓库描述
+     * @return 仓库描述
+     */
     const std::string& getDescription() { return m_description; }
+    /**
+     * @brief 设置仓库描述
+     * @param v 仓库描述
+     */
     void setDescription(const std::string& v);
 
+    /**
+     * @brief 获取仓库地址
+     * @return 仓库地址
+     */
     const std::string& getUrl() { return m_url; }
+    /**
+     * @brief 设置仓库地址
+     * @param v 仓库地址
+     */
     void setUrl(const std::string& v);
 
+    /**
+     * @brief 获取主要编程语言
+     * @return 主要编程语言
+     */
     const std::string& getLanguage() { return m_language; }
+    /**
+     * @brief 设置主要编程语言
+     * @param v 主要编程语言
+     */
     void setLanguage(const std::string& v);
 
+    /**
+     * @brief 获取Star 数量（可定时同步）
+     * @return Star 数量（可定时同步）
+     */
     const int32_t& getStarsCount() { return m_starsCount; }
+    /**
+     * @brief 设置Star 数量（可定时同步）
+     * @param v Star 数量（可定时同步）
+     */
     void setStarsCount(const int32_t& v);
 
+    /**
+     * @brief 获取排序权重，越大越靠前
+     * @return 排序权重，越大越靠前
+     */
     const int32_t& getSortOrder() { return m_sortOrder; }
+    /**
+     * @brief 设置排序权重，越大越靠前
+     * @param v 排序权重，越大越靠前
+     */
     void setSortOrder(const int32_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 获取仓库访问令牌, 用于 API 访问
+     * @return 仓库访问令牌, 用于 API 访问
+     */
     const std::string& getToken() { return m_token; }
+    /**
+     * @brief 设置仓库访问令牌, 用于 API 访问
+     * @param v 仓库访问令牌, 用于 API 访问
+     */
     void setToken(const std::string& v);
 
+    /**
+     * @brief 获取同步状态: idle/syncing/success/failed
+     * @return 同步状态: idle/syncing/success/failed
+     */
     const std::string& getSyncStatus() { return m_syncStatus; }
+    /**
+     * @brief 设置同步状态: idle/syncing/success/failed
+     * @param v 同步状态: idle/syncing/success/failed
+     */
     void setSyncStatus(const std::string& v);
 
+    /**
+     * @brief 获取PR 同步状态: idle/syncing/success/failed
+     * @return PR 同步状态: idle/syncing/success/failed
+     */
     const std::string& getPrSyncStatus() { return m_prSyncStatus; }
+    /**
+     * @brief 设置PR 同步状态: idle/syncing/success/failed
+     * @param v PR 同步状态: idle/syncing/success/failed
+     */
     void setPrSyncStatus(const std::string& v);
 
+    /**
+     * @brief 获取上次 PR 同步时间戳
+     * @return 上次 PR 同步时间戳
+     */
     const int64_t& getPrSyncedAt() { return m_prSyncedAt; }
+    /**
+     * @brief 设置上次 PR 同步时间戳
+     * @param v 上次 PR 同步时间戳
+     */
     void setPrSyncedAt(const int64_t& v);
 
+    /**
+     * @brief 获取GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找
+     * @return GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找
+     */
     const std::string& getGithubFullName() { return m_githubFullName; }
+    /**
+     * @brief 设置GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找
+     * @param v GitHub 全称 (owner/repo)，自动从 URL 提取，用于 webhook 查找
+     */
     void setGithubFullName(const std::string& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_starsCount;
@@ -84,6 +220,7 @@ private:
     std::string m_githubFullName;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -93,6 +230,9 @@ public:
     static int Update(OrganizationReposInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(OrganizationReposInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(OrganizationReposInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<OrganizationReposInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<OrganizationReposInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(OrganizationReposInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -107,6 +247,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static OrganizationReposInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<OrganizationReposInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<OrganizationReposInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

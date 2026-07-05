@@ -42,59 +42,134 @@ std::string EmailVerificationInfo::toJsonString() const {
 
 void EmailVerificationInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void EmailVerificationInfo::setEmail(const std::string& v) {
     m_email = v;
+    m_flags |= (1ull << 1);
 }
 
 void EmailVerificationInfo::setCode(const std::string& v) {
     m_code = v;
+    m_flags |= (1ull << 2);
 }
 
 void EmailVerificationInfo::setType(const int32_t& v) {
     m_type = v;
+    m_flags |= (1ull << 3);
 }
 
 void EmailVerificationInfo::setState(const int32_t& v) {
     m_state = v;
+    m_flags |= (1ull << 4);
 }
 
 void EmailVerificationInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 5);
 }
 
 void EmailVerificationInfo::setExpiresTime(const int64_t& v) {
     m_expiresTime = v;
+    m_flags |= (1ull << 6);
 }
 
 void EmailVerificationInfo::setClientIp(const std::string& v) {
     m_clientIp = v;
+    m_flags |= (1ull << 7);
 }
 
 void EmailVerificationInfo::setUserAgent(const std::string& v) {
     m_userAgent = v;
+    m_flags |= (1ull << 8);
 }
 
 
 int EmailVerificationInfoDao::Update(EmailVerificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update email_verification set email = ?, code = ?, type = ?, state = ?, create_time = ?, expires_time = ?, client_ip = ?, user_agent = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update email_verification set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "email = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "code = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "state = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "expires_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "client_ip = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "user_agent = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindString(1, info->m_email);
-    stmt->bindString(2, info->m_code);
-    stmt->bindInt32(3, info->m_type);
-    stmt->bindInt32(4, info->m_state);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_expiresTime);
-    stmt->bindString(7, info->m_clientIp);
-    stmt->bindString(8, info->m_userAgent);
-    stmt->bindInt64(9, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindString(idx++, info->m_email);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_code);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindInt32(idx++, info->m_type);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_state);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindTime(idx++, info->m_expiresTime);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindString(idx++, info->m_clientIp);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindString(idx++, info->m_userAgent);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, chen::IDB::ptr conn) {
@@ -102,7 +177,7 @@ int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, chen::IDB:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, info->m_email);
@@ -117,6 +192,9 @@ int EmailVerificationInfoDao::Insert(EmailVerificationInfo::ptr info, chen::IDB:
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -128,7 +206,7 @@ int EmailVerificationInfoDao::InsertOrUpdate(EmailVerificationInfo::ptr info, ch
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -140,6 +218,126 @@ int EmailVerificationInfoDao::InsertOrUpdate(EmailVerificationInfo::ptr info, ch
     stmt->bindTime(7, info->m_expiresTime);
     stmt->bindString(8, info->m_clientIp);
     stmt->bindString(9, info->m_userAgent);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int EmailVerificationInfoDao::BatchInsert(const std::vector<EmailVerificationInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into email_verification (";
+    sql += "email";
+    sql += ", ";
+    sql += "code";
+    sql += ", ";
+    sql += "type";
+    sql += ", ";
+    sql += "state";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "expires_time";
+    sql += ", ";
+    sql += "client_ip";
+    sql += ", ";
+    sql += "user_agent";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindString(idx++, info->m_email);
+        stmt->bindString(idx++, info->m_code);
+        stmt->bindInt32(idx++, info->m_type);
+        stmt->bindInt32(idx++, info->m_state);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_expiresTime);
+        stmt->bindString(idx++, info->m_clientIp);
+        stmt->bindString(idx++, info->m_userAgent);
+    }
+    return stmt->execute();
+}
+
+int EmailVerificationInfoDao::BatchUpdate(const std::vector<EmailVerificationInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int EmailVerificationInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from email_verification where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -148,7 +346,7 @@ int EmailVerificationInfoDao::Delete(EmailVerificationInfo::ptr info, chen::IDB:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -160,7 +358,7 @@ int EmailVerificationInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -172,7 +370,7 @@ int EmailVerificationInfoDao::DeleteByEmailCode( const std::string& email,  cons
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -185,7 +383,7 @@ int EmailVerificationInfoDao::DeleteByEmailType( const std::string& email,  cons
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -198,7 +396,7 @@ int EmailVerificationInfoDao::DeleteByExpiresTime( const int64_t& expires_time, 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindTime(1, expires_time);
@@ -210,7 +408,7 @@ int EmailVerificationInfoDao::DeleteByCreateTime( const int64_t& create_time, ch
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindTime(1, create_time);
@@ -222,7 +420,7 @@ int EmailVerificationInfoDao::QueryAll(std::vector<EmailVerificationInfo::ptr>& 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -250,7 +448,7 @@ EmailVerificationInfo::ptr EmailVerificationInfoDao::Query( const int64_t& id, c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -279,7 +477,7 @@ int EmailVerificationInfoDao::QueryByEmailCode(std::vector<EmailVerificationInfo
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -328,7 +526,7 @@ int EmailVerificationInfoDao::QueryByEmailCodePages(std::vector<EmailVerificatio
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -360,7 +558,7 @@ int EmailVerificationInfoDao::QueryByEmailType(std::vector<EmailVerificationInfo
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -409,7 +607,7 @@ int EmailVerificationInfoDao::QueryByEmailTypePages(std::vector<EmailVerificatio
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -441,7 +639,7 @@ int EmailVerificationInfoDao::QueryByExpiresTime(std::vector<EmailVerificationIn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindTime(1, expires_time);
@@ -488,7 +686,7 @@ int EmailVerificationInfoDao::QueryByExpiresTimePages(std::vector<EmailVerificat
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindTime(1, expires_time);
@@ -519,7 +717,7 @@ int EmailVerificationInfoDao::QueryByCreateTime(std::vector<EmailVerificationInf
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindTime(1, create_time);
@@ -566,7 +764,7 @@ int EmailVerificationInfoDao::QueryByCreateTimePages(std::vector<EmailVerificati
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindTime(1, create_time);
@@ -589,6 +787,115 @@ int EmailVerificationInfoDao::QueryByCreateTimePages(std::vector<EmailVerificati
         v->m_userAgent = rt->getString(8);
         results.push_back(v);
     };
+    return 0;
+}
+
+EmailVerificationInfo::ptr EmailVerificationInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+    v->m_id = data->getInt64(0);
+    v->m_email = data->getString(1);
+    v->m_code = data->getString(2);
+    v->m_type = data->getInt32(3);
+    v->m_state = data->getInt32(4);
+    v->m_createTime = data->getTime(5);
+    v->m_expiresTime = data->getTime(6);
+    v->m_clientIp = data->getString(7);
+    v->m_userAgent = data->getString(8);
+    return v;
+}
+
+int EmailVerificationInfoDao::QueryByBuilder(std::vector<EmailVerificationInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, email, code, type, state, create_time, expires_time, client_ip, user_agent");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_email = rt->getString(1);
+        v->m_code = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_state = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_expiresTime = rt->getTime(6);
+        v->m_clientIp = rt->getString(7);
+        v->m_userAgent = rt->getString(8);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int EmailVerificationInfoDao::QueryByBuilderPages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, email, code, type, state, create_time, expires_time, client_ip, user_agent", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        EmailVerificationInfo::ptr v(new EmailVerificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_email = rt->getString(1);
+        v->m_code = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_state = rt->getInt32(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_expiresTime = rt->getTime(6);
+        v->m_clientIp = rt->getString(7);
+        v->m_userAgent = rt->getString(8);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -626,6 +933,53 @@ int EmailVerificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `email_verification_email_type` (`email`,`type`),"
             "KEY `email_verification_expires_time` (`expires_time`),"
             "KEY `email_verification_create_time` (`create_time`)) COMMENT='邮箱验证表'");
+}
+
+int EmailVerificationInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "email_verification");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "email_verification");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "email_verification");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int EmailVerificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

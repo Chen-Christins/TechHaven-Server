@@ -60,104 +60,251 @@ std::string UserInfo::toJsonString() const {
 
 void UserInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void UserInfo::setName(const std::string& v) {
     m_name = v;
+    m_flags |= (1ull << 1);
 }
 
 void UserInfo::setAccount(const std::string& v) {
     m_account = v;
+    m_flags |= (1ull << 2);
 }
 
 void UserInfo::setAvatar(const std::string& v) {
     m_avatar = v;
+    m_flags |= (1ull << 3);
 }
 
 void UserInfo::setEmail(const std::string& v) {
     m_email = v;
+    m_flags |= (1ull << 4);
 }
 
 void UserInfo::setRole(const int32_t& v) {
     m_role = v;
+    m_flags |= (1ull << 5);
 }
 
 void UserInfo::setPasswd(const std::string& v) {
     m_passwd = v;
+    m_flags |= (1ull << 6);
 }
 
 void UserInfo::setState(const int32_t& v) {
     m_state = v;
+    m_flags |= (1ull << 7);
 }
 
 void UserInfo::setBio(const std::string& v) {
     m_bio = v;
+    m_flags |= (1ull << 8);
 }
 
 void UserInfo::setWebsite(const std::string& v) {
     m_website = v;
+    m_flags |= (1ull << 9);
 }
 
 void UserInfo::setGithub(const std::string& v) {
     m_github = v;
+    m_flags |= (1ull << 10);
 }
 
 void UserInfo::setLocation(const std::string& v) {
     m_location = v;
+    m_flags |= (1ull << 11);
 }
 
 void UserInfo::setToken(const std::string& v) {
     m_token = v;
+    m_flags |= (1ull << 12);
 }
 
 void UserInfo::setTokenTime(const int64_t& v) {
     m_tokenTime = v;
+    m_flags |= (1ull << 13);
 }
 
 void UserInfo::setLoginTime(const int64_t& v) {
     m_loginTime = v;
+    m_flags |= (1ull << 14);
 }
 
 void UserInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 15);
 }
 
 void UserInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 16);
 }
 
 void UserInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 17);
 }
 
 
 int UserInfoDao::Update(UserInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update user set name = ?, account = ?, avatar = ?, email = ?, role = ?, passwd = ?, state = ?, bio = ?, website = ?, github = ?, location = ?, token = ?, token_time = ?, login_time = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update user set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "account = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "avatar = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "email = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "role = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "passwd = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "state = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "bio = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "website = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "github = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "location = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "token = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "token_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "login_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 15)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 16)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 17)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindString(1, info->m_name);
-    stmt->bindString(2, info->m_account);
-    stmt->bindString(3, info->m_avatar);
-    stmt->bindString(4, info->m_email);
-    stmt->bindInt32(5, info->m_role);
-    stmt->bindString(6, info->m_passwd);
-    stmt->bindInt32(7, info->m_state);
-    stmt->bindString(8, info->m_bio);
-    stmt->bindString(9, info->m_website);
-    stmt->bindString(10, info->m_github);
-    stmt->bindString(11, info->m_location);
-    stmt->bindString(12, info->m_token);
-    stmt->bindInt64(13, info->m_tokenTime);
-    stmt->bindTime(14, info->m_loginTime);
-    stmt->bindInt32(15, info->m_isDeleted);
-    stmt->bindTime(16, info->m_createTime);
-    stmt->bindTime(17, info->m_updateTime);
-    stmt->bindInt64(18, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindString(idx++, info->m_name);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_account);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_avatar);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindString(idx++, info->m_email);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt32(idx++, info->m_role);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindString(idx++, info->m_passwd);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt32(idx++, info->m_state);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindString(idx++, info->m_bio);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindString(idx++, info->m_website);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindString(idx++, info->m_github);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindString(idx++, info->m_location);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindString(idx++, info->m_token);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindInt64(idx++, info->m_tokenTime);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindTime(idx++, info->m_loginTime);
+    }
+    if (info->m_flags & (1ull << 15)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 16)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 17)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
@@ -165,7 +312,7 @@ int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, info->m_name);
@@ -189,6 +336,9 @@ int UserInfoDao::Insert(UserInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -200,7 +350,7 @@ int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -221,6 +371,171 @@ int UserInfoDao::InsertOrUpdate(UserInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindInt32(16, info->m_isDeleted);
     stmt->bindTime(17, info->m_createTime);
     stmt->bindTime(18, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int UserInfoDao::BatchInsert(const std::vector<UserInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into user (";
+    sql += "name";
+    sql += ", ";
+    sql += "account";
+    sql += ", ";
+    sql += "avatar";
+    sql += ", ";
+    sql += "email";
+    sql += ", ";
+    sql += "role";
+    sql += ", ";
+    sql += "passwd";
+    sql += ", ";
+    sql += "state";
+    sql += ", ";
+    sql += "bio";
+    sql += ", ";
+    sql += "website";
+    sql += ", ";
+    sql += "github";
+    sql += ", ";
+    sql += "location";
+    sql += ", ";
+    sql += "token";
+    sql += ", ";
+    sql += "token_time";
+    sql += ", ";
+    sql += "login_time";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindString(idx++, info->m_name);
+        stmt->bindString(idx++, info->m_account);
+        stmt->bindString(idx++, info->m_avatar);
+        stmt->bindString(idx++, info->m_email);
+        stmt->bindInt32(idx++, info->m_role);
+        stmt->bindString(idx++, info->m_passwd);
+        stmt->bindInt32(idx++, info->m_state);
+        stmt->bindString(idx++, info->m_bio);
+        stmt->bindString(idx++, info->m_website);
+        stmt->bindString(idx++, info->m_github);
+        stmt->bindString(idx++, info->m_location);
+        stmt->bindString(idx++, info->m_token);
+        stmt->bindInt64(idx++, info->m_tokenTime);
+        stmt->bindTime(idx++, info->m_loginTime);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int UserInfoDao::BatchUpdate(const std::vector<UserInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int UserInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from user where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -229,7 +544,7 @@ int UserInfoDao::Delete(UserInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -241,7 +556,7 @@ int UserInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -253,7 +568,7 @@ int UserInfoDao::DeleteByAccount( const std::string& account, chen::IDB::ptr con
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, account);
@@ -265,7 +580,7 @@ int UserInfoDao::DeleteByEmail( const std::string& email, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, email);
@@ -277,7 +592,7 @@ int UserInfoDao::DeleteByName( const std::string& name, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, name);
@@ -289,7 +604,7 @@ int UserInfoDao::QueryAll(std::vector<UserInfo::ptr>& results, chen::IDB::ptr co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -326,7 +641,7 @@ UserInfo::ptr UserInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -364,7 +679,7 @@ UserInfo::ptr UserInfoDao::QueryByAccount( const std::string& account, chen::IDB
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindString(1, account);
@@ -402,7 +717,7 @@ UserInfo::ptr UserInfoDao::QueryByEmail( const std::string& email, chen::IDB::pt
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindString(1, email);
@@ -440,7 +755,7 @@ UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindString(1, name);
@@ -471,6 +786,142 @@ UserInfo::ptr UserInfoDao::QueryByName( const std::string& name, chen::IDB::ptr 
     v->m_createTime = rt->getTime(16);
     v->m_updateTime = rt->getTime(17);
     return v;
+}
+
+UserInfo::ptr UserInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    UserInfo::ptr v(new UserInfo);
+    v->m_id = data->getInt64(0);
+    v->m_name = data->getString(1);
+    v->m_account = data->getString(2);
+    v->m_avatar = data->getString(3);
+    v->m_email = data->getString(4);
+    v->m_role = data->getInt32(5);
+    v->m_passwd = data->getString(6);
+    v->m_state = data->getInt32(7);
+    v->m_bio = data->getString(8);
+    v->m_website = data->getString(9);
+    v->m_github = data->getString(10);
+    v->m_location = data->getString(11);
+    v->m_token = data->getString(12);
+    v->m_tokenTime = data->getInt64(13);
+    v->m_loginTime = data->getTime(14);
+    v->m_isDeleted = data->getInt32(15);
+    v->m_createTime = data->getTime(16);
+    v->m_updateTime = data->getTime(17);
+    return v;
+}
+
+int UserInfoDao::QueryByBuilder(std::vector<UserInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, name, account, avatar, email, role, passwd, state, bio, website, github, location, token, token_time, login_time, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        UserInfo::ptr v(new UserInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_account = rt->getString(2);
+        v->m_avatar = rt->getString(3);
+        v->m_email = rt->getString(4);
+        v->m_role = rt->getInt32(5);
+        v->m_passwd = rt->getString(6);
+        v->m_state = rt->getInt32(7);
+        v->m_bio = rt->getString(8);
+        v->m_website = rt->getString(9);
+        v->m_github = rt->getString(10);
+        v->m_location = rt->getString(11);
+        v->m_token = rt->getString(12);
+        v->m_tokenTime = rt->getInt64(13);
+        v->m_loginTime = rt->getTime(14);
+        v->m_isDeleted = rt->getInt32(15);
+        v->m_createTime = rt->getTime(16);
+        v->m_updateTime = rt->getTime(17);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int UserInfoDao::QueryByBuilderPages(std::vector<UserInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, name, account, avatar, email, role, passwd, state, bio, website, github, location, token, token_time, login_time, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        UserInfo::ptr v(new UserInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_account = rt->getString(2);
+        v->m_avatar = rt->getString(3);
+        v->m_email = rt->getString(4);
+        v->m_role = rt->getInt32(5);
+        v->m_passwd = rt->getString(6);
+        v->m_state = rt->getInt32(7);
+        v->m_bio = rt->getString(8);
+        v->m_website = rt->getString(9);
+        v->m_github = rt->getString(10);
+        v->m_location = rt->getString(11);
+        v->m_token = rt->getString(12);
+        v->m_tokenTime = rt->getInt64(13);
+        v->m_loginTime = rt->getTime(14);
+        v->m_isDeleted = rt->getInt32(15);
+        v->m_createTime = rt->getTime(16);
+        v->m_updateTime = rt->getTime(17);
+        results.push_back(v);
+    }
+    return 0;
 }
 
 int UserInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
@@ -523,6 +974,53 @@ int UserInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "UNIQUE KEY `user_account` (`account`),"
             "UNIQUE KEY `user_email` (`email`),"
             "UNIQUE KEY `user_name` (`name`)) COMMENT='用户表'");
+}
+
+int UserInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "user");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "user");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "user");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int UserInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

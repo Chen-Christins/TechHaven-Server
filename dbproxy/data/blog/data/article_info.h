@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class ArticleInfoDao;
+/**
+ * @brief 博客文章
+ */
 class ArticleInfo {
 friend class ArticleInfoDao;
 public:
@@ -21,52 +25,184 @@ public:
 
     ArticleInfo();
 
+    /**
+     * @brief 获取文章id
+     * @return 文章id
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置文章id
+     * @param v 文章id
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取用户id
+     * @return 用户id
+     */
     const int64_t& getUserId() { return m_userId; }
+    /**
+     * @brief 设置用户id
+     * @param v 用户id
+     */
     void setUserId(const int64_t& v);
 
+    /**
+     * @brief 获取文章标题
+     * @return 文章标题
+     */
     const std::string& getTitle() { return m_title; }
+    /**
+     * @brief 设置文章标题
+     * @param v 文章标题
+     */
     void setTitle(const std::string& v);
 
+    /**
+     * @brief 获取文章内容
+     * @return 文章内容
+     */
     const std::string& getContent() { return m_content; }
+    /**
+     * @brief 设置文章内容
+     * @param v 文章内容
+     */
     void setContent(const std::string& v);
 
+    /**
+     * @brief 获取类型 1:原创,2:转发
+     * @return 类型 1:原创,2:转发
+     */
     const int32_t& getType() { return m_type; }
+    /**
+     * @brief 设置类型 1:原创,2:转发
+     * @param v 类型 1:原创,2:转发
+     */
     void setType(const int32_t& v);
 
+    /**
+     * @brief 获取状态: 0全部 1审核中 2已发布 3未通过 4私密
+     * @return 状态: 0全部 1审核中 2已发布 3未通过 4私密
+     */
     const int32_t& getState() { return m_state; }
+    /**
+     * @brief 设置状态: 0全部 1审核中 2已发布 3未通过 4私密
+     * @param v 状态: 0全部 1审核中 2已发布 3未通过 4私密
+     */
     void setState(const int32_t& v);
 
+    /**
+     * @brief 获取频道id
+     * @return 频道id
+     */
     const int64_t& getChannel() { return m_channel; }
+    /**
+     * @brief 设置频道id
+     * @param v 频道id
+     */
     void setChannel(const int64_t& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取发布时间
+     * @return 发布时间
+     */
     const int64_t& getPublishTime() { return m_publishTime; }
+    /**
+     * @brief 设置发布时间
+     * @param v 发布时间
+     */
     void setPublishTime(const int64_t& v);
 
+    /**
+     * @brief 获取权重
+     * @return 权重
+     */
     const int64_t& getWeight() { return m_weight; }
+    /**
+     * @brief 设置权重
+     * @param v 权重
+     */
     void setWeight(const int64_t& v);
 
+    /**
+     * @brief 获取流量数
+     * @return 流量数
+     */
     const int64_t& getViews() { return m_views; }
+    /**
+     * @brief 设置流量数
+     * @param v 流量数
+     */
     void setViews(const int64_t& v);
 
+    /**
+     * @brief 获取点赞数
+     * @return 点赞数
+     */
     const int64_t& getPraise() { return m_praise; }
+    /**
+     * @brief 设置点赞数
+     * @param v 点赞数
+     */
     void setPraise(const int64_t& v);
 
+    /**
+     * @brief 获取收藏数
+     * @return 收藏数
+     */
     const int64_t& getFavorites() { return m_favorites; }
+    /**
+     * @brief 设置收藏数
+     * @param v 收藏数
+     */
     void setFavorites(const int64_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_type;
@@ -84,6 +220,7 @@ private:
     int64_t m_publishTime;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -93,6 +230,9 @@ public:
     static int Update(ArticleInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(ArticleInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(ArticleInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<ArticleInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<ArticleInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(ArticleInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -105,6 +245,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static ArticleInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<ArticleInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<ArticleInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

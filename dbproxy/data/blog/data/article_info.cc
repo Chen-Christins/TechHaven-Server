@@ -54,89 +54,212 @@ std::string ArticleInfo::toJsonString() const {
 
 void ArticleInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void ArticleInfo::setUserId(const int64_t& v) {
     m_userId = v;
+    m_flags |= (1ull << 1);
 }
 
 void ArticleInfo::setTitle(const std::string& v) {
     m_title = v;
+    m_flags |= (1ull << 2);
 }
 
 void ArticleInfo::setContent(const std::string& v) {
     m_content = v;
+    m_flags |= (1ull << 3);
 }
 
 void ArticleInfo::setType(const int32_t& v) {
     m_type = v;
+    m_flags |= (1ull << 4);
 }
 
 void ArticleInfo::setState(const int32_t& v) {
     m_state = v;
+    m_flags |= (1ull << 5);
 }
 
 void ArticleInfo::setChannel(const int64_t& v) {
     m_channel = v;
+    m_flags |= (1ull << 6);
 }
 
 void ArticleInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 7);
 }
 
 void ArticleInfo::setPublishTime(const int64_t& v) {
     m_publishTime = v;
+    m_flags |= (1ull << 8);
 }
 
 void ArticleInfo::setWeight(const int64_t& v) {
     m_weight = v;
+    m_flags |= (1ull << 9);
 }
 
 void ArticleInfo::setViews(const int64_t& v) {
     m_views = v;
+    m_flags |= (1ull << 10);
 }
 
 void ArticleInfo::setPraise(const int64_t& v) {
     m_praise = v;
+    m_flags |= (1ull << 11);
 }
 
 void ArticleInfo::setFavorites(const int64_t& v) {
     m_favorites = v;
+    m_flags |= (1ull << 12);
 }
 
 void ArticleInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 13);
 }
 
 void ArticleInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 14);
 }
 
 
 int ArticleInfoDao::Update(ArticleInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update article set user_id = ?, title = ?, content = ?, type = ?, state = ?, channel = ?, is_deleted = ?, publish_time = ?, weight = ?, views = ?, praise = ?, favorites = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update article set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "user_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "title = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "content = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "state = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "channel = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "publish_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "weight = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "views = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "praise = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "favorites = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_userId);
-    stmt->bindString(2, info->m_title);
-    stmt->bindString(3, info->m_content);
-    stmt->bindInt32(4, info->m_type);
-    stmt->bindInt32(5, info->m_state);
-    stmt->bindInt64(6, info->m_channel);
-    stmt->bindInt32(7, info->m_isDeleted);
-    stmt->bindTime(8, info->m_publishTime);
-    stmt->bindInt64(9, info->m_weight);
-    stmt->bindInt64(10, info->m_views);
-    stmt->bindInt64(11, info->m_praise);
-    stmt->bindInt64(12, info->m_favorites);
-    stmt->bindTime(13, info->m_createTime);
-    stmt->bindTime(14, info->m_updateTime);
-    stmt->bindInt64(15, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_userId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_title);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_content);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_type);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt32(idx++, info->m_state);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt64(idx++, info->m_channel);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindTime(idx++, info->m_publishTime);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt64(idx++, info->m_weight);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindInt64(idx++, info->m_views);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindInt64(idx++, info->m_praise);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindInt64(idx++, info->m_favorites);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int ArticleInfoDao::Insert(ArticleInfo::ptr info, chen::IDB::ptr conn) {
@@ -144,7 +267,7 @@ int ArticleInfoDao::Insert(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_userId);
@@ -165,6 +288,9 @@ int ArticleInfoDao::Insert(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -176,7 +302,7 @@ int ArticleInfoDao::InsertOrUpdate(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -194,6 +320,156 @@ int ArticleInfoDao::InsertOrUpdate(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindInt64(13, info->m_favorites);
     stmt->bindTime(14, info->m_createTime);
     stmt->bindTime(15, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int ArticleInfoDao::BatchInsert(const std::vector<ArticleInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into article (";
+    sql += "user_id";
+    sql += ", ";
+    sql += "title";
+    sql += ", ";
+    sql += "content";
+    sql += ", ";
+    sql += "type";
+    sql += ", ";
+    sql += "state";
+    sql += ", ";
+    sql += "channel";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "publish_time";
+    sql += ", ";
+    sql += "weight";
+    sql += ", ";
+    sql += "views";
+    sql += ", ";
+    sql += "praise";
+    sql += ", ";
+    sql += "favorites";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_userId);
+        stmt->bindString(idx++, info->m_title);
+        stmt->bindString(idx++, info->m_content);
+        stmt->bindInt32(idx++, info->m_type);
+        stmt->bindInt32(idx++, info->m_state);
+        stmt->bindInt64(idx++, info->m_channel);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_publishTime);
+        stmt->bindInt64(idx++, info->m_weight);
+        stmt->bindInt64(idx++, info->m_views);
+        stmt->bindInt64(idx++, info->m_praise);
+        stmt->bindInt64(idx++, info->m_favorites);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int ArticleInfoDao::BatchUpdate(const std::vector<ArticleInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int ArticleInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from article where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -202,7 +478,7 @@ int ArticleInfoDao::Delete(ArticleInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -214,7 +490,7 @@ int ArticleInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -226,7 +502,7 @@ int ArticleInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn)
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -238,7 +514,7 @@ int ArticleInfoDao::QueryAll(std::vector<ArticleInfo::ptr>& results, chen::IDB::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -272,7 +548,7 @@ ArticleInfo::ptr ArticleInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -307,7 +583,7 @@ int ArticleInfoDao::QueryByUserId(std::vector<ArticleInfo::ptr>& results,  const
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -360,7 +636,7 @@ int ArticleInfoDao::QueryByUserIdPages(std::vector<ArticleInfo::ptr>& results, i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -389,6 +665,133 @@ int ArticleInfoDao::QueryByUserIdPages(std::vector<ArticleInfo::ptr>& results, i
         v->m_updateTime = rt->getTime(14);
         results.push_back(v);
     };
+    return 0;
+}
+
+ArticleInfo::ptr ArticleInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    ArticleInfo::ptr v(new ArticleInfo);
+    v->m_id = data->getInt64(0);
+    v->m_userId = data->getInt64(1);
+    v->m_title = data->getString(2);
+    v->m_content = data->getString(3);
+    v->m_type = data->getInt32(4);
+    v->m_state = data->getInt32(5);
+    v->m_channel = data->getInt64(6);
+    v->m_isDeleted = data->getInt32(7);
+    v->m_publishTime = data->getTime(8);
+    v->m_weight = data->getInt64(9);
+    v->m_views = data->getInt64(10);
+    v->m_praise = data->getInt64(11);
+    v->m_favorites = data->getInt64(12);
+    v->m_createTime = data->getTime(13);
+    v->m_updateTime = data->getTime(14);
+    return v;
+}
+
+int ArticleInfoDao::QueryByBuilder(std::vector<ArticleInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        ArticleInfo::ptr v(new ArticleInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getInt32(4);
+        v->m_state = rt->getInt32(5);
+        v->m_channel = rt->getInt64(6);
+        v->m_isDeleted = rt->getInt32(7);
+        v->m_publishTime = rt->getTime(8);
+        v->m_weight = rt->getInt64(9);
+        v->m_views = rt->getInt64(10);
+        v->m_praise = rt->getInt64(11);
+        v->m_favorites = rt->getInt64(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int ArticleInfoDao::QueryByBuilderPages(std::vector<ArticleInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ArticleInfo::ptr v(new ArticleInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getInt32(4);
+        v->m_state = rt->getInt32(5);
+        v->m_channel = rt->getInt64(6);
+        v->m_isDeleted = rt->getInt32(7);
+        v->m_publishTime = rt->getTime(8);
+        v->m_weight = rt->getInt64(9);
+        v->m_views = rt->getInt64(10);
+        v->m_praise = rt->getInt64(11);
+        v->m_favorites = rt->getInt64(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -432,6 +835,53 @@ int ArticleInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`update_time` timestamp NOT NULL DEFAULT '1980-01-01 00:00:00' ON UPDATE current_timestamp  COMMENT '更新时间',"
             "PRIMARY KEY(`id`),"
             "KEY `article_user_id` (`user_id`)) COMMENT='博客文章'");
+}
+
+int ArticleInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "article");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "article");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "article");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int ArticleInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

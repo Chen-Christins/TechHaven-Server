@@ -82,159 +82,394 @@ std::string SystemSettingsInfo::toJsonString() const {
 
 void SystemSettingsInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void SystemSettingsInfo::setSiteName(const std::string& v) {
     m_siteName = v;
+    m_flags |= (1ull << 1);
 }
 
 void SystemSettingsInfo::setSiteDescription(const std::string& v) {
     m_siteDescription = v;
+    m_flags |= (1ull << 2);
 }
 
 void SystemSettingsInfo::setSiteKeywords(const std::string& v) {
     m_siteKeywords = v;
+    m_flags |= (1ull << 3);
 }
 
 void SystemSettingsInfo::setSiteIcon(const std::string& v) {
     m_siteIcon = v;
+    m_flags |= (1ull << 4);
 }
 
 void SystemSettingsInfo::setSiteLogo(const std::string& v) {
     m_siteLogo = v;
+    m_flags |= (1ull << 5);
 }
 
 void SystemSettingsInfo::setFavicon(const std::string& v) {
     m_favicon = v;
+    m_flags |= (1ull << 6);
 }
 
 void SystemSettingsInfo::setAdminEmail(const std::string& v) {
     m_adminEmail = v;
+    m_flags |= (1ull << 7);
 }
 
 void SystemSettingsInfo::setTimezone(const std::string& v) {
     m_timezone = v;
+    m_flags |= (1ull << 8);
 }
 
 void SystemSettingsInfo::setLanguage(const std::string& v) {
     m_language = v;
+    m_flags |= (1ull << 9);
 }
 
 void SystemSettingsInfo::setSmtpHost(const std::string& v) {
     m_smtpHost = v;
+    m_flags |= (1ull << 10);
 }
 
 void SystemSettingsInfo::setSmtpPort(const int32_t& v) {
     m_smtpPort = v;
+    m_flags |= (1ull << 11);
 }
 
 void SystemSettingsInfo::setSmtpUsername(const std::string& v) {
     m_smtpUsername = v;
+    m_flags |= (1ull << 12);
 }
 
 void SystemSettingsInfo::setSmtpPassword(const std::string& v) {
     m_smtpPassword = v;
+    m_flags |= (1ull << 13);
 }
 
 void SystemSettingsInfo::setSmtpEncryption(const std::string& v) {
     m_smtpEncryption = v;
+    m_flags |= (1ull << 14);
 }
 
 void SystemSettingsInfo::setFromEmail(const std::string& v) {
     m_fromEmail = v;
+    m_flags |= (1ull << 15);
 }
 
 void SystemSettingsInfo::setFromName(const std::string& v) {
     m_fromName = v;
+    m_flags |= (1ull << 16);
 }
 
 void SystemSettingsInfo::setReplyTo(const std::string& v) {
     m_replyTo = v;
+    m_flags |= (1ull << 17);
 }
 
 void SystemSettingsInfo::setEnableRegistration(const int32_t& v) {
     m_enableRegistration = v;
+    m_flags |= (1ull << 18);
 }
 
 void SystemSettingsInfo::setRequireEmailVerification(const int32_t& v) {
     m_requireEmailVerification = v;
+    m_flags |= (1ull << 19);
 }
 
 void SystemSettingsInfo::setAllowComments(const int32_t& v) {
     m_allowComments = v;
+    m_flags |= (1ull << 20);
 }
 
 void SystemSettingsInfo::setModerateComments(const int32_t& v) {
     m_moderateComments = v;
+    m_flags |= (1ull << 21);
 }
 
 void SystemSettingsInfo::setMaxFileSize(const int32_t& v) {
     m_maxFileSize = v;
+    m_flags |= (1ull << 22);
 }
 
 void SystemSettingsInfo::setAllowedFileTypes(const std::string& v) {
     m_allowedFileTypes = v;
+    m_flags |= (1ull << 23);
 }
 
 void SystemSettingsInfo::setSessionTimeout(const int32_t& v) {
     m_sessionTimeout = v;
+    m_flags |= (1ull << 24);
 }
 
 void SystemSettingsInfo::setMaintenanceMode(const int32_t& v) {
     m_maintenanceMode = v;
+    m_flags |= (1ull << 25);
 }
 
 void SystemSettingsInfo::setBackupSchedule(const std::string& v) {
     m_backupSchedule = v;
+    m_flags |= (1ull << 26);
 }
 
 void SystemSettingsInfo::setCreatedAt(const int64_t& v) {
     m_createdAt = v;
+    m_flags |= (1ull << 27);
 }
 
 void SystemSettingsInfo::setUpdatedAt(const int64_t& v) {
     m_updatedAt = v;
+    m_flags |= (1ull << 28);
 }
 
 
 int SystemSettingsInfoDao::Update(SystemSettingsInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update system_settings set site_name = ?, site_description = ?, site_keywords = ?, site_icon = ?, site_logo = ?, favicon = ?, admin_email = ?, timezone = ?, language = ?, smtp_host = ?, smtp_port = ?, smtp_username = ?, smtp_password = ?, smtp_encryption = ?, from_email = ?, from_name = ?, reply_to = ?, enable_registration = ?, require_email_verification = ?, allow_comments = ?, moderate_comments = ?, max_file_size = ?, allowed_file_types = ?, session_timeout = ?, maintenance_mode = ?, backup_schedule = ?, created_at = ?, updated_at = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update system_settings set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "site_name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "site_description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "site_keywords = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "site_icon = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "site_logo = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "favicon = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "admin_email = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "timezone = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "language = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "smtp_host = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "smtp_port = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "smtp_username = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "smtp_password = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "smtp_encryption = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 15)) {
+        if (!first) sql += ", ";
+        sql += "from_email = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 16)) {
+        if (!first) sql += ", ";
+        sql += "from_name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 17)) {
+        if (!first) sql += ", ";
+        sql += "reply_to = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 18)) {
+        if (!first) sql += ", ";
+        sql += "enable_registration = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 19)) {
+        if (!first) sql += ", ";
+        sql += "require_email_verification = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 20)) {
+        if (!first) sql += ", ";
+        sql += "allow_comments = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 21)) {
+        if (!first) sql += ", ";
+        sql += "moderate_comments = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 22)) {
+        if (!first) sql += ", ";
+        sql += "max_file_size = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 23)) {
+        if (!first) sql += ", ";
+        sql += "allowed_file_types = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 24)) {
+        if (!first) sql += ", ";
+        sql += "session_timeout = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 25)) {
+        if (!first) sql += ", ";
+        sql += "maintenance_mode = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 26)) {
+        if (!first) sql += ", ";
+        sql += "backup_schedule = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 27)) {
+        if (!first) sql += ", ";
+        sql += "created_at = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 28)) {
+        if (!first) sql += ", ";
+        sql += "updated_at = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindString(1, info->m_siteName);
-    stmt->bindString(2, info->m_siteDescription);
-    stmt->bindString(3, info->m_siteKeywords);
-    stmt->bindString(4, info->m_siteIcon);
-    stmt->bindString(5, info->m_siteLogo);
-    stmt->bindString(6, info->m_favicon);
-    stmt->bindString(7, info->m_adminEmail);
-    stmt->bindString(8, info->m_timezone);
-    stmt->bindString(9, info->m_language);
-    stmt->bindString(10, info->m_smtpHost);
-    stmt->bindInt32(11, info->m_smtpPort);
-    stmt->bindString(12, info->m_smtpUsername);
-    stmt->bindString(13, info->m_smtpPassword);
-    stmt->bindString(14, info->m_smtpEncryption);
-    stmt->bindString(15, info->m_fromEmail);
-    stmt->bindString(16, info->m_fromName);
-    stmt->bindString(17, info->m_replyTo);
-    stmt->bindInt32(18, info->m_enableRegistration);
-    stmt->bindInt32(19, info->m_requireEmailVerification);
-    stmt->bindInt32(20, info->m_allowComments);
-    stmt->bindInt32(21, info->m_moderateComments);
-    stmt->bindInt32(22, info->m_maxFileSize);
-    stmt->bindString(23, info->m_allowedFileTypes);
-    stmt->bindInt32(24, info->m_sessionTimeout);
-    stmt->bindInt32(25, info->m_maintenanceMode);
-    stmt->bindString(26, info->m_backupSchedule);
-    stmt->bindTime(27, info->m_createdAt);
-    stmt->bindTime(28, info->m_updatedAt);
-    stmt->bindInt64(29, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindString(idx++, info->m_siteName);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_siteDescription);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_siteKeywords);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindString(idx++, info->m_siteIcon);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindString(idx++, info->m_siteLogo);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindString(idx++, info->m_favicon);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindString(idx++, info->m_adminEmail);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindString(idx++, info->m_timezone);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindString(idx++, info->m_language);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindString(idx++, info->m_smtpHost);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindInt32(idx++, info->m_smtpPort);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindString(idx++, info->m_smtpUsername);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindString(idx++, info->m_smtpPassword);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindString(idx++, info->m_smtpEncryption);
+    }
+    if (info->m_flags & (1ull << 15)) {
+        stmt->bindString(idx++, info->m_fromEmail);
+    }
+    if (info->m_flags & (1ull << 16)) {
+        stmt->bindString(idx++, info->m_fromName);
+    }
+    if (info->m_flags & (1ull << 17)) {
+        stmt->bindString(idx++, info->m_replyTo);
+    }
+    if (info->m_flags & (1ull << 18)) {
+        stmt->bindInt32(idx++, info->m_enableRegistration);
+    }
+    if (info->m_flags & (1ull << 19)) {
+        stmt->bindInt32(idx++, info->m_requireEmailVerification);
+    }
+    if (info->m_flags & (1ull << 20)) {
+        stmt->bindInt32(idx++, info->m_allowComments);
+    }
+    if (info->m_flags & (1ull << 21)) {
+        stmt->bindInt32(idx++, info->m_moderateComments);
+    }
+    if (info->m_flags & (1ull << 22)) {
+        stmt->bindInt32(idx++, info->m_maxFileSize);
+    }
+    if (info->m_flags & (1ull << 23)) {
+        stmt->bindString(idx++, info->m_allowedFileTypes);
+    }
+    if (info->m_flags & (1ull << 24)) {
+        stmt->bindInt32(idx++, info->m_sessionTimeout);
+    }
+    if (info->m_flags & (1ull << 25)) {
+        stmt->bindInt32(idx++, info->m_maintenanceMode);
+    }
+    if (info->m_flags & (1ull << 26)) {
+        stmt->bindString(idx++, info->m_backupSchedule);
+    }
+    if (info->m_flags & (1ull << 27)) {
+        stmt->bindTime(idx++, info->m_createdAt);
+    }
+    if (info->m_flags & (1ull << 28)) {
+        stmt->bindTime(idx++, info->m_updatedAt);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int SystemSettingsInfoDao::Insert(SystemSettingsInfo::ptr info, chen::IDB::ptr conn) {
@@ -242,7 +477,7 @@ int SystemSettingsInfoDao::Insert(SystemSettingsInfo::ptr info, chen::IDB::ptr c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, info->m_siteName);
@@ -277,6 +512,9 @@ int SystemSettingsInfoDao::Insert(SystemSettingsInfo::ptr info, chen::IDB::ptr c
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -288,7 +526,7 @@ int SystemSettingsInfoDao::InsertOrUpdate(SystemSettingsInfo::ptr info, chen::ID
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -320,6 +558,226 @@ int SystemSettingsInfoDao::InsertOrUpdate(SystemSettingsInfo::ptr info, chen::ID
     stmt->bindString(27, info->m_backupSchedule);
     stmt->bindTime(28, info->m_createdAt);
     stmt->bindTime(29, info->m_updatedAt);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int SystemSettingsInfoDao::BatchInsert(const std::vector<SystemSettingsInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into system_settings (";
+    sql += "site_name";
+    sql += ", ";
+    sql += "site_description";
+    sql += ", ";
+    sql += "site_keywords";
+    sql += ", ";
+    sql += "site_icon";
+    sql += ", ";
+    sql += "site_logo";
+    sql += ", ";
+    sql += "favicon";
+    sql += ", ";
+    sql += "admin_email";
+    sql += ", ";
+    sql += "timezone";
+    sql += ", ";
+    sql += "language";
+    sql += ", ";
+    sql += "smtp_host";
+    sql += ", ";
+    sql += "smtp_port";
+    sql += ", ";
+    sql += "smtp_username";
+    sql += ", ";
+    sql += "smtp_password";
+    sql += ", ";
+    sql += "smtp_encryption";
+    sql += ", ";
+    sql += "from_email";
+    sql += ", ";
+    sql += "from_name";
+    sql += ", ";
+    sql += "reply_to";
+    sql += ", ";
+    sql += "enable_registration";
+    sql += ", ";
+    sql += "require_email_verification";
+    sql += ", ";
+    sql += "allow_comments";
+    sql += ", ";
+    sql += "moderate_comments";
+    sql += ", ";
+    sql += "max_file_size";
+    sql += ", ";
+    sql += "allowed_file_types";
+    sql += ", ";
+    sql += "session_timeout";
+    sql += ", ";
+    sql += "maintenance_mode";
+    sql += ", ";
+    sql += "backup_schedule";
+    sql += ", ";
+    sql += "created_at";
+    sql += ", ";
+    sql += "updated_at";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindString(idx++, info->m_siteName);
+        stmt->bindString(idx++, info->m_siteDescription);
+        stmt->bindString(idx++, info->m_siteKeywords);
+        stmt->bindString(idx++, info->m_siteIcon);
+        stmt->bindString(idx++, info->m_siteLogo);
+        stmt->bindString(idx++, info->m_favicon);
+        stmt->bindString(idx++, info->m_adminEmail);
+        stmt->bindString(idx++, info->m_timezone);
+        stmt->bindString(idx++, info->m_language);
+        stmt->bindString(idx++, info->m_smtpHost);
+        stmt->bindInt32(idx++, info->m_smtpPort);
+        stmt->bindString(idx++, info->m_smtpUsername);
+        stmt->bindString(idx++, info->m_smtpPassword);
+        stmt->bindString(idx++, info->m_smtpEncryption);
+        stmt->bindString(idx++, info->m_fromEmail);
+        stmt->bindString(idx++, info->m_fromName);
+        stmt->bindString(idx++, info->m_replyTo);
+        stmt->bindInt32(idx++, info->m_enableRegistration);
+        stmt->bindInt32(idx++, info->m_requireEmailVerification);
+        stmt->bindInt32(idx++, info->m_allowComments);
+        stmt->bindInt32(idx++, info->m_moderateComments);
+        stmt->bindInt32(idx++, info->m_maxFileSize);
+        stmt->bindString(idx++, info->m_allowedFileTypes);
+        stmt->bindInt32(idx++, info->m_sessionTimeout);
+        stmt->bindInt32(idx++, info->m_maintenanceMode);
+        stmt->bindString(idx++, info->m_backupSchedule);
+        stmt->bindTime(idx++, info->m_createdAt);
+        stmt->bindTime(idx++, info->m_updatedAt);
+    }
+    return stmt->execute();
+}
+
+int SystemSettingsInfoDao::BatchUpdate(const std::vector<SystemSettingsInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int SystemSettingsInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from system_settings where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -328,7 +786,7 @@ int SystemSettingsInfoDao::Delete(SystemSettingsInfo::ptr info, chen::IDB::ptr c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -340,7 +798,7 @@ int SystemSettingsInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -352,7 +810,7 @@ int SystemSettingsInfoDao::QueryAll(std::vector<SystemSettingsInfo::ptr>& result
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -400,7 +858,7 @@ SystemSettingsInfo::ptr SystemSettingsInfoDao::Query( const int64_t& id, chen::I
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -442,6 +900,175 @@ SystemSettingsInfo::ptr SystemSettingsInfoDao::Query( const int64_t& id, chen::I
     v->m_createdAt = rt->getTime(27);
     v->m_updatedAt = rt->getTime(28);
     return v;
+}
+
+SystemSettingsInfo::ptr SystemSettingsInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    SystemSettingsInfo::ptr v(new SystemSettingsInfo);
+    v->m_id = data->getInt64(0);
+    v->m_siteName = data->getString(1);
+    v->m_siteDescription = data->getString(2);
+    v->m_siteKeywords = data->getString(3);
+    v->m_siteIcon = data->getString(4);
+    v->m_siteLogo = data->getString(5);
+    v->m_favicon = data->getString(6);
+    v->m_adminEmail = data->getString(7);
+    v->m_timezone = data->getString(8);
+    v->m_language = data->getString(9);
+    v->m_smtpHost = data->getString(10);
+    v->m_smtpPort = data->getInt32(11);
+    v->m_smtpUsername = data->getString(12);
+    v->m_smtpPassword = data->getString(13);
+    v->m_smtpEncryption = data->getString(14);
+    v->m_fromEmail = data->getString(15);
+    v->m_fromName = data->getString(16);
+    v->m_replyTo = data->getString(17);
+    v->m_enableRegistration = data->getInt32(18);
+    v->m_requireEmailVerification = data->getInt32(19);
+    v->m_allowComments = data->getInt32(20);
+    v->m_moderateComments = data->getInt32(21);
+    v->m_maxFileSize = data->getInt32(22);
+    v->m_allowedFileTypes = data->getString(23);
+    v->m_sessionTimeout = data->getInt32(24);
+    v->m_maintenanceMode = data->getInt32(25);
+    v->m_backupSchedule = data->getString(26);
+    v->m_createdAt = data->getTime(27);
+    v->m_updatedAt = data->getTime(28);
+    return v;
+}
+
+int SystemSettingsInfoDao::QueryByBuilder(std::vector<SystemSettingsInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, site_name, site_description, site_keywords, site_icon, site_logo, favicon, admin_email, timezone, language, smtp_host, smtp_port, smtp_username, smtp_password, smtp_encryption, from_email, from_name, reply_to, enable_registration, require_email_verification, allow_comments, moderate_comments, max_file_size, allowed_file_types, session_timeout, maintenance_mode, backup_schedule, created_at, updated_at");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        SystemSettingsInfo::ptr v(new SystemSettingsInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_siteName = rt->getString(1);
+        v->m_siteDescription = rt->getString(2);
+        v->m_siteKeywords = rt->getString(3);
+        v->m_siteIcon = rt->getString(4);
+        v->m_siteLogo = rt->getString(5);
+        v->m_favicon = rt->getString(6);
+        v->m_adminEmail = rt->getString(7);
+        v->m_timezone = rt->getString(8);
+        v->m_language = rt->getString(9);
+        v->m_smtpHost = rt->getString(10);
+        v->m_smtpPort = rt->getInt32(11);
+        v->m_smtpUsername = rt->getString(12);
+        v->m_smtpPassword = rt->getString(13);
+        v->m_smtpEncryption = rt->getString(14);
+        v->m_fromEmail = rt->getString(15);
+        v->m_fromName = rt->getString(16);
+        v->m_replyTo = rt->getString(17);
+        v->m_enableRegistration = rt->getInt32(18);
+        v->m_requireEmailVerification = rt->getInt32(19);
+        v->m_allowComments = rt->getInt32(20);
+        v->m_moderateComments = rt->getInt32(21);
+        v->m_maxFileSize = rt->getInt32(22);
+        v->m_allowedFileTypes = rt->getString(23);
+        v->m_sessionTimeout = rt->getInt32(24);
+        v->m_maintenanceMode = rt->getInt32(25);
+        v->m_backupSchedule = rt->getString(26);
+        v->m_createdAt = rt->getTime(27);
+        v->m_updatedAt = rt->getTime(28);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int SystemSettingsInfoDao::QueryByBuilderPages(std::vector<SystemSettingsInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, site_name, site_description, site_keywords, site_icon, site_logo, favicon, admin_email, timezone, language, smtp_host, smtp_port, smtp_username, smtp_password, smtp_encryption, from_email, from_name, reply_to, enable_registration, require_email_verification, allow_comments, moderate_comments, max_file_size, allowed_file_types, session_timeout, maintenance_mode, backup_schedule, created_at, updated_at", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        SystemSettingsInfo::ptr v(new SystemSettingsInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_siteName = rt->getString(1);
+        v->m_siteDescription = rt->getString(2);
+        v->m_siteKeywords = rt->getString(3);
+        v->m_siteIcon = rt->getString(4);
+        v->m_siteLogo = rt->getString(5);
+        v->m_favicon = rt->getString(6);
+        v->m_adminEmail = rt->getString(7);
+        v->m_timezone = rt->getString(8);
+        v->m_language = rt->getString(9);
+        v->m_smtpHost = rt->getString(10);
+        v->m_smtpPort = rt->getInt32(11);
+        v->m_smtpUsername = rt->getString(12);
+        v->m_smtpPassword = rt->getString(13);
+        v->m_smtpEncryption = rt->getString(14);
+        v->m_fromEmail = rt->getString(15);
+        v->m_fromName = rt->getString(16);
+        v->m_replyTo = rt->getString(17);
+        v->m_enableRegistration = rt->getInt32(18);
+        v->m_requireEmailVerification = rt->getInt32(19);
+        v->m_allowComments = rt->getInt32(20);
+        v->m_moderateComments = rt->getInt32(21);
+        v->m_maxFileSize = rt->getInt32(22);
+        v->m_allowedFileTypes = rt->getString(23);
+        v->m_sessionTimeout = rt->getInt32(24);
+        v->m_maintenanceMode = rt->getInt32(25);
+        v->m_backupSchedule = rt->getString(26);
+        v->m_createdAt = rt->getTime(27);
+        v->m_updatedAt = rt->getTime(28);
+        results.push_back(v);
+    }
+    return 0;
 }
 
 int SystemSettingsInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
@@ -510,6 +1137,53 @@ int SystemSettingsInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "`created_at` timestamp NOT NULL DEFAULT current_timestamp COMMENT '创建时间',"
             "`updated_at` timestamp NOT NULL DEFAULT current_timestamp COMMENT '更新时间',"
             "PRIMARY KEY(`id`)) COMMENT='系统设置表'");
+}
+
+int SystemSettingsInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "system_settings");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "system_settings");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "system_settings");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int SystemSettingsInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

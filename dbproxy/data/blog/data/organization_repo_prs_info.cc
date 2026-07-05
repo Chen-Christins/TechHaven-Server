@@ -64,114 +64,277 @@ std::string OrganizationRepoPrsInfo::toJsonString() const {
 
 void OrganizationRepoPrsInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void OrganizationRepoPrsInfo::setRepoId(const int64_t& v) {
     m_repoId = v;
+    m_flags |= (1ull << 1);
 }
 
 void OrganizationRepoPrsInfo::setGithubPrId(const int32_t& v) {
     m_githubPrId = v;
+    m_flags |= (1ull << 2);
 }
 
 void OrganizationRepoPrsInfo::setTitle(const std::string& v) {
     m_title = v;
+    m_flags |= (1ull << 3);
 }
 
 void OrganizationRepoPrsInfo::setDescription(const std::string& v) {
     m_description = v;
+    m_flags |= (1ull << 4);
 }
 
 void OrganizationRepoPrsInfo::setState(const std::string& v) {
     m_state = v;
+    m_flags |= (1ull << 5);
 }
 
 void OrganizationRepoPrsInfo::setPriority(const std::string& v) {
     m_priority = v;
+    m_flags |= (1ull << 6);
 }
 
 void OrganizationRepoPrsInfo::setAuthor(const std::string& v) {
     m_author = v;
+    m_flags |= (1ull << 7);
 }
 
 void OrganizationRepoPrsInfo::setHeadBranch(const std::string& v) {
     m_headBranch = v;
+    m_flags |= (1ull << 8);
 }
 
 void OrganizationRepoPrsInfo::setBaseBranch(const std::string& v) {
     m_baseBranch = v;
+    m_flags |= (1ull << 9);
 }
 
 void OrganizationRepoPrsInfo::setCommitSha(const std::string& v) {
     m_commitSha = v;
+    m_flags |= (1ull << 10);
 }
 
 void OrganizationRepoPrsInfo::setChangedFiles(const int32_t& v) {
     m_changedFiles = v;
+    m_flags |= (1ull << 11);
 }
 
 void OrganizationRepoPrsInfo::setAdditions(const int32_t& v) {
     m_additions = v;
+    m_flags |= (1ull << 12);
 }
 
 void OrganizationRepoPrsInfo::setDeletions(const int32_t& v) {
     m_deletions = v;
+    m_flags |= (1ull << 13);
 }
 
 void OrganizationRepoPrsInfo::setReviewers(const std::string& v) {
     m_reviewers = v;
+    m_flags |= (1ull << 14);
 }
 
 void OrganizationRepoPrsInfo::setReviewStatus(const std::string& v) {
     m_reviewStatus = v;
+    m_flags |= (1ull << 15);
 }
 
 void OrganizationRepoPrsInfo::setClosedAt(const int64_t& v) {
     m_closedAt = v;
+    m_flags |= (1ull << 16);
 }
 
 void OrganizationRepoPrsInfo::setMergedAt(const int64_t& v) {
     m_mergedAt = v;
+    m_flags |= (1ull << 17);
 }
 
 void OrganizationRepoPrsInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 18);
 }
 
 void OrganizationRepoPrsInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 19);
 }
 
 
 int OrganizationRepoPrsInfoDao::Update(OrganizationRepoPrsInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update organization_repo_prs set repo_id = ?, github_pr_id = ?, title = ?, description = ?, state = ?, priority = ?, author = ?, head_branch = ?, base_branch = ?, commit_sha = ?, changed_files = ?, additions = ?, deletions = ?, reviewers = ?, review_status = ?, closed_at = ?, merged_at = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update organization_repo_prs set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "repo_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "github_pr_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "title = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "state = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "priority = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "author = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "head_branch = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "base_branch = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "commit_sha = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "changed_files = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "additions = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "deletions = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "reviewers = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 15)) {
+        if (!first) sql += ", ";
+        sql += "review_status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 16)) {
+        if (!first) sql += ", ";
+        sql += "closed_at = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 17)) {
+        if (!first) sql += ", ";
+        sql += "merged_at = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 18)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 19)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_repoId);
-    stmt->bindInt32(2, info->m_githubPrId);
-    stmt->bindString(3, info->m_title);
-    stmt->bindString(4, info->m_description);
-    stmt->bindString(5, info->m_state);
-    stmt->bindString(6, info->m_priority);
-    stmt->bindString(7, info->m_author);
-    stmt->bindString(8, info->m_headBranch);
-    stmt->bindString(9, info->m_baseBranch);
-    stmt->bindString(10, info->m_commitSha);
-    stmt->bindInt32(11, info->m_changedFiles);
-    stmt->bindInt32(12, info->m_additions);
-    stmt->bindInt32(13, info->m_deletions);
-    stmt->bindString(14, info->m_reviewers);
-    stmt->bindString(15, info->m_reviewStatus);
-    stmt->bindTime(16, info->m_closedAt);
-    stmt->bindTime(17, info->m_mergedAt);
-    stmt->bindTime(18, info->m_createTime);
-    stmt->bindTime(19, info->m_updateTime);
-    stmt->bindInt64(20, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_repoId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindInt32(idx++, info->m_githubPrId);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_title);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindString(idx++, info->m_description);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindString(idx++, info->m_state);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindString(idx++, info->m_priority);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindString(idx++, info->m_author);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindString(idx++, info->m_headBranch);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindString(idx++, info->m_baseBranch);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindString(idx++, info->m_commitSha);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindInt32(idx++, info->m_changedFiles);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindInt32(idx++, info->m_additions);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindInt32(idx++, info->m_deletions);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindString(idx++, info->m_reviewers);
+    }
+    if (info->m_flags & (1ull << 15)) {
+        stmt->bindString(idx++, info->m_reviewStatus);
+    }
+    if (info->m_flags & (1ull << 16)) {
+        stmt->bindTime(idx++, info->m_closedAt);
+    }
+    if (info->m_flags & (1ull << 17)) {
+        stmt->bindTime(idx++, info->m_mergedAt);
+    }
+    if (info->m_flags & (1ull << 18)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 19)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int OrganizationRepoPrsInfoDao::Insert(OrganizationRepoPrsInfo::ptr info, chen::IDB::ptr conn) {
@@ -179,7 +342,7 @@ int OrganizationRepoPrsInfoDao::Insert(OrganizationRepoPrsInfo::ptr info, chen::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_repoId);
@@ -205,6 +368,9 @@ int OrganizationRepoPrsInfoDao::Insert(OrganizationRepoPrsInfo::ptr info, chen::
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -216,7 +382,7 @@ int OrganizationRepoPrsInfoDao::InsertOrUpdate(OrganizationRepoPrsInfo::ptr info
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -239,6 +405,181 @@ int OrganizationRepoPrsInfoDao::InsertOrUpdate(OrganizationRepoPrsInfo::ptr info
     stmt->bindTime(18, info->m_mergedAt);
     stmt->bindTime(19, info->m_createTime);
     stmt->bindTime(20, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int OrganizationRepoPrsInfoDao::BatchInsert(const std::vector<OrganizationRepoPrsInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into organization_repo_prs (";
+    sql += "repo_id";
+    sql += ", ";
+    sql += "github_pr_id";
+    sql += ", ";
+    sql += "title";
+    sql += ", ";
+    sql += "description";
+    sql += ", ";
+    sql += "state";
+    sql += ", ";
+    sql += "priority";
+    sql += ", ";
+    sql += "author";
+    sql += ", ";
+    sql += "head_branch";
+    sql += ", ";
+    sql += "base_branch";
+    sql += ", ";
+    sql += "commit_sha";
+    sql += ", ";
+    sql += "changed_files";
+    sql += ", ";
+    sql += "additions";
+    sql += ", ";
+    sql += "deletions";
+    sql += ", ";
+    sql += "reviewers";
+    sql += ", ";
+    sql += "review_status";
+    sql += ", ";
+    sql += "closed_at";
+    sql += ", ";
+    sql += "merged_at";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_repoId);
+        stmt->bindInt32(idx++, info->m_githubPrId);
+        stmt->bindString(idx++, info->m_title);
+        stmt->bindString(idx++, info->m_description);
+        stmt->bindString(idx++, info->m_state);
+        stmt->bindString(idx++, info->m_priority);
+        stmt->bindString(idx++, info->m_author);
+        stmt->bindString(idx++, info->m_headBranch);
+        stmt->bindString(idx++, info->m_baseBranch);
+        stmt->bindString(idx++, info->m_commitSha);
+        stmt->bindInt32(idx++, info->m_changedFiles);
+        stmt->bindInt32(idx++, info->m_additions);
+        stmt->bindInt32(idx++, info->m_deletions);
+        stmt->bindString(idx++, info->m_reviewers);
+        stmt->bindString(idx++, info->m_reviewStatus);
+        stmt->bindTime(idx++, info->m_closedAt);
+        stmt->bindTime(idx++, info->m_mergedAt);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int OrganizationRepoPrsInfoDao::BatchUpdate(const std::vector<OrganizationRepoPrsInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int OrganizationRepoPrsInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from organization_repo_prs where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -247,7 +588,7 @@ int OrganizationRepoPrsInfoDao::Delete(OrganizationRepoPrsInfo::ptr info, chen::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -259,7 +600,7 @@ int OrganizationRepoPrsInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -271,7 +612,7 @@ int OrganizationRepoPrsInfoDao::DeleteByRepoId( const int64_t& repo_id, chen::ID
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, repo_id);
@@ -283,7 +624,7 @@ int OrganizationRepoPrsInfoDao::DeleteByRepoIdGithubPrId( const int64_t& repo_id
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, repo_id);
@@ -296,7 +637,7 @@ int OrganizationRepoPrsInfoDao::QueryAll(std::vector<OrganizationRepoPrsInfo::pt
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -335,7 +676,7 @@ OrganizationRepoPrsInfo::ptr OrganizationRepoPrsInfoDao::Query( const int64_t& i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -375,7 +716,7 @@ int OrganizationRepoPrsInfoDao::QueryByRepoId(std::vector<OrganizationRepoPrsInf
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, repo_id);
@@ -433,7 +774,7 @@ int OrganizationRepoPrsInfoDao::QueryByRepoIdPages(std::vector<OrganizationRepoP
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, repo_id);
@@ -475,7 +816,7 @@ OrganizationRepoPrsInfo::ptr OrganizationRepoPrsInfoDao::QueryByRepoIdGithubPrId
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, repo_id);
@@ -509,6 +850,148 @@ OrganizationRepoPrsInfo::ptr OrganizationRepoPrsInfoDao::QueryByRepoIdGithubPrId
     v->m_createTime = rt->getTime(18);
     v->m_updateTime = rt->getTime(19);
     return v;
+}
+
+OrganizationRepoPrsInfo::ptr OrganizationRepoPrsInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    OrganizationRepoPrsInfo::ptr v(new OrganizationRepoPrsInfo);
+    v->m_id = data->getInt64(0);
+    v->m_repoId = data->getInt64(1);
+    v->m_githubPrId = data->getInt32(2);
+    v->m_title = data->getString(3);
+    v->m_description = data->getString(4);
+    v->m_state = data->getString(5);
+    v->m_priority = data->getString(6);
+    v->m_author = data->getString(7);
+    v->m_headBranch = data->getString(8);
+    v->m_baseBranch = data->getString(9);
+    v->m_commitSha = data->getString(10);
+    v->m_changedFiles = data->getInt32(11);
+    v->m_additions = data->getInt32(12);
+    v->m_deletions = data->getInt32(13);
+    v->m_reviewers = data->getString(14);
+    v->m_reviewStatus = data->getString(15);
+    v->m_closedAt = data->getTime(16);
+    v->m_mergedAt = data->getTime(17);
+    v->m_createTime = data->getTime(18);
+    v->m_updateTime = data->getTime(19);
+    return v;
+}
+
+int OrganizationRepoPrsInfoDao::QueryByBuilder(std::vector<OrganizationRepoPrsInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, repo_id, github_pr_id, title, description, state, priority, author, head_branch, base_branch, commit_sha, changed_files, additions, deletions, reviewers, review_status, closed_at, merged_at, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        OrganizationRepoPrsInfo::ptr v(new OrganizationRepoPrsInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_repoId = rt->getInt64(1);
+        v->m_githubPrId = rt->getInt32(2);
+        v->m_title = rt->getString(3);
+        v->m_description = rt->getString(4);
+        v->m_state = rt->getString(5);
+        v->m_priority = rt->getString(6);
+        v->m_author = rt->getString(7);
+        v->m_headBranch = rt->getString(8);
+        v->m_baseBranch = rt->getString(9);
+        v->m_commitSha = rt->getString(10);
+        v->m_changedFiles = rt->getInt32(11);
+        v->m_additions = rt->getInt32(12);
+        v->m_deletions = rt->getInt32(13);
+        v->m_reviewers = rt->getString(14);
+        v->m_reviewStatus = rt->getString(15);
+        v->m_closedAt = rt->getTime(16);
+        v->m_mergedAt = rt->getTime(17);
+        v->m_createTime = rt->getTime(18);
+        v->m_updateTime = rt->getTime(19);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int OrganizationRepoPrsInfoDao::QueryByBuilderPages(std::vector<OrganizationRepoPrsInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, repo_id, github_pr_id, title, description, state, priority, author, head_branch, base_branch, commit_sha, changed_files, additions, deletions, reviewers, review_status, closed_at, merged_at, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationRepoPrsInfo::ptr v(new OrganizationRepoPrsInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_repoId = rt->getInt64(1);
+        v->m_githubPrId = rt->getInt32(2);
+        v->m_title = rt->getString(3);
+        v->m_description = rt->getString(4);
+        v->m_state = rt->getString(5);
+        v->m_priority = rt->getString(6);
+        v->m_author = rt->getString(7);
+        v->m_headBranch = rt->getString(8);
+        v->m_baseBranch = rt->getString(9);
+        v->m_commitSha = rt->getString(10);
+        v->m_changedFiles = rt->getInt32(11);
+        v->m_additions = rt->getInt32(12);
+        v->m_deletions = rt->getInt32(13);
+        v->m_reviewers = rt->getString(14);
+        v->m_reviewStatus = rt->getString(15);
+        v->m_closedAt = rt->getTime(16);
+        v->m_mergedAt = rt->getTime(17);
+        v->m_createTime = rt->getTime(18);
+        v->m_updateTime = rt->getTime(19);
+        results.push_back(v);
+    }
+    return 0;
 }
 
 int OrganizationRepoPrsInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
@@ -563,6 +1046,53 @@ int OrganizationRepoPrsInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "PRIMARY KEY(`id`),"
             "KEY `organization_repo_prs_repo_id` (`repo_id`),"
             "UNIQUE KEY `organization_repo_prs_repo_id_github_pr_id` (`repo_id`,`github_pr_id`)) COMMENT='组织仓库 PR 表'");
+}
+
+int OrganizationRepoPrsInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "organization_repo_prs");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "organization_repo_prs");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "organization_repo_prs");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int OrganizationRepoPrsInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

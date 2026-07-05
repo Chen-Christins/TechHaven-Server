@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class BugInfoDao;
+/**
+ * @brief 缺陷表
+ */
 class BugInfo {
 friend class BugInfoDao;
 public:
@@ -21,55 +25,195 @@ public:
 
     BugInfo();
 
+    /**
+     * @brief 获取缺陷ID
+     * @return 缺陷ID
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置缺陷ID
+     * @param v 缺陷ID
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取组织ID
+     * @return 组织ID
+     */
     const int64_t& getOrgId() { return m_orgId; }
+    /**
+     * @brief 设置组织ID
+     * @param v 组织ID
+     */
     void setOrgId(const int64_t& v);
 
+    /**
+     * @brief 获取缺陷标题
+     * @return 缺陷标题
+     */
     const std::string& getTitle() { return m_title; }
+    /**
+     * @brief 设置缺陷标题
+     * @param v 缺陷标题
+     */
     void setTitle(const std::string& v);
 
+    /**
+     * @brief 获取缺陷描述
+     * @return 缺陷描述
+     */
     const std::string& getDescription() { return m_description; }
+    /**
+     * @brief 设置缺陷描述
+     * @param v 缺陷描述
+     */
     void setDescription(const std::string& v);
 
+    /**
+     * @brief 获取严重程度: 1轻微 2一般 3严重 4致命
+     * @return 严重程度: 1轻微 2一般 3严重 4致命
+     */
     const int32_t& getSeverity() { return m_severity; }
+    /**
+     * @brief 设置严重程度: 1轻微 2一般 3严重 4致命
+     * @param v 严重程度: 1轻微 2一般 3严重 4致命
+     */
     void setSeverity(const int32_t& v);
 
+    /**
+     * @brief 获取优先级: 1低 2中 3高 4紧急
+     * @return 优先级: 1低 2中 3高 4紧急
+     */
     const int32_t& getPriority() { return m_priority; }
+    /**
+     * @brief 设置优先级: 1低 2中 3高 4紧急
+     * @param v 优先级: 1低 2中 3高 4紧急
+     */
     void setPriority(const int32_t& v);
 
+    /**
+     * @brief 获取状态: 0待处理 1进行中 2已修复 3已关闭 4重新打开
+     * @return 状态: 0待处理 1进行中 2已修复 3已关闭 4重新打开
+     */
     const int32_t& getStatus() { return m_status; }
+    /**
+     * @brief 设置状态: 0待处理 1进行中 2已修复 3已关闭 4重新打开
+     * @param v 状态: 0待处理 1进行中 2已修复 3已关闭 4重新打开
+     */
     void setStatus(const int32_t& v);
 
+    /**
+     * @brief 获取创建者ID
+     * @return 创建者ID
+     */
     const int64_t& getCreatorId() { return m_creatorId; }
+    /**
+     * @brief 设置创建者ID
+     * @param v 创建者ID
+     */
     void setCreatorId(const int64_t& v);
 
+    /**
+     * @brief 获取负责人ID
+     * @return 负责人ID
+     */
     const int64_t& getAssigneeId() { return m_assigneeId; }
+    /**
+     * @brief 设置负责人ID
+     * @param v 负责人ID
+     */
     void setAssigneeId(const int64_t& v);
 
+    /**
+     * @brief 获取关联需求ID
+     * @return 关联需求ID
+     */
     const int64_t& getRequirementId() { return m_requirementId; }
+    /**
+     * @brief 设置关联需求ID
+     * @param v 关联需求ID
+     */
     void setRequirementId(const int64_t& v);
 
+    /**
+     * @brief 获取所属模块
+     * @return 所属模块
+     */
     const std::string& getModule() { return m_module; }
+    /**
+     * @brief 设置所属模块
+     * @param v 所属模块
+     */
     void setModule(const std::string& v);
 
+    /**
+     * @brief 获取复现步骤
+     * @return 复现步骤
+     */
     const std::string& getStepsToReproduce() { return m_stepsToReproduce; }
+    /**
+     * @brief 设置复现步骤
+     * @param v 复现步骤
+     */
     void setStepsToReproduce(const std::string& v);
 
+    /**
+     * @brief 获取环境信息
+     * @return 环境信息
+     */
     const std::string& getEnvironment() { return m_environment; }
+    /**
+     * @brief 设置环境信息
+     * @param v 环境信息
+     */
     void setEnvironment(const std::string& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_severity;
@@ -88,6 +232,7 @@ private:
     std::string m_environment;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -97,6 +242,9 @@ public:
     static int Update(BugInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(BugInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(BugInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<BugInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<BugInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(BugInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -115,6 +263,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static BugInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<BugInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<BugInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

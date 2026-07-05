@@ -38,49 +38,108 @@ std::string ArticleCategoryRelInfo::toJsonString() const {
 
 void ArticleCategoryRelInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void ArticleCategoryRelInfo::setArticleId(const int64_t& v) {
     m_articleId = v;
+    m_flags |= (1ull << 1);
 }
 
 void ArticleCategoryRelInfo::setCategoryId(const int64_t& v) {
     m_categoryId = v;
+    m_flags |= (1ull << 2);
 }
 
 void ArticleCategoryRelInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 3);
 }
 
 void ArticleCategoryRelInfo::setPublishTime(const int64_t& v) {
     m_publishTime = v;
+    m_flags |= (1ull << 4);
 }
 
 void ArticleCategoryRelInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 5);
 }
 
 void ArticleCategoryRelInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 6);
 }
 
 
 int ArticleCategoryRelInfoDao::Update(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update article_category_rel set article_id = ?, category_id = ?, is_deleted = ?, publish_time = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update article_category_rel set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "article_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "category_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "publish_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_articleId);
-    stmt->bindInt64(2, info->m_categoryId);
-    stmt->bindInt32(3, info->m_isDeleted);
-    stmt->bindTime(4, info->m_publishTime);
-    stmt->bindTime(5, info->m_createTime);
-    stmt->bindTime(6, info->m_updateTime);
-    stmt->bindInt64(7, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_articleId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindInt64(idx++, info->m_categoryId);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindTime(idx++, info->m_publishTime);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int ArticleCategoryRelInfoDao::Insert(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn) {
@@ -88,7 +147,7 @@ int ArticleCategoryRelInfoDao::Insert(ArticleCategoryRelInfo::ptr info, chen::ID
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_articleId);
@@ -101,6 +160,9 @@ int ArticleCategoryRelInfoDao::Insert(ArticleCategoryRelInfo::ptr info, chen::ID
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -112,7 +174,7 @@ int ArticleCategoryRelInfoDao::InsertOrUpdate(ArticleCategoryRelInfo::ptr info, 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -122,6 +184,116 @@ int ArticleCategoryRelInfoDao::InsertOrUpdate(ArticleCategoryRelInfo::ptr info, 
     stmt->bindTime(5, info->m_publishTime);
     stmt->bindTime(6, info->m_createTime);
     stmt->bindTime(7, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int ArticleCategoryRelInfoDao::BatchInsert(const std::vector<ArticleCategoryRelInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into article_category_rel (";
+    sql += "article_id";
+    sql += ", ";
+    sql += "category_id";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "publish_time";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_articleId);
+        stmt->bindInt64(idx++, info->m_categoryId);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_publishTime);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int ArticleCategoryRelInfoDao::BatchUpdate(const std::vector<ArticleCategoryRelInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int ArticleCategoryRelInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from article_category_rel where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -130,7 +302,7 @@ int ArticleCategoryRelInfoDao::Delete(ArticleCategoryRelInfo::ptr info, chen::ID
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -142,7 +314,7 @@ int ArticleCategoryRelInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr con
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -154,7 +326,7 @@ int ArticleCategoryRelInfoDao::DeleteByArticleId( const int64_t& article_id, che
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -166,7 +338,7 @@ int ArticleCategoryRelInfoDao::DeleteByArticleIdCategoryId( const int64_t& artic
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -179,7 +351,7 @@ int ArticleCategoryRelInfoDao::QueryAll(std::vector<ArticleCategoryRelInfo::ptr>
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -205,7 +377,7 @@ ArticleCategoryRelInfo::ptr ArticleCategoryRelInfoDao::Query( const int64_t& id,
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -232,7 +404,7 @@ int ArticleCategoryRelInfoDao::QueryByArticleId(std::vector<ArticleCategoryRelIn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -277,7 +449,7 @@ int ArticleCategoryRelInfoDao::QueryByArticleIdPages(std::vector<ArticleCategory
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -306,7 +478,7 @@ ArticleCategoryRelInfo::ptr ArticleCategoryRelInfoDao::QueryByArticleIdCategoryI
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, article_id);
@@ -327,6 +499,109 @@ ArticleCategoryRelInfo::ptr ArticleCategoryRelInfoDao::QueryByArticleIdCategoryI
     v->m_createTime = rt->getTime(5);
     v->m_updateTime = rt->getTime(6);
     return v;
+}
+
+ArticleCategoryRelInfo::ptr ArticleCategoryRelInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    ArticleCategoryRelInfo::ptr v(new ArticleCategoryRelInfo);
+    v->m_id = data->getInt64(0);
+    v->m_articleId = data->getInt64(1);
+    v->m_categoryId = data->getInt64(2);
+    v->m_isDeleted = data->getInt32(3);
+    v->m_publishTime = data->getTime(4);
+    v->m_createTime = data->getTime(5);
+    v->m_updateTime = data->getTime(6);
+    return v;
+}
+
+int ArticleCategoryRelInfoDao::QueryByBuilder(std::vector<ArticleCategoryRelInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, article_id, category_id, is_deleted, publish_time, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        ArticleCategoryRelInfo::ptr v(new ArticleCategoryRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_categoryId = rt->getInt64(2);
+        v->m_isDeleted = rt->getInt32(3);
+        v->m_publishTime = rt->getTime(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_updateTime = rt->getTime(6);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int ArticleCategoryRelInfoDao::QueryByBuilderPages(std::vector<ArticleCategoryRelInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, article_id, category_id, is_deleted, publish_time, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ArticleCategoryRelInfo::ptr v(new ArticleCategoryRelInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_categoryId = rt->getInt64(2);
+        v->m_isDeleted = rt->getInt32(3);
+        v->m_publishTime = rt->getTime(4);
+        v->m_createTime = rt->getTime(5);
+        v->m_updateTime = rt->getTime(6);
+        results.push_back(v);
+    }
+    return 0;
 }
 
 int ArticleCategoryRelInfoDao::CreateTableSQLite3(chen::IDB::ptr conn) {
@@ -355,6 +630,53 @@ int ArticleCategoryRelInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "PRIMARY KEY(`id`),"
             "KEY `article_category_rel_article_id` (`article_id`),"
             "UNIQUE KEY `article_category_rel_article_id_category_id` (`article_id`,`category_id`)) COMMENT='文章-分类关联表'");
+}
+
+int ArticleCategoryRelInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "article_category_rel");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "article_category_rel");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "article_category_rel");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int ArticleCategoryRelInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class EmailVerificationInfoDao;
+/**
+ * @brief 邮箱验证表
+ */
 class EmailVerificationInfo {
 friend class EmailVerificationInfoDao;
 public:
@@ -21,34 +25,118 @@ public:
 
     EmailVerificationInfo();
 
+    /**
+     * @brief 获取主键id
+     * @return 主键id
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置主键id
+     * @param v 主键id
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取用户邮箱地址
+     * @return 用户邮箱地址
+     */
     const std::string& getEmail() { return m_email; }
+    /**
+     * @brief 设置用户邮箱地址
+     * @param v 用户邮箱地址
+     */
     void setEmail(const std::string& v);
 
+    /**
+     * @brief 获取验证码
+     * @return 验证码
+     */
     const std::string& getCode() { return m_code; }
+    /**
+     * @brief 设置验证码
+     * @param v 验证码
+     */
     void setCode(const std::string& v);
 
+    /**
+     * @brief 获取验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱
+     * @return 验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱
+     */
     const int32_t& getType() { return m_type; }
+    /**
+     * @brief 设置验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱
+     * @param v 验证类型: 1-注册, 2-登录, 3-密码重置, 4-更换邮箱
+     */
     void setType(const int32_t& v);
 
+    /**
+     * @brief 获取是否已使用
+     * @return 是否已使用
+     */
     const int32_t& getState() { return m_state; }
+    /**
+     * @brief 设置是否已使用
+     * @param v 是否已使用
+     */
     void setState(const int32_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取过期时间
+     * @return 过期时间
+     */
     const int64_t& getExpiresTime() { return m_expiresTime; }
+    /**
+     * @brief 设置过期时间
+     * @param v 过期时间
+     */
     void setExpiresTime(const int64_t& v);
 
+    /**
+     * @brief 获取请求IP地址
+     * @return 请求IP地址
+     */
     const std::string& getClientIp() { return m_clientIp; }
+    /**
+     * @brief 设置请求IP地址
+     * @param v 请求IP地址
+     */
     void setClientIp(const std::string& v);
 
+    /**
+     * @brief 获取用户代理信息
+     * @return 用户代理信息
+     */
     const std::string& getUserAgent() { return m_userAgent; }
+    /**
+     * @brief 设置用户代理信息
+     * @param v 用户代理信息
+     */
     void setUserAgent(const std::string& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_type;
@@ -60,6 +148,7 @@ private:
     std::string m_userAgent;
     int64_t m_createTime;
     int64_t m_expiresTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -69,6 +158,9 @@ public:
     static int Update(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<EmailVerificationInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<EmailVerificationInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(EmailVerificationInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -90,6 +182,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static EmailVerificationInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<EmailVerificationInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<EmailVerificationInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

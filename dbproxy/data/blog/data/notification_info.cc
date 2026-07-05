@@ -58,99 +58,238 @@ std::string NotificationInfo::toJsonString() const {
 
 void NotificationInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void NotificationInfo::setUserId(const int64_t& v) {
     m_userId = v;
+    m_flags |= (1ull << 1);
 }
 
 void NotificationInfo::setTitle(const std::string& v) {
     m_title = v;
+    m_flags |= (1ull << 2);
 }
 
 void NotificationInfo::setContent(const std::string& v) {
     m_content = v;
+    m_flags |= (1ull << 3);
 }
 
 void NotificationInfo::setType(const std::string& v) {
     m_type = v;
+    m_flags |= (1ull << 4);
 }
 
 void NotificationInfo::setSenderId(const int64_t& v) {
     m_senderId = v;
+    m_flags |= (1ull << 5);
 }
 
 void NotificationInfo::setArticleId(const int64_t& v) {
     m_articleId = v;
+    m_flags |= (1ull << 6);
 }
 
 void NotificationInfo::setCommentId(const int64_t& v) {
     m_commentId = v;
+    m_flags |= (1ull << 7);
 }
 
 void NotificationInfo::setIsRead(const int32_t& v) {
     m_isRead = v;
+    m_flags |= (1ull << 8);
 }
 
 void NotificationInfo::setReadTime(const int64_t& v) {
     m_readTime = v;
+    m_flags |= (1ull << 9);
 }
 
 void NotificationInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 10);
 }
 
 void NotificationInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 11);
 }
 
 void NotificationInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 12);
 }
 
 void NotificationInfo::setIsBroadcast(const int32_t& v) {
     m_isBroadcast = v;
+    m_flags |= (1ull << 13);
 }
 
 void NotificationInfo::setLevel(const std::string& v) {
     m_level = v;
+    m_flags |= (1ull << 14);
 }
 
 void NotificationInfo::setStartTime(const int64_t& v) {
     m_startTime = v;
+    m_flags |= (1ull << 15);
 }
 
 void NotificationInfo::setEndTime(const int64_t& v) {
     m_endTime = v;
+    m_flags |= (1ull << 16);
 }
 
 
 int NotificationInfoDao::Update(NotificationInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update notification set user_id = ?, title = ?, content = ?, type = ?, sender_id = ?, article_id = ?, comment_id = ?, is_read = ?, read_time = ?, is_deleted = ?, create_time = ?, update_time = ?, is_broadcast = ?, level = ?, start_time = ?, end_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update notification set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "user_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "title = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "content = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "sender_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "article_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "comment_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "is_read = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "read_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "is_broadcast = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "level = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 15)) {
+        if (!first) sql += ", ";
+        sql += "start_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 16)) {
+        if (!first) sql += ", ";
+        sql += "end_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_userId);
-    stmt->bindString(2, info->m_title);
-    stmt->bindString(3, info->m_content);
-    stmt->bindString(4, info->m_type);
-    stmt->bindInt64(5, info->m_senderId);
-    stmt->bindInt64(6, info->m_articleId);
-    stmt->bindInt64(7, info->m_commentId);
-    stmt->bindInt32(8, info->m_isRead);
-    stmt->bindTime(9, info->m_readTime);
-    stmt->bindInt32(10, info->m_isDeleted);
-    stmt->bindTime(11, info->m_createTime);
-    stmt->bindTime(12, info->m_updateTime);
-    stmt->bindInt32(13, info->m_isBroadcast);
-    stmt->bindString(14, info->m_level);
-    stmt->bindInt64(15, info->m_startTime);
-    stmt->bindInt64(16, info->m_endTime);
-    stmt->bindInt64(17, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_userId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_title);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_content);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindString(idx++, info->m_type);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt64(idx++, info->m_senderId);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt64(idx++, info->m_articleId);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt64(idx++, info->m_commentId);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt32(idx++, info->m_isRead);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindTime(idx++, info->m_readTime);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindInt32(idx++, info->m_isBroadcast);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindString(idx++, info->m_level);
+    }
+    if (info->m_flags & (1ull << 15)) {
+        stmt->bindInt64(idx++, info->m_startTime);
+    }
+    if (info->m_flags & (1ull << 16)) {
+        stmt->bindInt64(idx++, info->m_endTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn) {
@@ -158,7 +297,7 @@ int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn)
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_userId);
@@ -181,6 +320,9 @@ int NotificationInfoDao::Insert(NotificationInfo::ptr info, chen::IDB::ptr conn)
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -192,7 +334,7 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -212,6 +354,166 @@ int NotificationInfoDao::InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::p
     stmt->bindString(15, info->m_level);
     stmt->bindInt64(16, info->m_startTime);
     stmt->bindInt64(17, info->m_endTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int NotificationInfoDao::BatchInsert(const std::vector<NotificationInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into notification (";
+    sql += "user_id";
+    sql += ", ";
+    sql += "title";
+    sql += ", ";
+    sql += "content";
+    sql += ", ";
+    sql += "type";
+    sql += ", ";
+    sql += "sender_id";
+    sql += ", ";
+    sql += "article_id";
+    sql += ", ";
+    sql += "comment_id";
+    sql += ", ";
+    sql += "is_read";
+    sql += ", ";
+    sql += "read_time";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ", ";
+    sql += "is_broadcast";
+    sql += ", ";
+    sql += "level";
+    sql += ", ";
+    sql += "start_time";
+    sql += ", ";
+    sql += "end_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_userId);
+        stmt->bindString(idx++, info->m_title);
+        stmt->bindString(idx++, info->m_content);
+        stmt->bindString(idx++, info->m_type);
+        stmt->bindInt64(idx++, info->m_senderId);
+        stmt->bindInt64(idx++, info->m_articleId);
+        stmt->bindInt64(idx++, info->m_commentId);
+        stmt->bindInt32(idx++, info->m_isRead);
+        stmt->bindTime(idx++, info->m_readTime);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+        stmt->bindInt32(idx++, info->m_isBroadcast);
+        stmt->bindString(idx++, info->m_level);
+        stmt->bindInt64(idx++, info->m_startTime);
+        stmt->bindInt64(idx++, info->m_endTime);
+    }
+    return stmt->execute();
+}
+
+int NotificationInfoDao::BatchUpdate(const std::vector<NotificationInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int NotificationInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from notification where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -220,7 +522,7 @@ int NotificationInfoDao::Delete(NotificationInfo::ptr info, chen::IDB::ptr conn)
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -232,7 +534,7 @@ int NotificationInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -244,7 +546,7 @@ int NotificationInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -256,7 +558,7 @@ int NotificationInfoDao::DeleteByUserIdIsRead( const int64_t& user_id,  const in
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -269,7 +571,7 @@ int NotificationInfoDao::QueryAll(std::vector<NotificationInfo::ptr>& results, c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -305,7 +607,7 @@ NotificationInfo::ptr NotificationInfoDao::Query( const int64_t& id, chen::IDB::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -342,7 +644,7 @@ int NotificationInfoDao::QueryByUserId(std::vector<NotificationInfo::ptr>& resul
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -397,7 +699,7 @@ int NotificationInfoDao::QueryByUserIdPages(std::vector<NotificationInfo::ptr>& 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -436,7 +738,7 @@ int NotificationInfoDao::QueryByUserIdIsRead(std::vector<NotificationInfo::ptr>&
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -493,7 +795,7 @@ int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -525,6 +827,139 @@ int NotificationInfoDao::QueryByUserIdIsReadPages(std::vector<NotificationInfo::
         v->m_endTime = rt->getInt64(16);
         results.push_back(v);
     };
+    return 0;
+}
+
+NotificationInfo::ptr NotificationInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    NotificationInfo::ptr v(new NotificationInfo);
+    v->m_id = data->getInt64(0);
+    v->m_userId = data->getInt64(1);
+    v->m_title = data->getString(2);
+    v->m_content = data->getString(3);
+    v->m_type = data->getString(4);
+    v->m_senderId = data->getInt64(5);
+    v->m_articleId = data->getInt64(6);
+    v->m_commentId = data->getInt64(7);
+    v->m_isRead = data->getInt32(8);
+    v->m_readTime = data->getTime(9);
+    v->m_isDeleted = data->getInt32(10);
+    v->m_createTime = data->getTime(11);
+    v->m_updateTime = data->getTime(12);
+    v->m_isBroadcast = data->getInt32(13);
+    v->m_level = data->getString(14);
+    v->m_startTime = data->getInt64(15);
+    v->m_endTime = data->getInt64(16);
+    return v;
+}
+
+int NotificationInfoDao::QueryByBuilder(std::vector<NotificationInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        NotificationInfo::ptr v(new NotificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getString(4);
+        v->m_senderId = rt->getInt64(5);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int NotificationInfoDao::QueryByBuilderPages(std::vector<NotificationInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, user_id, title, content, type, sender_id, article_id, comment_id, is_read, read_time, is_deleted, create_time, update_time, is_broadcast, level, start_time, end_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        NotificationInfo::ptr v(new NotificationInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_content = rt->getString(3);
+        v->m_type = rt->getString(4);
+        v->m_senderId = rt->getInt64(5);
+        v->m_articleId = rt->getInt64(6);
+        v->m_commentId = rt->getInt64(7);
+        v->m_isRead = rt->getInt32(8);
+        v->m_readTime = rt->getTime(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        v->m_isBroadcast = rt->getInt32(13);
+        v->m_level = rt->getString(14);
+        v->m_startTime = rt->getInt64(15);
+        v->m_endTime = rt->getInt64(16);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -574,6 +1009,53 @@ int NotificationInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "PRIMARY KEY(`id`),"
             "KEY `notification_user_id` (`user_id`),"
             "KEY `notification_user_id_is_read` (`user_id`,`is_read`)) COMMENT='用户通知'");
+}
+
+int NotificationInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "notification");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "notification");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "notification");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int NotificationInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class CommentInfoDao;
+/**
+ * @brief 文章评论
+ */
 class CommentInfo {
 friend class CommentInfoDao;
 public:
@@ -21,46 +25,162 @@ public:
 
     CommentInfo();
 
+    /**
+     * @brief 获取评论ID
+     * @return 评论ID
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置评论ID
+     * @param v 评论ID
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取文章ID
+     * @return 文章ID
+     */
     const int64_t& getArticleId() { return m_articleId; }
+    /**
+     * @brief 设置文章ID
+     * @param v 文章ID
+     */
     void setArticleId(const int64_t& v);
 
+    /**
+     * @brief 获取评论用户ID
+     * @return 评论用户ID
+     */
     const int64_t& getUserId() { return m_userId; }
+    /**
+     * @brief 设置评论用户ID
+     * @param v 评论用户ID
+     */
     void setUserId(const int64_t& v);
 
+    /**
+     * @brief 获取父评论ID(0=顶级评论)
+     * @return 父评论ID(0=顶级评论)
+     */
     const int64_t& getParentId() { return m_parentId; }
+    /**
+     * @brief 设置父评论ID(0=顶级评论)
+     * @param v 父评论ID(0=顶级评论)
+     */
     void setParentId(const int64_t& v);
 
+    /**
+     * @brief 获取评论内容
+     * @return 评论内容
+     */
     const std::string& getContent() { return m_content; }
+    /**
+     * @brief 设置评论内容
+     * @param v 评论内容
+     */
     void setContent(const std::string& v);
 
+    /**
+     * @brief 获取客户端IP
+     * @return 客户端IP
+     */
     const std::string& getIp() { return m_ip; }
+    /**
+     * @brief 设置客户端IP
+     * @param v 客户端IP
+     */
     void setIp(const std::string& v);
 
+    /**
+     * @brief 获取客户端UserAgent
+     * @return 客户端UserAgent
+     */
     const std::string& getUserAgent() { return m_userAgent; }
+    /**
+     * @brief 设置客户端UserAgent
+     * @param v 客户端UserAgent
+     */
     void setUserAgent(const std::string& v);
 
+    /**
+     * @brief 获取状态 1:待审核 2:已通过 3:已拒绝 4:垃圾
+     * @return 状态 1:待审核 2:已通过 3:已拒绝 4:垃圾
+     */
     const int32_t& getStatus() { return m_status; }
+    /**
+     * @brief 设置状态 1:待审核 2:已通过 3:已拒绝 4:垃圾
+     * @param v 状态 1:待审核 2:已通过 3:已拒绝 4:垃圾
+     */
     void setStatus(const int32_t& v);
 
+    /**
+     * @brief 获取是否被举报
+     * @return 是否被举报
+     */
     const int32_t& getIsReported() { return m_isReported; }
+    /**
+     * @brief 设置是否被举报
+     * @param v 是否被举报
+     */
     void setIsReported(const int32_t& v);
 
+    /**
+     * @brief 获取举报次数
+     * @return 举报次数
+     */
     const int32_t& getReportCount() { return m_reportCount; }
+    /**
+     * @brief 设置举报次数
+     * @param v 举报次数
+     */
     void setReportCount(const int32_t& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_status;
@@ -76,6 +196,7 @@ private:
     std::string m_content;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -85,6 +206,9 @@ public:
     static int Update(CommentInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(CommentInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(CommentInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<CommentInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<CommentInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(CommentInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -106,6 +230,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static CommentInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<CommentInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<CommentInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

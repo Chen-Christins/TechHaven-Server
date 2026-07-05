@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class ArticleCategoryRelInfoDao;
+/**
+ * @brief 文章-分类关联表
+ */
 class ArticleCategoryRelInfo {
 friend class ArticleCategoryRelInfoDao;
 public:
@@ -21,28 +25,96 @@ public:
 
     ArticleCategoryRelInfo();
 
+    /**
+     * @brief 获取id
+     * @return id
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置id
+     * @param v id
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取article_id
+     * @return article_id
+     */
     const int64_t& getArticleId() { return m_articleId; }
+    /**
+     * @brief 设置article_id
+     * @param v article_id
+     */
     void setArticleId(const int64_t& v);
 
+    /**
+     * @brief 获取category_id
+     * @return category_id
+     */
     const int64_t& getCategoryId() { return m_categoryId; }
+    /**
+     * @brief 设置category_id
+     * @param v category_id
+     */
     void setCategoryId(const int64_t& v);
 
+    /**
+     * @brief 获取is_deleted
+     * @return is_deleted
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置is_deleted
+     * @param v is_deleted
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取publish_time
+     * @return publish_time
+     */
     const int64_t& getPublishTime() { return m_publishTime; }
+    /**
+     * @brief 设置publish_time
+     * @param v publish_time
+     */
     void setPublishTime(const int64_t& v);
 
+    /**
+     * @brief 获取create_time
+     * @return create_time
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置create_time
+     * @param v create_time
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取update_time
+     * @return update_time
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置update_time
+     * @param v update_time
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_isDeleted;
@@ -52,6 +124,7 @@ private:
     int64_t m_publishTime;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -61,6 +134,9 @@ public:
     static int Update(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<ArticleCategoryRelInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<ArticleCategoryRelInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(ArticleCategoryRelInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -75,6 +151,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static ArticleCategoryRelInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<ArticleCategoryRelInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<ArticleCategoryRelInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data
