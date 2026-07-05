@@ -9,7 +9,6 @@
 #include "../../util.h"
 
 #include <chen/config/config.h>
-#include <chen/ds/lru_cache.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/session_data.h>
 #include <chen/log/log.h>
@@ -28,9 +27,6 @@ static chen::ConfigVar<std::string>::ptr g_ai_api_key =
     chen::Config::Lookup("ai.api_key", std::string(""), "default AI API key");
 
 static const char* SYSTEM_PROMPT = "你是一个专业的文章总结助手。";
-
-// LRU 缓存：key=article_id，value=总结文本，16 桶，最多 500 条
-static chen::ds::HashLruCache<int64_t, std::string> g_summary_cache(16, 500, 50);
 
 ArticleAISummaryServlet::ArticleAISummaryServlet() : chen::http::SSEServlet("ArticleAISummaryServlet") {}
 
@@ -167,21 +163,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
     std::string api_body_str = provider->buildRequest(ai_model, ai_max_tokens, SYSTEM_PROMPT, prompt, true);
 
     // ================================================================
-    // 6. 缓存命中 — 直接返回已缓存的总结
-    // ================================================================
-    {
-        std::string cached;
-        if (g_summary_cache.get(article_id, cached)) {
-            INFO(logger) << "summary cache hit for article " << article_id;
-            SendSSEJson(session, "start", "message", "开始生成总结...");
-            SendSSEJson(session, "chunk", "content", cached);
-            SendSSEJson(session, "done", "message", "总结生成完成");
-            return 0;
-        }
-    }
-
-    // ================================================================
-    // 7. 构建请求头 — Content-Type + 厂商认证头
+    // 6. 构建请求头 — Content-Type + 厂商认证头
     // ================================================================
     auto uri = chen::Uri::Create(ai_url + provider->endpointSuffix());
     std::map<std::string, std::string> headers;
@@ -189,7 +171,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
     provider->authHeaders(ai_key, headers);
 
     // ================================================================
-    // 8. 流式调用 AI 服务（带有限重试）
+    // 7. 流式调用 AI 服务（带有限重试）
     // ================================================================
     SendSSEJson(session, "start", "message", "开始生成总结...");
 
@@ -229,7 +211,7 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
     }
 
     // ================================================================
-    // 9. 校验 HTTP 响应
+    // 8. 校验 HTTP 响应
     // ================================================================
     auto ai_response = http_result->response;
     if (!ai_response) {
@@ -245,15 +227,9 @@ int32_t ArticleAISummaryServlet::onConnect(chen::http::HttpRequest::ptr request,
     }
 
     // ================================================================
-    // 10. 写缓存（注意：SSE 流结束后 parser 已在 processEvent 中发送过 "done" 事件，
-    //     此处再次发送作为兜底，确保客户端不会因缺失结束标记而挂起）
+    // 9. 发送完成事件
     // ================================================================
     SendSSEJson(session, "done", "message", "总结生成完成");
-
-    if (!parser.full_text.empty()) {
-        g_summary_cache.set(article_id, parser.full_text);
-        INFO(logger) << "summary cached for article " << article_id;
-    }
 
     return 0;
 }
