@@ -40,6 +40,26 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             break;
         }
 
+        // IP 限流：每小时每 IP 最多 5 次
+        {
+            std::string ip = request->getHeader("X-Real-IP");
+            if (ip.empty()) {
+                ip = session->getRemoteAddressString();
+                auto pos = ip.find(':');
+                if (pos != std::string::npos) {
+                    ip = ip.substr(0, pos);
+                }
+            }
+            auto rpy = chen::RedisUtil::Cmd("blog", "INCR code_limit:ip:%s", ip.c_str());
+            if (rpy && rpy->integer == 1) {
+                chen::RedisUtil::Cmd("blog", "EXPIRE code_limit:ip:%s 3600", ip.c_str());
+            }
+            if (rpy && rpy->integer > 5) {
+                result->setErrno(errcode::SEND_CODE_FREQUENT);
+                break;
+            }
+        }
+
         // 检查 SMTP 配置（在写 DB 之前校验，避免产生无效验证码）
         auto sys_settings = SystemSettingsMgr::GetInstance()->get();
         if (!sys_settings || sys_settings->getSmtpHost().empty()) {

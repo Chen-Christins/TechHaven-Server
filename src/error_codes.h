@@ -51,6 +51,7 @@ constexpr int32_t USER_PASSWORDS_DIFFER = 2013;   // 两次密码不一致
 constexpr int32_t USER_CANNOT_FOLLOW_SELF = 2014; // 不能关注自己
 constexpr int32_t USER_NOT_FOLLOWING = 2015;      // 未关注该用户
 constexpr int32_t USER_FOLLOW_FAILED = 2016;      // 关注操作失败
+constexpr int32_t SEND_CODE_FREQUENT = 2017;       // 验证码发送过于频繁
 
 // ==================== 模块03: 文章模块 (03001-03999) ====================
 constexpr int32_t ARTICLE_NOT_FOUND = 3001;      // 文章不存在
