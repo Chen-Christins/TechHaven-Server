@@ -24,7 +24,7 @@ int32_t RdOrganizationMembersServlet::handle(chen::http::HttpRequest::ptr reques
         }
 
         std::vector<data::OrganizationUserRelInfo::ptr> members;
-        OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, UINT64_MAX, OrganizationUserRelManager::Status::APPROVED, true);
+        OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, INT32_MAX, OrganizationUserRelManager::Status::APPROVED, true);
 
         Json::Value arr(Json::arrayValue);
         for (auto& m : members) {

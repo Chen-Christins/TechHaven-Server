@@ -5,9 +5,12 @@
 
 #include <chen/util/json_util.h>
 #include <chen/db/query_builder.h>
+#include <chen/log/log.h>
 
 namespace blog {
 namespace servlet {
+
+static chen::Logger::ptr g_logger = LOG_ROOT();
 
 UserAdminListsServlet::UserAdminListsServlet()
     : BlogLoginedServlet("UserAdminListsServlet") {

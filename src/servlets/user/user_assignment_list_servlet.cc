@@ -37,7 +37,7 @@ int32_t UserAssignmentListServlet::handle(chen::http::HttpRequest::ptr request, 
             // 该组织下的所有作业关系
             std::vector<data::AssignmentOrganizationRelInfo::ptr> assignment_org_rels;
             AssignmentOrganizationRelMgr::GetInstance()->getByPages(assignment_org_rels
-                , org_rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                , org_rel->getOrgId(), 0, INT32_MAX, -1, true);
             for (auto& assign_org_rel : assignment_org_rels) {
                 // 把作业信息加入结果集中
                 int64_t assign_id = assign_org_rel->getAssignmentId();

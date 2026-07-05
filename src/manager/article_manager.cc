@@ -88,42 +88,22 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("article");
+    qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
     qb->whereIf(id != 0, "user_id", "=", id);
     qb->whereIf(state != 0, "state", "=", (int64_t)state);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    qb->limit(size);
-    qb->offset(offset);
 
     int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+    if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
         return 0;
     }
-    if (total == 0) {
-        return 0;
-    }
-
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : infos) {
         auto cached = m_cache.get(info->getId());
         if (cached) {
-            infos.push_back(cached);
+            info = cached;
         } else {
             m_cache.set(info->getId(), info);
-            infos.push_back(info);
         }
     }
     return total;
@@ -137,15 +117,13 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("article a");
-    qb->select("a.*");
+    qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
     qb->join("article_label_rel alr", "a.id = alr.article_id");
     qb->where("alr.label_id", "=", label_id);
     qb->where("alr.is_deleted", "=", (int64_t)0);
     qb->where("a.state", "=", (int64_t)Status::PUBLISHED);
     qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
     qb->orderBy("a.id", "DESC");
-    qb->limit(size);
-    qb->offset(offset);
 
     // 结果缓存：仅对首页做缓存
     std::string listKey = "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0")
@@ -161,27 +139,13 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
         return executeCountCached(qb, db, "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
     }
 
-    int64_t total = executeCountCached(qb, db, "art:lbl:" + std::to_string(label_id) + ":" + (valid ? "1" : "0"));
-    if (total == 0) {
-        return 0;
-    }
-
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    int64_t total = 0;
+    if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
         return 0;
     }
     std::vector<int64_t> ids;
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : infos) {
         ids.push_back(info->getId());
-        infos.push_back(info);
     }
     cacheListResult(listKey, ids);
     return total;
@@ -195,15 +159,13 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("article a");
-    qb->select("a.*");
+    qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
     qb->join("article_category_rel acr", "a.id = acr.article_id");
     qb->where("acr.category_id", "=", category_id);
     qb->where("acr.is_deleted", "=", (int64_t)0);
     qb->where("a.state", "=", (int64_t)Status::PUBLISHED);
     qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
     qb->orderBy("a.id", "DESC");
-    qb->limit(size);
-    qb->offset(offset);
 
     // 结果缓存：仅对首页做缓存
     std::string listKey = "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0")
@@ -219,27 +181,13 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
         return executeCountCached(qb, db, "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
     }
 
-    int64_t total = executeCountCached(qb, db, "art:cat:" + std::to_string(category_id) + ":" + (valid ? "1" : "0"));
-    if (total == 0) {
-        return 0;
-    }
-
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    int64_t total = 0;
+    if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
         return 0;
     }
     std::vector<int64_t> ids;
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : infos) {
         ids.push_back(info->getId());
-        infos.push_back(info);
     }
     cacheListResult(listKey, ids);
     return total;
@@ -254,7 +202,7 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
     }
 
     auto qb = chen::QueryBuilder::Create("article a");
-    qb->select("a.*");
+    qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
 
     if (category > 0) {
         qb->join("article_category_rel acr", "a.id = acr.article_id");
@@ -273,36 +221,20 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         qb->whereSQL("a.create_time >= ?", (int64_t)(now - days * 24 * 3600));
     }
     qb->orderBy("a.id", "DESC");
-    qb->limit(size);
-    qb->offset(offset);
 
     {
         std::stringstream ck;
         ck << "art:list:" << state << ":" << category << ":" << role << ":" << days << ":" << (valid ? "1" : "0");
-        int64_t total = executeCountCached(qb, db, ck.str());
-        if (total == 0) {
+        int64_t total = 0;
+        if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
             return 0;
         }
-
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (!stmt) {
-            ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-            return 0;
-        }
-        qb->bindParams(stmt);
-        auto rt = stmt->query();
-        if (!rt) {
-            return 0;
-        }
-        while (rt->next()) {
-            auto info = parseRow(rt);
+        for (auto& info : infos) {
             auto cached = m_cache.get(info->getId());
             if (cached) {
-                infos.push_back(cached);
+                info = cached;
             } else {
                 m_cache.set(info->getId(), info);
-                infos.push_back(info);
             }
         }
         return total;
@@ -324,34 +256,19 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("article");
+    qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
     qb->where("state", "=", (int64_t)Status::CHECKING);
     qb->orderBy("id", "DESC");
-    qb->limit(size);
-    qb->offset(offset);
 
-    int64_t total = executeCountCached(qb, db, "art:verify", 60);
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::ArticleInfoDao::QueryByBuilderPages(infos, total, qb, offset, size, db)) {
         return 0;
     }
-
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : infos) {
         if (info->getIsDeleted()) {
             m_cache.del(info->getId());
             continue;
         }
-        infos.push_back(info);
     }
     return total;
 }

@@ -46,7 +46,7 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
             break;
         }
         std::vector<data::AssignmentInfo::ptr> infos;
-        if (!AssignmentMgr::GetInstance()->listByPages(infos, 0, UINT64_MAX, -1, true)) {
+        if (!AssignmentMgr::GetInstance()->listByPages(infos, 0, INT32_MAX, -1, true)) {
             break;
         }
 

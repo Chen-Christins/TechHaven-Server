@@ -706,7 +706,7 @@ int OrganizationApplyInfoDao::QueryByBuilderPages(std::vector<OrganizationApplyI
     if (total == 0) {
         return 0;
     }
-    std::string sql = qb->buildQuerySQL("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted", false);
+    std::string sql = qb->buildQuerySQL(qb->getSelectCols(), false);
     if (!qb->hasOrderBy()) {
         sql += " order by id desc";
     }

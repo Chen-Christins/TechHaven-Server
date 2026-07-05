@@ -754,7 +754,7 @@ int ArticleInfoDao::QueryByBuilderPages(std::vector<ArticleInfo::ptr>& results, 
     if (total == 0) {
         return 0;
     }
-    std::string sql = qb->buildQuerySQL("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time", false);
+    std::string sql = qb->buildQuerySQL(qb->getSelectCols(), false);
     if (!qb->hasOrderBy()) {
         sql += " order by id desc";
     }

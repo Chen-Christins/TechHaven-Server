@@ -52,32 +52,16 @@ int64_t OrganizationApplyManager::listByPages(std::vector<data::OrganizationAppl
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("organization_apply");
+    qb->select("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("created_at", "DESC");
 
     int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+    if (data::OrganizationApplyInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         return 0;
     }
-
-    qb->limit((int32_t)limit);
-    qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -93,32 +77,16 @@ int64_t OrganizationApplyManager::listByUserId(std::vector<data::OrganizationApp
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("organization_apply");
+    qb->select("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted");
     qb->where("user_id", "=", user_id);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("created_at", "DESC");
 
     int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+    if (data::OrganizationApplyInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         return 0;
     }
-
-    qb->limit((int32_t)limit);
-    qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

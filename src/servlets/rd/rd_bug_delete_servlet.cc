@@ -54,7 +54,7 @@ int32_t RdBugDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         }
 
         std::vector<data::BugInfo::ptr> all;
-        BugMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
+        BugMgr::GetInstance()->listByOrg(all, org_id, 0, INT32_MAX, -1, true);
         std::vector<data::BugInfo::ptr> delItems;
         for (auto& i : all) {
             if (!delIds.count(i->getId())) {

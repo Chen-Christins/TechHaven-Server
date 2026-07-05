@@ -66,7 +66,7 @@ int32_t RdRequirementDeleteServlet::handle(chen::http::HttpRequest::ptr request,
         }
 
         std::vector<data::RequirementInfo::ptr> all;
-        RequirementMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
+        RequirementMgr::GetInstance()->listByOrg(all, org_id, 0, INT32_MAX, -1, true);
 
         std::vector<data::RequirementInfo::ptr> delItems;
         for (auto& i : all) {

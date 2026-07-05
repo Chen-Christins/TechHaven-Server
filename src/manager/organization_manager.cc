@@ -67,35 +67,16 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("organization");
+    qb->select("id, name, type, description, owner_id, status, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
 
-    std::stringstream ck;
-    ck << "org:list:" << status << ":" << (isValid ? "1" : "0");
-    int64_t total = executeCountCached(qb, db, ck.str());
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::OrganizationInfoDao::QueryByBuilderPages(orgs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
         return 0;
     }
-
-    if (limit < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)limit);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        orgs.push_back(info);
+    for (auto& info : orgs) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

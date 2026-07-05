@@ -65,7 +65,7 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
 
         std::vector<data::BugInfo::ptr> all;
         if (is_platform_admin && org_id) {
-            BugMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
+            BugMgr::GetInstance()->listByOrg(all, org_id, 0, INT32_MAX, -1, true);
         } else if (!is_platform_admin) {
             std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
             OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
@@ -74,7 +74,7 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
                     continue;
                 }
                 std::vector<data::BugInfo::ptr> org_bugs;
-                BugMgr::GetInstance()->listByOrg(org_bugs, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                BugMgr::GetInstance()->listByOrg(org_bugs, rel->getOrgId(), 0, INT32_MAX, -1, true);
                 for (auto& bug : org_bugs) {
                     if (permission::CanViewBug(rel->getRole(), uid, bug->getCreatorId())) {
                         all.push_back(bug);
@@ -82,7 +82,7 @@ int32_t RdBugServlet::handle(chen::http::HttpRequest::ptr request, chen::http::H
                 }
             }
         } else {
-            BugMgr::GetInstance()->listByPages(all, 0, UINT64_MAX, -1, true);
+            BugMgr::GetInstance()->listByPages(all, 0, INT32_MAX, -1, true);
         }
 
         std::vector<data::BugInfo::ptr> filtered;

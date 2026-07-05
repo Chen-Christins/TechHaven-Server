@@ -990,7 +990,7 @@ int BugInfoDao::QueryByBuilderPages(std::vector<BugInfo::ptr>& results, int64_t&
     if (total == 0) {
         return 0;
     }
-    std::string sql = qb->buildQuerySQL("id, org_id, title, description, severity, priority, status, creator_id, assignee_id, requirement_id, module, steps_to_reproduce, environment, is_deleted, create_time, update_time", false);
+    std::string sql = qb->buildQuerySQL(qb->getSelectCols(), false);
     if (!qb->hasOrderBy()) {
         sql += " order by id desc";
     }

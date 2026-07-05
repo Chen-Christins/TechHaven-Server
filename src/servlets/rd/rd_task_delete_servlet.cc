@@ -54,7 +54,7 @@ int32_t RdTaskDeleteServlet::handle(chen::http::HttpRequest::ptr request, chen::
         }
 
         std::vector<data::TaskInfo::ptr> all;
-        TaskMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
+        TaskMgr::GetInstance()->listByOrg(all, org_id, 0, INT32_MAX, -1, true);
         std::vector<data::TaskInfo::ptr> delItems;
         for (auto& i : all) {
             if (!delIds.count(i->getId())) {

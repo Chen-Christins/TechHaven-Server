@@ -66,7 +66,7 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
 
         std::vector<data::TaskInfo::ptr> all;
         if (is_platform_admin && org_id) {
-            TaskMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
+            TaskMgr::GetInstance()->listByOrg(all, org_id, 0, INT32_MAX, -1, true);
         } else if (!is_platform_admin) {
             std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
             OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
@@ -75,7 +75,7 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
                     continue;
                 }
                 std::vector<data::TaskInfo::ptr> org_tasks;
-                TaskMgr::GetInstance()->listByOrg(org_tasks, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                TaskMgr::GetInstance()->listByOrg(org_tasks, rel->getOrgId(), 0, INT32_MAX, -1, true);
                 for (auto& task : org_tasks) {
                     bool is_related = (uid == task->getCreatorId() || uid == task->getAssigneeId());
                     if (permission::CanViewTask(rel->getRole(), is_related)) {
@@ -84,7 +84,7 @@ int32_t RdTaskServlet::handle(chen::http::HttpRequest::ptr request, chen::http::
                 }
             }
         } else {
-            TaskMgr::GetInstance()->listByPages(all, 0, UINT64_MAX, -1, true);
+            TaskMgr::GetInstance()->listByPages(all, 0, INT32_MAX, -1, true);
         }
 
         std::vector<data::TaskInfo::ptr> filtered;
