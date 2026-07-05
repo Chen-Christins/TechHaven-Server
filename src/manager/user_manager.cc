@@ -68,36 +68,19 @@ uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos,
     }
 
     auto qb = chen::QueryBuilder::Create("user");
+    qb->select("id, name, account, avatar, email, role, passwd, state, bio, website, github, location, token, token_time, login_time, is_deleted, create_time, update_time");
     qb->whereIf(role != -1, "role", "=", (int64_t)role);
     qb->whereIf(state != -1, "state", "=", (int64_t)state);
     qb->whereIf(days > 0, "create_time", ">=", start_time);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
 
-    std::stringstream ck;
-    ck << "usr:list:" << role << ":" << state << ":" << days << ":" << (isValid ? "1" : "0");
-    int64_t total = executeCountCached(qb, db, ck.str());
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::UserInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
     }
-
-    qb->limit((int32_t)size);
-    qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
-        if (!m_cache.exists(info->getId())) {
+    for (auto& info : infos) {
+        if (info && !m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
     }

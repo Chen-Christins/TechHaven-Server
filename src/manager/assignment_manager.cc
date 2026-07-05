@@ -72,34 +72,16 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
         return 0;
     }
     auto qb = chen::QueryBuilder::Create("assignment");
+    qb->select("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
 
     int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "listByPages executeCount fail errno=" << db->getErrno();
+    if (data::AssignmentInfoDao::QueryByBuilderPages(infos, total, qb, (int32_t)offset, (int32_t)size, db)) {
         return 0;
     }
-
-    if (size < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)size);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
+    for (auto& info : infos) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

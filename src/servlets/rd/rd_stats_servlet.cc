@@ -37,13 +37,13 @@ int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
 
         if (is_platform_admin) {
             if (org_id) {
-                RequirementMgr::GetInstance()->listByOrg(reqs, org_id, 0, UINT64_MAX, -1, true);
-                BugMgr::GetInstance()->listByOrg(bugs, org_id, 0, UINT64_MAX, -1, true);
-                TaskMgr::GetInstance()->listByOrg(tasks, org_id, 0, UINT64_MAX, -1, true);
+                RequirementMgr::GetInstance()->listByOrg(reqs, org_id, 0, INT32_MAX, -1, true);
+                BugMgr::GetInstance()->listByOrg(bugs, org_id, 0, INT32_MAX, -1, true);
+                TaskMgr::GetInstance()->listByOrg(tasks, org_id, 0, INT32_MAX, -1, true);
             } else {
-                RequirementMgr::GetInstance()->listByPages(reqs, 0, UINT64_MAX, -1, true);
-                BugMgr::GetInstance()->listByPages(bugs, 0, UINT64_MAX, -1, true);
-                TaskMgr::GetInstance()->listByPages(tasks, 0, UINT64_MAX, -1, true);
+                RequirementMgr::GetInstance()->listByPages(reqs, 0, INT32_MAX, -1, true);
+                BugMgr::GetInstance()->listByPages(bugs, 0, INT32_MAX, -1, true);
+                TaskMgr::GetInstance()->listByPages(tasks, 0, INT32_MAX, -1, true);
             }
         } else {
             std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
@@ -53,13 +53,13 @@ int32_t RdStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
                     continue;
                 }
                 std::vector<data::RequirementInfo::ptr> oReqs;
-                RequirementMgr::GetInstance()->listByOrg(oReqs, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                RequirementMgr::GetInstance()->listByOrg(oReqs, rel->getOrgId(), 0, INT32_MAX, -1, true);
                 reqs.insert(reqs.end(), oReqs.begin(), oReqs.end());
                 std::vector<data::BugInfo::ptr> oBugs;
-                BugMgr::GetInstance()->listByOrg(oBugs, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                BugMgr::GetInstance()->listByOrg(oBugs, rel->getOrgId(), 0, INT32_MAX, -1, true);
                 bugs.insert(bugs.end(), oBugs.begin(), oBugs.end());
                 std::vector<data::TaskInfo::ptr> oTasks;
-                TaskMgr::GetInstance()->listByOrg(oTasks, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                TaskMgr::GetInstance()->listByOrg(oTasks, rel->getOrgId(), 0, INT32_MAX, -1, true);
                 tasks.insert(tasks.end(), oTasks.begin(), oTasks.end());
             }
         }

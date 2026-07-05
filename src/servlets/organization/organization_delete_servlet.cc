@@ -38,7 +38,7 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
         std::vector<data::OrganizationInfo::ptr> infos;
-        if (!OrganizationMgr::GetInstance()->listByPages(infos, 0, UINT64_MAX, -1, true)) {
+        if (!OrganizationMgr::GetInstance()->listByPages(infos, 0, INT32_MAX, -1, true)) {
             break;
         }
 
@@ -57,7 +57,7 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
         std::vector<data::OrganizationUserRelInfo::ptr> all_rels;
         for (auto& org : del_organizations) {
             std::vector<data::OrganizationUserRelInfo::ptr> rels;
-            OrganizationUserRelMgr::GetInstance()->getByPages(rels, org->getId(), 0, UINT64_MAX, -1, true);
+            OrganizationUserRelMgr::GetInstance()->getByPages(rels, org->getId(), 0, INT32_MAX, -1, true);
             for (auto& rel : rels) {
                 all_rels.push_back(rel);
             }

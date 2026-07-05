@@ -37,7 +37,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         if (type == "requirement") {
             std::vector<data::RequirementInfo::ptr> my;
             std::vector<data::RequirementInfo::ptr> all;
-            RequirementMgr::GetInstance()->listByPages(all, 0, UINT64_MAX, -1, true);
+            RequirementMgr::GetInstance()->listByPages(all, 0, INT32_MAX, -1, true);
             for (auto& info : all) {
                 if (org_id && info->getOrgId() != org_id) {
                     continue;
@@ -82,7 +82,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         } else if (type == "bug") {
             std::vector<data::BugInfo::ptr> my;
             std::vector<data::BugInfo::ptr> all;
-            BugMgr::GetInstance()->listByPages(all, 0, UINT64_MAX, -1, true);
+            BugMgr::GetInstance()->listByPages(all, 0, INT32_MAX, -1, true);
             for (auto& info : all) {
                 if (org_id && info->getOrgId() != org_id) {
                     continue;
@@ -128,7 +128,7 @@ int32_t RdMyTicketsServlet::handle(chen::http::HttpRequest::ptr request, chen::h
         } else if (type == "task") {
             std::vector<data::TaskInfo::ptr> my;
             std::vector<data::TaskInfo::ptr> all;
-            TaskMgr::GetInstance()->listByPages(all, 0, UINT64_MAX, -1, true);
+            TaskMgr::GetInstance()->listByPages(all, 0, INT32_MAX, -1, true);
             for (auto& info : all) {
                 if (org_id && info->getOrgId() != org_id) {
                     continue;

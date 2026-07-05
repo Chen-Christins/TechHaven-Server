@@ -65,7 +65,7 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
 
         std::vector<data::RequirementInfo::ptr> all;
         if (is_platform_admin && org_id) {
-            RequirementMgr::GetInstance()->listByOrg(all, org_id, 0, UINT64_MAX, -1, true);
+            RequirementMgr::GetInstance()->listByOrg(all, org_id, 0, INT32_MAX, -1, true);
         } else if (!is_platform_admin) {
             std::vector<data::OrganizationUserRelInfo::ptr> user_orgs;
             OrganizationUserRelMgr::GetInstance()->getOrgByUserId(user_orgs, uid, OrganizationUserRelManager::Status::APPROVED, true);
@@ -74,7 +74,7 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
                     continue;
                 }
                 std::vector<data::RequirementInfo::ptr> org_reqs;
-                RequirementMgr::GetInstance()->listByOrg(org_reqs, rel->getOrgId(), 0, UINT64_MAX, -1, true);
+                RequirementMgr::GetInstance()->listByOrg(org_reqs, rel->getOrgId(), 0, INT32_MAX, -1, true);
                 for (auto& req : org_reqs) {
                     if (permission::CanViewRequirement(rel->getRole(), uid, req->getCreatorId())) {
                         all.push_back(req);
@@ -82,7 +82,7 @@ int32_t RdRequirementServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 }
             }
         } else {
-            RequirementMgr::GetInstance()->listByPages(all, 0, UINT64_MAX, -1, true);
+            RequirementMgr::GetInstance()->listByPages(all, 0, INT32_MAX, -1, true);
         }
 
         std::vector<data::RequirementInfo::ptr> filtered;
