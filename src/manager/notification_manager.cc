@@ -16,21 +16,7 @@ NotificationManager::NotificationManager()
 }
 
 data::NotificationInfo::ptr NotificationManager::parseRow(chen::ISQLData::ptr rt) {
-    data::NotificationInfo::ptr v(new data::NotificationInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setTitle(rt->getString(2));
-    v->setContent(rt->getString(3));
-    v->setType(rt->getString(4));
-    v->setSenderId(rt->getInt64(5));
-    v->setArticleId(rt->getInt64(6));
-    v->setCommentId(rt->getInt64(7));
-    v->setIsRead(rt->getInt32(8));
-    v->setReadTime(rt->getTime(9));
-    v->setIsDeleted(rt->getInt32(10));
-    v->setCreateTime(rt->getTime(11));
-    v->setUpdateTime(rt->getTime(12));
-    return v;
+    return data::NotificationInfoDao::ParseRow(rt);
 }
 
 // ========== WS connection management ==========
@@ -126,7 +112,9 @@ int32_t NotificationManager::getPresenceOnlineCount() {
 data::NotificationInfo::ptr NotificationManager::addNotification(
     int64_t user_id, const std::string& title,
     const std::string& content, const std::string& type, int64_t sender_id,
-    int64_t article_id, int64_t comment_id) {
+    int64_t article_id, int64_t comment_id,
+    int32_t is_broadcast, const std::string& level,
+    int64_t start_time, int64_t end_time) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -144,6 +132,10 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
     info->setIsRead(0);
     info->setReadTime(0);
     info->setIsDeleted(0);
+    info->setIsBroadcast(is_broadcast);
+    info->setLevel(level);
+    info->setStartTime(start_time);
+    info->setEndTime(end_time);
     info->setCreateTime(time(0));
     info->setUpdateTime(time(0));
 
@@ -362,6 +354,27 @@ data::NotificationInfo::ptr NotificationManager::get(int64_t id) {
         m_cache.set(id, v);
     }
     return v;
+}
+
+void NotificationManager::cleanupExpiredBroadcasts() {
+    auto db = GetDB();
+    if (!db) {
+        return;
+    }
+    int64_t now = time(0);
+    // 将已过期的广播的 is_broadcast 置 0，前端 /broadcast/list 不再返回
+    auto qb = chen::QueryBuilder::Create("notification");
+    qb->set("is_broadcast", (int64_t)0);
+    qb->set("update_time", now);
+    qb->where("is_broadcast", "=", (int64_t)1);
+    qb->whereSQL("end_time > ?", (int64_t)0);
+    qb->where("end_time", "<=", now);
+    auto stmt = db->prepare(qb->buildUpdateSQL());
+    if (!stmt) {
+        return;
+    }
+    qb->bindUpdateParams(stmt);
+    stmt->execute();
 }
 
 }

@@ -16,19 +16,7 @@ CategoryManager::CategoryManager()
 }
 
 data::CategoryInfo::ptr CategoryManager::parseRow(chen::ISQLData::ptr rt) {
-    data::CategoryInfo::ptr v(new data::CategoryInfo);
-    v->setId(rt->getInt64(0));
-    v->setName(rt->getString(1));
-    v->setColor(rt->getString(2));
-    v->setDescription(rt->getString(3));
-    v->setUrl(rt->getString(4));
-    v->setIcon(rt->getString(5));
-    v->setParentId(rt->getInt64(6));
-    v->setStatus(rt->getInt32(7));
-    v->setIsDeleted(rt->getInt32(8));
-    v->setCreateTime(rt->getTime(9));
-    v->setUpdateTime(rt->getTime(10));
-    return v;
+    return data::CategoryInfoDao::ParseRow(rt);
 }
 
 

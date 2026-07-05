@@ -1,10 +1,14 @@
 #include "index.h"
 #include "blog/data/article_category_rel_info.h"
 
+#include <chen/config/config.h>
 #include <chen/log/log.h>
 #include <chen/util/util.h>
+#include <cppjieba/Jieba.hpp>
 
 #include <algorithm>
+
+#include <chen/util/fs_util.h>
 
 #include "manager/article_manager.h"
 #include "manager/article_category_rel_manager.h"
@@ -16,6 +20,11 @@ namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
 
+static chen::ConfigVar<std::string>::ptr g_jieba_dict_path =
+    chen::Config::Lookup("search.jieba_dict_path", std::string(""), "jieba dict directory path");
+static chen::ConfigVar<std::string>::ptr g_index_path =
+    chen::Config::Lookup("search.index_path", std::string(""), "search index file path");
+
 struct ParamArgsInfo {
     std::string name;
     uint64_t key;
@@ -26,6 +35,8 @@ Index::Index()
     :m_createTime(0)
     ,m_endTime(0) {
 }
+
+Index::~Index() = default;
 
 bool Index::set(uint64_t type, uint64_t key, uint32_t idx, bool v) {
     auto b = m_indexs[type][key];
@@ -46,25 +57,55 @@ chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
     return itt == it->second.end() ? nullptr : itt->second;
 }
 
+void Index::initJieba() {
+    if (m_jieba) {
+        return;
+    }
+    std::string dict_path = g_jieba_dict_path->getValue();
+    if (dict_path.empty()) {
+        dict_path = CPPJIEBA_DICT_PATH;
+    }
+    try {
+        m_jieba.reset(new cppjieba::Jieba(
+            dict_path + "/jieba.dict.utf8",
+            dict_path + "/hmm_model.utf8",
+            dict_path + "/user.dict.utf8",
+            dict_path + "/idf.utf8",
+            dict_path + "/stop_words.utf8"));
+        INFO(logger) << "jieba initialized, dict_path=" << dict_path;
+    } catch (const std::exception& e) {
+        ERROR(logger) << "jieba init failed: " << e.what();
+    }
+}
+
 void Index::build() {
     INFO(logger) << "Index build begin...";
+
+    initJieba();
+
     m_createTime = time(0);
     std::vector<data::ArticleInfo::ptr> infos;
-    ArticleMgr::GetInstance()->listByUserIdPages(infos, 0, 0, 0x7FFFFFFF, true, 0);
+    ArticleMgr::GetInstance()->listByUserIdPages(infos, 0, 0, 0x7FFFFFFF, true, ArticleManager::PUBLISHED);
     std::sort(infos.begin(), infos.end(), [](const data::ArticleInfo::ptr a, const data::ArticleInfo::ptr b) {
         if (a->getWeight() != b->getWeight()) {
             return a->getWeight() > b->getWeight();
         }
         return a->getId() > b->getId();
     });
+    m_docs.clear();
+    m_indexs.clear();
+    m_strings.clear();
+    m_docMap.clear();
     m_docs.reserve(infos.size());
     for (auto& info : infos) {
         m_docs.emplace_back(info->getId());
     }
     for (size_t i = 0; i < infos.size(); ++i) {
+        m_docMap[infos[i]->getId()] = i;
         buildIdx(infos[i], i);
     }
     m_endTime = time(0);
+    m_isReady.store(true);
     INFO(logger) << "Index build over... used="
         << (m_endTime - m_createTime) << " doc.size=" << m_docs.size();
 }
@@ -75,7 +116,10 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
     set((uint64_t)IndexType::YEAR_MON, hash(chen::Time2Str(info->getPublishTime(), "%Y年%m月"), true), idx, true);
     set((uint64_t)IndexType::CHANNEL, info->getChannel(), idx, true);
 
-    // TODO: 根据文章内容和文章标题建立索引
+    // 中文分词全文索引（正文只取前 2000 字，长文不影响搜索命中且大幅减少分词耗时）
+    buildWordIdx(info->getTitle(), idx);
+    // buildWordIdx(info->getContent().substr(0, 2000), idx);
+    buildWordIdx(info->getContent(), idx);
 
     std::vector<data::ArticleCategoryRelInfo::ptr> cats;
     ArticleCategoryRelMgr::GetInstance()->listByArticleId(cats, info->getId(), true);
@@ -104,6 +148,9 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
 
 int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params
         , uint32_t max_size) {
+    if (!m_isReady.load()) {
+        return -1;
+    }
     auto v = query(params);
     if (!v) {
         return -1;
@@ -137,8 +184,48 @@ std::string Index::getStr(uint64_t id) {
 }
 
 chen::ds::Bitmap::ptr Index::query(const std::map<uint64_t, std::set<uint64_t>>& params) {
-    // TODO: Index::query
-    return nullptr;
+    if (params.empty()) {
+        return nullptr;
+    }
+
+    chen::ds::Bitmap::ptr result;
+
+    for (auto& [type, keys] : params) {
+        if (keys.empty()) {
+            continue;
+        }
+
+        // 同 type 内：各 key 的 Bitmap 做 OR
+        chen::ds::Bitmap::ptr type_result;
+        for (auto key : keys) {
+            auto b = get(type, key);
+            if (!b) {
+                continue;
+            }
+            if (!type_result) {
+                type_result.reset(new chen::ds::Bitmap(*b));
+            } else {
+                *type_result |= *b;
+            }
+        }
+
+        if (!type_result) {
+            // 该 type 下无任何命中，整体无结果
+            return nullptr;
+        }
+
+        // 不同 type 间：做 AND
+        if (!result) {
+            result = type_result;
+        } else {
+            *result &= *type_result;
+            if (!result->any()) {
+                return nullptr;
+            }
+        }
+    }
+
+    return result;
 }
 
 uint64_t Index::hash(const std::string& str, bool save) {
@@ -150,7 +237,204 @@ uint64_t Index::hash(const std::string& str, bool save) {
 }
 
 void Index::buildWordIdx(const std::string& str, uint32_t idx) {
-    // TODO: Index::buildWordIdx
+    if (!m_jieba || str.empty()) {
+        return;
+    }
+    std::vector<std::string> words;
+    m_jieba->Cut(str, words, true);
+    std::set<uint64_t> seen;
+    for (auto& w : words) {
+        if (w.size() < 2) {
+            continue;
+        }
+        auto h = hash(w, true);
+        if (seen.insert(h).second) {
+            set((uint64_t)IndexType::WORD, h, idx, true);
+        }
+    }
+}
+
+void Index::cutWord(const std::string& str, std::vector<std::string>& words) {
+    if (m_jieba) {
+        m_jieba->Cut(str, words, true);
+    }
+}
+
+int32_t Index::getIdx(uint64_t article_id) {
+    auto it = m_docMap.find(article_id);
+    return it == m_docMap.end() ? -1 : static_cast<int32_t>(it->second);
+}
+
+void Index::addArticle(data::ArticleInfo::ptr info) {
+    if (!info) {
+        return;
+    }
+
+    // 已存在则先移除旧索引
+    int32_t old = getIdx(info->getId());
+    if (old >= 0) {
+        removeArticle(info->getId());
+    }
+
+    uint32_t idx = m_docs.size();
+    m_docs.push_back(info->getId());
+    m_docMap[info->getId()] = idx;
+
+    // 将已有位图全部扩容到新 m_docs.size()，避免 query() 中 &= 时 m_size 不一致崩溃
+    uint32_t new_size = m_docs.size();
+    for (auto& [type, keyMap] : m_indexs) {
+        for (auto& [key, bitmap] : keyMap) {
+            bitmap->resize(new_size, false);
+        }
+    }
+
+    buildIdx(info, idx);
+
+    std::string path = g_index_path->getValue();
+    if (!path.empty()) save(path);
+}
+
+void Index::removeArticle(uint64_t article_id) {
+    int32_t idx = getIdx(article_id);
+    if (idx < 0) {
+        return;
+    }
+
+    // 遍历所有类型的位图，将该文章对应的 bit 置为 false
+    for (auto& [type, keyMap] : m_indexs) {
+        for (auto& [key, bitmap] : keyMap) {
+            bitmap->set(idx, false);
+        }
+    }
+
+    m_docMap.erase(article_id);
+
+    std::string path = g_index_path->getValue();
+    if (!path.empty()) save(path);
+}
+
+void Index::updateArticle(data::ArticleInfo::ptr info) {
+    if (!info) {
+        return;
+    }
+    removeArticle(info->getId());
+    addArticle(info);
+}
+
+bool Index::save(const std::string& path) {
+    if (!m_isReady.load()) {
+        ERROR(logger) << "index not ready, skip save";
+        return false;
+    }
+    chen::ByteArray::ptr ba(new chen::ByteArray);
+    ba->writeUint32(0x42494458);       // magic 'BIDX'
+    ba->writeUint32(1);                // version
+    ba->writeInt64(m_docs.size());
+    for (auto id : m_docs) {
+        ba->writeInt64(id);
+    }
+    ba->writeUint32(m_docMap.size());
+    for (auto& [aid, pos] : m_docMap) {
+        ba->writeStringF16(std::to_string(aid));
+        ba->writeUint32(pos);
+    }
+    ba->writeUint32(m_strings.size());
+    for (auto& [h, s] : m_strings) {
+        ba->writeInt64(h);
+        ba->writeStringF16(s);
+    }
+    ba->writeUint32(m_indexs.size());
+    for (auto& [type, keyMap] : m_indexs) {
+        ba->writeInt64(type);
+        ba->writeUint32(keyMap.size());
+        for (auto& [key, bitmap] : keyMap) {
+            ba->writeInt64(key);
+            size_t pos_before = ba->getPosition();
+            ba->writeUint32(0);  // placeholder
+            bitmap->writeTo(ba);
+            size_t pos_after = ba->getPosition();
+            ba->setPosition(pos_before);
+            ba->writeUint32(pos_after - pos_before - 4);
+            ba->setPosition(pos_after);
+        }
+    }
+    if (!ba->writeToFile(path)) {
+        ERROR(logger) << "failed to write index file: " << path;
+        return false;
+    }
+    INFO(logger) << "index saved to " << path << ", docs=" << m_docs.size();
+    return true;
+}
+
+bool Index::load(const std::string& path) {
+    // 先检查文件是否存在，避免 ByteArray::readFromFile 打 ERROR 日志
+    if (!chen::FSUtil::Exists(path)) {
+        INFO(logger) << "no index file at " << path << ", will build from scratch";
+        return false;
+    }
+    chen::ByteArray::ptr ba(new chen::ByteArray);
+    if (!ba->readFromFile(path)) {
+        ERROR(logger) << "failed to read index file: " << path;
+        return false;
+    }
+    if (ba->getSize() < 12) {
+        return false;
+    }
+    uint32_t magic = ba->readUint32();
+    if (magic != 0x42494458) {
+        ERROR(logger) << "invalid index file magic";
+        return false;
+    }
+    uint32_t version = ba->readUint32();
+    (void)version;
+
+    initJieba();
+
+    m_docs.clear();
+    m_docMap.clear();
+    m_strings.clear();
+    m_indexs.clear();
+
+    int64_t doc_count = ba->readInt64();
+    m_docs.reserve(doc_count);
+    for (int64_t i = 0; i < doc_count; ++i) {
+        m_docs.push_back(ba->readInt64());
+    }
+
+    uint32_t docmap_size = ba->readUint32();
+    for (uint32_t i = 0; i < docmap_size; ++i) {
+        std::string key_str = ba->readStringF16();
+        int64_t aid = std::stoll(key_str);
+        uint32_t pos = ba->readUint32();
+        m_docMap[aid] = pos;
+    }
+
+    uint32_t string_count = ba->readUint32();
+    for (uint32_t i = 0; i < string_count; ++i) {
+        int64_t h = ba->readInt64();
+        std::string s = ba->readStringF16();
+        m_strings[h] = s;
+    }
+
+    uint32_t type_count = ba->readUint32();
+    for (uint32_t ti = 0; ti < type_count; ++ti) {
+        uint64_t type = ba->readInt64();
+        uint32_t key_count = ba->readUint32();
+        for (uint32_t ki = 0; ki < key_count; ++ki) {
+            uint64_t key = ba->readInt64();
+            ba->readUint32();  // bm_size, consumed by readFrom below
+            auto bm = std::make_shared<chen::ds::Bitmap>(0);
+            if (!bm->readFrom(ba)) {
+                ERROR(logger) << "failed to read bitmap type=" << type << " key=" << key;
+                return false;
+            }
+            m_indexs[type][key] = bm;
+        }
+    }
+
+    m_isReady.store(true);
+    INFO(logger) << "index loaded from " << path << ", docs=" << m_docs.size();
+    return true;
 }
 
 }

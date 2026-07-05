@@ -50,79 +50,186 @@ std::string CommentInfo::toJsonString() const {
 
 void CommentInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void CommentInfo::setArticleId(const int64_t& v) {
     m_articleId = v;
+    m_flags |= (1ull << 1);
 }
 
 void CommentInfo::setUserId(const int64_t& v) {
     m_userId = v;
+    m_flags |= (1ull << 2);
 }
 
 void CommentInfo::setParentId(const int64_t& v) {
     m_parentId = v;
+    m_flags |= (1ull << 3);
 }
 
 void CommentInfo::setContent(const std::string& v) {
     m_content = v;
+    m_flags |= (1ull << 4);
 }
 
 void CommentInfo::setIp(const std::string& v) {
     m_ip = v;
+    m_flags |= (1ull << 5);
 }
 
 void CommentInfo::setUserAgent(const std::string& v) {
     m_userAgent = v;
+    m_flags |= (1ull << 6);
 }
 
 void CommentInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 7);
 }
 
 void CommentInfo::setIsReported(const int32_t& v) {
     m_isReported = v;
+    m_flags |= (1ull << 8);
 }
 
 void CommentInfo::setReportCount(const int32_t& v) {
     m_reportCount = v;
+    m_flags |= (1ull << 9);
 }
 
 void CommentInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 10);
 }
 
 void CommentInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 11);
 }
 
 void CommentInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 12);
 }
 
 
 int CommentInfoDao::Update(CommentInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update comment set article_id = ?, user_id = ?, parent_id = ?, content = ?, ip = ?, user_agent = ?, status = ?, is_reported = ?, report_count = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update comment set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "article_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "user_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "parent_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "content = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "ip = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "user_agent = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "is_reported = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "report_count = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_articleId);
-    stmt->bindInt64(2, info->m_userId);
-    stmt->bindInt64(3, info->m_parentId);
-    stmt->bindString(4, info->m_content);
-    stmt->bindString(5, info->m_ip);
-    stmt->bindString(6, info->m_userAgent);
-    stmt->bindInt32(7, info->m_status);
-    stmt->bindInt32(8, info->m_isReported);
-    stmt->bindInt32(9, info->m_reportCount);
-    stmt->bindInt32(10, info->m_isDeleted);
-    stmt->bindTime(11, info->m_createTime);
-    stmt->bindTime(12, info->m_updateTime);
-    stmt->bindInt64(13, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_articleId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindInt64(idx++, info->m_userId);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindInt64(idx++, info->m_parentId);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindString(idx++, info->m_content);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindString(idx++, info->m_ip);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindString(idx++, info->m_userAgent);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt32(idx++, info->m_isReported);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt32(idx++, info->m_reportCount);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int CommentInfoDao::Insert(CommentInfo::ptr info, chen::IDB::ptr conn) {
@@ -130,7 +237,7 @@ int CommentInfoDao::Insert(CommentInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_articleId);
@@ -149,6 +256,9 @@ int CommentInfoDao::Insert(CommentInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -160,7 +270,7 @@ int CommentInfoDao::InsertOrUpdate(CommentInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -176,6 +286,146 @@ int CommentInfoDao::InsertOrUpdate(CommentInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindInt32(11, info->m_isDeleted);
     stmt->bindTime(12, info->m_createTime);
     stmt->bindTime(13, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int CommentInfoDao::BatchInsert(const std::vector<CommentInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into comment (";
+    sql += "article_id";
+    sql += ", ";
+    sql += "user_id";
+    sql += ", ";
+    sql += "parent_id";
+    sql += ", ";
+    sql += "content";
+    sql += ", ";
+    sql += "ip";
+    sql += ", ";
+    sql += "user_agent";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "is_reported";
+    sql += ", ";
+    sql += "report_count";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_articleId);
+        stmt->bindInt64(idx++, info->m_userId);
+        stmt->bindInt64(idx++, info->m_parentId);
+        stmt->bindString(idx++, info->m_content);
+        stmt->bindString(idx++, info->m_ip);
+        stmt->bindString(idx++, info->m_userAgent);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindInt32(idx++, info->m_isReported);
+        stmt->bindInt32(idx++, info->m_reportCount);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int CommentInfoDao::BatchUpdate(const std::vector<CommentInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int CommentInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from comment where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -184,7 +434,7 @@ int CommentInfoDao::Delete(CommentInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -196,7 +446,7 @@ int CommentInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -208,7 +458,7 @@ int CommentInfoDao::DeleteByArticleId( const int64_t& article_id, chen::IDB::ptr
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -220,7 +470,7 @@ int CommentInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB::ptr conn)
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -232,7 +482,7 @@ int CommentInfoDao::DeleteByParentId( const int64_t& parent_id, chen::IDB::ptr c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, parent_id);
@@ -244,7 +494,7 @@ int CommentInfoDao::DeleteByStatus( const int32_t& status, chen::IDB::ptr conn) 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt32(1, status);
@@ -256,7 +506,7 @@ int CommentInfoDao::QueryAll(std::vector<CommentInfo::ptr>& results, chen::IDB::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -288,7 +538,7 @@ CommentInfo::ptr CommentInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -321,7 +571,7 @@ int CommentInfoDao::QueryByArticleId(std::vector<CommentInfo::ptr>& results,  co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -372,7 +622,7 @@ int CommentInfoDao::QueryByArticleIdPages(std::vector<CommentInfo::ptr>& results
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, article_id);
@@ -407,7 +657,7 @@ int CommentInfoDao::QueryByUserId(std::vector<CommentInfo::ptr>& results,  const
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -458,7 +708,7 @@ int CommentInfoDao::QueryByUserIdPages(std::vector<CommentInfo::ptr>& results, i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -493,7 +743,7 @@ int CommentInfoDao::QueryByParentId(std::vector<CommentInfo::ptr>& results,  con
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, parent_id);
@@ -544,7 +794,7 @@ int CommentInfoDao::QueryByParentIdPages(std::vector<CommentInfo::ptr>& results,
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, parent_id);
@@ -579,7 +829,7 @@ int CommentInfoDao::QueryByStatus(std::vector<CommentInfo::ptr>& results,  const
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt32(1, status);
@@ -630,7 +880,7 @@ int CommentInfoDao::QueryByStatusPages(std::vector<CommentInfo::ptr>& results, i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt32(1, status);
@@ -657,6 +907,127 @@ int CommentInfoDao::QueryByStatusPages(std::vector<CommentInfo::ptr>& results, i
         v->m_updateTime = rt->getTime(12);
         results.push_back(v);
     };
+    return 0;
+}
+
+CommentInfo::ptr CommentInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    CommentInfo::ptr v(new CommentInfo);
+    v->m_id = data->getInt64(0);
+    v->m_articleId = data->getInt64(1);
+    v->m_userId = data->getInt64(2);
+    v->m_parentId = data->getInt64(3);
+    v->m_content = data->getString(4);
+    v->m_ip = data->getString(5);
+    v->m_userAgent = data->getString(6);
+    v->m_status = data->getInt32(7);
+    v->m_isReported = data->getInt32(8);
+    v->m_reportCount = data->getInt32(9);
+    v->m_isDeleted = data->getInt32(10);
+    v->m_createTime = data->getTime(11);
+    v->m_updateTime = data->getTime(12);
+    return v;
+}
+
+int CommentInfoDao::QueryByBuilder(std::vector<CommentInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        CommentInfo::ptr v(new CommentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_parentId = rt->getInt64(3);
+        v->m_content = rt->getString(4);
+        v->m_ip = rt->getString(5);
+        v->m_userAgent = rt->getString(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isReported = rt->getInt32(8);
+        v->m_reportCount = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int CommentInfoDao::QueryByBuilderPages(std::vector<CommentInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, article_id, user_id, parent_id, content, ip, user_agent, status, is_reported, report_count, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        CommentInfo::ptr v(new CommentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_articleId = rt->getInt64(1);
+        v->m_userId = rt->getInt64(2);
+        v->m_parentId = rt->getInt64(3);
+        v->m_content = rt->getString(4);
+        v->m_ip = rt->getString(5);
+        v->m_userAgent = rt->getString(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isReported = rt->getInt32(8);
+        v->m_reportCount = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -702,6 +1073,53 @@ int CommentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `comment_user_id` (`user_id`),"
             "KEY `comment_parent_id` (`parent_id`),"
             "KEY `comment_status` (`status`)) COMMENT='文章评论'");
+}
+
+int CommentInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "comment");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "comment");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "comment");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int CommentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

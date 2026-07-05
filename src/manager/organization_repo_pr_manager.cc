@@ -25,28 +25,7 @@ OrganizationRepoPrManager::OrganizationRepoPrManager()
 }
 
 data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::parseRow(chen::ISQLData::ptr rt) {
-    data::OrganizationRepoPrsInfo::ptr v(new data::OrganizationRepoPrsInfo);
-    v->setId(rt->getInt64(0));
-    v->setRepoId(rt->getInt64(1));
-    v->setGithubPrId(rt->getInt32(2));
-    v->setTitle(rt->getString(3));
-    v->setDescription(rt->getString(4));
-    v->setState(rt->getString(5));
-    v->setPriority(rt->getString(6));
-    v->setAuthor(rt->getString(7));
-    v->setHeadBranch(rt->getString(8));
-    v->setBaseBranch(rt->getString(9));
-    v->setCommitSha(rt->getString(10));
-    v->setChangedFiles(rt->getInt32(11));
-    v->setAdditions(rt->getInt32(12));
-    v->setDeletions(rt->getInt32(13));
-    v->setReviewers(rt->getString(14));
-    v->setReviewStatus(rt->getString(15));
-    v->setClosedAt(rt->getTime(16));
-    v->setMergedAt(rt->getTime(17));
-    v->setCreateTime(rt->getTime(18));
-    v->setUpdateTime(rt->getTime(19));
-    return v;
+    return data::OrganizationRepoPrsInfoDao::ParseRow(rt);
 }
 
 void OrganizationRepoPrManager::add(data::OrganizationRepoPrsInfo::ptr info) {
@@ -595,13 +574,16 @@ data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndNa
     }
 
     // 用 github_full_name 字段精确匹配
-    std::string sql = "SELECT id FROM organization_repos WHERE github_full_name = ? LIMIT 1";
-    auto stmt = db->prepare(sql);
+    auto qb = chen::QueryBuilder::Create("organization_repos");
+    qb->select("id");
+    qb->where("github_full_name", "=", full_name);
+    qb->limit(1);
+    auto stmt = db->prepare(qb->buildQuerySQL());
     if (!stmt) {
         ERROR(logger) << "findRepoByOwnerAndName: prepare failed for " << full_name;
         return nullptr;
     }
-    stmt->bindString(1, full_name);
+    qb->bindParams(stmt);
     auto rt = stmt->query();
     if (!rt || !rt->next()) {
         DEBUG(logger) << "findRepoByOwnerAndName: no repo found for " << full_name;

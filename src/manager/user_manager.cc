@@ -16,25 +16,7 @@ UserManager::UserManager()
 }
 
 data::UserInfo::ptr UserManager::parseRow(chen::ISQLData::ptr rt) {
-    data::UserInfo::ptr v(new data::UserInfo);
-    v->setId(rt->getInt64(0));
-    v->setName(rt->getString(1));
-    v->setAccount(rt->getString(2));
-    v->setAvatar(rt->getString(3));
-    v->setEmail(rt->getString(4));
-    v->setRole(rt->getInt32(5));
-    v->setPasswd(rt->getString(6));
-    v->setState(rt->getInt32(7));
-    v->setBio(rt->getString(8));
-    v->setWebsite(rt->getString(9));
-    v->setLocation(rt->getString(10));
-    v->setToken(rt->getString(11));
-    v->setTokenTime(rt->getInt64(12));
-    v->setLoginTime(rt->getTime(13));
-    v->setIsDeleted(rt->getInt32(14));
-    v->setCreateTime(rt->getTime(15));
-    v->setUpdateTime(rt->getTime(16));
-    return v;
+    return data::UserInfoDao::ParseRow(rt);
 }
 
 

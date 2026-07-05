@@ -54,89 +54,212 @@ std::string RequirementInfo::toJsonString() const {
 
 void RequirementInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void RequirementInfo::setOrgId(const int64_t& v) {
     m_orgId = v;
+    m_flags |= (1ull << 1);
 }
 
 void RequirementInfo::setTitle(const std::string& v) {
     m_title = v;
+    m_flags |= (1ull << 2);
 }
 
 void RequirementInfo::setDescription(const std::string& v) {
     m_description = v;
+    m_flags |= (1ull << 3);
 }
 
 void RequirementInfo::setPriority(const int32_t& v) {
     m_priority = v;
+    m_flags |= (1ull << 4);
 }
 
 void RequirementInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 5);
 }
 
 void RequirementInfo::setCreatorId(const int64_t& v) {
     m_creatorId = v;
+    m_flags |= (1ull << 6);
 }
 
 void RequirementInfo::setAssigneeId(const int64_t& v) {
     m_assigneeId = v;
+    m_flags |= (1ull << 7);
 }
 
 void RequirementInfo::setIteration(const std::string& v) {
     m_iteration = v;
+    m_flags |= (1ull << 8);
 }
 
 void RequirementInfo::setCategory(const std::string& v) {
     m_category = v;
+    m_flags |= (1ull << 9);
 }
 
 void RequirementInfo::setSource(const std::string& v) {
     m_source = v;
+    m_flags |= (1ull << 10);
 }
 
 void RequirementInfo::setDeadline(const int64_t& v) {
     m_deadline = v;
+    m_flags |= (1ull << 11);
 }
 
 void RequirementInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 12);
 }
 
 void RequirementInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 13);
 }
 
 void RequirementInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 14);
 }
 
 
 int RequirementInfoDao::Update(RequirementInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update requirement set org_id = ?, title = ?, description = ?, priority = ?, status = ?, creator_id = ?, assignee_id = ?, iteration = ?, category = ?, source = ?, deadline = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update requirement set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "org_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "title = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "priority = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "creator_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "assignee_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "iteration = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "category = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "source = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "deadline = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_orgId);
-    stmt->bindString(2, info->m_title);
-    stmt->bindString(3, info->m_description);
-    stmt->bindInt32(4, info->m_priority);
-    stmt->bindInt32(5, info->m_status);
-    stmt->bindInt64(6, info->m_creatorId);
-    stmt->bindInt64(7, info->m_assigneeId);
-    stmt->bindString(8, info->m_iteration);
-    stmt->bindString(9, info->m_category);
-    stmt->bindString(10, info->m_source);
-    stmt->bindTime(11, info->m_deadline);
-    stmt->bindInt32(12, info->m_isDeleted);
-    stmt->bindTime(13, info->m_createTime);
-    stmt->bindTime(14, info->m_updateTime);
-    stmt->bindInt64(15, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_orgId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_title);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_description);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_priority);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt64(idx++, info->m_creatorId);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt64(idx++, info->m_assigneeId);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindString(idx++, info->m_iteration);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindString(idx++, info->m_category);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindString(idx++, info->m_source);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindTime(idx++, info->m_deadline);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int RequirementInfoDao::Insert(RequirementInfo::ptr info, chen::IDB::ptr conn) {
@@ -144,7 +267,7 @@ int RequirementInfoDao::Insert(RequirementInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_orgId);
@@ -165,6 +288,9 @@ int RequirementInfoDao::Insert(RequirementInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -176,7 +302,7 @@ int RequirementInfoDao::InsertOrUpdate(RequirementInfo::ptr info, chen::IDB::ptr
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -194,6 +320,156 @@ int RequirementInfoDao::InsertOrUpdate(RequirementInfo::ptr info, chen::IDB::ptr
     stmt->bindInt32(13, info->m_isDeleted);
     stmt->bindTime(14, info->m_createTime);
     stmt->bindTime(15, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int RequirementInfoDao::BatchInsert(const std::vector<RequirementInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into requirement (";
+    sql += "org_id";
+    sql += ", ";
+    sql += "title";
+    sql += ", ";
+    sql += "description";
+    sql += ", ";
+    sql += "priority";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "creator_id";
+    sql += ", ";
+    sql += "assignee_id";
+    sql += ", ";
+    sql += "iteration";
+    sql += ", ";
+    sql += "category";
+    sql += ", ";
+    sql += "source";
+    sql += ", ";
+    sql += "deadline";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_orgId);
+        stmt->bindString(idx++, info->m_title);
+        stmt->bindString(idx++, info->m_description);
+        stmt->bindInt32(idx++, info->m_priority);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindInt64(idx++, info->m_creatorId);
+        stmt->bindInt64(idx++, info->m_assigneeId);
+        stmt->bindString(idx++, info->m_iteration);
+        stmt->bindString(idx++, info->m_category);
+        stmt->bindString(idx++, info->m_source);
+        stmt->bindTime(idx++, info->m_deadline);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int RequirementInfoDao::BatchUpdate(const std::vector<RequirementInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int RequirementInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from requirement where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -202,7 +478,7 @@ int RequirementInfoDao::Delete(RequirementInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -214,7 +490,7 @@ int RequirementInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -226,7 +502,7 @@ int RequirementInfoDao::DeleteByOrgId( const int64_t& org_id, chen::IDB::ptr con
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -238,7 +514,7 @@ int RequirementInfoDao::DeleteByCreatorId( const int64_t& creator_id, chen::IDB:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -250,7 +526,7 @@ int RequirementInfoDao::DeleteByAssigneeId( const int64_t& assignee_id, chen::ID
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -262,7 +538,7 @@ int RequirementInfoDao::QueryAll(std::vector<RequirementInfo::ptr>& results, che
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -296,7 +572,7 @@ RequirementInfo::ptr RequirementInfoDao::Query( const int64_t& id, chen::IDB::pt
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -331,7 +607,7 @@ int RequirementInfoDao::QueryByOrgId(std::vector<RequirementInfo::ptr>& results,
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -384,7 +660,7 @@ int RequirementInfoDao::QueryByOrgIdPages(std::vector<RequirementInfo::ptr>& res
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -421,7 +697,7 @@ int RequirementInfoDao::QueryByCreatorId(std::vector<RequirementInfo::ptr>& resu
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -474,7 +750,7 @@ int RequirementInfoDao::QueryByCreatorIdPages(std::vector<RequirementInfo::ptr>&
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -511,7 +787,7 @@ int RequirementInfoDao::QueryByAssigneeId(std::vector<RequirementInfo::ptr>& res
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -564,7 +840,7 @@ int RequirementInfoDao::QueryByAssigneeIdPages(std::vector<RequirementInfo::ptr>
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -593,6 +869,133 @@ int RequirementInfoDao::QueryByAssigneeIdPages(std::vector<RequirementInfo::ptr>
         v->m_updateTime = rt->getTime(14);
         results.push_back(v);
     };
+    return 0;
+}
+
+RequirementInfo::ptr RequirementInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    RequirementInfo::ptr v(new RequirementInfo);
+    v->m_id = data->getInt64(0);
+    v->m_orgId = data->getInt64(1);
+    v->m_title = data->getString(2);
+    v->m_description = data->getString(3);
+    v->m_priority = data->getInt32(4);
+    v->m_status = data->getInt32(5);
+    v->m_creatorId = data->getInt64(6);
+    v->m_assigneeId = data->getInt64(7);
+    v->m_iteration = data->getString(8);
+    v->m_category = data->getString(9);
+    v->m_source = data->getString(10);
+    v->m_deadline = data->getTime(11);
+    v->m_isDeleted = data->getInt32(12);
+    v->m_createTime = data->getTime(13);
+    v->m_updateTime = data->getTime(14);
+    return v;
+}
+
+int RequirementInfoDao::QueryByBuilder(std::vector<RequirementInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        RequirementInfo::ptr v(new RequirementInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_iteration = rt->getString(8);
+        v->m_category = rt->getString(9);
+        v->m_source = rt->getString(10);
+        v->m_deadline = rt->getTime(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int RequirementInfoDao::QueryByBuilderPages(std::vector<RequirementInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, priority, status, creator_id, assignee_id, iteration, category, source, deadline, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        RequirementInfo::ptr v(new RequirementInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_iteration = rt->getString(8);
+        v->m_category = rt->getString(9);
+        v->m_source = rt->getString(10);
+        v->m_deadline = rt->getTime(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -640,6 +1043,53 @@ int RequirementInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `requirement_org_id` (`org_id`),"
             "KEY `requirement_creator_id` (`creator_id`),"
             "KEY `requirement_assignee_id` (`assignee_id`)) COMMENT='需求表'");
+}
+
+int RequirementInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "requirement");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "requirement");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "requirement");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int RequirementInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

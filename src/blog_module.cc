@@ -18,6 +18,7 @@
 #include "./include/managers.h"
 #include "./include/servlets.h"
 #include "./chunk_upload.h"
+#include "./index.h"
 #include "protocol_ss_github.h" // IWYU pragma: keep
 
 namespace blog {
@@ -64,7 +65,10 @@ void BlogModule::onTick() {
     // 2. 定时 flush 脏数据（浏览/点赞/收藏数）到数据库
     ArticleMgr::GetInstance()->onUpdateTimer();
 
-    // 3. 清理过期的分块上传会话及临时文件
+    // 3. 关闭已过期的广播
+    NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
+
+    // 4. 清理过期的分块上传会话及临时文件
     ::ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
     // 4. 定时同步有 token 的仓库 PR（每 30 分钟）
@@ -102,13 +106,21 @@ bool BlogModule::onServerReady() {
 
     ArticleMgr::GetInstance()->start();
 
-    // 初始化错误码管理器
+    // 初始化搜索索引（优先从磁盘加载，失败则后台异步构建）
     {
         std::string workPath = chen::Config::Lookup<std::string>("server.work_path")->getValue();
+        std::string indexPath = workPath + "/search_index.dat";
+        if (!IndexMgr::GetInstance()->load(indexPath)) {
+            INFO(logger) << "index load failed, scheduling async build...";
+            chen::IOManager::GetThis()->schedule([indexPath]() {
+                IndexMgr::GetInstance()->build();
+                IndexMgr::GetInstance()->save(indexPath);
+            });
+        }
+
         std::string errorsPath = workPath + "/errors.json";
         if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
             ERROR(logger) << "Failed to load error codes from " << errorsPath;
-            // 不阻止启动，使用空错误码表（兜底）
         }
     }
 
@@ -272,6 +284,8 @@ void BlogModule::registerServlets() {
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
+        dp->addServlet("/api/v1/broadcast/list", XX(BroadcastListServlet));
+        dp->addServlet("/api/v1/broadcast/close", XX(BroadcastCloseServlet));
         dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));
@@ -283,6 +297,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/article/detail", XX(ArticleDetailServlet));
         dp->addServlet("/api/v1/article/publish", XX(ArticlePublishServlet));
         dp->addServlet("/api/v1/article/query", XX(ArticleQueryServlet));
+        dp->addServlet("/api/v1/article/search", XX(ArticleSearchServlet));
         dp->addServlet("/api/v1/article/list_by_label", XX(ArticleListByLabelServlet));
         dp->addServlet("/api/v1/article/list_by_category", XX(ArticleListByCategoryServlet));
         dp->addServlet("/api/v1/article/delete", XX(ArticleDeleteServlet));

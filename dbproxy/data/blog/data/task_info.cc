@@ -54,89 +54,212 @@ std::string TaskInfo::toJsonString() const {
 
 void TaskInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void TaskInfo::setOrgId(const int64_t& v) {
     m_orgId = v;
+    m_flags |= (1ull << 1);
 }
 
 void TaskInfo::setTitle(const std::string& v) {
     m_title = v;
+    m_flags |= (1ull << 2);
 }
 
 void TaskInfo::setDescription(const std::string& v) {
     m_description = v;
+    m_flags |= (1ull << 3);
 }
 
 void TaskInfo::setPriority(const int32_t& v) {
     m_priority = v;
+    m_flags |= (1ull << 4);
 }
 
 void TaskInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 5);
 }
 
 void TaskInfo::setCreatorId(const int64_t& v) {
     m_creatorId = v;
+    m_flags |= (1ull << 6);
 }
 
 void TaskInfo::setAssigneeId(const int64_t& v) {
     m_assigneeId = v;
+    m_flags |= (1ull << 7);
 }
 
 void TaskInfo::setRequirementId(const int64_t& v) {
     m_requirementId = v;
+    m_flags |= (1ull << 8);
 }
 
 void TaskInfo::setBugId(const int64_t& v) {
     m_bugId = v;
+    m_flags |= (1ull << 9);
 }
 
 void TaskInfo::setDeadline(const int64_t& v) {
     m_deadline = v;
+    m_flags |= (1ull << 10);
 }
 
 void TaskInfo::setEstimatedHours(const int32_t& v) {
     m_estimatedHours = v;
+    m_flags |= (1ull << 11);
 }
 
 void TaskInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 12);
 }
 
 void TaskInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 13);
 }
 
 void TaskInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 14);
 }
 
 
 int TaskInfoDao::Update(TaskInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update task set org_id = ?, title = ?, description = ?, priority = ?, status = ?, creator_id = ?, assignee_id = ?, requirement_id = ?, bug_id = ?, deadline = ?, estimated_hours = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update task set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "org_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "title = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "priority = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "creator_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "assignee_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "requirement_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "bug_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "deadline = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "estimated_hours = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_orgId);
-    stmt->bindString(2, info->m_title);
-    stmt->bindString(3, info->m_description);
-    stmt->bindInt32(4, info->m_priority);
-    stmt->bindInt32(5, info->m_status);
-    stmt->bindInt64(6, info->m_creatorId);
-    stmt->bindInt64(7, info->m_assigneeId);
-    stmt->bindInt64(8, info->m_requirementId);
-    stmt->bindInt64(9, info->m_bugId);
-    stmt->bindTime(10, info->m_deadline);
-    stmt->bindInt32(11, info->m_estimatedHours);
-    stmt->bindInt32(12, info->m_isDeleted);
-    stmt->bindTime(13, info->m_createTime);
-    stmt->bindTime(14, info->m_updateTime);
-    stmt->bindInt64(15, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_orgId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_title);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_description);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_priority);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt64(idx++, info->m_creatorId);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt64(idx++, info->m_assigneeId);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt64(idx++, info->m_requirementId);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt64(idx++, info->m_bugId);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindTime(idx++, info->m_deadline);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindInt32(idx++, info->m_estimatedHours);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int TaskInfoDao::Insert(TaskInfo::ptr info, chen::IDB::ptr conn) {
@@ -144,7 +267,7 @@ int TaskInfoDao::Insert(TaskInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_orgId);
@@ -165,6 +288,9 @@ int TaskInfoDao::Insert(TaskInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -176,7 +302,7 @@ int TaskInfoDao::InsertOrUpdate(TaskInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -194,6 +320,156 @@ int TaskInfoDao::InsertOrUpdate(TaskInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindInt32(13, info->m_isDeleted);
     stmt->bindTime(14, info->m_createTime);
     stmt->bindTime(15, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int TaskInfoDao::BatchInsert(const std::vector<TaskInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into task (";
+    sql += "org_id";
+    sql += ", ";
+    sql += "title";
+    sql += ", ";
+    sql += "description";
+    sql += ", ";
+    sql += "priority";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "creator_id";
+    sql += ", ";
+    sql += "assignee_id";
+    sql += ", ";
+    sql += "requirement_id";
+    sql += ", ";
+    sql += "bug_id";
+    sql += ", ";
+    sql += "deadline";
+    sql += ", ";
+    sql += "estimated_hours";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_orgId);
+        stmt->bindString(idx++, info->m_title);
+        stmt->bindString(idx++, info->m_description);
+        stmt->bindInt32(idx++, info->m_priority);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindInt64(idx++, info->m_creatorId);
+        stmt->bindInt64(idx++, info->m_assigneeId);
+        stmt->bindInt64(idx++, info->m_requirementId);
+        stmt->bindInt64(idx++, info->m_bugId);
+        stmt->bindTime(idx++, info->m_deadline);
+        stmt->bindInt32(idx++, info->m_estimatedHours);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int TaskInfoDao::BatchUpdate(const std::vector<TaskInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int TaskInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from task where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -202,7 +478,7 @@ int TaskInfoDao::Delete(TaskInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -214,7 +490,7 @@ int TaskInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -226,7 +502,7 @@ int TaskInfoDao::DeleteByOrgId( const int64_t& org_id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -238,7 +514,7 @@ int TaskInfoDao::DeleteByCreatorId( const int64_t& creator_id, chen::IDB::ptr co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -250,7 +526,7 @@ int TaskInfoDao::DeleteByAssigneeId( const int64_t& assignee_id, chen::IDB::ptr 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -262,7 +538,7 @@ int TaskInfoDao::QueryAll(std::vector<TaskInfo::ptr>& results, chen::IDB::ptr co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -296,7 +572,7 @@ TaskInfo::ptr TaskInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -331,7 +607,7 @@ int TaskInfoDao::QueryByOrgId(std::vector<TaskInfo::ptr>& results,  const int64_
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -384,7 +660,7 @@ int TaskInfoDao::QueryByOrgIdPages(std::vector<TaskInfo::ptr>& results, int64_t&
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -421,7 +697,7 @@ int TaskInfoDao::QueryByCreatorId(std::vector<TaskInfo::ptr>& results,  const in
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -474,7 +750,7 @@ int TaskInfoDao::QueryByCreatorIdPages(std::vector<TaskInfo::ptr>& results, int6
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -511,7 +787,7 @@ int TaskInfoDao::QueryByAssigneeId(std::vector<TaskInfo::ptr>& results,  const i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -564,7 +840,7 @@ int TaskInfoDao::QueryByAssigneeIdPages(std::vector<TaskInfo::ptr>& results, int
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -593,6 +869,133 @@ int TaskInfoDao::QueryByAssigneeIdPages(std::vector<TaskInfo::ptr>& results, int
         v->m_updateTime = rt->getTime(14);
         results.push_back(v);
     };
+    return 0;
+}
+
+TaskInfo::ptr TaskInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    TaskInfo::ptr v(new TaskInfo);
+    v->m_id = data->getInt64(0);
+    v->m_orgId = data->getInt64(1);
+    v->m_title = data->getString(2);
+    v->m_description = data->getString(3);
+    v->m_priority = data->getInt32(4);
+    v->m_status = data->getInt32(5);
+    v->m_creatorId = data->getInt64(6);
+    v->m_assigneeId = data->getInt64(7);
+    v->m_requirementId = data->getInt64(8);
+    v->m_bugId = data->getInt64(9);
+    v->m_deadline = data->getTime(10);
+    v->m_estimatedHours = data->getInt32(11);
+    v->m_isDeleted = data->getInt32(12);
+    v->m_createTime = data->getTime(13);
+    v->m_updateTime = data->getTime(14);
+    return v;
+}
+
+int TaskInfoDao::QueryByBuilder(std::vector<TaskInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, priority, status, creator_id, assignee_id, requirement_id, bug_id, deadline, estimated_hours, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        TaskInfo::ptr v(new TaskInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_requirementId = rt->getInt64(8);
+        v->m_bugId = rt->getInt64(9);
+        v->m_deadline = rt->getTime(10);
+        v->m_estimatedHours = rt->getInt32(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int TaskInfoDao::QueryByBuilderPages(std::vector<TaskInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, priority, status, creator_id, assignee_id, requirement_id, bug_id, deadline, estimated_hours, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        TaskInfo::ptr v(new TaskInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_priority = rt->getInt32(4);
+        v->m_status = rt->getInt32(5);
+        v->m_creatorId = rt->getInt64(6);
+        v->m_assigneeId = rt->getInt64(7);
+        v->m_requirementId = rt->getInt64(8);
+        v->m_bugId = rt->getInt64(9);
+        v->m_deadline = rt->getTime(10);
+        v->m_estimatedHours = rt->getInt32(11);
+        v->m_isDeleted = rt->getInt32(12);
+        v->m_createTime = rt->getTime(13);
+        v->m_updateTime = rt->getTime(14);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -640,6 +1043,53 @@ int TaskInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `task_org_id` (`org_id`),"
             "KEY `task_creator_id` (`creator_id`),"
             "KEY `task_assignee_id` (`assignee_id`)) COMMENT='任务表'");
+}
+
+int TaskInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "task");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "task");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "task");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int TaskInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

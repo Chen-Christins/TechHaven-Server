@@ -42,21 +42,7 @@ ResourceManager::ResourceType ResourceManager::GetResourceType(const std::string
 }
 
 data::ResourceInfo::ptr ResourceManager::parseRow(chen::ISQLData::ptr rt) {
-    data::ResourceInfo::ptr v(new data::ResourceInfo);
-    v->setId(rt->getInt64(0));
-    v->setName(rt->getString(1));
-    v->setPath(rt->getString(2));
-    v->setType(rt->getInt32(3));
-    v->setSize(rt->getInt64(4));
-    v->setHash(rt->getString(5));
-    v->setOwnerId(rt->getInt64(6));
-    v->setBizType(rt->getString(7));
-    v->setBizId(rt->getInt64(8));
-    v->setStatus(rt->getInt32(9));
-    v->setIsDeleted(rt->getInt32(10));
-    v->setCreateTime(rt->getTime(11));
-    v->setUpdateTime(rt->getTime(12));
-    return v;
+    return data::ResourceInfoDao::ParseRow(rt);
 }
 
 

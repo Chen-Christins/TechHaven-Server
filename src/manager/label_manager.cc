@@ -16,16 +16,7 @@ LabelManager::LabelManager()
 }
 
 data::LabelInfo::ptr LabelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::LabelInfo::ptr v(new data::LabelInfo);
-    v->setId(rt->getInt64(0));
-    v->setUserId(rt->getInt64(1));
-    v->setName(rt->getString(2));
-    v->setColor(rt->getString(3));
-    v->setDescription(rt->getString(4));
-    v->setIsDeleted(rt->getInt32(5));
-    v->setCreateTime(rt->getTime(6));
-    v->setUpdateTime(rt->getTime(7));
-    return v;
+    return data::LabelInfoDao::ParseRow(rt);
 }
 
 

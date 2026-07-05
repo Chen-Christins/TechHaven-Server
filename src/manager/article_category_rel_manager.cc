@@ -16,15 +16,7 @@ ArticleCategoryRelManager::ArticleCategoryRelManager()
 }
 
 data::ArticleCategoryRelInfo::ptr ArticleCategoryRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::ArticleCategoryRelInfo::ptr v(new data::ArticleCategoryRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setArticleId(rt->getInt64(1));
-    v->setCategoryId(rt->getInt64(2));
-    v->setIsDeleted(rt->getInt32(3));
-    v->setPublishTime(rt->getTime(4));
-    v->setCreateTime(rt->getTime(5));
-    v->setUpdateTime(rt->getTime(6));
-    return v;
+    return data::ArticleCategoryRelInfoDao::ParseRow(rt);
 }
 
 

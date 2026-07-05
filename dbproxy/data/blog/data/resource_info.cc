@@ -50,79 +50,186 @@ std::string ResourceInfo::toJsonString() const {
 
 void ResourceInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void ResourceInfo::setName(const std::string& v) {
     m_name = v;
+    m_flags |= (1ull << 1);
 }
 
 void ResourceInfo::setPath(const std::string& v) {
     m_path = v;
+    m_flags |= (1ull << 2);
 }
 
 void ResourceInfo::setType(const int32_t& v) {
     m_type = v;
+    m_flags |= (1ull << 3);
 }
 
 void ResourceInfo::setSize(const int64_t& v) {
     m_size = v;
+    m_flags |= (1ull << 4);
 }
 
 void ResourceInfo::setHash(const std::string& v) {
     m_hash = v;
+    m_flags |= (1ull << 5);
 }
 
 void ResourceInfo::setOwnerId(const int64_t& v) {
     m_ownerId = v;
+    m_flags |= (1ull << 6);
 }
 
 void ResourceInfo::setBizType(const std::string& v) {
     m_bizType = v;
+    m_flags |= (1ull << 7);
 }
 
 void ResourceInfo::setBizId(const int64_t& v) {
     m_bizId = v;
+    m_flags |= (1ull << 8);
 }
 
 void ResourceInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 9);
 }
 
 void ResourceInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 10);
 }
 
 void ResourceInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 11);
 }
 
 void ResourceInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 12);
 }
 
 
 int ResourceInfoDao::Update(ResourceInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update resource set name = ?, path = ?, type = ?, size = ?, hash = ?, owner_id = ?, biz_type = ?, biz_id = ?, status = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update resource set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "path = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "size = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "hash = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "owner_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "biz_type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "biz_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindString(1, info->m_name);
-    stmt->bindString(2, info->m_path);
-    stmt->bindInt32(3, info->m_type);
-    stmt->bindInt64(4, info->m_size);
-    stmt->bindString(5, info->m_hash);
-    stmt->bindInt64(6, info->m_ownerId);
-    stmt->bindString(7, info->m_bizType);
-    stmt->bindInt64(8, info->m_bizId);
-    stmt->bindInt32(9, info->m_status);
-    stmt->bindInt32(10, info->m_isDeleted);
-    stmt->bindTime(11, info->m_createTime);
-    stmt->bindTime(12, info->m_updateTime);
-    stmt->bindInt64(13, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindString(idx++, info->m_name);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_path);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindInt32(idx++, info->m_type);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt64(idx++, info->m_size);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindString(idx++, info->m_hash);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt64(idx++, info->m_ownerId);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindString(idx++, info->m_bizType);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt64(idx++, info->m_bizId);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int ResourceInfoDao::Insert(ResourceInfo::ptr info, chen::IDB::ptr conn) {
@@ -130,7 +237,7 @@ int ResourceInfoDao::Insert(ResourceInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, info->m_name);
@@ -149,6 +256,9 @@ int ResourceInfoDao::Insert(ResourceInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -160,7 +270,7 @@ int ResourceInfoDao::InsertOrUpdate(ResourceInfo::ptr info, chen::IDB::ptr conn)
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -176,6 +286,146 @@ int ResourceInfoDao::InsertOrUpdate(ResourceInfo::ptr info, chen::IDB::ptr conn)
     stmt->bindInt32(11, info->m_isDeleted);
     stmt->bindTime(12, info->m_createTime);
     stmt->bindTime(13, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int ResourceInfoDao::BatchInsert(const std::vector<ResourceInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into resource (";
+    sql += "name";
+    sql += ", ";
+    sql += "path";
+    sql += ", ";
+    sql += "type";
+    sql += ", ";
+    sql += "size";
+    sql += ", ";
+    sql += "hash";
+    sql += ", ";
+    sql += "owner_id";
+    sql += ", ";
+    sql += "biz_type";
+    sql += ", ";
+    sql += "biz_id";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindString(idx++, info->m_name);
+        stmt->bindString(idx++, info->m_path);
+        stmt->bindInt32(idx++, info->m_type);
+        stmt->bindInt64(idx++, info->m_size);
+        stmt->bindString(idx++, info->m_hash);
+        stmt->bindInt64(idx++, info->m_ownerId);
+        stmt->bindString(idx++, info->m_bizType);
+        stmt->bindInt64(idx++, info->m_bizId);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int ResourceInfoDao::BatchUpdate(const std::vector<ResourceInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int ResourceInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from resource where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -184,7 +434,7 @@ int ResourceInfoDao::Delete(ResourceInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -196,7 +446,7 @@ int ResourceInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -208,7 +458,7 @@ int ResourceInfoDao::DeleteByOwnerId( const int64_t& owner_id, chen::IDB::ptr co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, owner_id);
@@ -220,7 +470,7 @@ int ResourceInfoDao::DeleteByBizTypeBizId( const std::string& biz_type,  const i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, biz_type);
@@ -233,7 +483,7 @@ int ResourceInfoDao::DeleteByHash( const std::string& hash, chen::IDB::ptr conn)
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, hash);
@@ -245,7 +495,7 @@ int ResourceInfoDao::QueryAll(std::vector<ResourceInfo::ptr>& results, chen::IDB
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -277,7 +527,7 @@ ResourceInfo::ptr ResourceInfoDao::Query( const int64_t& id, chen::IDB::ptr conn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -310,7 +560,7 @@ int ResourceInfoDao::QueryByOwnerId(std::vector<ResourceInfo::ptr>& results,  co
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, owner_id);
@@ -361,7 +611,7 @@ int ResourceInfoDao::QueryByOwnerIdPages(std::vector<ResourceInfo::ptr>& results
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, owner_id);
@@ -396,7 +646,7 @@ int ResourceInfoDao::QueryByBizTypeBizId(std::vector<ResourceInfo::ptr>& results
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, biz_type);
@@ -449,7 +699,7 @@ int ResourceInfoDao::QueryByBizTypeBizIdPages(std::vector<ResourceInfo::ptr>& re
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, biz_type);
@@ -485,7 +735,7 @@ int ResourceInfoDao::QueryByHash(std::vector<ResourceInfo::ptr>& results,  const
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, hash);
@@ -536,7 +786,7 @@ int ResourceInfoDao::QueryByHashPages(std::vector<ResourceInfo::ptr>& results, i
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, hash);
@@ -563,6 +813,127 @@ int ResourceInfoDao::QueryByHashPages(std::vector<ResourceInfo::ptr>& results, i
         v->m_updateTime = rt->getTime(12);
         results.push_back(v);
     };
+    return 0;
+}
+
+ResourceInfo::ptr ResourceInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    ResourceInfo::ptr v(new ResourceInfo);
+    v->m_id = data->getInt64(0);
+    v->m_name = data->getString(1);
+    v->m_path = data->getString(2);
+    v->m_type = data->getInt32(3);
+    v->m_size = data->getInt64(4);
+    v->m_hash = data->getString(5);
+    v->m_ownerId = data->getInt64(6);
+    v->m_bizType = data->getString(7);
+    v->m_bizId = data->getInt64(8);
+    v->m_status = data->getInt32(9);
+    v->m_isDeleted = data->getInt32(10);
+    v->m_createTime = data->getTime(11);
+    v->m_updateTime = data->getTime(12);
+    return v;
+}
+
+int ResourceInfoDao::QueryByBuilder(std::vector<ResourceInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        ResourceInfo::ptr v(new ResourceInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_path = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_size = rt->getInt64(4);
+        v->m_hash = rt->getString(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_bizType = rt->getString(7);
+        v->m_bizId = rt->getInt64(8);
+        v->m_status = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int ResourceInfoDao::QueryByBuilderPages(std::vector<ResourceInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, name, path, type, size, hash, owner_id, biz_type, biz_id, status, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ResourceInfo::ptr v(new ResourceInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_path = rt->getString(2);
+        v->m_type = rt->getInt32(3);
+        v->m_size = rt->getInt64(4);
+        v->m_hash = rt->getString(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_bizType = rt->getString(7);
+        v->m_bizId = rt->getInt64(8);
+        v->m_status = rt->getInt32(9);
+        v->m_isDeleted = rt->getInt32(10);
+        v->m_createTime = rt->getTime(11);
+        v->m_updateTime = rt->getTime(12);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -606,6 +977,53 @@ int ResourceInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `resource_owner_id` (`owner_id`),"
             "KEY `resource_biz_type_biz_id` (`biz_type`,`biz_id`),"
             "KEY `resource_hash` (`hash`)) COMMENT='文件资源元数据表'");
+}
+
+int ResourceInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "resource");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "resource");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "resource");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int ResourceInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

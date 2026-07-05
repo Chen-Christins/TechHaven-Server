@@ -44,64 +44,147 @@ std::string OrganizationApplyInfo::toJsonString() const {
 
 void OrganizationApplyInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void OrganizationApplyInfo::setUserId(const int64_t& v) {
     m_userId = v;
+    m_flags |= (1ull << 1);
 }
 
 void OrganizationApplyInfo::setOrgName(const std::string& v) {
     m_orgName = v;
+    m_flags |= (1ull << 2);
 }
 
 void OrganizationApplyInfo::setOrgType(const std::string& v) {
     m_orgType = v;
+    m_flags |= (1ull << 3);
 }
 
 void OrganizationApplyInfo::setOrgDescription(const std::string& v) {
     m_orgDescription = v;
+    m_flags |= (1ull << 4);
 }
 
 void OrganizationApplyInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 5);
 }
 
 void OrganizationApplyInfo::setReviewReason(const std::string& v) {
     m_reviewReason = v;
+    m_flags |= (1ull << 6);
 }
 
 void OrganizationApplyInfo::setCreatedAt(const int64_t& v) {
     m_createdAt = v;
+    m_flags |= (1ull << 7);
 }
 
 void OrganizationApplyInfo::setReviewedAt(const int64_t& v) {
     m_reviewedAt = v;
+    m_flags |= (1ull << 8);
 }
 
 void OrganizationApplyInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 9);
 }
 
 
 int OrganizationApplyInfoDao::Update(OrganizationApplyInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update organization_apply set user_id = ?, org_name = ?, org_type = ?, org_description = ?, status = ?, review_reason = ?, created_at = ?, reviewed_at = ?, is_deleted = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update organization_apply set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "user_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "org_name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "org_type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "org_description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "review_reason = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "created_at = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "reviewed_at = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_userId);
-    stmt->bindString(2, info->m_orgName);
-    stmt->bindString(3, info->m_orgType);
-    stmt->bindString(4, info->m_orgDescription);
-    stmt->bindInt32(5, info->m_status);
-    stmt->bindString(6, info->m_reviewReason);
-    stmt->bindInt64(7, info->m_createdAt);
-    stmt->bindInt64(8, info->m_reviewedAt);
-    stmt->bindInt32(9, info->m_isDeleted);
-    stmt->bindInt64(10, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_userId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_orgName);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_orgType);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindString(idx++, info->m_orgDescription);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindString(idx++, info->m_reviewReason);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt64(idx++, info->m_createdAt);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt64(idx++, info->m_reviewedAt);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int OrganizationApplyInfoDao::Insert(OrganizationApplyInfo::ptr info, chen::IDB::ptr conn) {
@@ -109,7 +192,7 @@ int OrganizationApplyInfoDao::Insert(OrganizationApplyInfo::ptr info, chen::IDB:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_userId);
@@ -125,6 +208,9 @@ int OrganizationApplyInfoDao::Insert(OrganizationApplyInfo::ptr info, chen::IDB:
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -136,7 +222,7 @@ int OrganizationApplyInfoDao::InsertOrUpdate(OrganizationApplyInfo::ptr info, ch
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -149,6 +235,131 @@ int OrganizationApplyInfoDao::InsertOrUpdate(OrganizationApplyInfo::ptr info, ch
     stmt->bindInt64(8, info->m_createdAt);
     stmt->bindInt64(9, info->m_reviewedAt);
     stmt->bindInt32(10, info->m_isDeleted);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int OrganizationApplyInfoDao::BatchInsert(const std::vector<OrganizationApplyInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into organization_apply (";
+    sql += "user_id";
+    sql += ", ";
+    sql += "org_name";
+    sql += ", ";
+    sql += "org_type";
+    sql += ", ";
+    sql += "org_description";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "review_reason";
+    sql += ", ";
+    sql += "created_at";
+    sql += ", ";
+    sql += "reviewed_at";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_userId);
+        stmt->bindString(idx++, info->m_orgName);
+        stmt->bindString(idx++, info->m_orgType);
+        stmt->bindString(idx++, info->m_orgDescription);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindString(idx++, info->m_reviewReason);
+        stmt->bindInt64(idx++, info->m_createdAt);
+        stmt->bindInt64(idx++, info->m_reviewedAt);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    return stmt->execute();
+}
+
+int OrganizationApplyInfoDao::BatchUpdate(const std::vector<OrganizationApplyInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int OrganizationApplyInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from organization_apply where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -157,7 +368,7 @@ int OrganizationApplyInfoDao::Delete(OrganizationApplyInfo::ptr info, chen::IDB:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -169,7 +380,7 @@ int OrganizationApplyInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -181,7 +392,7 @@ int OrganizationApplyInfoDao::DeleteByUserId( const int64_t& user_id, chen::IDB:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -193,7 +404,7 @@ int OrganizationApplyInfoDao::DeleteByStatus( const int32_t& status, chen::IDB::
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt32(1, status);
@@ -205,7 +416,7 @@ int OrganizationApplyInfoDao::QueryAll(std::vector<OrganizationApplyInfo::ptr>& 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -234,7 +445,7 @@ OrganizationApplyInfo::ptr OrganizationApplyInfoDao::Query( const int64_t& id, c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -264,7 +475,7 @@ int OrganizationApplyInfoDao::QueryByUserId(std::vector<OrganizationApplyInfo::p
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -312,7 +523,7 @@ int OrganizationApplyInfoDao::QueryByUserIdPages(std::vector<OrganizationApplyIn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, user_id);
@@ -344,7 +555,7 @@ int OrganizationApplyInfoDao::QueryByStatus(std::vector<OrganizationApplyInfo::p
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt32(1, status);
@@ -392,7 +603,7 @@ int OrganizationApplyInfoDao::QueryByStatusPages(std::vector<OrganizationApplyIn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt32(1, status);
@@ -416,6 +627,118 @@ int OrganizationApplyInfoDao::QueryByStatusPages(std::vector<OrganizationApplyIn
         v->m_isDeleted = rt->getInt32(9);
         results.push_back(v);
     };
+    return 0;
+}
+
+OrganizationApplyInfo::ptr OrganizationApplyInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    OrganizationApplyInfo::ptr v(new OrganizationApplyInfo);
+    v->m_id = data->getInt64(0);
+    v->m_userId = data->getInt64(1);
+    v->m_orgName = data->getString(2);
+    v->m_orgType = data->getString(3);
+    v->m_orgDescription = data->getString(4);
+    v->m_status = data->getInt32(5);
+    v->m_reviewReason = data->getString(6);
+    v->m_createdAt = data->getInt64(7);
+    v->m_reviewedAt = data->getInt64(8);
+    v->m_isDeleted = data->getInt32(9);
+    return v;
+}
+
+int OrganizationApplyInfoDao::QueryByBuilder(std::vector<OrganizationApplyInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        OrganizationApplyInfo::ptr v(new OrganizationApplyInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_orgName = rt->getString(2);
+        v->m_orgType = rt->getString(3);
+        v->m_orgDescription = rt->getString(4);
+        v->m_status = rt->getInt32(5);
+        v->m_reviewReason = rt->getString(6);
+        v->m_createdAt = rt->getInt64(7);
+        v->m_reviewedAt = rt->getInt64(8);
+        v->m_isDeleted = rt->getInt32(9);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int OrganizationApplyInfoDao::QueryByBuilderPages(std::vector<OrganizationApplyInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        OrganizationApplyInfo::ptr v(new OrganizationApplyInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_userId = rt->getInt64(1);
+        v->m_orgName = rt->getString(2);
+        v->m_orgType = rt->getString(3);
+        v->m_orgDescription = rt->getString(4);
+        v->m_status = rt->getInt32(5);
+        v->m_reviewReason = rt->getString(6);
+        v->m_createdAt = rt->getInt64(7);
+        v->m_reviewedAt = rt->getInt64(8);
+        v->m_isDeleted = rt->getInt32(9);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -451,6 +774,53 @@ int OrganizationApplyInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "PRIMARY KEY(`id`),"
             "KEY `organization_apply_user_id` (`user_id`),"
             "KEY `organization_apply_status` (`status`)) COMMENT='组织创建申请表'");
+}
+
+int OrganizationApplyInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "organization_apply");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "organization_apply");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "organization_apply");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int OrganizationApplyInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

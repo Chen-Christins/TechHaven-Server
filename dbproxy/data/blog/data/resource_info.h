@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class ResourceInfoDao;
+/**
+ * @brief 文件资源元数据表
+ */
 class ResourceInfo {
 friend class ResourceInfoDao;
 public:
@@ -21,46 +25,162 @@ public:
 
     ResourceInfo();
 
+    /**
+     * @brief 获取主键ID
+     * @return 主键ID
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置主键ID
+     * @param v 主键ID
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取原始文件名
+     * @return 原始文件名
+     */
     const std::string& getName() { return m_name; }
+    /**
+     * @brief 设置原始文件名
+     * @param v 原始文件名
+     */
     void setName(const std::string& v);
 
+    /**
+     * @brief 获取存储路径（相对或绝对）
+     * @return 存储路径（相对或绝对）
+     */
     const std::string& getPath() { return m_path; }
+    /**
+     * @brief 设置存储路径（相对或绝对）
+     * @param v 存储路径（相对或绝对）
+     */
     void setPath(const std::string& v);
 
+    /**
+     * @brief 获取文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other
+     * @return 文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other
+     */
     const int32_t& getType() { return m_type; }
+    /**
+     * @brief 设置文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other
+     * @param v 文件类型 1: image、2: video、3: document、4: compressed、5: audio、6: other
+     */
     void setType(const int32_t& v);
 
+    /**
+     * @brief 获取文件大小（字节）
+     * @return 文件大小（字节）
+     */
     const int64_t& getSize() { return m_size; }
+    /**
+     * @brief 设置文件大小（字节）
+     * @param v 文件大小（字节）
+     */
     void setSize(const int64_t& v);
 
+    /**
+     * @brief 获取文件哈希（去重/校验）
+     * @return 文件哈希（去重/校验）
+     */
     const std::string& getHash() { return m_hash; }
+    /**
+     * @brief 设置文件哈希（去重/校验）
+     * @param v 文件哈希（去重/校验）
+     */
     void setHash(const std::string& v);
 
+    /**
+     * @brief 获取上传者用户ID
+     * @return 上传者用户ID
+     */
     const int64_t& getOwnerId() { return m_ownerId; }
+    /**
+     * @brief 设置上传者用户ID
+     * @param v 上传者用户ID
+     */
     void setOwnerId(const int64_t& v);
 
+    /**
+     * @brief 获取业务类型 如assignment、article等
+     * @return 业务类型 如assignment、article等
+     */
     const std::string& getBizType() { return m_bizType; }
+    /**
+     * @brief 设置业务类型 如assignment、article等
+     * @param v 业务类型 如assignment、article等
+     */
     void setBizType(const std::string& v);
 
+    /**
+     * @brief 获取业务ID 如作业ID、文章ID等
+     * @return 业务ID 如作业ID、文章ID等
+     */
     const int64_t& getBizId() { return m_bizId; }
+    /**
+     * @brief 设置业务ID 如作业ID、文章ID等
+     * @param v 业务ID 如作业ID、文章ID等
+     */
     void setBizId(const int64_t& v);
 
+    /**
+     * @brief 获取状态: 1正常 2删除
+     * @return 状态: 1正常 2删除
+     */
     const int32_t& getStatus() { return m_status; }
+    /**
+     * @brief 设置状态: 1正常 2删除
+     * @param v 状态: 1正常 2删除
+     */
     void setStatus(const int32_t& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取上传时间
+     * @return 上传时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置上传时间
+     * @param v 上传时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_type;
@@ -76,6 +196,7 @@ private:
     std::string m_bizType;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -85,6 +206,9 @@ public:
     static int Update(ResourceInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(ResourceInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(ResourceInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<ResourceInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<ResourceInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(ResourceInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -103,6 +227,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static ResourceInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<ResourceInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<ResourceInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

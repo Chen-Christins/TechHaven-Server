@@ -20,23 +20,7 @@ OrganizationRepoManager::OrganizationRepoManager()
 }
 
 data::OrganizationReposInfo::ptr OrganizationRepoManager::parseRow(chen::ISQLData::ptr rt) {
-    data::OrganizationReposInfo::ptr v(new data::OrganizationReposInfo);
-    v->setId(rt->getInt64(0));
-    v->setOrgId(rt->getInt64(1));
-    v->setName(rt->getString(2));
-    v->setDescription(rt->getString(3));
-    v->setUrl(rt->getString(4));
-    v->setLanguage(rt->getString(5));
-    v->setStarsCount(rt->getInt32(6));
-    v->setSortOrder(rt->getInt32(7));
-    v->setCreateTime(rt->getTime(8));
-    v->setUpdateTime(rt->getTime(9));
-    v->setToken(rt->getString(10));
-    v->setSyncStatus(rt->getString(11));
-    v->setPrSyncStatus(rt->getString(12));
-    v->setPrSyncedAt(rt->getInt64(13));
-    v->setGithubFullName(rt->getString(14));
-    return v;
+    return data::OrganizationReposInfoDao::ParseRow(rt);
 }
 
 void OrganizationRepoManager::add(data::OrganizationReposInfo::ptr info) {

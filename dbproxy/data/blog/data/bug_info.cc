@@ -56,94 +56,225 @@ std::string BugInfo::toJsonString() const {
 
 void BugInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void BugInfo::setOrgId(const int64_t& v) {
     m_orgId = v;
+    m_flags |= (1ull << 1);
 }
 
 void BugInfo::setTitle(const std::string& v) {
     m_title = v;
+    m_flags |= (1ull << 2);
 }
 
 void BugInfo::setDescription(const std::string& v) {
     m_description = v;
+    m_flags |= (1ull << 3);
 }
 
 void BugInfo::setSeverity(const int32_t& v) {
     m_severity = v;
+    m_flags |= (1ull << 4);
 }
 
 void BugInfo::setPriority(const int32_t& v) {
     m_priority = v;
+    m_flags |= (1ull << 5);
 }
 
 void BugInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 6);
 }
 
 void BugInfo::setCreatorId(const int64_t& v) {
     m_creatorId = v;
+    m_flags |= (1ull << 7);
 }
 
 void BugInfo::setAssigneeId(const int64_t& v) {
     m_assigneeId = v;
+    m_flags |= (1ull << 8);
 }
 
 void BugInfo::setRequirementId(const int64_t& v) {
     m_requirementId = v;
+    m_flags |= (1ull << 9);
 }
 
 void BugInfo::setModule(const std::string& v) {
     m_module = v;
+    m_flags |= (1ull << 10);
 }
 
 void BugInfo::setStepsToReproduce(const std::string& v) {
     m_stepsToReproduce = v;
+    m_flags |= (1ull << 11);
 }
 
 void BugInfo::setEnvironment(const std::string& v) {
     m_environment = v;
+    m_flags |= (1ull << 12);
 }
 
 void BugInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 13);
 }
 
 void BugInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 14);
 }
 
 void BugInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 15);
 }
 
 
 int BugInfoDao::Update(BugInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update bug set org_id = ?, title = ?, description = ?, severity = ?, priority = ?, status = ?, creator_id = ?, assignee_id = ?, requirement_id = ?, module = ?, steps_to_reproduce = ?, environment = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update bug set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "org_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "title = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "severity = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "priority = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "creator_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "assignee_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "requirement_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "module = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "steps_to_reproduce = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 12)) {
+        if (!first) sql += ", ";
+        sql += "environment = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 13)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 14)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 15)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindInt64(1, info->m_orgId);
-    stmt->bindString(2, info->m_title);
-    stmt->bindString(3, info->m_description);
-    stmt->bindInt32(4, info->m_severity);
-    stmt->bindInt32(5, info->m_priority);
-    stmt->bindInt32(6, info->m_status);
-    stmt->bindInt64(7, info->m_creatorId);
-    stmt->bindInt64(8, info->m_assigneeId);
-    stmt->bindInt64(9, info->m_requirementId);
-    stmt->bindString(10, info->m_module);
-    stmt->bindString(11, info->m_stepsToReproduce);
-    stmt->bindString(12, info->m_environment);
-    stmt->bindInt32(13, info->m_isDeleted);
-    stmt->bindTime(14, info->m_createTime);
-    stmt->bindTime(15, info->m_updateTime);
-    stmt->bindInt64(16, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindInt64(idx++, info->m_orgId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_title);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindString(idx++, info->m_description);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_severity);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt32(idx++, info->m_priority);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt64(idx++, info->m_creatorId);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt64(idx++, info->m_assigneeId);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt64(idx++, info->m_requirementId);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindString(idx++, info->m_module);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindString(idx++, info->m_stepsToReproduce);
+    }
+    if (info->m_flags & (1ull << 12)) {
+        stmt->bindString(idx++, info->m_environment);
+    }
+    if (info->m_flags & (1ull << 13)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 14)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 15)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int BugInfoDao::Insert(BugInfo::ptr info, chen::IDB::ptr conn) {
@@ -151,7 +282,7 @@ int BugInfoDao::Insert(BugInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_orgId);
@@ -173,6 +304,9 @@ int BugInfoDao::Insert(BugInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -184,7 +318,7 @@ int BugInfoDao::InsertOrUpdate(BugInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -203,6 +337,161 @@ int BugInfoDao::InsertOrUpdate(BugInfo::ptr info, chen::IDB::ptr conn) {
     stmt->bindInt32(14, info->m_isDeleted);
     stmt->bindTime(15, info->m_createTime);
     stmt->bindTime(16, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int BugInfoDao::BatchInsert(const std::vector<BugInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into bug (";
+    sql += "org_id";
+    sql += ", ";
+    sql += "title";
+    sql += ", ";
+    sql += "description";
+    sql += ", ";
+    sql += "severity";
+    sql += ", ";
+    sql += "priority";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "creator_id";
+    sql += ", ";
+    sql += "assignee_id";
+    sql += ", ";
+    sql += "requirement_id";
+    sql += ", ";
+    sql += "module";
+    sql += ", ";
+    sql += "steps_to_reproduce";
+    sql += ", ";
+    sql += "environment";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindInt64(idx++, info->m_orgId);
+        stmt->bindString(idx++, info->m_title);
+        stmt->bindString(idx++, info->m_description);
+        stmt->bindInt32(idx++, info->m_severity);
+        stmt->bindInt32(idx++, info->m_priority);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindInt64(idx++, info->m_creatorId);
+        stmt->bindInt64(idx++, info->m_assigneeId);
+        stmt->bindInt64(idx++, info->m_requirementId);
+        stmt->bindString(idx++, info->m_module);
+        stmt->bindString(idx++, info->m_stepsToReproduce);
+        stmt->bindString(idx++, info->m_environment);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int BugInfoDao::BatchUpdate(const std::vector<BugInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int BugInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from bug where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -211,7 +500,7 @@ int BugInfoDao::Delete(BugInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -223,7 +512,7 @@ int BugInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -235,7 +524,7 @@ int BugInfoDao::DeleteByOrgId( const int64_t& org_id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -247,7 +536,7 @@ int BugInfoDao::DeleteByCreatorId( const int64_t& creator_id, chen::IDB::ptr con
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -259,7 +548,7 @@ int BugInfoDao::DeleteByAssigneeId( const int64_t& assignee_id, chen::IDB::ptr c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -271,7 +560,7 @@ int BugInfoDao::QueryAll(std::vector<BugInfo::ptr>& results, chen::IDB::ptr conn
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -306,7 +595,7 @@ BugInfo::ptr BugInfoDao::Query( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -342,7 +631,7 @@ int BugInfoDao::QueryByOrgId(std::vector<BugInfo::ptr>& results,  const int64_t&
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -396,7 +685,7 @@ int BugInfoDao::QueryByOrgIdPages(std::vector<BugInfo::ptr>& results, int64_t& t
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, org_id);
@@ -434,7 +723,7 @@ int BugInfoDao::QueryByCreatorId(std::vector<BugInfo::ptr>& results,  const int6
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -488,7 +777,7 @@ int BugInfoDao::QueryByCreatorIdPages(std::vector<BugInfo::ptr>& results, int64_
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, creator_id);
@@ -526,7 +815,7 @@ int BugInfoDao::QueryByAssigneeId(std::vector<BugInfo::ptr>& results,  const int
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -580,7 +869,7 @@ int BugInfoDao::QueryByAssigneeIdPages(std::vector<BugInfo::ptr>& results, int64
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, assignee_id);
@@ -610,6 +899,136 @@ int BugInfoDao::QueryByAssigneeIdPages(std::vector<BugInfo::ptr>& results, int64
         v->m_updateTime = rt->getTime(15);
         results.push_back(v);
     };
+    return 0;
+}
+
+BugInfo::ptr BugInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    BugInfo::ptr v(new BugInfo);
+    v->m_id = data->getInt64(0);
+    v->m_orgId = data->getInt64(1);
+    v->m_title = data->getString(2);
+    v->m_description = data->getString(3);
+    v->m_severity = data->getInt32(4);
+    v->m_priority = data->getInt32(5);
+    v->m_status = data->getInt32(6);
+    v->m_creatorId = data->getInt64(7);
+    v->m_assigneeId = data->getInt64(8);
+    v->m_requirementId = data->getInt64(9);
+    v->m_module = data->getString(10);
+    v->m_stepsToReproduce = data->getString(11);
+    v->m_environment = data->getString(12);
+    v->m_isDeleted = data->getInt32(13);
+    v->m_createTime = data->getTime(14);
+    v->m_updateTime = data->getTime(15);
+    return v;
+}
+
+int BugInfoDao::QueryByBuilder(std::vector<BugInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, severity, priority, status, creator_id, assignee_id, requirement_id, module, steps_to_reproduce, environment, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        BugInfo::ptr v(new BugInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_severity = rt->getInt32(4);
+        v->m_priority = rt->getInt32(5);
+        v->m_status = rt->getInt32(6);
+        v->m_creatorId = rt->getInt64(7);
+        v->m_assigneeId = rt->getInt64(8);
+        v->m_requirementId = rt->getInt64(9);
+        v->m_module = rt->getString(10);
+        v->m_stepsToReproduce = rt->getString(11);
+        v->m_environment = rt->getString(12);
+        v->m_isDeleted = rt->getInt32(13);
+        v->m_createTime = rt->getTime(14);
+        v->m_updateTime = rt->getTime(15);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int BugInfoDao::QueryByBuilderPages(std::vector<BugInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, severity, priority, status, creator_id, assignee_id, requirement_id, module, steps_to_reproduce, environment, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        BugInfo::ptr v(new BugInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_orgId = rt->getInt64(1);
+        v->m_title = rt->getString(2);
+        v->m_description = rt->getString(3);
+        v->m_severity = rt->getInt32(4);
+        v->m_priority = rt->getInt32(5);
+        v->m_status = rt->getInt32(6);
+        v->m_creatorId = rt->getInt64(7);
+        v->m_assigneeId = rt->getInt64(8);
+        v->m_requirementId = rt->getInt64(9);
+        v->m_module = rt->getString(10);
+        v->m_stepsToReproduce = rt->getString(11);
+        v->m_environment = rt->getString(12);
+        v->m_isDeleted = rt->getInt32(13);
+        v->m_createTime = rt->getTime(14);
+        v->m_updateTime = rt->getTime(15);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -659,6 +1078,53 @@ int BugInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "KEY `bug_org_id` (`org_id`),"
             "KEY `bug_creator_id` (`creator_id`),"
             "KEY `bug_assignee_id` (`assignee_id`)) COMMENT='缺陷表'");
+}
+
+int BugInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "bug");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "bug");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "bug");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int BugInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

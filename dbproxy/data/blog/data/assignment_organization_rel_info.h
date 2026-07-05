@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class AssignmentOrganizationRelInfoDao;
+/**
+ * @brief 作业-组织关联表
+ */
 class AssignmentOrganizationRelInfo {
 friend class AssignmentOrganizationRelInfoDao;
 public:
@@ -21,31 +25,107 @@ public:
 
     AssignmentOrganizationRelInfo();
 
+    /**
+     * @brief 获取主键ID
+     * @return 主键ID
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置主键ID
+     * @param v 主键ID
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取作业ID
+     * @return 作业ID
+     */
     const int64_t& getAssignmentId() { return m_assignmentId; }
+    /**
+     * @brief 设置作业ID
+     * @param v 作业ID
+     */
     void setAssignmentId(const int64_t& v);
 
+    /**
+     * @brief 获取组织ID
+     * @return 组织ID
+     */
     const int64_t& getOrganizationId() { return m_organizationId; }
+    /**
+     * @brief 设置组织ID
+     * @param v 组织ID
+     */
     void setOrganizationId(const int64_t& v);
 
+    /**
+     * @brief 获取负责人
+     * @return 负责人
+     */
     const std::string& getAssignedBy() { return m_assignedBy; }
+    /**
+     * @brief 设置负责人
+     * @param v 负责人
+     */
     void setAssignedBy(const std::string& v);
 
+    /**
+     * @brief 获取状态: 1分配 2取消
+     * @return 状态: 1分配 2取消
+     */
     const int32_t& getStatus() { return m_status; }
+    /**
+     * @brief 设置状态: 1分配 2取消
+     * @param v 状态: 1分配 2取消
+     */
     void setStatus(const int32_t& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_status;
@@ -56,6 +136,7 @@ private:
     std::string m_assignedBy;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -65,6 +146,9 @@ public:
     static int Update(AssignmentOrganizationRelInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(AssignmentOrganizationRelInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(AssignmentOrganizationRelInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<AssignmentOrganizationRelInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<AssignmentOrganizationRelInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(AssignmentOrganizationRelInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -82,6 +166,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static AssignmentOrganizationRelInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<AssignmentOrganizationRelInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<AssignmentOrganizationRelInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

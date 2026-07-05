@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class NotificationInfoDao;
+/**
+ * @brief 用户通知
+ */
 class NotificationInfo {
 friend class NotificationInfoDao;
 public:
@@ -21,49 +25,206 @@ public:
 
     NotificationInfo();
 
+    /**
+     * @brief 获取主键id
+     * @return 主键id
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置主键id
+     * @param v 主键id
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取接收用户id
+     * @return 接收用户id
+     */
     const int64_t& getUserId() { return m_userId; }
+    /**
+     * @brief 设置接收用户id
+     * @param v 接收用户id
+     */
     void setUserId(const int64_t& v);
 
+    /**
+     * @brief 获取通知标题
+     * @return 通知标题
+     */
     const std::string& getTitle() { return m_title; }
+    /**
+     * @brief 设置通知标题
+     * @param v 通知标题
+     */
     void setTitle(const std::string& v);
 
+    /**
+     * @brief 获取通知内容
+     * @return 通知内容
+     */
     const std::string& getContent() { return m_content; }
+    /**
+     * @brief 设置通知内容
+     * @param v 通知内容
+     */
     void setContent(const std::string& v);
 
+    /**
+     * @brief 获取通知类型: system/announcement/article
+     * @return 通知类型: system/announcement/article
+     */
     const std::string& getType() { return m_type; }
+    /**
+     * @brief 设置通知类型: system/announcement/article
+     * @param v 通知类型: system/announcement/article
+     */
     void setType(const std::string& v);
 
+    /**
+     * @brief 获取发送者id(0=系统)
+     * @return 发送者id(0=系统)
+     */
     const int64_t& getSenderId() { return m_senderId; }
+    /**
+     * @brief 设置发送者id(0=系统)
+     * @param v 发送者id(0=系统)
+     */
     void setSenderId(const int64_t& v);
 
+    /**
+     * @brief 获取关联文章ID
+     * @return 关联文章ID
+     */
     const int64_t& getArticleId() { return m_articleId; }
+    /**
+     * @brief 设置关联文章ID
+     * @param v 关联文章ID
+     */
     void setArticleId(const int64_t& v);
 
+    /**
+     * @brief 获取关联评论ID
+     * @return 关联评论ID
+     */
     const int64_t& getCommentId() { return m_commentId; }
+    /**
+     * @brief 设置关联评论ID
+     * @param v 关联评论ID
+     */
     void setCommentId(const int64_t& v);
 
+    /**
+     * @brief 获取是否已读: 0未读 1已读
+     * @return 是否已读: 0未读 1已读
+     */
     const int32_t& getIsRead() { return m_isRead; }
+    /**
+     * @brief 设置是否已读: 0未读 1已读
+     * @param v 是否已读: 0未读 1已读
+     */
     void setIsRead(const int32_t& v);
 
+    /**
+     * @brief 获取阅读时间
+     * @return 阅读时间
+     */
     const int64_t& getReadTime() { return m_readTime; }
+    /**
+     * @brief 设置阅读时间
+     * @param v 阅读时间
+     */
     void setReadTime(const int64_t& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 获取创建时间
+     * @return 创建时间
+     */
     const int64_t& getCreateTime() { return m_createTime; }
+    /**
+     * @brief 设置创建时间
+     * @param v 创建时间
+     */
     void setCreateTime(const int64_t& v);
 
+    /**
+     * @brief 获取更新时间
+     * @return 更新时间
+     */
     const int64_t& getUpdateTime() { return m_updateTime; }
+    /**
+     * @brief 设置更新时间
+     * @param v 更新时间
+     */
     void setUpdateTime(const int64_t& v);
 
+    /**
+     * @brief 获取是否广播: 0否 1是
+     * @return 是否广播: 0否 1是
+     */
     const int32_t& getIsBroadcast() { return m_isBroadcast; }
+    /**
+     * @brief 设置是否广播: 0否 1是
+     * @param v 是否广播: 0否 1是
+     */
     void setIsBroadcast(const int32_t& v);
 
+    /**
+     * @brief 获取广播级别: info/warning/danger
+     * @return 广播级别: info/warning/danger
+     */
+    const std::string& getLevel() { return m_level; }
+    /**
+     * @brief 设置广播级别: info/warning/danger
+     * @param v 广播级别: info/warning/danger
+     */
+    void setLevel(const std::string& v);
+
+    /**
+     * @brief 获取广播开始时间(Unix秒), 0=即时
+     * @return 广播开始时间(Unix秒), 0=即时
+     */
+    const int64_t& getStartTime() { return m_startTime; }
+    /**
+     * @brief 设置广播开始时间(Unix秒), 0=即时
+     * @param v 广播开始时间(Unix秒), 0=即时
+     */
+    void setStartTime(const int64_t& v);
+
+    /**
+     * @brief 获取广播结束时间(Unix秒), 0=手动关闭
+     * @return 广播结束时间(Unix秒), 0=手动关闭
+     */
+    const int64_t& getEndTime() { return m_endTime; }
+    /**
+     * @brief 设置广播结束时间(Unix秒), 0=手动关闭
+     * @param v 广播结束时间(Unix秒), 0=手动关闭
+     */
+    void setEndTime(const int64_t& v);
+
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_isRead;
@@ -74,12 +235,16 @@ private:
     int64_t m_senderId;
     int64_t m_articleId;
     int64_t m_commentId;
+    int64_t m_startTime;
+    int64_t m_endTime;
     std::string m_title;
     std::string m_type;
+    std::string m_level;
     std::string m_content;
     int64_t m_readTime;
     int64_t m_createTime;
     int64_t m_updateTime;
+    uint64_t m_flags = 0;
 };
 
 
@@ -89,6 +254,9 @@ public:
     static int Update(NotificationInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(NotificationInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(NotificationInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<NotificationInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<NotificationInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(NotificationInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -104,6 +272,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static NotificationInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<NotificationInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<NotificationInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

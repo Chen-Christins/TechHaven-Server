@@ -16,17 +16,7 @@ AssignmentUserRelManager::AssignmentUserRelManager()
 }
 
 data::AssignmentUserRelInfo::ptr AssignmentUserRelManager::parseRow(chen::ISQLData::ptr rt) {
-    data::AssignmentUserRelInfo::ptr v(new data::AssignmentUserRelInfo);
-    v->setId(rt->getInt64(0));
-    v->setAssignmentId(rt->getInt64(1));
-    v->setUserId(rt->getInt64(2));
-    v->setStatus(rt->getInt32(3));
-    v->setScore(rt->getInt32(4));
-    v->setSubmitTime(rt->getInt64(5));
-    v->setIsDeleted(rt->getInt32(6));
-    v->setCreateTime(rt->getTime(7));
-    v->setUpdateTime(rt->getTime(8));
-    return v;
+    return data::AssignmentUserRelInfoDao::ParseRow(rt);
 }
 
 void AssignmentUserRelManager::add(blog::data::AssignmentUserRelInfo::ptr info) {

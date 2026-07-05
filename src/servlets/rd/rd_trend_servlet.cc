@@ -1,6 +1,7 @@
 #include "rd_trend_servlet.h"
 
 #include <chen/log/log.h>
+#include <chen/db/query_builder.h>
 
 #include <cmath>
 
@@ -46,75 +47,67 @@ std::string RdTrendServlet::formatGroupKey(time_t t, const std::string& granular
 
 // ==================== 查询辅助函数 ====================
 
-static std::string buildOrgFilter(const std::vector<int64_t>& target_orgs) {
-    if (target_orgs.empty()) return "";
-    std::string cond = " org_id IN (";
-    for (size_t i = 0; i < target_orgs.size(); ++i) {
-        if (i) cond += ",";
-        cond += std::to_string(target_orgs[i]);
+/// 为 QueryBuilder 添加 is_deleted + org 过滤条件
+static void addBaseConds(chen::QueryBuilder::ptr qb, const TrendContext& ctx) {
+    qb->where("is_deleted", "=", (int64_t)0);
+    if (!ctx.target_orgs.empty()) {
+        qb->whereIn("org_id", ctx.target_orgs);
     }
-    cond += ")";
-    return cond;
 }
 
-std::string RdTrendServlet::buildTimeCond(time_t start, time_t end) {
-    return "create_time >= FROM_UNIXTIME(" + std::to_string(start) + ")"
-         + " AND create_time < FROM_UNIXTIME(" + std::to_string(end) + ")";
+/// 为 QueryBuilder 添加标准时间范围条件
+static void addTimeCond(chen::QueryBuilder::ptr qb, time_t start, time_t end) {
+    qb->whereSQL("create_time >= FROM_UNIXTIME(?)", (int64_t)start);
+    qb->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)end);
 }
 
-std::string RdTrendServlet::buildPRTimeCond(time_t start, time_t end) {
-    return "prs.create_time >= FROM_UNIXTIME(" + std::to_string(start) + ")"
-         + " AND prs.create_time < FROM_UNIXTIME(" + std::to_string(end) + ")";
+/// 为 QueryBuilder 添加 PR 表的时间范围条件
+static void addPRTimeCond(chen::QueryBuilder::ptr qb, time_t start, time_t end) {
+    qb->whereSQL("prs.create_time >= FROM_UNIXTIME(?)", (int64_t)start);
+    qb->whereSQL("prs.create_time < FROM_UNIXTIME(?)", (int64_t)end);
 }
 
-static std::string buildOrgFilterForPR(const std::vector<int64_t>& target_orgs) {
-    if (target_orgs.empty()) return "";
-    std::string cond = " AND repos.org_id IN (";
-    for (size_t i = 0; i < target_orgs.size(); ++i) {
-        if (i) cond += ",";
-        cond += std::to_string(target_orgs[i]);
+int64_t RdTrendServlet::countBySql(const TrendContext& ctx, const std::string& table, int32_t min_status) {
+    auto qb = chen::QueryBuilder::Create(table);
+    addBaseConds(qb, ctx);
+    if (min_status >= 0) {
+        qb->where("status", ">=", (int64_t)min_status);
     }
-    cond += ")";
-    return cond;
+    addTimeCond(qb, ctx.start_date, ctx.end_date);
+    int64_t total = 0;
+    qb->executeCount(total, ctx.db);
+    return total;
 }
 
-int64_t RdTrendServlet::countBySql(const TrendContext& ctx, const std::string& table, const std::string& extra_cond) {
-    std::string sql = "SELECT COUNT(*) FROM " + table + " WHERE is_deleted = 0";
-    std::string org_filter = buildOrgFilter(ctx.target_orgs);
-    if (!org_filter.empty()) sql += " AND " + org_filter;
-    if (!extra_cond.empty()) sql += " AND " + extra_cond;
+double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& table, int32_t min_status) {
+    auto qb = chen::QueryBuilder::Create(table);
+    qb->select("AVG(TIMESTAMPDIFF(SECOND, create_time, update_time)) / 86400.0");
+    addBaseConds(qb, ctx);
+    qb->where("status", ">=", (int64_t)min_status);
+    addTimeCond(qb, ctx.start_date, ctx.end_date);
 
-    auto stmt = ctx.db->prepare(sql);
-    if (!stmt) return 0;
-    auto rt = stmt->query();
-    if (!rt || !rt->next()) return 0;
-    return rt->getInt64(0);
-}
-
-double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& table, const std::string& status_cond) {
-    std::string sql = "SELECT AVG(TIMESTAMPDIFF(SECOND, create_time, update_time)) / 86400.0 FROM " + table
-                   + " WHERE is_deleted = 0 AND " + status_cond;
-    std::string org_filter = buildOrgFilter(ctx.target_orgs);
-    if (!org_filter.empty()) sql += " AND " + org_filter;
-    sql += " AND " + buildTimeCond(ctx.start_date, ctx.end_date);
-
-    auto stmt = ctx.db->prepare(sql);
+    auto stmt = ctx.db->prepare(qb->buildQuerySQL());
     if (!stmt) return 0.0;
+    qb->bindParams(stmt);
     auto rt = stmt->query();
     if (!rt || !rt->next()) return 0.0;
     return rt->getDouble(0);
 }
 
-void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table, const std::string& extra_cond, const std::string& field_name) {
-    std::string sql = "SELECT DATE_FORMAT(create_time, '%Y-%m-%d') as d, COUNT(*) as cnt FROM " + table
-                   + " WHERE is_deleted = 0";
-    std::string org_filter = buildOrgFilter(ctx.target_orgs);
-    if (!org_filter.empty()) sql += " AND " + org_filter;
-    if (!extra_cond.empty()) sql += " AND " + extra_cond;
-    sql += " AND " + buildTimeCond(ctx.start_date, ctx.end_date) + " GROUP BY d ORDER BY d";
+void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name) {
+    auto qb = chen::QueryBuilder::Create(table);
+    qb->select("DATE_FORMAT(create_time, '%Y-%m-%d') as d, COUNT(*) as cnt");
+    addBaseConds(qb, ctx);
+    if (min_status >= 0) {
+        qb->where("status", ">=", (int64_t)min_status);
+    }
+    addTimeCond(qb, ctx.start_date, ctx.end_date);
+    qb->groupBy("d");
+    qb->orderBy("d", "ASC");
 
-    auto stmt = ctx.db->prepare(sql);
+    auto stmt = ctx.db->prepare(qb->buildQuerySQL());
     if (!stmt) return;
+    qb->bindParams(stmt);
     auto rt = stmt->query();
     if (!rt) return;
     while (rt->next()) {
@@ -213,43 +206,46 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         }
 
         // ====== 汇总统计 ======
-        std::string time_cond = buildTimeCond(ctx.start_date, ctx.end_date);
-        ctx.new_req   = countBySql(ctx, "requirement", time_cond);
-        ctx.done_req  = countBySql(ctx, "requirement", "status >= 3 AND " + time_cond);
-        ctx.bug_total = countBySql(ctx, "bug", time_cond);
-        ctx.done_bug  = countBySql(ctx, "bug", "status >= 2 AND " + time_cond);
-        ctx.new_task  = countBySql(ctx, "task", time_cond);
-        ctx.done_task = countBySql(ctx, "task", "status >= 2 AND " + time_cond);
+        ctx.new_req   = countBySql(ctx, "requirement");
+        ctx.done_req  = countBySql(ctx, "requirement", 3);
+        ctx.bug_total = countBySql(ctx, "bug");
+        ctx.done_bug  = countBySql(ctx, "bug", 2);
+        ctx.new_task  = countBySql(ctx, "task");
+        ctx.done_task = countBySql(ctx, "task", 2);
         ctx.total_completed = ctx.done_req + ctx.done_bug + ctx.done_task;
 
         // avg_review_pass_rate
         {
-            std::string pr_time = buildPRTimeCond(ctx.start_date, ctx.end_date);
-            std::string org_pr = buildOrgFilterForPR(ctx.target_orgs);
-            std::string base_sql = "FROM organization_repo_prs prs"
-                                   " INNER JOIN organization_repos repos ON prs.repo_id = repos.id"
-                                   " WHERE prs.review_status != '' AND prs.review_status != 'pending'"
-                                   + org_pr + " AND " + pr_time;
-            auto countReviewed = [&](const std::string& extra) -> int64_t {
-                std::string sql = "SELECT COUNT(*) " + base_sql + extra;
-                auto stmt = ctx.db->prepare(sql);
-                if (!stmt) return 0;
-                auto rt = stmt->query();
-                if (rt && rt->next()) return rt->getInt64(0);
-                return 0;
+            auto buildBaseQB = [&]() {
+                auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+                qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
+                qb->where("prs.review_status", "!=", std::string(""));
+                qb->where("prs.review_status", "!=", std::string("pending"));
+                if (!ctx.target_orgs.empty()) {
+                    qb->whereIn("repos.org_id", ctx.target_orgs);
+                }
+                addPRTimeCond(qb, ctx.start_date, ctx.end_date);
+                return qb;
             };
-            int64_t total_reviewed = countReviewed("");
+
+            auto totalQB = buildBaseQB();
+            int64_t total_reviewed = 0;
+            totalQB->executeCount(total_reviewed, ctx.db);
+
             if (total_reviewed > 0) {
-                int64_t approved = countReviewed(" AND prs.review_status = 'approved'");
+                auto approvedQB = buildBaseQB();
+                approvedQB->where("prs.review_status", "=", std::string("approved"));
+                int64_t approved = 0;
+                approvedQB->executeCount(approved, ctx.db);
                 ctx.review_pass_rate = approved * 100 / total_reviewed;
             }
         }
 
         // avg_cycle_time
         {
-            double req_cycle  = avgCycleTime(ctx, "requirement", "status >= 3");
-            double bug_cycle  = avgCycleTime(ctx, "bug", "status >= 2");
-            double task_cycle = avgCycleTime(ctx, "task", "status >= 2");
+            double req_cycle  = avgCycleTime(ctx, "requirement", 3);
+            double bug_cycle  = avgCycleTime(ctx, "bug", 2);
+            double task_cycle = avgCycleTime(ctx, "task", 2);
             if (ctx.total_completed > 0) {
                 ctx.avg_cycle_time = (req_cycle * ctx.done_req + bug_cycle * ctx.done_bug + task_cycle * ctx.done_task)
                                    / ctx.total_completed;
@@ -258,8 +254,18 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
 
         // task_delta
         {
-            int64_t tasks_at_end   = countBySql(ctx, "task", "create_time < FROM_UNIXTIME(" + std::to_string(ctx.end_date) + ")");
-            int64_t tasks_at_start = countBySql(ctx, "task", "create_time < FROM_UNIXTIME(" + std::to_string(ctx.start_date) + ")");
+            auto qbEnd = chen::QueryBuilder::Create("task");
+            addBaseConds(qbEnd, ctx);
+            qbEnd->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)ctx.end_date);
+            int64_t tasks_at_end = 0;
+            qbEnd->executeCount(tasks_at_end, ctx.db);
+
+            auto qbStart = chen::QueryBuilder::Create("task");
+            addBaseConds(qbStart, ctx);
+            qbStart->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)ctx.start_date);
+            int64_t tasks_at_start = 0;
+            qbStart->executeCount(tasks_at_start, ctx.db);
+
             ctx.task_delta = tasks_at_end - tasks_at_start;
         }
 
@@ -274,9 +280,9 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
                 prev_ctx.start_date = prev_start;
                 prev_ctx.end_date = prev_end;
 
-                double prev_req  = avgCycleTime(prev_ctx, "requirement", "status >= 3");
-                double prev_bug  = avgCycleTime(prev_ctx, "bug", "status >= 2");
-                double prev_task = avgCycleTime(prev_ctx, "task", "status >= 2");
+                double prev_req  = avgCycleTime(prev_ctx, "requirement", 3);
+                double prev_bug  = avgCycleTime(prev_ctx, "bug", 2);
+                double prev_task = avgCycleTime(prev_ctx, "task", 2);
                 if (ctx.total_completed > 0) {
                     double prev_total = (prev_req * ctx.done_req + prev_bug * ctx.done_bug + prev_task * ctx.done_task)
                                       / ctx.total_completed;
@@ -320,12 +326,12 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
                 }
             }
 
-            addSeriesBySql(ctx, "requirement", "", "requirements");
-            addSeriesBySql(ctx, "bug", "", "bugs");
-            addSeriesBySql(ctx, "task", "", "tasks");
-            addSeriesBySql(ctx, "requirement", "status >= 3", "completed");
-            addSeriesBySql(ctx, "bug", "status >= 2", "completed");
-            addSeriesBySql(ctx, "task", "status >= 2", "completed");
+            addSeriesBySql(ctx, "requirement", -1, "requirements");
+            addSeriesBySql(ctx, "bug", -1, "bugs");
+            addSeriesBySql(ctx, "task", -1, "tasks");
+            addSeriesBySql(ctx, "requirement", 3, "completed");
+            addSeriesBySql(ctx, "bug", 2, "completed");
+            addSeriesBySql(ctx, "task", 2, "completed");
 
             for (auto& t : date_points) {
                 std::string key = formatGroupKey(t, ctx.granularity);
@@ -351,17 +357,16 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         int64_t total_items = ctx.new_req + ctx.bug_total + ctx.new_task;
         auto& dist = result->jsondata["work_distribution"];
         {
-            std::string pr_time = buildPRTimeCond(ctx.start_date, ctx.end_date);
-            std::string org_pr = buildOrgFilterForPR(ctx.target_orgs);
-            std::string sql = "SELECT COUNT(*) FROM organization_repo_prs prs"
-                              " INNER JOIN organization_repos repos ON prs.repo_id = repos.id"
-                              " WHERE 1=1" + org_pr + " AND " + pr_time;
+            auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+            qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
+            if (!ctx.target_orgs.empty()) {
+                qb->whereIn("repos.org_id", ctx.target_orgs);
+            } 
+            addPRTimeCond(qb, ctx.start_date, ctx.end_date);
+
             int64_t pr_count = 0;
-            auto stmt = ctx.db->prepare(sql);
-            if (stmt) {
-                auto rt = stmt->query();
-                if (rt && rt->next()) pr_count = rt->getInt64(0);
-            }
+            qb->executeCount(pr_count, ctx.db);
+
             int64_t dist_total = total_items + pr_count;
             if (dist_total > 0) {
                 dist["requirement_delivery"] = std::round(ctx.new_req * 100.0 / dist_total);

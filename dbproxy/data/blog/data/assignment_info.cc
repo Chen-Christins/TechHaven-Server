@@ -48,74 +48,173 @@ std::string AssignmentInfo::toJsonString() const {
 
 void AssignmentInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void AssignmentInfo::setName(const std::string& v) {
     m_name = v;
+    m_flags |= (1ull << 1);
 }
 
 void AssignmentInfo::setSubjectName(const std::string& v) {
     m_subjectName = v;
+    m_flags |= (1ull << 2);
 }
 
 void AssignmentInfo::setPriority(const int32_t& v) {
     m_priority = v;
+    m_flags |= (1ull << 3);
 }
 
 void AssignmentInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 4);
 }
 
 void AssignmentInfo::setDescription(const std::string& v) {
     m_description = v;
+    m_flags |= (1ull << 5);
 }
 
 void AssignmentInfo::setMaxSize(const int32_t& v) {
     m_maxSize = v;
+    m_flags |= (1ull << 6);
 }
 
 void AssignmentInfo::setFileType(const std::string& v) {
     m_fileType = v;
+    m_flags |= (1ull << 7);
 }
 
 void AssignmentInfo::setDeadline(const int64_t& v) {
     m_deadline = v;
+    m_flags |= (1ull << 8);
 }
 
 void AssignmentInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 9);
 }
 
 void AssignmentInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 10);
 }
 
 void AssignmentInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 11);
 }
 
 
 int AssignmentInfoDao::Update(AssignmentInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update assignment set name = ?, subject_name = ?, priority = ?, status = ?, description = ?, max_size = ?, file_type = ?, deadline = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update assignment set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "subject_name = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "priority = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "description = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "max_size = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "file_type = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "deadline = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 11)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindString(1, info->m_name);
-    stmt->bindString(2, info->m_subjectName);
-    stmt->bindInt32(3, info->m_priority);
-    stmt->bindInt32(4, info->m_status);
-    stmt->bindString(5, info->m_description);
-    stmt->bindInt32(6, info->m_maxSize);
-    stmt->bindString(7, info->m_fileType);
-    stmt->bindTime(8, info->m_deadline);
-    stmt->bindInt32(9, info->m_isDeleted);
-    stmt->bindTime(10, info->m_createTime);
-    stmt->bindTime(11, info->m_updateTime);
-    stmt->bindInt64(12, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindString(idx++, info->m_name);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_subjectName);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindInt32(idx++, info->m_priority);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindString(idx++, info->m_description);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt32(idx++, info->m_maxSize);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindString(idx++, info->m_fileType);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindTime(idx++, info->m_deadline);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 11)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int AssignmentInfoDao::Insert(AssignmentInfo::ptr info, chen::IDB::ptr conn) {
@@ -123,7 +222,7 @@ int AssignmentInfoDao::Insert(AssignmentInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, info->m_name);
@@ -141,6 +240,9 @@ int AssignmentInfoDao::Insert(AssignmentInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -152,7 +254,7 @@ int AssignmentInfoDao::InsertOrUpdate(AssignmentInfo::ptr info, chen::IDB::ptr c
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -167,6 +269,141 @@ int AssignmentInfoDao::InsertOrUpdate(AssignmentInfo::ptr info, chen::IDB::ptr c
     stmt->bindInt32(10, info->m_isDeleted);
     stmt->bindTime(11, info->m_createTime);
     stmt->bindTime(12, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int AssignmentInfoDao::BatchInsert(const std::vector<AssignmentInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into assignment (";
+    sql += "name";
+    sql += ", ";
+    sql += "subject_name";
+    sql += ", ";
+    sql += "priority";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "description";
+    sql += ", ";
+    sql += "max_size";
+    sql += ", ";
+    sql += "file_type";
+    sql += ", ";
+    sql += "deadline";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindString(idx++, info->m_name);
+        stmt->bindString(idx++, info->m_subjectName);
+        stmt->bindInt32(idx++, info->m_priority);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindString(idx++, info->m_description);
+        stmt->bindInt32(idx++, info->m_maxSize);
+        stmt->bindString(idx++, info->m_fileType);
+        stmt->bindTime(idx++, info->m_deadline);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int AssignmentInfoDao::BatchUpdate(const std::vector<AssignmentInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int AssignmentInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from assignment where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -175,7 +412,7 @@ int AssignmentInfoDao::Delete(AssignmentInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -187,7 +424,7 @@ int AssignmentInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -199,7 +436,7 @@ int AssignmentInfoDao::DeleteBySubjectName( const std::string& subject_name, che
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
@@ -211,7 +448,7 @@ int AssignmentInfoDao::DeleteBySubjectNameName( const std::string& subject_name,
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
@@ -224,7 +461,7 @@ int AssignmentInfoDao::QueryAll(std::vector<AssignmentInfo::ptr>& results, chen:
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -255,7 +492,7 @@ AssignmentInfo::ptr AssignmentInfoDao::Query( const int64_t& id, chen::IDB::ptr 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -287,7 +524,7 @@ int AssignmentInfoDao::QueryBySubjectName(std::vector<AssignmentInfo::ptr>& resu
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
@@ -337,7 +574,7 @@ int AssignmentInfoDao::QueryBySubjectNamePages(std::vector<AssignmentInfo::ptr>&
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
@@ -371,7 +608,7 @@ int AssignmentInfoDao::QueryBySubjectNameName(std::vector<AssignmentInfo::ptr>& 
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
@@ -423,7 +660,7 @@ int AssignmentInfoDao::QueryBySubjectNameNamePages(std::vector<AssignmentInfo::p
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, subject_name);
@@ -450,6 +687,124 @@ int AssignmentInfoDao::QueryBySubjectNameNamePages(std::vector<AssignmentInfo::p
         v->m_updateTime = rt->getTime(11);
         results.push_back(v);
     };
+    return 0;
+}
+
+AssignmentInfo::ptr AssignmentInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    AssignmentInfo::ptr v(new AssignmentInfo);
+    v->m_id = data->getInt64(0);
+    v->m_name = data->getString(1);
+    v->m_subjectName = data->getString(2);
+    v->m_priority = data->getInt32(3);
+    v->m_status = data->getInt32(4);
+    v->m_description = data->getString(5);
+    v->m_maxSize = data->getInt32(6);
+    v->m_fileType = data->getString(7);
+    v->m_deadline = data->getTime(8);
+    v->m_isDeleted = data->getInt32(9);
+    v->m_createTime = data->getTime(10);
+    v->m_updateTime = data->getTime(11);
+    return v;
+}
+
+int AssignmentInfoDao::QueryByBuilder(std::vector<AssignmentInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        AssignmentInfo::ptr v(new AssignmentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_subjectName = rt->getString(2);
+        v->m_priority = rt->getInt32(3);
+        v->m_status = rt->getInt32(4);
+        v->m_description = rt->getString(5);
+        v->m_maxSize = rt->getInt32(6);
+        v->m_fileType = rt->getString(7);
+        v->m_deadline = rt->getTime(8);
+        v->m_isDeleted = rt->getInt32(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int AssignmentInfoDao::QueryByBuilderPages(std::vector<AssignmentInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        AssignmentInfo::ptr v(new AssignmentInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_name = rt->getString(1);
+        v->m_subjectName = rt->getString(2);
+        v->m_priority = rt->getInt32(3);
+        v->m_status = rt->getInt32(4);
+        v->m_description = rt->getString(5);
+        v->m_maxSize = rt->getInt32(6);
+        v->m_fileType = rt->getString(7);
+        v->m_deadline = rt->getTime(8);
+        v->m_isDeleted = rt->getInt32(9);
+        v->m_createTime = rt->getTime(10);
+        v->m_updateTime = rt->getTime(11);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -489,6 +844,53 @@ int AssignmentInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "PRIMARY KEY(`id`),"
             "KEY `assignment_subject_name` (`subject_name`),"
             "KEY `assignment_subject_name_name` (`subject_name`,`name`)) COMMENT='作业'");
+}
+
+int AssignmentInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "assignment");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "assignment");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "assignment");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int AssignmentInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {

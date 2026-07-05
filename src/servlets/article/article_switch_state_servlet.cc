@@ -1,5 +1,6 @@
 #include "article_switch_state_servlet.h"
 
+#include "../../index.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/notification_manager.h"
@@ -67,6 +68,7 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
             break;
         }
         ArticleMgr::GetInstance()->add(article);
+        IndexMgr::GetInstance()->updateArticle(article);
 
         // 清除旧发布时间对应月份的日历缓存
         if (oldPublishTime > 0) {

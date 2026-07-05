@@ -15,19 +15,7 @@ ChunkUploadManager::ChunkUploadManager()
 }
 
 data::ChunkUploadInfo::ptr ChunkUploadManager::parseRow(chen::ISQLData::ptr rt) {
-    data::ChunkUploadInfo::ptr v(new data::ChunkUploadInfo);
-    v->setId(rt->getInt64(0));
-    v->setUploadId(rt->getString(1));
-    v->setFilename(rt->getString(2));
-    v->setTotalChunks(rt->getInt32(3));
-    v->setUploadedChunks(rt->getInt32(4));
-    v->setSize(rt->getInt64(5));
-    v->setOwnerId(rt->getInt64(6));
-    v->setStatus(rt->getInt32(7));
-    v->setIsDeleted(rt->getInt32(8));
-    v->setCreateTime(rt->getTime(9));
-    v->setUpdateTime(rt->getTime(10));
-    return v;
+    return data::ChunkUploadInfoDao::ParseRow(rt);
 }
 
 

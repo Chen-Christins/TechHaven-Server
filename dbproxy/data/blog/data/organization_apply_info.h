@@ -8,12 +8,16 @@
 #include <vector>
 
 #include <chen/db/db.h>
+#include <chen/db/query_builder.h>
 #include <chen/util/util.h>
 
 namespace blog {
 namespace data {
 
 class OrganizationApplyInfoDao;
+/**
+ * @brief 组织创建申请表
+ */
 class OrganizationApplyInfo {
 friend class OrganizationApplyInfoDao;
 public:
@@ -21,37 +25,129 @@ public:
 
     OrganizationApplyInfo();
 
+    /**
+     * @brief 获取申请ID
+     * @return 申请ID
+     */
     const int64_t& getId() { return m_id; }
+    /**
+     * @brief 设置申请ID
+     * @param v 申请ID
+     */
     void setId(const int64_t& v);
 
+    /**
+     * @brief 获取申请人用户ID
+     * @return 申请人用户ID
+     */
     const int64_t& getUserId() { return m_userId; }
+    /**
+     * @brief 设置申请人用户ID
+     * @param v 申请人用户ID
+     */
     void setUserId(const int64_t& v);
 
+    /**
+     * @brief 获取组织名称
+     * @return 组织名称
+     */
     const std::string& getOrgName() { return m_orgName; }
+    /**
+     * @brief 设置组织名称
+     * @param v 组织名称
+     */
     void setOrgName(const std::string& v);
 
+    /**
+     * @brief 获取组织类型
+     * @return 组织类型
+     */
     const std::string& getOrgType() { return m_orgType; }
+    /**
+     * @brief 设置组织类型
+     * @param v 组织类型
+     */
     void setOrgType(const std::string& v);
 
+    /**
+     * @brief 获取组织描述
+     * @return 组织描述
+     */
     const std::string& getOrgDescription() { return m_orgDescription; }
+    /**
+     * @brief 设置组织描述
+     * @param v 组织描述
+     */
     void setOrgDescription(const std::string& v);
 
+    /**
+     * @brief 获取状态: 0待审核 1已通过 2已拒绝
+     * @return 状态: 0待审核 1已通过 2已拒绝
+     */
     const int32_t& getStatus() { return m_status; }
+    /**
+     * @brief 设置状态: 0待审核 1已通过 2已拒绝
+     * @param v 状态: 0待审核 1已通过 2已拒绝
+     */
     void setStatus(const int32_t& v);
 
+    /**
+     * @brief 获取审核备注
+     * @return 审核备注
+     */
     const std::string& getReviewReason() { return m_reviewReason; }
+    /**
+     * @brief 设置审核备注
+     * @param v 审核备注
+     */
     void setReviewReason(const std::string& v);
 
+    /**
+     * @brief 获取申请时间(unix timestamp)
+     * @return 申请时间(unix timestamp)
+     */
     const int64_t& getCreatedAt() { return m_createdAt; }
+    /**
+     * @brief 设置申请时间(unix timestamp)
+     * @param v 申请时间(unix timestamp)
+     */
     void setCreatedAt(const int64_t& v);
 
+    /**
+     * @brief 获取审核时间(unix timestamp)
+     * @return 审核时间(unix timestamp)
+     */
     const int64_t& getReviewedAt() { return m_reviewedAt; }
+    /**
+     * @brief 设置审核时间(unix timestamp)
+     * @param v 审核时间(unix timestamp)
+     */
     void setReviewedAt(const int64_t& v);
 
+    /**
+     * @brief 获取是否删除
+     * @return 是否删除
+     */
     const int32_t& getIsDeleted() { return m_isDeleted; }
+    /**
+     * @brief 设置是否删除
+     * @param v 是否删除
+     */
     void setIsDeleted(const int32_t& v);
 
+    /**
+     * @brief 转为 JSON 字符串
+     * @return JSON 字符串
+     */
     std::string toJsonString() const;
+
+    /** @brief 清除脏标记（Update 成功后自动调用） */
+    void markClean() { m_flags = 0; }
+    /**
+     * @brief 是否有字段被修改过
+     * @return true 有未保存的修改，false 无修改
+     */
+    bool isDirty() const { return m_flags != 0; }
 
 private:
     int32_t m_status;
@@ -64,6 +160,7 @@ private:
     std::string m_orgType;
     std::string m_orgDescription;
     std::string m_reviewReason;
+    uint64_t m_flags = 0;
 };
 
 
@@ -73,6 +170,9 @@ public:
     static int Update(OrganizationApplyInfo::ptr info, chen::IDB::ptr conn);
     static int Insert(OrganizationApplyInfo::ptr info, chen::IDB::ptr conn);
     static int InsertOrUpdate(OrganizationApplyInfo::ptr info, chen::IDB::ptr conn);
+    static int BatchInsert(const std::vector<OrganizationApplyInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchUpdate(const std::vector<OrganizationApplyInfo::ptr>& infos, chen::IDB::ptr conn);
+    static int BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn);
     static int Delete(OrganizationApplyInfo::ptr info, chen::IDB::ptr conn);
     static int Delete(const int64_t& id, chen::IDB::ptr conn);
     static int DeleteById( const int64_t& id, chen::IDB::ptr conn);
@@ -88,6 +188,10 @@ public:
     static int CreateTableMySQL(chen::IDB::ptr info);
     static int MigrateTableSQLite3(chen::IDB::ptr info);
     static int MigrateTableMySQL(chen::IDB::ptr info);
+    static int Migrate(chen::IDB::ptr conn);
+    static OrganizationApplyInfo::ptr ParseRow(chen::ISQLData::ptr data);
+    static int QueryByBuilder(std::vector<OrganizationApplyInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn);
+    static int QueryByBuilderPages(std::vector<OrganizationApplyInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn);
 };
 
 } //namespace data

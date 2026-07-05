@@ -15,23 +15,7 @@ RequirementManager::RequirementManager()
 }
 
 data::RequirementInfo::ptr RequirementManager::parseRow(chen::ISQLData::ptr rt) {
-    data::RequirementInfo::ptr v(new data::RequirementInfo);
-    v->setId(rt->getInt64(0));
-    v->setOrgId(rt->getInt64(1));
-    v->setTitle(rt->getString(2));
-    v->setDescription(rt->getString(3));
-    v->setPriority(rt->getInt32(4));
-    v->setStatus(rt->getInt32(5));
-    v->setCreatorId(rt->getInt64(6));
-    v->setAssigneeId(rt->getInt64(7));
-    v->setIteration(rt->getString(8));
-    v->setCategory(rt->getString(9));
-    v->setSource(rt->getString(10));
-    v->setDeadline(rt->getTime(11));
-    v->setIsDeleted(rt->getInt32(12));
-    v->setCreateTime(rt->getTime(13));
-    v->setUpdateTime(rt->getTime(14));
-    return v;
+    return data::RequirementInfoDao::ParseRow(rt);
 }
 
 

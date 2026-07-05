@@ -46,69 +46,160 @@ std::string ChunkUploadInfo::toJsonString() const {
 
 void ChunkUploadInfo::setId(const int64_t& v) {
     m_id = v;
+    m_flags |= (1ull << 0);
 }
 
 void ChunkUploadInfo::setUploadId(const std::string& v) {
     m_uploadId = v;
+    m_flags |= (1ull << 1);
 }
 
 void ChunkUploadInfo::setFilename(const std::string& v) {
     m_filename = v;
+    m_flags |= (1ull << 2);
 }
 
 void ChunkUploadInfo::setTotalChunks(const int32_t& v) {
     m_totalChunks = v;
+    m_flags |= (1ull << 3);
 }
 
 void ChunkUploadInfo::setUploadedChunks(const int32_t& v) {
     m_uploadedChunks = v;
+    m_flags |= (1ull << 4);
 }
 
 void ChunkUploadInfo::setSize(const int64_t& v) {
     m_size = v;
+    m_flags |= (1ull << 5);
 }
 
 void ChunkUploadInfo::setOwnerId(const int64_t& v) {
     m_ownerId = v;
+    m_flags |= (1ull << 6);
 }
 
 void ChunkUploadInfo::setStatus(const int32_t& v) {
     m_status = v;
+    m_flags |= (1ull << 7);
 }
 
 void ChunkUploadInfo::setIsDeleted(const int32_t& v) {
     m_isDeleted = v;
+    m_flags |= (1ull << 8);
 }
 
 void ChunkUploadInfo::setCreateTime(const int64_t& v) {
     m_createTime = v;
+    m_flags |= (1ull << 9);
 }
 
 void ChunkUploadInfo::setUpdateTime(const int64_t& v) {
     m_updateTime = v;
+    m_flags |= (1ull << 10);
 }
 
 
 int ChunkUploadInfoDao::Update(ChunkUploadInfo::ptr info, chen::IDB::ptr conn) {
-    std::string sql = "update chunk_upload set upload_id = ?, filename = ?, total_chunks = ?, uploaded_chunks = ?, size = ?, owner_id = ?, status = ?, is_deleted = ?, create_time = ?, update_time = ? where id = ?";
+    if (!info->isDirty()) {
+        return 0;
+    }
+    std::string sql = "update chunk_upload set ";
+    bool first = true;
+    if (info->m_flags & (1ull << 1)) {
+        if (!first) sql += ", ";
+        sql += "upload_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 2)) {
+        if (!first) sql += ", ";
+        sql += "filename = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 3)) {
+        if (!first) sql += ", ";
+        sql += "total_chunks = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 4)) {
+        if (!first) sql += ", ";
+        sql += "uploaded_chunks = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 5)) {
+        if (!first) sql += ", ";
+        sql += "size = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 6)) {
+        if (!first) sql += ", ";
+        sql += "owner_id = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 7)) {
+        if (!first) sql += ", ";
+        sql += "status = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 8)) {
+        if (!first) sql += ", ";
+        sql += "is_deleted = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 9)) {
+        if (!first) sql += ", ";
+        sql += "create_time = ?";
+        first = false;
+    }
+    if (info->m_flags & (1ull << 10)) {
+        if (!first) sql += ", ";
+        sql += "update_time = ?";
+        first = false;
+    }
+    sql += " where id = ?";
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
-    stmt->bindString(1, info->m_uploadId);
-    stmt->bindString(2, info->m_filename);
-    stmt->bindInt32(3, info->m_totalChunks);
-    stmt->bindInt32(4, info->m_uploadedChunks);
-    stmt->bindInt64(5, info->m_size);
-    stmt->bindInt64(6, info->m_ownerId);
-    stmt->bindInt32(7, info->m_status);
-    stmt->bindInt32(8, info->m_isDeleted);
-    stmt->bindTime(9, info->m_createTime);
-    stmt->bindTime(10, info->m_updateTime);
-    stmt->bindInt64(11, info->m_id);
-    return stmt->execute();
+    int idx = 1;
+    if (info->m_flags & (1ull << 1)) {
+        stmt->bindString(idx++, info->m_uploadId);
+    }
+    if (info->m_flags & (1ull << 2)) {
+        stmt->bindString(idx++, info->m_filename);
+    }
+    if (info->m_flags & (1ull << 3)) {
+        stmt->bindInt32(idx++, info->m_totalChunks);
+    }
+    if (info->m_flags & (1ull << 4)) {
+        stmt->bindInt32(idx++, info->m_uploadedChunks);
+    }
+    if (info->m_flags & (1ull << 5)) {
+        stmt->bindInt64(idx++, info->m_size);
+    }
+    if (info->m_flags & (1ull << 6)) {
+        stmt->bindInt64(idx++, info->m_ownerId);
+    }
+    if (info->m_flags & (1ull << 7)) {
+        stmt->bindInt32(idx++, info->m_status);
+    }
+    if (info->m_flags & (1ull << 8)) {
+        stmt->bindInt32(idx++, info->m_isDeleted);
+    }
+    if (info->m_flags & (1ull << 9)) {
+        stmt->bindTime(idx++, info->m_createTime);
+    }
+    if (info->m_flags & (1ull << 10)) {
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    stmt->bindInt64(idx++, info->m_id);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
 }
 
 int ChunkUploadInfoDao::Insert(ChunkUploadInfo::ptr info, chen::IDB::ptr conn) {
@@ -116,7 +207,7 @@ int ChunkUploadInfoDao::Insert(ChunkUploadInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, info->m_uploadId);
@@ -133,6 +224,9 @@ int ChunkUploadInfoDao::Insert(ChunkUploadInfo::ptr info, chen::IDB::ptr conn) {
     if(rt == 0) {
         info->m_id = conn->getLastInsertId();
     }
+    if (rt == 0) {
+        info->markClean();
+    }
     return rt;
 }
 
@@ -144,7 +238,7 @@ int ChunkUploadInfoDao::InsertOrUpdate(ChunkUploadInfo::ptr info, chen::IDB::ptr
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -158,6 +252,136 @@ int ChunkUploadInfoDao::InsertOrUpdate(ChunkUploadInfo::ptr info, chen::IDB::ptr
     stmt->bindInt32(9, info->m_isDeleted);
     stmt->bindTime(10, info->m_createTime);
     stmt->bindTime(11, info->m_updateTime);
+    int rt = stmt->execute();
+    if (rt == 0) {
+        info->markClean();
+    }
+    return rt;
+}
+
+int ChunkUploadInfoDao::BatchInsert(const std::vector<ChunkUploadInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchInsert conn is null";
+        return -1;
+    }
+    std::string sql = "insert into chunk_upload (";
+    sql += "upload_id";
+    sql += ", ";
+    sql += "filename";
+    sql += ", ";
+    sql += "total_chunks";
+    sql += ", ";
+    sql += "uploaded_chunks";
+    sql += ", ";
+    sql += "size";
+    sql += ", ";
+    sql += "owner_id";
+    sql += ", ";
+    sql += "status";
+    sql += ", ";
+    sql += "is_deleted";
+    sql += ", ";
+    sql += "create_time";
+    sql += ", ";
+    sql += "update_time";
+    sql += ") VALUES ";
+    for (size_t r = 0; r < infos.size(); ++r) {
+        if (r) sql += ", ";
+        sql += "(";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ", ";
+        sql += "?";
+        sql += ")";
+    }
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& info : infos) {
+        stmt->bindString(idx++, info->m_uploadId);
+        stmt->bindString(idx++, info->m_filename);
+        stmt->bindInt32(idx++, info->m_totalChunks);
+        stmt->bindInt32(idx++, info->m_uploadedChunks);
+        stmt->bindInt64(idx++, info->m_size);
+        stmt->bindInt64(idx++, info->m_ownerId);
+        stmt->bindInt32(idx++, info->m_status);
+        stmt->bindInt32(idx++, info->m_isDeleted);
+        stmt->bindTime(idx++, info->m_createTime);
+        stmt->bindTime(idx++, info->m_updateTime);
+    }
+    return stmt->execute();
+}
+
+int ChunkUploadInfoDao::BatchUpdate(const std::vector<ChunkUploadInfo::ptr>& infos, chen::IDB::ptr conn) {
+    if (infos.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchUpdate conn is null";
+        return -1;
+    }
+    auto trans = conn->openTransaction(true);
+    if (!trans || !trans->begin()) {
+        ERROR(logger) << "BatchUpdate begin transaction failed";
+        return -1;
+    }
+    for (auto& info : infos) {
+        if (Update(info, conn)) {
+            ERROR(logger) << "BatchUpdate Update failed";
+            trans->rollback();
+            return conn->getErrno();
+        }
+    }
+    trans->commit();
+    return 0;
+}
+
+int ChunkUploadInfoDao::BatchDelete(const std::vector<int64_t>& ids, chen::IDB::ptr conn) {
+    if (ids.empty()) {
+        return 0;
+    }
+    if (!conn) {
+        ERROR(logger) << "BatchDelete conn is null";
+        return -1;
+    }
+    std::string sql = "delete from chunk_upload where id IN (";
+    for (size_t i = 0; i < ids.size(); ++i) {
+        if (i) sql += ", ";
+        sql += "?";
+    }
+    sql += ")";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    int idx = 1;
+    for (auto& id : ids) {
+        stmt->bindInt64(idx++, id);
+    }
     return stmt->execute();
 }
 
@@ -166,7 +390,7 @@ int ChunkUploadInfoDao::Delete(ChunkUploadInfo::ptr info, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, info->m_id);
@@ -178,7 +402,7 @@ int ChunkUploadInfoDao::DeleteById( const int64_t& id, chen::IDB::ptr conn) {
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, id);
@@ -190,7 +414,7 @@ int ChunkUploadInfoDao::DeleteByUploadId( const std::string& upload_id, chen::ID
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindString(1, upload_id);
@@ -202,7 +426,7 @@ int ChunkUploadInfoDao::DeleteByOwnerId( const int64_t& owner_id, chen::IDB::ptr
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, owner_id);
@@ -214,7 +438,7 @@ int ChunkUploadInfoDao::QueryAll(std::vector<ChunkUploadInfo::ptr>& results, che
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     auto rt = stmt->query();
@@ -244,7 +468,7 @@ ChunkUploadInfo::ptr ChunkUploadInfoDao::Query( const int64_t& id, chen::IDB::pt
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindInt64(1, id);
@@ -275,7 +499,7 @@ ChunkUploadInfo::ptr ChunkUploadInfoDao::QueryByUploadId( const std::string& upl
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return nullptr;
     }
     stmt->bindString(1, upload_id);
@@ -306,7 +530,7 @@ int ChunkUploadInfoDao::QueryByOwnerId(std::vector<ChunkUploadInfo::ptr>& result
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, owner_id);
@@ -355,7 +579,7 @@ int ChunkUploadInfoDao::QueryByOwnerIdPages(std::vector<ChunkUploadInfo::ptr>& r
     auto stmt = conn->prepare(sql);
     if(!stmt) {
         ERROR(logger) << "stmt=" << sql
-                 << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
         return conn->getErrno();
     }
     stmt->bindInt64(1, owner_id);
@@ -380,6 +604,121 @@ int ChunkUploadInfoDao::QueryByOwnerIdPages(std::vector<ChunkUploadInfo::ptr>& r
         v->m_updateTime = rt->getTime(10);
         results.push_back(v);
     };
+    return 0;
+}
+
+ChunkUploadInfo::ptr ChunkUploadInfoDao::ParseRow(chen::ISQLData::ptr data) {
+    if (!data) {
+        ERROR(logger) << "ParseRow data is null";
+        return nullptr;
+    }
+    ChunkUploadInfo::ptr v(new ChunkUploadInfo);
+    v->m_id = data->getInt64(0);
+    v->m_uploadId = data->getString(1);
+    v->m_filename = data->getString(2);
+    v->m_totalChunks = data->getInt32(3);
+    v->m_uploadedChunks = data->getInt32(4);
+    v->m_size = data->getInt64(5);
+    v->m_ownerId = data->getInt64(6);
+    v->m_status = data->getInt32(7);
+    v->m_isDeleted = data->getInt32(8);
+    v->m_createTime = data->getTime(9);
+    v->m_updateTime = data->getTime(10);
+    return v;
+}
+
+int ChunkUploadInfoDao::QueryByBuilder(std::vector<ChunkUploadInfo::ptr>& results, chen::QueryBuilder::ptr qb, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilder qb or conn is null";
+        return -1;
+    }
+    std::string sql = qb->buildQuerySQL("id, upload_id, filename, total_chunks, uploaded_chunks, size, owner_id, status, is_deleted, create_time, update_time");
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindParams(stmt);
+    auto rt = stmt->query();
+    if(!rt) {
+        return stmt->getErrno();
+    }
+    while (rt->next()) {
+        ChunkUploadInfo::ptr v(new ChunkUploadInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_uploadId = rt->getString(1);
+        v->m_filename = rt->getString(2);
+        v->m_totalChunks = rt->getInt32(3);
+        v->m_uploadedChunks = rt->getInt32(4);
+        v->m_size = rt->getInt64(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isDeleted = rt->getInt32(8);
+        v->m_createTime = rt->getTime(9);
+        v->m_updateTime = rt->getTime(10);
+        results.push_back(v);
+    }
+    return 0;
+}
+
+int ChunkUploadInfoDao::QueryByBuilderPages(std::vector<ChunkUploadInfo::ptr>& results, int64_t& total, chen::QueryBuilder::ptr qb, int32_t offset, int32_t limit, chen::IDB::ptr conn) {
+    if (!qb || !conn) {
+        ERROR(logger) << "QueryByBuilderPages qb or conn is null";
+        return -1;
+    }
+    std::string countSql = qb->buildCountSQL();
+    auto countStmt = conn->prepare(countSql);
+    if (!countStmt) {
+        ERROR(logger) << "stmt=" << countSql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(countStmt);
+    auto countRt = countStmt->query();
+    if (!countRt) {
+        return countStmt->getErrno();
+    }
+    if (countRt->next()) {
+        total = countRt->getInt64(0);
+    }
+    if (total == 0) {
+        return 0;
+    }
+    std::string sql = qb->buildQuerySQL("id, upload_id, filename, total_chunks, uploaded_chunks, size, owner_id, status, is_deleted, create_time, update_time", false);
+    if (!qb->hasOrderBy()) {
+        sql += " order by id desc";
+    }
+    sql += " limit ? offset ?";
+    auto stmt = conn->prepare(sql);
+    if(!stmt) {
+        ERROR(logger) << "stmt=" << sql
+            << " errno=" << conn->getErrno() << " errstr=" << conn->getErrStr();
+        return conn->getErrno();
+    }
+    qb->bindQueryParams(stmt);
+    int idx = qb->getQueryParamCount() + 1;
+    stmt->bindInt32(idx++, limit);
+    stmt->bindInt32(idx++, offset);
+    auto rt = stmt->query();
+    if (!rt) {
+        return 0;
+    }
+    while (rt->next()) {
+        ChunkUploadInfo::ptr v(new ChunkUploadInfo);
+        v->m_id = rt->getInt64(0);
+        v->m_uploadId = rt->getString(1);
+        v->m_filename = rt->getString(2);
+        v->m_totalChunks = rt->getInt32(3);
+        v->m_uploadedChunks = rt->getInt32(4);
+        v->m_size = rt->getInt64(5);
+        v->m_ownerId = rt->getInt64(6);
+        v->m_status = rt->getInt32(7);
+        v->m_isDeleted = rt->getInt32(8);
+        v->m_createTime = rt->getTime(9);
+        v->m_updateTime = rt->getTime(10);
+        results.push_back(v);
+    }
     return 0;
 }
 
@@ -417,6 +756,53 @@ int ChunkUploadInfoDao::CreateTableMySQL(chen::IDB::ptr conn) {
             "PRIMARY KEY(`id`),"
             "UNIQUE KEY `chunk_upload_upload_id` (`upload_id`),"
             "KEY `chunk_upload_owner_id` (`owner_id`)) COMMENT='分片上传任务表'");
+}
+
+int ChunkUploadInfoDao::Migrate(chen::IDB::ptr conn) {
+    if (!conn) {
+        ERROR(logger) << "Migrate conn is null";
+        return -1;
+    }
+
+    conn->execute("CREATE TABLE IF NOT EXISTS schema_version ("
+        "table_name VARCHAR(128) PRIMARY KEY, "
+        "version INT NOT NULL DEFAULT 0)");
+
+    auto verStmt = conn->prepare("SELECT version FROM schema_version WHERE table_name = ?");
+    if (!verStmt) {
+        ERROR(logger) << "Migrate prepare version query failed errno=" << conn->getErrno();
+        return conn->getErrno();
+    }
+    verStmt->bindString(1, "chunk_upload");
+    auto verRt = verStmt->query();
+    int dbVer = 0;
+    if (verRt && verRt->next()) {
+        dbVer = (int)verRt->getInt64(0);
+    }
+
+    if (dbVer < 1) {
+        if (CreateTableSQLite3(conn)) {
+            ERROR(logger) << "Migrate v1 CreateTable failed";
+            return conn->getErrno();
+        }
+    }
+
+    if (dbVer == 0) {
+        auto insStmt = conn->prepare("INSERT INTO schema_version (table_name, version) VALUES (?, ?)");
+        if (insStmt) {
+            insStmt->bindString(1, "chunk_upload");
+            insStmt->bindInt32(2, 1);
+            insStmt->execute();
+        }
+    } else {
+        auto updStmt = conn->prepare("UPDATE schema_version SET version = ? WHERE table_name = ?");
+        if (updStmt) {
+            updStmt->bindInt32(1, 1);
+            updStmt->bindString(2, "chunk_upload");
+            updStmt->execute();
+        }
+    }
+    return 0;
 }
 
 int ChunkUploadInfoDao::MigrateTableSQLite3(chen::IDB::ptr conn) {
