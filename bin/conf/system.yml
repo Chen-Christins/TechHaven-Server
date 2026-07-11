@@ -43,8 +43,8 @@ workers:
 
 # Server configuration, including work path, PID file, and email service settings for sending notifications or alerts.
 server:
-  work_path: /home/chen/workspace/Blog
-  pid_file: blog.pid
+  work_path: /home/chen/workspace/TechHaven-Server
+  pid_file: server.pid
 
 # Logging configuration, defining different loggers for root, system, and access logs with their respective levels, formatters, and appenders.
 logs:
@@ -53,21 +53,21 @@ logs:
     formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/Blog/logs/root.log
+        file: /home/chen/workspace/TechHaven-Server/logs/root.log
       - type: StdoutLogAppender
   - name: system
     level: info
     formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/Blog/logs/system.log
+        file: /home/chen/workspace/TechHaven-Server/logs/system.log
       - type: StdoutLogAppender
   - name: access
     level: info
     formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/Blog/logs/access.log
+        file: /home/chen/workspace/TechHaven-Server/logs/access.log
       - type: StdoutLogAppender
 
 # Database configuration for MySQL, defining the database path and SQL settings for the blog database.
