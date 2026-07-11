@@ -197,6 +197,8 @@ bool BlogModule::initMySQL() {
     XX(NotificationInfoDao, "notification")
     XX(UserFollowRelInfoDao, "user_follow_rel")
     XX(ArticlePraiseRelInfoDao, "article_praise_rel")
+    XX(BackupRecordInfoDao, "backup_record")
+    XX(ExportRecordInfoDao, "export_record")
     XX(CommentInfoDao, "comment")
     XX(CommentPraiseRelInfoDao, "comment_praise_rel")
     XX(RequirementInfoDao, "requirement")
@@ -232,6 +234,8 @@ bool BlogModule::initMySQL() {
         XX(ArticlePraiseRelInfoDao)
         XX(CommentInfoDao)
         XX(CommentPraiseRelInfoDao)
+        XX(BackupRecordInfoDao)
+        XX(ExportRecordInfoDao)
         XX(RequirementInfoDao)
         XX(BugInfoDao)
         XX(TaskInfoDao)
@@ -329,6 +333,17 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/admin/dashboard/trend", XX(DashboardTrendServlet));
         dp->addServlet("/api/v1/admin/dashboard/activities", XX(DashboardActivitiesServlet));
         dp->addServlet("/api/v1/admin/dashboard/recent-users", XX(DashboardRecentUsersServlet));
+        // 数据库管理相关
+        dp->addServlet("/api/v1/admin/database/stats", XX(DatabaseStatsServlet));
+        dp->addServlet("/api/v1/admin/database/backups", XX(BackupListServlet));
+        dp->addServlet("/api/v1/admin/database/backups/create", XX(BackupCreateServlet));
+        dp->addServlet("/api/v1/admin/database/backups/:id/delete", XX(BackupDeleteServlet));
+        dp->addServlet("/api/v1/admin/database/backups/:id/download", XX(BackupDownloadServlet));
+        dp->addServlet("/api/v1/admin/database/exports", XX(ExportListServlet));
+        dp->addServlet("/api/v1/admin/database/exports/create", XX(ExportCreateServlet));
+        dp->addServlet("/api/v1/admin/database/exports/:id/delete", XX(ExportDeleteServlet));
+        dp->addServlet("/api/v1/admin/database/exports/:id/download", XX(ExportDownloadServlet));
+        dp->addServlet("/api/v1/admin/database/cleanup", XX(CleanupServlet));
         // 文章分类相关
         dp->addServlet("/api/v1/category/admin/create", XX(CategoryCreateServlet));
         dp->addServlet("/api/v1/category/admin/delete", XX(CategoryDeleteServlet));

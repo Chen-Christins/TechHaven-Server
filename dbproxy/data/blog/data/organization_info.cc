@@ -627,7 +627,7 @@ int OrganizationInfoDao::QueryByBuilderPages(std::vector<OrganizationInfo::ptr>&
     if (total == 0) {
         return 0;
     }
-    std::string sql = qb->buildQuerySQL(qb->getSelectCols(), false);
+    std::string sql = qb->buildQuerySQL("id, name, type, description, owner_id, status, is_deleted, create_time, update_time", false);
     if (!qb->hasOrderBy()) {
         sql += " order by id desc";
     }

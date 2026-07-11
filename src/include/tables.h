@@ -1,4 +1,5 @@
 #include "blog/data/article_category_rel_info.h"        // IWYU pragma: keep
+#include "blog/data/backup_record_info.h"               // IWYU pragma: keep
 #include "blog/data/article_info.h"                     // IWYU pragma: keep
 #include "blog/data/article_label_rel_info.h"           // IWYU pragma: keep
 #include "blog/data/article_praise_rel_info.h"          // IWYU pragma: keep
@@ -11,6 +12,7 @@
 #include "blog/data/comment_info.h"                     // IWYU pragma: keep
 #include "blog/data/comment_praise_rel_info.h"          // IWYU pragma: keep
 #include "blog/data/email_verification_info.h"          // IWYU pragma: keep
+#include "blog/data/export_record_info.h"               // IWYU pragma: keep
 #include "blog/data/notification_info.h"                // IWYU pragma: keep
 #include "blog/data/organization_apply_info.h"          // IWYU pragma: keep
 #include "blog/data/organization_info.h"                // IWYU pragma: keep

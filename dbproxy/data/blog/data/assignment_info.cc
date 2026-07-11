@@ -770,7 +770,7 @@ int AssignmentInfoDao::QueryByBuilderPages(std::vector<AssignmentInfo::ptr>& res
     if (total == 0) {
         return 0;
     }
-    std::string sql = qb->buildQuerySQL(qb->getSelectCols(), false);
+    std::string sql = qb->buildQuerySQL("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time", false);
     if (!qb->hasOrderBy()) {
         sql += " order by id desc";
     }

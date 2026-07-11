@@ -958,7 +958,7 @@ int TaskInfoDao::QueryByBuilderPages(std::vector<TaskInfo::ptr>& results, int64_
     if (total == 0) {
         return 0;
     }
-    std::string sql = qb->buildQuerySQL(qb->getSelectCols(), false);
+    std::string sql = qb->buildQuerySQL("id, org_id, title, description, priority, status, creator_id, assignee_id, requirement_id, bug_id, deadline, estimated_hours, is_deleted, create_time, update_time", false);
     if (!qb->hasOrderBy()) {
         sql += " order by id desc";
     }

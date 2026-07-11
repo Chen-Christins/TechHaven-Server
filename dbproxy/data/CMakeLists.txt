@@ -9,12 +9,14 @@ set(LIB_SRC
     blog/data/assignment_info.cc
     blog/data/assignment_organization_rel_info.cc
     blog/data/assignment_user_rel_info.cc
+    blog/data/backup_record_info.cc
     blog/data/bug_info.cc
     blog/data/category_info.cc
     blog/data/chunk_upload_info.cc
     blog/data/comment_info.cc
     blog/data/comment_praise_rel_info.cc
     blog/data/email_verification_info.cc
+    blog/data/export_record_info.cc
     blog/data/label_info.cc
     blog/data/notification_info.cc
     blog/data/organization_info.cc
