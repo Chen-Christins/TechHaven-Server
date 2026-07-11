@@ -27,7 +27,10 @@ if command -v apt-get >/dev/null 2>&1; then
         libboost-all-dev \
         libsqlite3-dev \
         libssl-dev \
-        libevent-dev
+        libevent-dev \
+        ccache \
+        lld \
+        ninja-build
 elif command -v yum >/dev/null 2>&1; then
     # CentOS/RHEL 系统
     command_error_exit sudo yum install libtool \
@@ -39,7 +42,10 @@ elif command -v yum >/dev/null 2>&1; then
         boost-devel \
         sqlite-devel \
         openssl-devel \
-        libevent-devel
+        libevent-devel \
+        ccache \
+        lld \
+        ninja-build
 else
     echo "Error: Neither apt-get nor yum package manager found"
     exit 1
