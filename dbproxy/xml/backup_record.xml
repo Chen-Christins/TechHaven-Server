@@ -1,0 +1,22 @@
+<table name="backup_record" namespace="blog.data" desc="备份记录表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键id"/>
+        <column name="name" type="string" length="255" desc="备份名称"/>
+        <column name="type" type="string" length="32" desc="备份类型: full/incremental/manual"/>
+        <column name="size" type="int64" default="0" desc="备份大小(bytes)"/>
+        <column name="file_count" type="int32" default="0" desc="文件数量"/>
+        <column name="file_path" type="string" length="512" desc="备份文件路径"/>
+        <column name="status" type="string" length="32" default="processing" desc="状态: completed/processing/failed"/>
+        <column name="description" type="string" length="1024" desc="描述"/>
+        <column name="created_by" type="int64" desc="创建者用户ID"/>
+        <column name="completed_at" type="datetime" desc="完成时间"/>
+        <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="idx_type" cols="type" type="index"/>
+        <index name="idx_status" cols="status" type="index"/>
+        <index name="idx_created_by" cols="created_by" type="index"/>
+    </indexs>
+</table>

@@ -25,3 +25,5 @@ protocol/include
 orm
 tools
 *.dat
+*.sql*
+dbproxy/data

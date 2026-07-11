@@ -1,0 +1,21 @@
+<table name="export_record" namespace="blog.data" desc="导出记录表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键id"/>
+        <column name="name" type="string" length="255" desc="导出名称"/>
+        <column name="type" type="string" length="32" desc="导出类型: articles/users/comments/full"/>
+        <column name="format" type="string" length="16" default="json" desc="导出格式: json/csv/xlsx"/>
+        <column name="size" type="int64" default="0" desc="导出文件大小(bytes)"/>
+        <column name="record_count" type="int32" default="0" desc="记录数量"/>
+        <column name="file_path" type="string" length="512" desc="导出文件路径"/>
+        <column name="status" type="string" length="32" default="processing" desc="状态: completed/processing/failed"/>
+        <column name="created_by" type="int64" desc="创建者用户ID"/>
+        <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="idx_type" cols="type" type="index"/>
+        <index name="idx_status" cols="status" type="index"/>
+        <index name="idx_created_by" cols="created_by" type="index"/>
+    </indexs>
+</table>

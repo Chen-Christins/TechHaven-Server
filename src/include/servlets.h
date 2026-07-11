@@ -41,6 +41,16 @@
 #include "../servlets/category/category_delete_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/category/category_query_servlet.h"                    // IWYU pragma: keep
 #include "../servlets/dashboard/dashboard_activities_servlet.h"             // IWYU pragma: keep
+#include "../servlets/database/database_stats_servlet.h"                    // IWYU pragma: keep
+#include "../servlets/database/backup_list_servlet.h"                       // IWYU pragma: keep
+#include "../servlets/database/backup_create_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/database/backup_delete_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/database/backup_download_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/database/export_list_servlet.h"                       // IWYU pragma: keep
+#include "../servlets/database/export_create_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/database/export_delete_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/database/export_download_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/database/cleanup_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/dashboard/dashboard_recent_users_servlet.h"           // IWYU pragma: keep
 #include "../servlets/dashboard/dashboard_stats_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/dashboard/dashboard_trend_servlet.h"                  // IWYU pragma: keep
