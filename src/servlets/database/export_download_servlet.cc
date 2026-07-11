@@ -39,7 +39,7 @@ int32_t ExportDownloadServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
-        std::string id_str = request->getParam(":id");
+        std::string id_str = request->getParam("id");
         if (id_str.empty()) {
             result->setErrno(errcode::PARAM_MISSING, "param id is required");
             break;

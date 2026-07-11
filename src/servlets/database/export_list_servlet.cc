@@ -58,12 +58,12 @@ int32_t ExportListServlet::handle(chen::http::HttpRequest::ptr request,
             if (format.empty()) format = "json";
             item["format"] = format;
             item["size"] = info->getSize();
-            item["recordCount"] = info->getRecordCount();
+            item["record_count"] = info->getRecordCount();
             item["status"] = info->getStatus();
-            item["createdAt"] = info->getCreateTime();
-            item["createdBy"] = info->getCreatedBy();
+            item["created_at"] = info->getCreateTime();
+            item["created_by"] = info->getCreatedBy();
             if (!info->getFilePath().empty()) {
-                item["downloadUrl"] = "/api/v1/admin/database/exports/" + std::to_string(info->getId()) + "/download";
+                item["download_url"] = "/api/v1/admin/database/exports/" + std::to_string(info->getId()) + "/download";
             }
             arr.append(item);
         }

@@ -11,11 +11,29 @@
 #include <chen/http/sse_session.h>
 #include <chen/util/util.h>
 
+#include <sys/statvfs.h>
 #include <regex>
 
 namespace blog {
 
 chen::IDB::ptr GetDB();
+
+struct DiskUsage {
+    int64_t totalSize;
+    int64_t usedSize;
+    int64_t availableSize;
+};
+
+inline DiskUsage GetDiskUsage(const std::string& path = ".") {
+    DiskUsage du = {0, 0, 0};
+    struct statvfs vfs;
+    if (statvfs(path.c_str(), &vfs) == 0) {
+        du.totalSize = (int64_t)vfs.f_frsize * vfs.f_blocks;
+        du.availableSize = (int64_t)vfs.f_frsize * vfs.f_bavail;
+        du.usedSize = du.totalSize - du.availableSize;
+    }
+    return du;
+}
 
 inline bool IsEmail(const std::string& str) {
     static const std::regex pattern("([0-9A-Za-z\\-_\\.]+)@([0-9a-z]+\\.[a-z]{2,8}(\\.[a-z]{2,8})?)");

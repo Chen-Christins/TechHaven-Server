@@ -82,6 +82,7 @@ data::BackupRecordInfo::ptr BackupRecordManager::create(int64_t uid,
     info->setIsDeleted(0);
     info->setSize(0);
     info->setFileCount(0);
+    info->setCreateTime(time(0));
     if (data::BackupRecordInfoDao::Insert(info, db)) {
         ERROR(logger) << "Insert backup_record failed";
         return nullptr;

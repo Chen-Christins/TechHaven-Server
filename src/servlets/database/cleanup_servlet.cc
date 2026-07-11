@@ -66,7 +66,7 @@ int32_t CleanupServlet::handle(chen::http::HttpRequest::ptr request,
                     freed += sz;
                 }
             }
-            data::BackupRecordInfoDao::Delete(b->getId(), db);
+            data::BackupRecordInfoDao::DeleteById(b->getId(), db);
             cleaned++;
         }
 
@@ -87,7 +87,7 @@ int32_t CleanupServlet::handle(chen::http::HttpRequest::ptr request,
                     freed += sz;
                 }
             }
-            data::ExportRecordInfoDao::Delete(e->getId(), db);
+            data::ExportRecordInfoDao::DeleteById(e->getId(), db);
             cleaned++;
         }
 

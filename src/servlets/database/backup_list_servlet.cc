@@ -55,14 +55,17 @@ int32_t BackupListServlet::handle(chen::http::HttpRequest::ptr request,
             item["name"] = info->getName();
             item["type"] = info->getType();
             item["size"] = info->getSize();
-            item["fileCount"] = info->getFileCount();
+            item["file_count"] = info->getFileCount();
             item["status"] = info->getStatus();
-            item["createdAt"] = info->getCreateTime();
-            item["completedAt"] = info->getCompletedAt();
-            item["createdBy"] = info->getCreatedBy();
+            item["created_at"] = info->getCreateTime();
+            item["completed_at"] = info->getCompletedAt();
+            auto created_by_user = UserMgr::GetInstance()->get(info->getCreatedBy());
+            if (created_by_user) {
+                item["created_by"] = created_by_user->getName();
+            }
             item["description"] = info->getDescription();
             if (!info->getFilePath().empty()) {
-                item["downloadUrl"] = "/api/v1/admin/database/backups/" + std::to_string(info->getId()) + "/download";
+                item["download_url"] = "/api/v1/admin/database/backups/" + std::to_string(info->getId()) + "/download";
             }
             arr.append(item);
         }

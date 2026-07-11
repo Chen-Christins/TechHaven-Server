@@ -62,10 +62,12 @@ int32_t DatabaseStatsServlet::handle(chen::http::HttpRequest::ptr request,
         std::vector<data::BackupRecordInfo::ptr> backups;
         BackupRecordMgr::GetInstance()->list(backups, total_backups, "", "", "", 0, 1);
 
-        result->set("totalSize", (int64_t)0);
-        result->set("usedSize", (int64_t)0);
-        result->set("availableSize", (int64_t)0);
-        result->set("totalRecords", astats.total + total_users + cstats.total + total_categories + total_labels);
+        auto du = GetDiskUsage();
+
+        result->set("total_size", du.totalSize);
+        result->set("used_size", du.usedSize);
+        result->set("available_size", du.availableSize);
+        result->set("total_records", astats.total + total_users + cstats.total + total_categories + total_labels);
         result->set("articles", astats.total);
         result->set("users", total_users);
         result->set("comments", cstats.total);

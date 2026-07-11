@@ -53,13 +53,15 @@ int32_t ExportCreateServlet::handle(chen::http::HttpRequest::ptr request,
         item["name"] = info->getName();
         item["type"] = info->getType();
         std::string format = info->getFormat();
-        if (format.empty()) format = "json";
+        if (format.empty()) {
+            format = "json";
+        }
         item["format"] = format;
         item["size"] = info->getSize();
-        item["recordCount"] = info->getRecordCount();
+        item["record_count"] = info->getRecordCount();
         item["status"] = info->getStatus();
-        item["createdAt"] = info->getCreateTime();
-        item["createdBy"] = info->getCreatedBy();
+        item["created_at"] = info->getCreateTime();
+        item["created_by"] = info->getCreatedBy();
 
         result->set("data", item);
         result->setErrno(errcode::SUCCESS);

@@ -80,6 +80,7 @@ data::ExportRecordInfo::ptr ExportRecordManager::create(int64_t uid,
     info->setIsDeleted(0);
     info->setSize(0);
     info->setRecordCount(0);
+    info->setCreateTime(time(0));
     if (data::ExportRecordInfoDao::Insert(info, db)) {
         ERROR(logger) << "Insert export_record failed";
         return nullptr;
