@@ -1,8 +1,11 @@
 #include "label_query_servlet.h"
 
-#include "../../manager/label_manager.h"
+#include "../../include/managers.h"
+#include "../../util.h"
 
 #include <chen/log/log.h>
+
+#include <map>
 
 namespace blog {
 namespace servlet {
@@ -38,6 +41,32 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 }
             }
         }
+        std::map<int64_t, int64_t> article_counts;
+        if (!infos.empty()) {
+            auto db = GetDB();
+            if (db) {
+                std::vector<int64_t> label_ids;
+                label_ids.reserve(infos.size());
+                for (auto& i : infos) {
+                    label_ids.push_back(i->getId());
+                }
+                auto qb = chen::QueryBuilder::Create("article_label_rel r");
+                qb->select("r.label_id, COUNT(*) cnt");
+                qb->join("article a", "r.article_id = a.id");
+                qb->whereIn("r.label_id", label_ids);
+                qb->where("r.is_deleted", "=", (int64_t)0);
+                qb->where("a.state", "=", (int64_t)ArticleManager::PUBLISHED);
+                qb->where("a.is_deleted", "=", (int64_t)0);
+                qb->groupBy("r.label_id");
+                auto qrt = qb->executeQuery(db);
+                if (qrt) {
+                    while (qrt->next()) {
+                        article_counts[qrt->getInt64(0)] = qrt->getInt64(1);
+                    }
+                }
+            }
+        }
+
         for (auto& i : infos) {
             Json::Value v;
             v["id"] = i->getId();
@@ -45,6 +74,7 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             v["color"] = i->getColor();
             v["desc"] = i->getDescription();
             v["create_time"] = i->getCreateTime();
+            v["article_count"] = article_counts[i->getId()];
             result->jsondata.append(v);
         }
     } while (0);

@@ -36,6 +36,7 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         int64_t total_views = 0;
         int64_t total_likes = 0;
         std::set<int64_t> unique_labels;
+        std::vector<int64_t> published_ids;
 
         for (auto& a : articles) {
             if (a->getIsDeleted()) continue;
@@ -44,6 +45,7 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             int32_t state = a->getState();
             if (state == ArticleManager::PUBLISHED) {
                 published_articles++;
+                published_ids.push_back(a->getId());
             } else if (state == ArticleManager::PRIVATE) {
                 private_articles++;
             }
@@ -72,11 +74,11 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         result->set("total_likes", total_likes);
         // total_comments
         int64_t total_comments = 0;
-        {
+        if (!published_ids.empty()) {
             auto db = GetDB();
             if (db) {
                 auto qb = chen::QueryBuilder::Create("comment");
-                qb->where("user_id", "=", uid);
+                qb->whereIn("article_id", published_ids);
                 qb->where("is_deleted", "=", (int64_t)0);
                 qb->executeCount(total_comments, db);
             }
