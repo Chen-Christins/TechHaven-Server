@@ -2,6 +2,7 @@
 
 #include "../../manager/user_manager.h"
 #include "../../manager/article_manager.h"
+#include "../../manager/comment_manager.h"
 #include "../../util.h"
 
 namespace blog {
@@ -61,6 +62,7 @@ int32_t ArticleAdminListsServlet::handle(chen::http::HttpRequest::ptr request, c
             item["favorites"] = atc->getFavorites();
             item["publish_time"] = atc->getPublishTime();
             item["summary"] = atc->getContent().substr(0, 100);
+            item["comment_count"] = CommentMgr::GetInstance()->countByArticle(atc->getId());
             list.append(item);
         }
     } while (0);

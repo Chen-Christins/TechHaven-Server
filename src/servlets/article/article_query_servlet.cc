@@ -6,6 +6,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/article_category_rel_manager.h"
 #include "../../manager/category_manager.h"
+#include "../../manager/comment_manager.h"
 
 namespace blog {
 namespace servlet {
@@ -42,6 +43,7 @@ int32_t ArticleQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::
             item["praise"] = i->getPraise();
             item["favorites"] = i->getFavorites();
             item["publish_time"] = i->getPublishTime();
+            item["comment_count"] = CommentMgr::GetInstance()->countByArticle(i->getId());
             // 查询文章分类
             {
                 std::vector<data::ArticleCategoryRelInfo::ptr> rels;
