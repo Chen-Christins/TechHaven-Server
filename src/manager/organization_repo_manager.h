@@ -26,6 +26,9 @@ public:
     /// 从 GitHub API 异步同步仓库数据（stars_count、language、description）
     static void SyncFromGitHub(int64_t repo_id, const std::string& url, const std::string& token);
 
+    /// 遍历所有含 token 的仓库，异步同步仓库信息与 PR（由 BlogModule::onTick 调用）
+    void syncAllFromGitHub();
+
 private:
     static data::OrganizationReposInfo::ptr parseRow(chen::ISQLData::ptr rt);
     void invalidateCountCache(int64_t org_id);

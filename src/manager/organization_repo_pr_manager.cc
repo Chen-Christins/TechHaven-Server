@@ -501,15 +501,12 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
     auto doGetWithRetry = [&](const std::string& url, int max_retries) -> chen::http::HttpResult::ptr {
         for (int retry = 0; retry <= max_retries; ++retry) {
             auto r = chen::http::HttpConnection::DoGet(url, 30000, headers);
-            if (r && r->result == 0 && r->response
-                    && r->response->getStatus() == chen::http::HttpStatus::OK) {
+            if (r && r->result == 0 && r->response && r->response->getStatus() == chen::http::HttpStatus::OK) {
                 return r;
             }
             if (retry < max_retries) {
-                int delay = (2 << retry) * 1000000;  // 2s, 4s, 8s
                 WARN(logger) << "SyncPrFromGitHub: retry " << (retry + 1) << "/" << max_retries
                     << " for " << url;
-                usleep(delay);
             }
         }
         return nullptr;
@@ -557,6 +554,19 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
 
     INFO(logger) << "SyncPrFromGitHub: synced " << total_synced << " PRs across "
         << page_no << " pages for repo " << repo_id;
+}
+
+void OrganizationRepoPrManager::syncAllFromGitHub() {
+    std::vector<data::OrganizationReposInfo::ptr> repos;
+    OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
+    for (auto& repo : repos) {
+        int64_t repo_id = repo->getId();
+        std::string url = repo->getUrl();
+        std::string token = repo->getToken();
+        chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
+            OrganizationRepoPrManager::SyncFromGitHub(repo_id, url, token);
+        });
+    }
 }
 
 // ==================== RPC Webhook Handlers ====================
