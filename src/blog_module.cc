@@ -71,20 +71,15 @@ void BlogModule::onTick() {
     // 4. 清理过期的分块上传会话及临时文件
     ::ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
-    // 4. 定时同步有 token 的仓库 PR（每 30 分钟）
+    // 5. 定时同步有 token 的仓库及其 PR（每 30 分钟）
     static int s_pr_sync_tick = 0;
+
     if (++s_pr_sync_tick >= 30) {
         s_pr_sync_tick = 0;
-        std::vector<data::OrganizationReposInfo::ptr> repos;
-        OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
-        for (auto& repo : repos) {
-            int64_t repo_id = repo->getId();
-            std::string url = repo->getUrl();
-            std::string token = repo->getToken();
-            chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
-                OrganizationRepoPrManager::SyncFromGitHub(repo_id, url, token);
-            });
-        }
+        // 同步Repo信息
+        OrganizationRepoMgr::GetInstance()->syncAllFromGitHub();
+        // 同步PR信息
+        OrganizationRepoPrMgr::GetInstance()->syncAllFromGitHub();
     }
 }
 
