@@ -266,17 +266,4 @@ void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string&
     INFO(logger) << "SyncFromGitHub: success for repo " << repo_id;
 }
 
-void OrganizationRepoManager::syncAllFromGitHub() {
-    std::vector<data::OrganizationReposInfo::ptr> repos;
-    getAllWithToken(repos);
-    for (auto& repo : repos) {
-        int64_t repo_id = repo->getId();
-        std::string url = repo->getUrl();
-        std::string token = repo->getToken();
-        chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
-            OrganizationRepoManager::SyncFromGitHub(repo_id, url, token);
-        });
-    }
-}
-
 }

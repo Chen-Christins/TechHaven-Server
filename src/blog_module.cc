@@ -58,6 +58,22 @@ bool BlogModule::onGracefulUnload() {
     return true;
 }
 
+/// 遍历所有含 token 的仓库，为每个仓库调度【一个】异步任务，
+/// 在该任务内串行执行仓库信息同步与 PR 同步，避免两个 manager 各起任务导致的并发写竞争
+static void SyncAllReposFromGitHub() {
+    std::vector<data::OrganizationReposInfo::ptr> repos;
+    OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
+    for (auto& repo : repos) {
+        int64_t repo_id = repo->getId();
+        std::string url = repo->getUrl();
+        std::string token = repo->getToken();
+        chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
+            OrganizationRepoManager::SyncFromGitHub(repo_id, url, token);
+            OrganizationRepoPrManager::SyncFromGitHub(repo_id, url, token);
+        });
+    }
+}
+
 void BlogModule::onTick() {
     // 1. 定时发布已到发布时间的文章
     ArticleMgr::GetInstance()->onTimer();
@@ -76,10 +92,7 @@ void BlogModule::onTick() {
 
     if (++s_pr_sync_tick >= 30) {
         s_pr_sync_tick = 0;
-        // 同步Repo信息
-        OrganizationRepoMgr::GetInstance()->syncAllFromGitHub();
-        // 同步PR信息
-        OrganizationRepoPrMgr::GetInstance()->syncAllFromGitHub();
+        SyncAllReposFromGitHub();
     }
 }
 
