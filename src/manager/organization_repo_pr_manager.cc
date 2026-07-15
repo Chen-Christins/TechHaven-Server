@@ -556,19 +556,6 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
         << page_no << " pages for repo " << repo_id;
 }
 
-void OrganizationRepoPrManager::syncAllFromGitHub() {
-    std::vector<data::OrganizationReposInfo::ptr> repos;
-    OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
-    for (auto& repo : repos) {
-        int64_t repo_id = repo->getId();
-        std::string url = repo->getUrl();
-        std::string token = repo->getToken();
-        chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
-            OrganizationRepoPrManager::SyncFromGitHub(repo_id, url, token);
-        });
-    }
-}
-
 // ==================== RPC Webhook Handlers ====================
 
 data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndName(const std::string& owner, const std::string& name) {

@@ -43,9 +43,6 @@ public:
     /// 从 GitHub API 全量同步某个仓库的 PR
     static void SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token);
 
-    /// 遍历所有含 token 的仓库，异步同步 PR（由 BlogModule::onTick 调用）
-    void syncAllFromGitHub();
-
     // ==================== RPC Webhook 处理 ====================
 
     /**
