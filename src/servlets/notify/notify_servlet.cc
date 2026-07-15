@@ -1,13 +1,22 @@
 #include "notify_servlet.h"
 
+#include "../../error_codes.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/notification_manager.h"
 
 #include <chen/log/log.h>
+#include <json/json.h>
 
 namespace blog::servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
+
+static void sendError(chen::http::WSSession::ptr session, int32_t errno_, const std::string& errstr) {
+    Json::Value err;
+    err["errno"] = errno_;
+    err["errstr"] = errstr;
+    session->sendMessage(chen::JsonUtil::ToString(err));
+}
 
 NotifyServlet::NotifyServlet()
     : chen::http::WSServlet("Notify") {
@@ -24,6 +33,7 @@ int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http
 
     if (uid_str.empty() || token.empty() || token_time_str.empty()) {
         INFO(logger) << "[WS] onConnect FAIL: missing params";
+        sendError(session, errcode::PARAM_MISSING, "Required parameter missing");
         return -1;
     }
 
@@ -33,17 +43,20 @@ int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http
     if (token_time <= time(0)) {
         INFO(logger) << "[WS] onConnect FAIL: token expired, token_time="
             << token_time << " now=" << time(0);
+        sendError(session, errcode::NOT_LOGIN, "Token expired, please re-login");
         return -1;
     }
 
     data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
     if (!uinfo) {
         INFO(logger) << "[WS] onConnect FAIL: user not found uid=" << uid;
+        sendError(session, errcode::USER_NOT_FOUND, "User not found");
         return -1;
     }
     if (uinfo->getState() != 1) {
         INFO(logger) << "[WS] onConnect FAIL: user state=" << uinfo->getState()
             << " uid=" << uid;
+        sendError(session, errcode::ACCOUNT_INVALID, "Account status abnormal");
         return -1;
     }
 
@@ -59,6 +72,7 @@ int32_t NotifyServlet::onConnect(chen::http::HttpRequest::ptr header, chen::http
     if (!token_valid) {
         INFO(logger) << "[WS] onConnect FAIL: token mismatch, stored="
             << (stored_token.empty() ? "(empty)" : "***") << " got=" << token;
+        sendError(session, errcode::NOT_LOGIN, "Token mismatch, please re-login");
         return -1;
     }
 

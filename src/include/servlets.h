@@ -141,6 +141,7 @@
 #include "../servlets/user/user_logout_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_organization_list_servlet.h"                // IWYU pragma: keep
 #include "../servlets/user/user_query_servlet.h"                            // IWYU pragma: keep
+#include "../servlets/user/user_refresh_token_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_reset_passwd_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_stats_servlet.h"                            // IWYU pragma: keep
