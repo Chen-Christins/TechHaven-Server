@@ -596,7 +596,7 @@ int32_t OrganizationRepoPrManager::HandlePRWebhook(const tagGithubPRInfo& info) 
         WARN(logger) << "HandlePRWebhook: repo not found for "
             << info.RepoOwner << "/" << info.RepoName
             << ", PR #" << info.Number << " \"" << info.Title << "\"";
-        return -1;
+        return GITHUB_REPO_NOT_FOUND;
     }
     int64_t repo_id = repo->getId();
 
@@ -609,7 +609,7 @@ int32_t OrganizationRepoPrManager::HandlePRWebhook(const tagGithubPRInfo& info) 
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "HandlePRWebhook: GetDB failed for repo " << repo_id << " PR #" << info.Number;
-        return -2;
+        return GITHUB_DB_CONNECTION_FAILED;
     }
 
     // 4. 查找已有记录（幂等去重）
@@ -661,22 +661,12 @@ int32_t OrganizationRepoPrManager::HandlePRWebhook(const tagGithubPRInfo& info) 
     pr->setUpdateTime(time(0));
 
     // 6. 写入 DB
-    if (existing) {
-        if (data::OrganizationRepoPrsInfoDao::Update(pr, db)) {
-            ERROR(logger) << "HandlePRWebhook: Update failed for repo " << repo_id << " PR #" << info.Number;
-            return -3;
-        }
-        DEBUG(logger) << "HandlePRWebhook: updated PR #" << info.Number
-            << " state=" << pr->getState() << " action=" << info.Action;
-    } else {
-        if (data::OrganizationRepoPrsInfoDao::Insert(pr, db)) {
-            ERROR(logger) << "HandlePRWebhook: Insert failed for repo " << repo_id << " PR #" << info.Number;
-            return -4;
-        }
-        OrganizationRepoPrMgr::GetInstance()->add(pr);
-        DEBUG(logger) << "HandlePRWebhook: inserted PR #" << info.Number
-            << " state=" << pr->getState();
+    if (data::OrganizationRepoPrsInfoDao::InsertOrUpdate(pr, db)) {
+        ERROR(logger) << "HandlePRWebhook: Update failed for repo " << repo_id << " PR #" << info.Number;
+        return GITHUB_DB_OPERATION_FAILED;
     }
+    DEBUG(logger) << "HandlePRWebhook: updated PR #" << info.Number
+        << " state=" << pr->getState() << " action=" << info.Action;
 
     return 0;
 }
@@ -688,7 +678,7 @@ int32_t OrganizationRepoPrManager::HandlePRReviewWebhook(const tagGithubPRReview
         WARN(logger) << "HandlePRReviewWebhook: repo not found for "
             << info.RepoOwner << "/" << info.RepoName
             << ", PR #" << info.PRNumber;
-        return -1;
+        return GITHUB_REPO_NOT_FOUND;
     }
     int64_t repo_id = repo->getId();
 
@@ -698,14 +688,14 @@ int32_t OrganizationRepoPrManager::HandlePRReviewWebhook(const tagGithubPRReview
         WARN(logger) << "HandlePRReviewWebhook: PR #" << info.PRNumber
             << " not found in repo " << repo_id
             << " (" << info.RepoOwner << "/" << info.RepoName << ")";
-        return -2;
+        return GITHUB_PR_NOT_FOUND;
     }
 
     // 3. 获取 DB
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "HandlePRReviewWebhook: GetDB failed for repo " << repo_id << " PR #" << info.PRNumber;
-        return -3;
+        return GITHUB_DB_CONNECTION_FAILED;
     }
 
     // 4. 更新审查状态
@@ -769,9 +759,9 @@ int32_t OrganizationRepoPrManager::HandlePRReviewWebhook(const tagGithubPRReview
     pr->setUpdateTime(time(0));
 
     // 6. 写入 DB
-    if (data::OrganizationRepoPrsInfoDao::Update(pr, db)) {
+    if (data::OrganizationRepoPrsInfoDao::InsertOrUpdate(pr, db)) {
         ERROR(logger) << "HandlePRReviewWebhook: Update failed for repo " << repo_id << " PR #" << info.PRNumber;
-        return -4;
+        return GITHUB_DB_OPERATION_FAILED;
     }
 
     DEBUG(logger) << "HandlePRReviewWebhook: updated review for PR #" << info.PRNumber
