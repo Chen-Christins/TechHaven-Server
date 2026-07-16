@@ -74,4 +74,62 @@ bool FaqManager::searchByKeyword(const std::string& keyword, std::vector<data::H
     return true;
 }
 
+bool FaqManager::remove(int64_t id) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return false;
+    }
+
+    auto info = data::HelpFaqsInfoDao::Query(id, db);
+    if (!info) {
+        ERROR(logger) << "faq not found: " << id;
+        return false;
+    }
+
+    info->setIsDeleted(1);
+    info->setUpdateTime(time(0));
+
+    if (data::HelpFaqsInfoDao::Update(info, db)) {
+        ERROR(logger) << "soft delete faq failed, errno=" << db->getErrno()
+            << " errstr=" << db->getErrStr();
+        return false;
+    }
+
+    return true;
+}
+
+bool FaqManager::update(int64_t id, const std::string& q, const std::string& a, const std::string& cat) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return false;
+    }
+
+    auto info = data::HelpFaqsInfoDao::Query(id, db);
+    if (!info) {
+        ERROR(logger) << "faq not found: " << id;
+        return false;
+    }
+
+    if (!q.empty()) {
+        info->setQ(q);
+    }
+    if (!a.empty()) {
+        info->setA(a);
+    }
+    if (!cat.empty()) {
+        info->setCat(cat);
+    }
+    info->setUpdateTime(time(0));
+
+    if (data::HelpFaqsInfoDao::Update(info, db)) {
+        ERROR(logger) << "update faq failed, errno=" << db->getErrno()
+            << " errstr=" << db->getErrStr();
+        return false;
+    }
+
+    return true;
+}
+
 }

@@ -372,6 +372,13 @@ void BlogModule::registerServlets() {
         // 帮助中心
         dp->addServlet("/api/v1/help/faqs", XX(FaqsServlet));
         dp->addServlet("/api/v1/help/feedback", XX(FeedbackServlet));
+        // 管理端 - 帮助中心
+        dp->addServlet("/api/v1/admin/faq/delete", XX(AdminFaqDeleteServlet));
+        dp->addServlet("/api/v1/admin/faq/edit", XX(AdminFaqEditServlet));
+        // 管理端 - 反馈管理
+        dp->addServlet("/api/v1/admin/feedback/list", XX(AdminFeedbackListServlet));
+        dp->addServlet("/api/v1/admin/feedback/delete", XX(AdminFeedbackDeleteServlet));
+        dp->addServlet("/api/v1/admin/feedback/convert", XX(AdminFeedbackConvertServlet));
         // 首页统计（公开接口）
         dp->addServlet("/api/v1/stats", XX(StatsServlet));
         // 文章标签相关

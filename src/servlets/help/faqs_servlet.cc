@@ -34,6 +34,7 @@ int32_t FaqsServlet::handle(chen::http::HttpRequest::ptr request, chen::http::Ht
             result->jsondata.append(v);
         }
     } while (0);
+    DEBUG(logger) << "FaqsServlet handle result: " << result->toJsonString();
     response->setBody(result->toJsonString());
     return 0;
 }
