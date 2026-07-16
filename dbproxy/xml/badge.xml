@@ -1,0 +1,18 @@
+<table name="badge" namespace="blog.data" desc="徽章定义表">
+  <columns>
+    <column name="id" type="int64" auto_increment="true" desc="主键ID" />
+    <column name="name" type="string" length="50" desc="徽章名称" />
+    <column name="description" type="string" length="255" desc="解锁条件描述" />
+    <column name="icon" type="string" length="50" desc="图标标识" />
+    <column name="color" type="string" length="10" desc="主题色" />
+    <column name="condition_key" type="string" length="50" desc="条件键" />
+    <column name="condition_value" type="int64" desc="条件值" />
+    <column name="sort_order" type="int32" default="0" desc="排序权重" />
+    <column name="is_deleted" type="int32" default="0" desc="是否删除" />
+    <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间" />
+    <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间" />
+  </columns>
+  <indexs>
+    <index name="pk" cols="id" type="pk" />
+  </indexs>
+</table>

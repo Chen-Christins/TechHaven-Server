@@ -134,6 +134,7 @@
 #include "../servlets/user/user_admin_reset_passwd_servlet.h"               // IWYU pragma: keep
 #include "../servlets/user/user_admin_stats_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_admin_update_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/user/user_achievements_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/user/user_ai_config_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep

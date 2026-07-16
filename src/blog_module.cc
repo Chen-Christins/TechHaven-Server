@@ -112,6 +112,9 @@ bool BlogModule::onServerReady() {
     // 启动时从 DB 同步统计计数到 Redis，覆盖旧实例可能残留的数据
     ArticleMgr::GetInstance()->syncStatsFromDB();
 
+    // 确保默认徽章数据存在
+    BadgeMgr::GetInstance()->ensureDefaults();
+
     ArticleMgr::GetInstance()->start();
 
     // 初始化搜索索引（优先从磁盘加载，失败则后台异步构建）
@@ -213,6 +216,7 @@ bool BlogModule::initMySQL() {
     XX(BugInfoDao, "bug")
     XX(TaskInfoDao, "task")
     XX(SystemSettingsInfoDao, "system_settings")
+    XX(BadgeInfoDao, "badge")
     XX(HelpFaqsInfoDao, "help_faqs")
     XX(UserFeedbackInfoDao, "user_feedback")
     XX(UserAiConfigInfoDao, "user_ai_config")
@@ -249,6 +253,7 @@ bool BlogModule::initMySQL() {
         XX(RequirementInfoDao)
         XX(BugInfoDao)
         XX(TaskInfoDao)
+        XX(BadgeInfoDao)
         XX(HelpFaqsInfoDao)
         XX(UserFeedbackInfoDao)
         XX(UserAiConfigInfoDao)
@@ -282,6 +287,7 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/user/update", XX(UserUpdateServlet));
         dp->addServlet("/api/v1/user/query", XX(UserQueryServlet));
         dp->addServlet("/api/v1/user/stats", XX(UserStatsServlet));
+        dp->addServlet("/api/v1/user/achievements", XX(UserAchievementsServlet));
         dp->addServlet("/api/v1/user/ai-config", XX(UserAIConfigServlet));
         dp->addServlet("/api/v1/user/admin/create", XX(UserAdminCreateServlet));
         dp->addServlet("/api/v1/user/admin/delete", XX(UserAdminDeleteServlet));

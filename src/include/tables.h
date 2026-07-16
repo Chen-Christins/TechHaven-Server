@@ -1,4 +1,5 @@
 #include "blog/data/article_category_rel_info.h"        // IWYU pragma: keep
+#include "blog/data/badge_info.h"                         // IWYU pragma: keep
 #include "blog/data/backup_record_info.h"               // IWYU pragma: keep
 #include "blog/data/help_faqs_info.h"                   // IWYU pragma: keep
 #include "blog/data/article_info.h"                     // IWYU pragma: keep
