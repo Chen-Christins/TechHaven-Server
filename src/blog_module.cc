@@ -213,6 +213,8 @@ bool BlogModule::initMySQL() {
     XX(BugInfoDao, "bug")
     XX(TaskInfoDao, "task")
     XX(SystemSettingsInfoDao, "system_settings")
+    XX(HelpFaqsInfoDao, "help_faqs")
+    XX(UserFeedbackInfoDao, "user_feedback")
     XX(UserAiConfigInfoDao, "user_ai_config")
 #undef XX
 
@@ -247,6 +249,8 @@ bool BlogModule::initMySQL() {
         XX(RequirementInfoDao)
         XX(BugInfoDao)
         XX(TaskInfoDao)
+        XX(HelpFaqsInfoDao)
+        XX(UserFeedbackInfoDao)
         XX(UserAiConfigInfoDao)
 #undef XX
         INFO(logger) << "migrate database end";
@@ -365,6 +369,9 @@ void BlogModule::registerServlets() {
         // 系统设置相关
         dp->addServlet("/api/v1/admin/settings", XX(SystemSettingsServlet));
         dp->addServlet("/api/v1/admin/settings/upload", XX(SystemSettingsUploadServlet));
+        // 帮助中心
+        dp->addServlet("/api/v1/help/faqs", XX(FaqsServlet));
+        dp->addServlet("/api/v1/help/feedback", XX(FeedbackServlet));
         // 首页统计（公开接口）
         dp->addServlet("/api/v1/stats", XX(StatsServlet));
         // 文章标签相关

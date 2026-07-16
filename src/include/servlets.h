@@ -113,6 +113,8 @@
 #include "../servlets/rd/rd_task_edit_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/rd/rd_task_servlet.h"                                 // IWYU pragma: keep
 #include "../servlets/rd/rd_trend_servlet.h"                                // IWYU pragma: keep
+#include "../servlets/help/faqs_servlet.h"                                  // IWYU pragma: keep
+#include "../servlets/help/feedback_servlet.h"                              // IWYU pragma: keep
 #include "../servlets/settings/error_codes_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/settings/site_settings_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/settings/site_status_servlet.h"                       // IWYU pragma: keep
