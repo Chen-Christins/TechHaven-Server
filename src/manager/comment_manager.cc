@@ -124,20 +124,11 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
     qb->orderBy("id", "ASC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::CommentInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -173,22 +164,13 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
         return;
     }
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    if (data::CommentInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
     std::vector<int64_t> ids;
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : results) {
         ids.push_back(info->getId());
-        results.push_back(info);
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -209,20 +191,11 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, i
     qb->orderBy("id", "ASC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::CommentInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -272,27 +245,12 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
     qb->orderBy("id", "DESC");
 
     int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "listByAdmin executeCount fail errno=" << db->getErrno();
+    int32_t offset = (int32_t)((page_num - 1) * page_size);
+    if (data::CommentInfoDao::QueryByBuilderPages(results, total, qb, offset, (int32_t)page_size, db)) {
+        ERROR(logger) << "listByAdmin QueryByBuilderPages failed";
         return 0;
     }
-
-    qb->limit((int32_t)page_size);
-    qb->offset((int32_t)((page_num - 1) * page_size));
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -387,27 +345,14 @@ CommentManager::CommentStats CommentManager::getStats() {
         qb->select("status, COUNT(*) AS cnt");
         qb->where("is_deleted", "=", (int64_t)0);
         qb->groupBy("status");
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (stmt) {
-            qb->bindParams(stmt);
-            auto rt = stmt->query();
-            if (rt) {
-                while (rt->next()) {
-                    int32_t s = rt->getInt32(0);
-                    int64_t cnt = rt->getInt64(1);
-                    stats.total += cnt;
-                    switch (s) {
-                    case PENDING:
-                        stats.pending = cnt;
-                        break;
-                    case APPROVED:
-                        stats.approved = cnt;
-                        break;
-                    case SPAM:
-                        stats.spam = cnt;
-                        break;
-                    }
+        std::vector<std::pair<int32_t, int64_t>> rows;
+        if (qb->queryPairs<int32_t, int64_t>(rows, db) == 0) {
+            for (auto& [s, cnt] : rows) {
+                stats.total += cnt;
+                switch (s) {
+                case PENDING:   stats.pending = cnt;  break;
+                case APPROVED:  stats.approved = cnt; break;
+                case SPAM:      stats.spam = cnt;     break;
                 }
             }
         }

@@ -87,24 +87,8 @@ void BadgeManager::listAll(std::vector<data::BadgeInfo::ptr>& badges) {
     qb->orderBy("sort_order", "ASC");
     qb->orderBy("id", "ASC");
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-
-    while (rt->next()) {
-        auto info = data::BadgeInfoDao::ParseRow(rt);
-        if (info) {
-            badges.push_back(info);
-        }
+    if (data::BadgeInfoDao::QueryByBuilder(badges, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
     }
 }
 

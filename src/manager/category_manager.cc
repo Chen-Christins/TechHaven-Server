@@ -50,20 +50,11 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
     auto qb = data::CategoryInfoDao::newQuery();
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "ASC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::CategoryInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
+    for (auto& info : infos) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

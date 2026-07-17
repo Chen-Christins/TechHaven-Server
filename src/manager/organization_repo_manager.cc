@@ -79,31 +79,12 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
     qb->where("org_id", "=", org_id);
     qb->orderBy("sort_order DESC, id", "DESC");
 
-    std::stringstream ck;
-    ck << "org_repo:list:" << org_id;
-    int64_t total = executeCountCached(qb, db, ck.str());
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::OrganizationReposInfoDao::QueryByBuilderPages(repos, total, qb, (int32_t)offset, (int32_t)limit, db)) {
+        ERROR(logger) << "QueryByBuilderPages failed";
         return 0;
     }
-
-    if (limit < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)limit);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        repos.push_back(info);
+    for (auto& info : repos) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -134,19 +115,8 @@ void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationRepo
     }
     auto qb = data::OrganizationReposInfoDao::newQuery();
     qb->where("token", "!=", "");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        repos.push_back(parseRow(rt));
+    if (data::OrganizationReposInfoDao::QueryByBuilder(repos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
     }
 }
 

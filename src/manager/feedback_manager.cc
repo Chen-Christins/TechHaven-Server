@@ -26,60 +26,17 @@ bool FeedbackManager::list(std::vector<data::UserFeedbackInfo::ptr>& infos,
         qb->where("type", "=", type);
     }
 
-    // 如果需要总数，先查 count
-    if (total) {
-        std::string countSql = qb->buildCountSQL();
-        auto countStmt = db->prepare(countSql);
-        if (!countStmt) {
-            ERROR(logger) << "count stmt=" << countSql
-                << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-            return false;
-        }
-        qb->bindQueryParams(countStmt);
-        auto countRt = countStmt->query();
-        if (!countRt) {
-            ERROR(logger) << "count query failed";
-            return false;
-        }
-        if (countRt->next()) {
-            *total = countRt->getInt64(0);
-        }
-        if (*total == 0) {
-            return true;
-        }
-    }
-
     qb->orderBy("id", "DESC");
 
     int32_t offset = (page - 1) * page_size;
-    std::string sql = qb->buildQuerySQL("id, type, content, contact, user_id, is_deleted, create_time, update_time", false);
-    sql += " limit ? offset ?";
-
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-            << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    int64_t total_cnt = 0;
+    if (data::UserFeedbackInfoDao::QueryByBuilderPages(infos, total_cnt, qb, offset, page_size, db)) {
+        ERROR(logger) << "QueryByBuilderPages failed";
         return false;
     }
-
-    qb->bindQueryParams(stmt);
-    int idx = qb->getQueryParamCount() + 1;
-    stmt->bindInt32(idx++, page_size);
-    stmt->bindInt32(idx++, offset);
-
-    auto rt = stmt->query();
-    if (!rt) {
-        ERROR(logger) << "query failed";
-        return false;
+    if (total) {
+        *total = total_cnt;
     }
-
-    while (rt->next()) {
-        auto info = data::UserFeedbackInfoDao::ParseRow(rt);
-        if (info) {
-            infos.push_back(info);
-        }
-    }
-
     return true;
 }
 
@@ -94,25 +51,11 @@ data::UserFeedbackInfo::ptr FeedbackManager::get(int64_t id) {
     qb->where("id", "=", id);
     qb->where("is_deleted", "=", (int64_t)0);
 
-    std::string sql = qb->buildQuerySQL("id, type, content, contact, user_id, is_deleted, create_time, update_time");
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-            << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    std::vector<data::UserFeedbackInfo::ptr> results;
+    if (data::UserFeedbackInfoDao::QueryByBuilder(results, qb, db) || results.empty()) {
         return nullptr;
     }
-    qb->bindParams(stmt);
-
-    auto rt = stmt->query();
-    if (!rt) {
-        return nullptr;
-    }
-
-    if (!rt->next()) {
-        return nullptr;
-    }
-
-    return data::UserFeedbackInfoDao::ParseRow(rt);
+    return results[0];
 }
 
 bool FeedbackManager::remove(int64_t id) {

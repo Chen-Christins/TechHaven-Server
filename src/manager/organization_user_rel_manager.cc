@@ -99,20 +99,11 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::OrganizationUserRelInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return 0;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -157,22 +148,13 @@ OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t o
         qb->where("status", "=", (int64_t)Status::APPROVED);
         qb->where("is_deleted", "=", (int64_t)0);
         qb->groupBy("role");
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (!stmt) {
-            ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        } else {
-            qb->bindParams(stmt);
-            auto rt = stmt->query();
-            if (rt) {
-                while (rt->next()) {
-                    int32_t role = rt->getInt32(0);
-                    int64_t cnt = rt->getInt64(1);
-                    if (role == OrganizationManager::Role::ORG_ADMIN) {
-                        stats.org_admin_count = cnt;
-                    } else if (role == OrganizationManager::Role::MEMBER) {
-                        stats.regular_count = cnt;
-                    }
+        std::vector<std::pair<int32_t, int64_t>> rows;
+        if (qb->queryPairs<int32_t, int64_t>(rows, db) == 0) {
+            for (auto& [role, cnt] : rows) {
+                if (role == OrganizationManager::Role::ORG_ADMIN) {
+                    stats.org_admin_count = cnt;
+                } else if (role == OrganizationManager::Role::MEMBER) {
+                    stats.regular_count = cnt;
                 }
             }
         }

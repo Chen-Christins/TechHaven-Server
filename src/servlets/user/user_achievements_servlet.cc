@@ -92,17 +92,11 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
                 qb->where("is_deleted", "=", (int64_t)0);
                 qb->where("create_time", ">=", cutoffStr);
 
-                std::string sql = qb->buildQuerySQL("create_time");
-                auto stmt = db->prepare(sql);
-                if (stmt) {
-                    qb->bindParams(stmt);
-                    auto rt = stmt->query();
-                    if (rt) {
-                        while (rt->next()) {
-                            time_t ct = rt->getTime(0);
-                            std::string dateKey = chen::Time2Str(ct, "%Y-%m-%d");
-                            dateContributions[dateKey]++;
-                        }
+                std::vector<int64_t> timestamps;
+                if (qb->queryColumn<int64_t>(timestamps, db, "create_time") == 0) {
+                    for (auto ts : timestamps) {
+                        std::string dateKey = chen::Time2Str((time_t)ts, "%Y-%m-%d");
+                        dateContributions[dateKey]++;
                     }
                 }
             }

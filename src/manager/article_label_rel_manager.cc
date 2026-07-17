@@ -52,22 +52,13 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
     qb->where("article_id", "=", id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticleLabelRelInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
+    for (auto& info : infos) {
         if (!m_cache.exists(info->getId())) {
-    m_cache.set(info->getId(), info);
+            m_cache.set(info->getId(), info);
         }
     }
     return true;
@@ -84,20 +75,11 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
     qb->where("label_id", "=", label_id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticleLabelRelInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
+    for (auto& info : infos) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

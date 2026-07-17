@@ -58,35 +58,28 @@ int32_t UserAdminListsServlet::handle(chen::http::HttpRequest::ptr request, chen
                 user_ids.push_back(u->getId());
             }
 
+            std::vector<std::pair<int64_t, int64_t>> rows;
+
             auto aqb = data::ArticleInfoDao::newQuery();
             aqb->select("user_id, COUNT(*) as cnt");
             aqb->whereIn("user_id", user_ids);
             aqb->where("is_deleted", "=", (int64_t)0);
             aqb->groupBy("user_id");
-            auto stmt = db->prepare(aqb->buildQuerySQL());
-            if (stmt) {
-                aqb->bindParams(stmt);
-                auto rt = stmt->query();
-                if (rt) {
-                    while (rt->next()) {
-                        article_counts[rt->getInt64(0)] = rt->getInt64(1);
-                    }
+            if (aqb->queryPairs<int64_t, int64_t>(rows, db) == 0) {
+                for (auto& [uid, cnt] : rows) {
+                    article_counts[uid] = cnt;
                 }
             }
 
+            rows.clear();
             auto cqb = data::CommentInfoDao::newQuery();
             cqb->select("user_id, COUNT(*) as cnt");
             cqb->whereIn("user_id", user_ids);
             cqb->where("is_deleted", "=", (int64_t)0);
             cqb->groupBy("user_id");
-            stmt = db->prepare(cqb->buildQuerySQL());
-            if (stmt) {
-                cqb->bindParams(stmt);
-                auto rt = stmt->query();
-                if (rt) {
-                    while (rt->next()) {
-                        comment_counts[rt->getInt64(0)] = rt->getInt64(1);
-                    }
+            if (cqb->queryPairs<int64_t, int64_t>(rows, db) == 0) {
+                for (auto& [uid, cnt] : rows) {
+                    comment_counts[uid] = cnt;
                 }
             }
         }

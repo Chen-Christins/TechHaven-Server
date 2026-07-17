@@ -80,20 +80,11 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
     qb->where("owner_id", "=", uid);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ResourceInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -113,20 +104,13 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
     qb->where("owner_id", "=", uid);
     qb->where("name", "=", filename);
     qb->limit(1);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    std::vector<data::ResourceInfo::ptr> results;
+    if (data::ResourceInfoDao::QueryByBuilder(results, qb, db) || results.empty()) {
         return nullptr;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (rt && rt->next()) {
-        auto info = parseRow(rt);
-        m_cache.set(info->getId(), info);
-        return info;
-    }
-    return nullptr;
+    auto info = results[0];
+    m_cache.set(info->getId(), info);
+    return info;
 }
 
 data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
@@ -143,20 +127,13 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
     auto qb = data::ResourceInfoDao::newQuery();
     qb->where("path", "=", path);
     qb->limit(1);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    std::vector<data::ResourceInfo::ptr> results;
+    if (data::ResourceInfoDao::QueryByBuilder(results, qb, db) || results.empty()) {
         return nullptr;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (rt && rt->next()) {
-        auto info = parseRow(rt);
-        m_cache.set(info->getId(), info);
-        cacheIdMapping(ck, info->getId());
-        return info;
-    }
-    return nullptr;
+    auto info = results[0];
+    m_cache.set(info->getId(), info);
+    cacheIdMapping(ck, info->getId());
+    return info;
 }
 }

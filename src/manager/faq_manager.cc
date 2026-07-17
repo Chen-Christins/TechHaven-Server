@@ -21,22 +21,9 @@ bool FaqManager::listAll(std::vector<data::HelpFaqsInfo::ptr>& infos) {
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("sort_order", "ASC");
     qb->orderBy("id", "ASC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::HelpFaqsInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = data::HelpFaqsInfoDao::ParseRow(rt);
-        if (info) {
-            infos.push_back(info);
-        }
     }
     return true;
 }
@@ -51,24 +38,15 @@ bool FaqManager::searchByKeyword(const std::string& keyword, std::vector<data::H
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("sort_order", "ASC");
     qb->orderBy("id", "ASC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    std::vector<data::HelpFaqsInfo::ptr> all;
+    if (data::HelpFaqsInfoDao::QueryByBuilder(all, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = data::HelpFaqsInfoDao::ParseRow(rt);
-        if (info) {
-            if (info->getQ().find(keyword) != std::string::npos ||
-                info->getA().find(keyword) != std::string::npos) {
-                infos.push_back(info);
-            }
+    for (auto& info : all) {
+        if (info->getQ().find(keyword) != std::string::npos ||
+            info->getA().find(keyword) != std::string::npos) {
+            infos.push_back(info);
         }
     }
     return true;

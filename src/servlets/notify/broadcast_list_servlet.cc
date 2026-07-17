@@ -36,23 +36,15 @@ int32_t BroadcastListServlet::handle(chen::http::HttpRequest::ptr request, chen:
         qb->limit((int32_t)size);
         qb->offset((int32_t)offset);
 
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (!stmt) {
-            ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-            result->setErrno(errcode::DB_OPERATION_FAILED);
-            break;
-        }
-        qb->bindParams(stmt);
-        auto rt = stmt->query();
-        if (!rt) {
+        std::vector<data::NotificationInfo::ptr> notifs;
+        if (data::NotificationInfoDao::QueryByBuilder(notifs, qb, db)) {
+            ERROR(logger) << "QueryByBuilder failed";
             result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
         Json::Value list(Json::arrayValue);
-        while (rt->next()) {
-            auto info = data::NotificationInfoDao::ParseRow(rt);
+        for (auto& info : notifs) {
             if (!info) {
                 continue;
             }

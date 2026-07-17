@@ -52,20 +52,11 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
     qb->where("article_id", "=", id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticleCategoryRelInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
+    for (auto& info : infos) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -84,20 +75,11 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
     qb->where("category_id", "=", category_id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticleCategoryRelInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        infos.push_back(info);
+    for (auto& info : infos) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

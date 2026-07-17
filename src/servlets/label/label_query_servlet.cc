@@ -59,10 +59,10 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 qb->where("a.state", "=", (int64_t)ArticleManager::PUBLISHED);
                 qb->where("a.is_deleted", "=", (int64_t)0);
                 qb->groupBy("r.label_id");
-                auto qrt = qb->executeQuery(db);
-                if (qrt) {
-                    while (qrt->next()) {
-                        article_counts[qrt->getInt64(0)] = qrt->getInt64(1);
+                std::vector<std::pair<int64_t, int64_t>> rows;
+                if (qb->queryPairs<int64_t, int64_t>(rows, db) == 0) {
+                    for (auto& [label_id, cnt] : rows) {
+                        article_counts[label_id] = cnt;
                     }
                 }
             }

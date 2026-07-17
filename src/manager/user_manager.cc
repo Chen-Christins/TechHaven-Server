@@ -37,21 +37,7 @@ void UserManager::getAllIds(std::vector<int64_t>& ids, bool isValid) {
     auto qb = data::UserInfoDao::newQuery();
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->select("id");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        ids.push_back(rt->getInt64(0));
-    }
+    qb->queryColumn<int64_t>(ids, db, "id");
 }
 
 uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size

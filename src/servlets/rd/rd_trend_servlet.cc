@@ -88,12 +88,9 @@ double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& 
     qb->where("status", ">=", (int64_t)min_status);
     addTimeCond(qb, ctx.start_date, ctx.end_date);
 
-    auto stmt = ctx.db->prepare(qb->buildQuerySQL());
-    if (!stmt) return 0.0;
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt || !rt->next()) return 0.0;
-    return rt->getDouble(0);
+    double result = 0.0;
+    qb->queryScalarDouble(result, ctx.db);
+    return result;
 }
 
 void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name) {
@@ -107,22 +104,19 @@ void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table,
     qb->groupBy("d");
     qb->orderBy("d", "ASC");
 
-    auto stmt = ctx.db->prepare(qb->buildQuerySQL());
-    if (!stmt) return;
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) return;
-    while (rt->next()) {
-        std::string d = rt->getString(0);
-        std::string key = d;
-        if (ctx.granularity == "week") {
-            key = formatGroupKey(parseDate(d), "week");
-        } else if (ctx.granularity == "month") {
-            key = d.substr(0, 7);
-        }
-        auto it = ctx.series_map.find(key);
-        if (it != ctx.series_map.end()) {
-            it->second[field_name] = it->second[field_name].asInt64() + rt->getInt64(1);
+    std::vector<std::pair<std::string, int64_t>> rows;
+    if (qb->queryPairs<std::string, int64_t>(rows, ctx.db) == 0) {
+        for (auto& [d, cnt] : rows) {
+            std::string key = d;
+            if (ctx.granularity == "week") {
+                key = formatGroupKey(parseDate(d), "week");
+            } else if (ctx.granularity == "month") {
+                key = d.substr(0, 7);
+            }
+            auto it = ctx.series_map.find(key);
+            if (it != ctx.series_map.end()) {
+                it->second[field_name] = it->second[field_name].asInt64() + cnt;
+            }
         }
     }
 }
