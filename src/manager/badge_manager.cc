@@ -82,7 +82,7 @@ void BadgeManager::listAll(std::vector<data::BadgeInfo::ptr>& badges) {
         return;
     }
 
-    auto qb = chen::QueryBuilder::Create("badge");
+    auto qb = data::BadgeInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("sort_order", "ASC");
     qb->orderBy("id", "ASC");

@@ -95,7 +95,7 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
                 std::set<int64_t> notified;
                 auto db2 = getDB();
                 if (db2) {
-                    auto qb = chen::QueryBuilder::Create("assignment_user_rel");
+                    auto qb = data::AssignmentUserRelInfoDao::newQuery();
                     qb->where("assignment_id", "=", assign->getId());
                     qb->where("is_deleted", "=", (int64_t)0);
                     auto stmt = db2->prepare(qb->buildQuerySQL());

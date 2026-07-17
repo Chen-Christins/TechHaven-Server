@@ -75,7 +75,7 @@ int64_t OrganizationRepoManager::listByOrgPages(std::vector<data::OrganizationRe
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repos");
+    auto qb = data::OrganizationReposInfoDao::newQuery();
     qb->where("org_id", "=", org_id);
     qb->orderBy("sort_order DESC, id", "DESC");
 
@@ -118,7 +118,7 @@ int64_t OrganizationRepoManager::getCountByOrg(int64_t org_id) {
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repos");
+    auto qb = data::OrganizationReposInfoDao::newQuery();
     qb->where("org_id", "=", org_id);
 
     std::stringstream ck;
@@ -132,7 +132,7 @@ void OrganizationRepoManager::getAllWithToken(std::vector<data::OrganizationRepo
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("organization_repos");
+    auto qb = data::OrganizationReposInfoDao::newQuery();
     qb->where("token", "!=", "");
     std::string sql = qb->buildQuerySQL();
     auto stmt = db->prepare(sql);

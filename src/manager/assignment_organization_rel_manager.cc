@@ -64,7 +64,7 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("assignment_organization_rel");
+    auto qb = data::AssignmentOrganizationRelInfoDao::newQuery();
     qb->where("assignment_id", "=", assign_id);
     qb->orderBy("id", "DESC");
     std::string sql = qb->buildQuerySQL();
@@ -95,7 +95,7 @@ int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::Assignmen
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("assignment_organization_rel");
+    auto qb = data::AssignmentOrganizationRelInfoDao::newQuery();
     qb->where("organization_id", "=", o_id);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);

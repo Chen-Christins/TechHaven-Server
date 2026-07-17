@@ -77,7 +77,7 @@ int32_t UserStatsServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         if (!published_ids.empty()) {
             auto db = GetDB();
             if (db) {
-                auto qb = chen::QueryBuilder::Create("comment");
+                auto qb = data::CommentInfoDao::newQuery();
                 qb->whereIn("article_id", published_ids);
                 qb->where("is_deleted", "=", (int64_t)0);
                 qb->executeCount(total_comments, db);

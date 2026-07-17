@@ -8,6 +8,8 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
+#include "blog/data/task_info.h"
+#include "blog/data/organization_repo_prs_info.h"
 
 namespace blog {
 namespace servlet {
@@ -217,7 +219,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         // avg_review_pass_rate
         {
             auto buildBaseQB = [&]() {
-                auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+                auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
                 qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
                 qb->where("prs.review_status", "!=", std::string(""));
                 qb->where("prs.review_status", "!=", std::string("pending"));
@@ -254,13 +256,13 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
 
         // task_delta
         {
-            auto qbEnd = chen::QueryBuilder::Create("task");
+            auto qbEnd = data::TaskInfoDao::newQuery();
             addBaseConds(qbEnd, ctx);
             qbEnd->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)ctx.end_date);
             int64_t tasks_at_end = 0;
             qbEnd->executeCount(tasks_at_end, ctx.db);
 
-            auto qbStart = chen::QueryBuilder::Create("task");
+            auto qbStart = data::TaskInfoDao::newQuery();
             addBaseConds(qbStart, ctx);
             qbStart->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)ctx.start_date);
             int64_t tasks_at_start = 0;
@@ -357,7 +359,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         int64_t total_items = ctx.new_req + ctx.bug_total + ctx.new_task;
         auto& dist = result->jsondata["work_distribution"];
         {
-            auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+            auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
             qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
             if (!ctx.target_orgs.empty()) {
                 qb->whereIn("repos.org_id", ctx.target_orgs);

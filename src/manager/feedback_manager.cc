@@ -19,7 +19,7 @@ bool FeedbackManager::list(std::vector<data::UserFeedbackInfo::ptr>& infos,
         return false;
     }
 
-    auto qb = chen::QueryBuilder::Create("user_feedback");
+    auto qb = data::UserFeedbackInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
 
     if (!type.empty()) {
@@ -90,7 +90,7 @@ data::UserFeedbackInfo::ptr FeedbackManager::get(int64_t id) {
         return nullptr;
     }
 
-    auto qb = chen::QueryBuilder::Create("user_feedback");
+    auto qb = data::UserFeedbackInfoDao::newQuery();
     qb->where("id", "=", id);
     qb->where("is_deleted", "=", (int64_t)0);
 

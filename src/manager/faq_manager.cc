@@ -17,7 +17,7 @@ bool FaqManager::listAll(std::vector<data::HelpFaqsInfo::ptr>& infos) {
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("help_faqs");
+    auto qb = data::HelpFaqsInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("sort_order", "ASC");
     qb->orderBy("id", "ASC");
@@ -47,7 +47,7 @@ bool FaqManager::searchByKeyword(const std::string& keyword, std::vector<data::H
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("help_faqs");
+    auto qb = data::HelpFaqsInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("sort_order", "ASC");
     qb->orderBy("id", "ASC");

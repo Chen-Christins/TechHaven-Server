@@ -2,6 +2,7 @@
 
 #include "../../include/managers.h"
 #include "../../util.h"
+#include "blog/data/article_label_rel_info.h"
 
 #include <chen/log/log.h>
 
@@ -50,7 +51,7 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 for (auto& i : infos) {
                     label_ids.push_back(i->getId());
                 }
-                auto qb = chen::QueryBuilder::Create("article_label_rel r");
+                auto qb = data::ArticleLabelRelInfoDao::newQuery("r");
                 qb->select("r.label_id, COUNT(*) cnt");
                 qb->join("article a", "r.article_id = a.id");
                 qb->whereIn("r.label_id", label_ids);

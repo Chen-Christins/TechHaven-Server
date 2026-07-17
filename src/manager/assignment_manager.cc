@@ -71,7 +71,7 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("assignment");
+    auto qb = data::AssignmentInfoDao::newQuery();
     qb->select("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
@@ -99,7 +99,7 @@ AssignmentManager::AssignmentStats AssignmentManager::getStats() {
 
     // Query status counts with GROUP BY
     {
-        auto qb = chen::QueryBuilder::Create("assignment");
+        auto qb = data::AssignmentInfoDao::newQuery();
         qb->select("status, COUNT(*) AS cnt");
         qb->where("is_deleted", "=", (int64_t)0);
         qb->groupBy("status");

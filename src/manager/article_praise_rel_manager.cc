@@ -136,7 +136,7 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -169,7 +169,7 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -201,7 +201,7 @@ int64_t ArticlePraiseRelManager::countByArticle(int64_t article_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;
@@ -218,7 +218,7 @@ int64_t ArticlePraiseRelManager::countByUser(int64_t user_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;

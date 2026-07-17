@@ -87,7 +87,7 @@ int32_t UserAchievementsServlet::handle(chen::http::HttpRequest::ptr request, ch
                 time_t cutoff = now - 371 * 86400;
                 std::string cutoffStr = chen::Time2Str(cutoff, "%Y-%m-%d");
 
-                auto qb = chen::QueryBuilder::Create("comment");
+                auto qb = data::CommentInfoDao::newQuery();
                 qb->where("user_id", "=", uid);
                 qb->where("is_deleted", "=", (int64_t)0);
                 qb->where("create_time", ">=", cutoffStr);

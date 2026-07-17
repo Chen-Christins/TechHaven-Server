@@ -137,7 +137,7 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("follower_id", "=", follower_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -170,7 +170,7 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("following_id", "=", following_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -202,7 +202,7 @@ int64_t UserFollowRelManager::countFollowing(int64_t follower_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("follower_id", "=", follower_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;
@@ -219,7 +219,7 @@ int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("following_id", "=", following_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;

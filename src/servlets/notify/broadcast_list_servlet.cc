@@ -29,7 +29,7 @@ int32_t BroadcastListServlet::handle(chen::http::HttpRequest::ptr request, chen:
         }
 
         // 查 is_broadcast=1 且未删除的，按创建时间倒序
-        auto qb = chen::QueryBuilder::Create("notification");
+        auto qb = data::NotificationInfoDao::newQuery();
         qb->where("is_broadcast", "=", (int64_t)1);
         qb->where("is_deleted", "=", (int64_t)0);
         qb->orderBy("id", "DESC");

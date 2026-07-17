@@ -65,7 +65,7 @@ bool LabelManager::listByUserId(std::vector<data::LabelInfo::ptr>& infos, int64_
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("label");
+    auto qb = data::LabelInfoDao::newQuery();
     qb->where("user_id", "=", id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");

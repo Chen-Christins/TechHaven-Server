@@ -155,7 +155,7 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->whereIf(!type.empty(), "type", "=", type);
     qb->orderBy("id", "DESC");
@@ -206,7 +206,7 @@ int64_t NotificationManager::countByUser(int64_t user_id, const std::string& typ
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->whereIf(!type.empty(), "type", "=", type);
     std::string ck = "notif:cnt:" + std::to_string(user_id) + ":" + (type.empty() ? "all" : type);
@@ -219,7 +219,7 @@ int64_t NotificationManager::unreadCount(int64_t user_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
@@ -273,7 +273,7 @@ int64_t NotificationManager::markAllRead(int64_t user_id) {
     }
 
     // Find all unread, non-deleted notifications for this user
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
@@ -309,7 +309,7 @@ int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& 
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
@@ -363,7 +363,7 @@ void NotificationManager::cleanupExpiredBroadcasts() {
     }
     int64_t now = time(0);
     // 将已过期的广播的 is_broadcast 置 0，前端 /broadcast/list 不再返回
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->set("is_broadcast", (int64_t)0);
     qb->set("update_time", now);
     qb->where("is_broadcast", "=", (int64_t)1);

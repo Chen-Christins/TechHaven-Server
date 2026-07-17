@@ -119,7 +119,7 @@ void CommentManager::listAllByArticle(std::vector<data::CommentInfo::ptr>& resul
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
@@ -150,7 +150,7 @@ void CommentManager::listByArticle(std::vector<data::CommentInfo::ptr>& results,
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("parent_id", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
@@ -202,7 +202,7 @@ void CommentManager::listReplies(std::vector<data::CommentInfo::ptr>& results, i
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->where("parent_id", "=", parent_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
@@ -235,7 +235,7 @@ int64_t CommentManager::countByArticle(int64_t article_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("parent_id", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
@@ -249,7 +249,7 @@ int64_t CommentManager::countReplies(int64_t parent_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->where("parent_id", "=", parent_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("status", "=", (int64_t)APPROVED);
@@ -263,7 +263,7 @@ int64_t CommentManager::listByAdmin(std::vector<data::CommentInfo::ptr>& results
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
     qb->whereIf(status > 0, "status", "=", (int64_t)status);
     qb->whereIf(article_id > 0, "article_id", "=", article_id);
@@ -310,7 +310,7 @@ int64_t CommentManager::batchUpdateStatus(const std::vector<int64_t>& ids, int32
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->set("status", (int64_t)status);
     qb->whereIn("id", ids);
     if (qb->executeUpdate(db)) {
@@ -338,7 +338,7 @@ int64_t CommentManager::batchDelete(const std::vector<int64_t>& ids) {
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("comment");
+    auto qb = data::CommentInfoDao::newQuery();
     qb->set("is_deleted", (int64_t)1);
     qb->whereIn("id", ids);
     if (qb->executeUpdate(db)) {
@@ -383,7 +383,7 @@ CommentManager::CommentStats CommentManager::getStats() {
 
     // Query status counts with GROUP BY
     {
-        auto qb = chen::QueryBuilder::Create("comment");
+        auto qb = data::CommentInfoDao::newQuery();
         qb->select("status, COUNT(*) AS cnt");
         qb->where("is_deleted", "=", (int64_t)0);
         qb->groupBy("status");
@@ -415,7 +415,7 @@ CommentManager::CommentStats CommentManager::getStats() {
 
     // Query reported count
     {
-        auto qb = chen::QueryBuilder::Create("comment");
+        auto qb = data::CommentInfoDao::newQuery();
         qb->where("is_deleted", "=", (int64_t)0);
         qb->where("is_reported", "=", (int64_t)1);
         int64_t reported = 0;

@@ -74,7 +74,7 @@ void ResourceManager::getByBizUid(std::vector<data::ResourceInfo::ptr>& results
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("resource");
+    auto qb = data::ResourceInfoDao::newQuery();
     qb->where("biz_type", "=", biz_type);
     qb->where("biz_id", "=", biz_id);
     qb->where("owner_id", "=", uid);
@@ -107,7 +107,7 @@ data::ResourceInfo::ptr ResourceManager::getByBizUidName(const std::string& biz_
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    auto qb = chen::QueryBuilder::Create("resource");
+    auto qb = data::ResourceInfoDao::newQuery();
     qb->where("biz_type", "=", biz_type);
     qb->where("biz_id", "=", biz_id);
     qb->where("owner_id", "=", uid);
@@ -140,7 +140,7 @@ data::ResourceInfo::ptr ResourceManager::getByPath(const std::string& path) {
         ERROR(logger) << "Get DB connection fail";
         return nullptr;
     }
-    auto qb = chen::QueryBuilder::Create("resource");
+    auto qb = data::ResourceInfoDao::newQuery();
     qb->where("path", "=", path);
     qb->limit(1);
     std::string sql = qb->buildQuerySQL();

@@ -67,7 +67,7 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("organization_user_rel");
+    auto qb = data::OrganizationUserRelInfoDao::newQuery();
     qb->select("id, org_id, user_id, role, status, is_deleted, create_time, update_time");
     qb->where("org_id", "=", o_id);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
@@ -93,7 +93,7 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("organization_user_rel");
+    auto qb = data::OrganizationUserRelInfoDao::newQuery();
     qb->where("user_id", "=", u_id);
     qb->where("status", "!=", (int64_t)Status::PENDING);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
@@ -126,7 +126,7 @@ int64_t OrganizationUserRelManager::getMemberCount(int64_t o_id, int32_t status,
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("organization_user_rel");
+    auto qb = data::OrganizationUserRelInfoDao::newQuery();
     qb->where("org_id", "=", o_id);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
@@ -151,7 +151,7 @@ OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t o
 
     // 按角色 GROUP BY 拿到 org_admin_count 和 regular_count
     {
-        auto qb = chen::QueryBuilder::Create("organization_user_rel");
+        auto qb = data::OrganizationUserRelInfoDao::newQuery();
         qb->select("role, COUNT(*) as cnt");
         qb->where("org_id", "=", org_id);
         qb->where("status", "=", (int64_t)Status::APPROVED);
@@ -180,7 +180,7 @@ OrganizationUserRelManager::Stats OrganizationUserRelManager::getStats(int64_t o
 
     // active_members: 已批准成员中，其用户账号状态为正常的数量
     {
-        auto qb = chen::QueryBuilder::Create("organization_user_rel r");
+        auto qb = data::OrganizationUserRelInfoDao::newQuery("r");
         qb->join("INNER", "user u", "r.user_id = u.id");
         qb->where("r.org_id", "=", org_id);
         qb->where("r.status", "=", (int64_t)Status::APPROVED);

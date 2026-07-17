@@ -46,7 +46,7 @@ bool ExportRecordManager::list(std::vector<data::ExportRecordInfo::ptr>& results
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("export_record");
+    auto qb = data::ExportRecordInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
     if (!search.empty()) {
         qb->where("name", "LIKE", "%" + search + "%");

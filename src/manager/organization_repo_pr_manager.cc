@@ -70,7 +70,7 @@ int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::Organizatio
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery();
     qb->where("repo_id", "=", repo_id);
     qb->whereIf(!state.empty(), "state", "=", state);
     qb->orderBy("create_time", "DESC");
@@ -111,7 +111,7 @@ int64_t OrganizationRepoPrManager::getCountByRepo(int64_t repo_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery();
     qb->where("repo_id", "=", repo_id);
     int64_t total = 0;
     if (qb->executeCount(total, db)) {
@@ -128,7 +128,7 @@ int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::Organization
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
     qb->select("prs.*");
     qb->join("organization_repos repos", "prs.repo_id = repos.id");
     qb->where("repos.org_id", "=", org_id);
@@ -174,7 +174,7 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
     qb->select("prs.*");
     qb->join("organization_repos repos", "prs.repo_id = repos.id");
     qb->join("INNER", "organization_user_rel rel", "repos.org_id = rel.org_id");
@@ -571,7 +571,7 @@ data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndNa
     }
 
     // 用 github_full_name 字段精确匹配
-    auto qb = chen::QueryBuilder::Create("organization_repos");
+    auto qb = data::OrganizationReposInfoDao::newQuery();
     qb->select("id");
     qb->where("github_full_name", "=", full_name);
     qb->limit(1);

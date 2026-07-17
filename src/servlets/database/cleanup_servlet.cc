@@ -49,7 +49,7 @@ int32_t CleanupServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
-        auto qb_old = chen::QueryBuilder::Create("backup_record");
+        auto qb_old = data::BackupRecordInfoDao::newQuery();
         qb_old->where("is_deleted", "=", (int64_t)1);
         qb_old->where("create_time", "<", deadline);
 
@@ -70,7 +70,7 @@ int32_t CleanupServlet::handle(chen::http::HttpRequest::ptr request,
             cleaned++;
         }
 
-        auto qb_old_exp = chen::QueryBuilder::Create("export_record");
+        auto qb_old_exp = data::ExportRecordInfoDao::newQuery();
         qb_old_exp->where("is_deleted", "=", (int64_t)1);
         qb_old_exp->where("create_time", "<", deadline);
 

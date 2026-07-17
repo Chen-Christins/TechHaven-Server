@@ -47,7 +47,7 @@ void CategoryManager::listAll(std::vector<blog::data::CategoryInfo::ptr>& infos,
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("category");
+    auto qb = data::CategoryInfoDao::newQuery();
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "ASC");
     std::string sql = qb->buildQuerySQL();

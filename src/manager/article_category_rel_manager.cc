@@ -48,7 +48,7 @@ bool ArticleCategoryRelManager::listByArticleId(std::vector<data::ArticleCategor
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("article_category_rel");
+    auto qb = data::ArticleCategoryRelInfoDao::newQuery();
     qb->where("article_id", "=", id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -80,7 +80,7 @@ bool ArticleCategoryRelManager::listByCategoryId(std::vector<data::ArticleCatego
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("article_category_rel");
+    auto qb = data::ArticleCategoryRelInfoDao::newQuery();
     qb->where("category_id", "=", category_id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");

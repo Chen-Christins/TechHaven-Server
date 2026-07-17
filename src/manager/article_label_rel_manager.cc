@@ -48,7 +48,7 @@ bool ArticleLabelRelManager::listByArticleId(std::vector<data::ArticleLabelRelIn
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("article_label_rel");
+    auto qb = data::ArticleLabelRelInfoDao::newQuery();
     qb->where("article_id", "=", id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -80,7 +80,7 @@ bool ArticleLabelRelManager::listByLabelId(std::vector<data::ArticleLabelRelInfo
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("article_label_rel");
+    auto qb = data::ArticleLabelRelInfoDao::newQuery();
     qb->where("label_id", "=", label_id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
