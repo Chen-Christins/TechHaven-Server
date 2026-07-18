@@ -96,6 +96,8 @@ int64_t OrganizationUserRelManager::getOrgByUserId(std::vector<data::Organizatio
     auto qb = data::OrganizationUserRelInfoDao::newQuery();
     qb->where("user_id", "=", u_id);
     qb->where("status", "!=", (int64_t)Status::PENDING);
+    qb->where("status", "!=", (int64_t)Status::EXITED);
+    qb->where("status", "!=", (int64_t)Status::REJECTED);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
