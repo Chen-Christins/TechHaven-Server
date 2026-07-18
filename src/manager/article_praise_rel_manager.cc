@@ -136,26 +136,17 @@ void ArticlePraiseRelManager::listByArticle(std::vector<data::ArticlePraiseRelIn
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticlePraiseRelInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -169,26 +160,17 @@ void ArticlePraiseRelManager::listByUser(std::vector<data::ArticlePraiseRelInfo:
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticlePraiseRelInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -201,7 +183,7 @@ int64_t ArticlePraiseRelManager::countByArticle(int64_t article_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("article_id", "=", article_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;
@@ -218,7 +200,7 @@ int64_t ArticlePraiseRelManager::countByUser(int64_t user_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article_praise_rel");
+    auto qb = data::ArticlePraiseRelInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;

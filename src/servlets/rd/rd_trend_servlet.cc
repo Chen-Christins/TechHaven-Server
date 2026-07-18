@@ -8,6 +8,8 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
+#include "blog/data/task_info.h"
+#include "blog/data/organization_repo_prs_info.h"
 
 namespace blog {
 namespace servlet {
@@ -86,12 +88,9 @@ double RdTrendServlet::avgCycleTime(const TrendContext& ctx, const std::string& 
     qb->where("status", ">=", (int64_t)min_status);
     addTimeCond(qb, ctx.start_date, ctx.end_date);
 
-    auto stmt = ctx.db->prepare(qb->buildQuerySQL());
-    if (!stmt) return 0.0;
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt || !rt->next()) return 0.0;
-    return rt->getDouble(0);
+    double result = 0.0;
+    qb->queryScalarDouble(result, ctx.db);
+    return result;
 }
 
 void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name) {
@@ -105,22 +104,19 @@ void RdTrendServlet::addSeriesBySql(TrendContext& ctx, const std::string& table,
     qb->groupBy("d");
     qb->orderBy("d", "ASC");
 
-    auto stmt = ctx.db->prepare(qb->buildQuerySQL());
-    if (!stmt) return;
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) return;
-    while (rt->next()) {
-        std::string d = rt->getString(0);
-        std::string key = d;
-        if (ctx.granularity == "week") {
-            key = formatGroupKey(parseDate(d), "week");
-        } else if (ctx.granularity == "month") {
-            key = d.substr(0, 7);
-        }
-        auto it = ctx.series_map.find(key);
-        if (it != ctx.series_map.end()) {
-            it->second[field_name] = it->second[field_name].asInt64() + rt->getInt64(1);
+    std::vector<std::pair<std::string, int64_t>> rows;
+    if (qb->queryPairs<std::string, int64_t>(rows, ctx.db) == 0) {
+        for (auto& [d, cnt] : rows) {
+            std::string key = d;
+            if (ctx.granularity == "week") {
+                key = formatGroupKey(parseDate(d), "week");
+            } else if (ctx.granularity == "month") {
+                key = d.substr(0, 7);
+            }
+            auto it = ctx.series_map.find(key);
+            if (it != ctx.series_map.end()) {
+                it->second[field_name] = it->second[field_name].asInt64() + cnt;
+            }
         }
     }
 }
@@ -217,7 +213,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         // avg_review_pass_rate
         {
             auto buildBaseQB = [&]() {
-                auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+                auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
                 qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
                 qb->where("prs.review_status", "!=", std::string(""));
                 qb->where("prs.review_status", "!=", std::string("pending"));
@@ -254,13 +250,13 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
 
         // task_delta
         {
-            auto qbEnd = chen::QueryBuilder::Create("task");
+            auto qbEnd = data::TaskInfoDao::newQuery();
             addBaseConds(qbEnd, ctx);
             qbEnd->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)ctx.end_date);
             int64_t tasks_at_end = 0;
             qbEnd->executeCount(tasks_at_end, ctx.db);
 
-            auto qbStart = chen::QueryBuilder::Create("task");
+            auto qbStart = data::TaskInfoDao::newQuery();
             addBaseConds(qbStart, ctx);
             qbStart->whereSQL("create_time < FROM_UNIXTIME(?)", (int64_t)ctx.start_date);
             int64_t tasks_at_start = 0;
@@ -357,7 +353,7 @@ int32_t RdTrendServlet::handle(chen::http::HttpRequest::ptr request, chen::http:
         int64_t total_items = ctx.new_req + ctx.bug_total + ctx.new_task;
         auto& dist = result->jsondata["work_distribution"];
         {
-            auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+            auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
             qb->join("INNER", "organization_repos repos", "prs.repo_id = repos.id");
             if (!ctx.target_orgs.empty()) {
                 qb->whereIn("repos.org_id", ctx.target_orgs);

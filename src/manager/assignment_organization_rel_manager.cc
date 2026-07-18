@@ -64,23 +64,14 @@ int64_t AssignmentOrganizationRelManager::getByAssignmentId(std::vector<data::As
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("assignment_organization_rel");
+    auto qb = data::AssignmentOrganizationRelInfoDao::newQuery();
     qb->where("assignment_id", "=", assign_id);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::AssignmentOrganizationRelInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return 0;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -95,36 +86,18 @@ int64_t AssignmentOrganizationRelManager::getByPages(std::vector<data::Assignmen
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("assignment_organization_rel");
+    auto qb = data::AssignmentOrganizationRelInfoDao::newQuery();
     qb->where("organization_id", "=", o_id);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
 
     int64_t total = 0;
-    if (qb->executeCount(total, db)) {
-        ERROR(logger) << "executeCount fail errno=" << db->getErrno();
+    if (data::AssignmentOrganizationRelInfoDao::QueryByBuilderPages(results, total, qb, (int32_t)offset, (int32_t)size, db)) {
+        ERROR(logger) << "QueryByBuilderPages failed";
         return 0;
     }
-
-    if (size < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)size);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }

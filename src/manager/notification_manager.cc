@@ -155,7 +155,7 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->whereIf(!type.empty(), "type", "=", type);
     qb->orderBy("id", "DESC");
@@ -176,23 +176,13 @@ void NotificationManager::listByUser(std::vector<data::NotificationInfo::ptr>& r
         return;
     }
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql
-                 << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    if (data::NotificationInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
     std::vector<int64_t> ids;
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : results) {
         ids.push_back(info->getId());
-        results.push_back(info);
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -206,7 +196,7 @@ int64_t NotificationManager::countByUser(int64_t user_id, const std::string& typ
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->whereIf(!type.empty(), "type", "=", type);
     std::string ck = "notif:cnt:" + std::to_string(user_id) + ":" + (type.empty() ? "all" : type);
@@ -219,7 +209,7 @@ int64_t NotificationManager::unreadCount(int64_t user_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
@@ -273,25 +263,18 @@ int64_t NotificationManager::markAllRead(int64_t user_id) {
     }
 
     // Find all unread, non-deleted notifications for this user
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    std::vector<data::NotificationInfo::ptr> unread;
+    if (data::NotificationInfoDao::QueryByBuilder(unread, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return 0;
     }
 
     int64_t count = 0;
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : unread) {
         info->setIsRead(1);
         info->setReadTime(time(0));
         if (data::NotificationInfoDao::Update(info, db) == 0) {
@@ -309,26 +292,19 @@ int64_t NotificationManager::markReadByType(int64_t user_id, const std::string& 
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->where("user_id", "=", user_id);
     qb->where("is_read", "=", (int64_t)0);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("type", "=", type);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    std::vector<data::NotificationInfo::ptr> unread;
+    if (data::NotificationInfoDao::QueryByBuilder(unread, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return 0;
     }
 
     int64_t count = 0;
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : unread) {
         info->setIsRead(1);
         info->setReadTime(time(0));
         if (data::NotificationInfoDao::Update(info, db) == 0) {
@@ -363,7 +339,7 @@ void NotificationManager::cleanupExpiredBroadcasts() {
     }
     int64_t now = time(0);
     // 将已过期的广播的 is_broadcast 置 0，前端 /broadcast/list 不再返回
-    auto qb = chen::QueryBuilder::Create("notification");
+    auto qb = data::NotificationInfoDao::newQuery();
     qb->set("is_broadcast", (int64_t)0);
     qb->set("update_time", now);
     qb->where("is_broadcast", "=", (int64_t)1);

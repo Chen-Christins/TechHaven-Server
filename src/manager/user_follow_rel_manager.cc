@@ -137,26 +137,17 @@ void UserFollowRelManager::listFollowing(std::vector<data::UserFollowRelInfo::pt
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("follower_id", "=", follower_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::UserFollowRelInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -170,26 +161,17 @@ void UserFollowRelManager::listFollowers(std::vector<data::UserFollowRelInfo::pt
         ERROR(logger) << "Get DB connection fail";
         return;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("following_id", "=", following_id);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
     qb->limit((int32_t)size);
     qb->offset((int32_t)offset);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::UserFollowRelInfoDao::QueryByBuilder(results, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        results.push_back(info);
+    for (auto& info : results) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -202,7 +184,7 @@ int64_t UserFollowRelManager::countFollowing(int64_t follower_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("follower_id", "=", follower_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;
@@ -219,7 +201,7 @@ int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("user_follow_rel");
+    auto qb = data::UserFollowRelInfoDao::newQuery();
     qb->where("following_id", "=", following_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;

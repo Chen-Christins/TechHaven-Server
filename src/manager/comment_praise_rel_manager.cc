@@ -136,7 +136,7 @@ int64_t CommentPraiseRelManager::countByComment(int64_t comment_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("comment_praise_rel");
+    auto qb = data::CommentPraiseRelInfoDao::newQuery();
     qb->where("comment_id", "=", comment_id);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;

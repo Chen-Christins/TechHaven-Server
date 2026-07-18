@@ -113,6 +113,13 @@
 #include "../servlets/rd/rd_task_edit_servlet.h"                            // IWYU pragma: keep
 #include "../servlets/rd/rd_task_servlet.h"                                 // IWYU pragma: keep
 #include "../servlets/rd/rd_trend_servlet.h"                                // IWYU pragma: keep
+#include "../servlets/help/admin_faq_delete_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/help/admin_faq_edit_servlet.h"                       // IWYU pragma: keep
+#include "../servlets/help/admin_feedback_convert_servlet.h"                // IWYU pragma: keep
+#include "../servlets/help/admin_feedback_delete_servlet.h"                 // IWYU pragma: keep
+#include "../servlets/help/admin_feedback_list_servlet.h"                   // IWYU pragma: keep
+#include "../servlets/help/faqs_servlet.h"                                  // IWYU pragma: keep
+#include "../servlets/help/feedback_servlet.h"                              // IWYU pragma: keep
 #include "../servlets/settings/error_codes_servlet.h"                       // IWYU pragma: keep
 #include "../servlets/settings/site_settings_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/settings/site_status_servlet.h"                       // IWYU pragma: keep
@@ -127,6 +134,7 @@
 #include "../servlets/user/user_admin_reset_passwd_servlet.h"               // IWYU pragma: keep
 #include "../servlets/user/user_admin_stats_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_admin_update_servlet.h"                     // IWYU pragma: keep
+#include "../servlets/user/user_achievements_servlet.h"                   // IWYU pragma: keep
 #include "../servlets/user/user_ai_config_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep
@@ -141,6 +149,7 @@
 #include "../servlets/user/user_logout_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_organization_list_servlet.h"                // IWYU pragma: keep
 #include "../servlets/user/user_query_servlet.h"                            // IWYU pragma: keep
+#include "../servlets/user/user_refresh_token_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_reset_passwd_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/user/user_send_code_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_stats_servlet.h"                            // IWYU pragma: keep

@@ -71,7 +71,7 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("assignment");
+    auto qb = data::AssignmentInfoDao::newQuery();
     qb->select("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
@@ -99,31 +99,18 @@ AssignmentManager::AssignmentStats AssignmentManager::getStats() {
 
     // Query status counts with GROUP BY
     {
-        auto qb = chen::QueryBuilder::Create("assignment");
+        auto qb = data::AssignmentInfoDao::newQuery();
         qb->select("status, COUNT(*) AS cnt");
         qb->where("is_deleted", "=", (int64_t)0);
         qb->groupBy("status");
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (stmt) {
-            qb->bindParams(stmt);
-            auto rt = stmt->query();
-            if (rt) {
-                while (rt->next()) {
-                    int32_t s = rt->getInt32(0);
-                    int64_t cnt = rt->getInt64(1);
-                    stats.total += cnt;
-                    switch (s) {
-                    case Status::ACTIVE:
-                        stats.active = cnt;
-                        break;
-                    case Status::INACTIVE:
-                        stats.closed = cnt;
-                        break;
-                    case Status::DRAFT:
-                        stats.draft = cnt;
-                        break;
-                    }
+        std::vector<std::pair<int32_t, int64_t>> rows;
+        if (qb->queryPairs<int32_t, int64_t>(rows, db) == 0) {
+            for (auto& [s, cnt] : rows) {
+                stats.total += cnt;
+                switch (s) {
+                case Status::ACTIVE:   stats.active = cnt; break;
+                case Status::INACTIVE: stats.closed = cnt; break;
+                case Status::DRAFT:    stats.draft = cnt;  break;
                 }
             }
         }

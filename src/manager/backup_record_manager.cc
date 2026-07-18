@@ -46,7 +46,7 @@ bool BackupRecordManager::list(std::vector<data::BackupRecordInfo::ptr>& results
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("backup_record");
+    auto qb = data::BackupRecordInfoDao::newQuery();
     qb->where("is_deleted", "=", (int64_t)0);
     if (!search.empty()) {
         qb->where("name", "LIKE", "%" + search + "%");

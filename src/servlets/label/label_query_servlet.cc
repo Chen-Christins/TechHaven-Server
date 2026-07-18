@@ -2,6 +2,7 @@
 
 #include "../../include/managers.h"
 #include "../../util.h"
+#include "blog/data/article_label_rel_info.h"
 
 #include <chen/log/log.h>
 
@@ -50,7 +51,7 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 for (auto& i : infos) {
                     label_ids.push_back(i->getId());
                 }
-                auto qb = chen::QueryBuilder::Create("article_label_rel r");
+                auto qb = data::ArticleLabelRelInfoDao::newQuery("r");
                 qb->select("r.label_id, COUNT(*) cnt");
                 qb->join("article a", "r.article_id = a.id");
                 qb->whereIn("r.label_id", label_ids);
@@ -58,10 +59,10 @@ int32_t LabelQueryServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
                 qb->where("a.state", "=", (int64_t)ArticleManager::PUBLISHED);
                 qb->where("a.is_deleted", "=", (int64_t)0);
                 qb->groupBy("r.label_id");
-                auto qrt = qb->executeQuery(db);
-                if (qrt) {
-                    while (qrt->next()) {
-                        article_counts[qrt->getInt64(0)] = qrt->getInt64(1);
+                std::vector<std::pair<int64_t, int64_t>> rows;
+                if (qb->queryPairs<int64_t, int64_t>(rows, db) == 0) {
+                    for (auto& [label_id, cnt] : rows) {
+                        article_counts[label_id] = cnt;
                     }
                 }
             }

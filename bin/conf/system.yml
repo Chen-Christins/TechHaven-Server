@@ -49,7 +49,7 @@ server:
 # Logging configuration, defining different loggers for root, system, and access logs with their respective levels, formatters, and appenders.
 logs:
   - name: root
-    level: info
+    level: debug
     formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender

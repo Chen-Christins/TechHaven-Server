@@ -95,16 +95,12 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
                 std::set<int64_t> notified;
                 auto db2 = getDB();
                 if (db2) {
-                    auto qb = chen::QueryBuilder::Create("assignment_user_rel");
+                    auto qb = data::AssignmentUserRelInfoDao::newQuery();
                     qb->where("assignment_id", "=", assign->getId());
                     qb->where("is_deleted", "=", (int64_t)0);
-                    auto stmt = db2->prepare(qb->buildQuerySQL());
-                    if (stmt) {
-                        qb->bindParams(stmt);
-                        auto rt = stmt->query();
-                        if (rt) {
-                            while (rt->next()) {
-                                auto info = data::AssignmentUserRelInfoDao::ParseRow(rt);
+                    std::vector<data::AssignmentUserRelInfo::ptr> submitters;
+                    if (data::AssignmentUserRelInfoDao::QueryByBuilder(submitters, qb, db2) == 0) {
+                            for (auto& info : submitters) {
                                 if (!info) continue;
                                 int64_t submitter_id = info->getUserId();
                                 if (notified.count(submitter_id)) continue;
@@ -130,7 +126,6 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
                     }
                 }
             }
-        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

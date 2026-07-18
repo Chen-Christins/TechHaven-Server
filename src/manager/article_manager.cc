@@ -52,29 +52,20 @@ bool ArticleManager::listByUserId(std::vector<data::ArticleInfo::ptr>& infos, in
         ERROR(logger) << "Get DB connection fail";
         return false;
     }
-    auto qb = chen::QueryBuilder::Create("article");
+    auto qb = data::ArticleInfoDao::newQuery();
     qb->where("user_id", "=", id);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    if (data::ArticleInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "QueryByBuilder failed";
         return false;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return false;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
+    for (auto& info : infos) {
         auto cached = m_cache.get(info->getId());
         if (cached) {
-            infos.push_back(cached);
+            info = cached;
         } else {
             m_cache.set(info->getId(), info);
-            infos.push_back(info);
         }
     }
     return true;
@@ -87,7 +78,7 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article");
+    auto qb = data::ArticleInfoDao::newQuery();
     qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
     qb->whereIf(id != 0, "user_id", "=", id);
     qb->whereIf(state != 0, "state", "=", (int64_t)state);
@@ -116,7 +107,7 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article a");
+    auto qb = data::ArticleInfoDao::newQuery("a");
     qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
     qb->join("article_label_rel alr", "a.id = alr.article_id");
     qb->where("alr.label_id", "=", label_id);
@@ -158,7 +149,7 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article a");
+    auto qb = data::ArticleInfoDao::newQuery("a");
     qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
     qb->join("article_category_rel acr", "a.id = acr.article_id");
     qb->where("acr.category_id", "=", category_id);
@@ -201,7 +192,7 @@ int64_t ArticleManager::listByPages(std::vector<data::ArticleInfo::ptr>& infos, 
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("article a");
+    auto qb = data::ArticleInfoDao::newQuery("a");
     qb->select("a.id, a.user_id, a.title, a.content, a.type, a.state, a.channel, a.is_deleted, a.publish_time, a.weight, a.views, a.praise, a.favorites, a.create_time, a.update_time");
 
     if (category > 0) {
@@ -255,7 +246,7 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article");
+    auto qb = data::ArticleInfoDao::newQuery();
     qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
     qb->where("state", "=", (int64_t)Status::CHECKING);
     qb->orderBy("id", "DESC");
@@ -283,25 +274,20 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
     // 查找上一篇（id 最大的小于给定 id 的已发布文章）
     data::ArticleInfo::ptr prev;
     {
-        auto qb = chen::QueryBuilder::Create("article");
+        auto qb = data::ArticleInfoDao::newQuery();
         qb->whereSQL("id < ?", id);
         qb->where("state", "=", (int64_t)Status::PUBLISHED);
         qb->where("is_deleted", "=", (int64_t)0);
         qb->orderBy("id", "DESC");
         qb->limit(1);
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (stmt) {
-            qb->bindParams(stmt);
-            auto rt = stmt->query();
-            if (rt && rt->next()) {
-                prev = parseRow(rt);
-                auto cached = m_cache.get(prev->getId());
-                if (cached) {
-                    prev = cached;
-                } else {
-                    m_cache.set(prev->getId(), prev);
-                }
+        std::vector<data::ArticleInfo::ptr> results;
+        if (data::ArticleInfoDao::QueryByBuilder(results, qb, db) == 0 && !results.empty()) {
+            prev = results[0];
+            auto cached = m_cache.get(prev->getId());
+            if (cached) {
+                prev = cached;
+            } else {
+                m_cache.set(prev->getId(), prev);
             }
         }
     }
@@ -309,25 +295,20 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
     // 查找下一篇（id 最小的大于给定 id 的已发布文章）
     data::ArticleInfo::ptr next;
     {
-        auto qb = chen::QueryBuilder::Create("article");
+        auto qb = data::ArticleInfoDao::newQuery();
         qb->whereSQL("id > ?", id);
         qb->where("state", "=", (int64_t)Status::PUBLISHED);
         qb->where("is_deleted", "=", (int64_t)0);
         qb->orderBy("id", "ASC");
         qb->limit(1);
-        std::string sql = qb->buildQuerySQL();
-        auto stmt = db->prepare(sql);
-        if (stmt) {
-            qb->bindParams(stmt);
-            auto rt = stmt->query();
-            if (rt && rt->next()) {
-                next = parseRow(rt);
-                auto cached = m_cache.get(next->getId());
-                if (cached) {
-                    next = cached;
-                } else {
-                    m_cache.set(next->getId(), next);
-                }
+        std::vector<data::ArticleInfo::ptr> results;
+        if (data::ArticleInfoDao::QueryByBuilder(results, qb, db) == 0 && !results.empty()) {
+            next = results[0];
+            auto cached = m_cache.get(next->getId());
+            if (cached) {
+                next = cached;
+            } else {
+                m_cache.set(next->getId(), next);
             }
         }
     }
@@ -363,7 +344,7 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
         return stats;
     }
 
-    auto qb = chen::QueryBuilder::Create("article a");
+    auto qb = data::ArticleInfoDao::newQuery("a");
     qb->select("a.state, COUNT(*) as cnt");
 
     if (category > 0) {
@@ -386,32 +367,16 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
     }
     qb->groupBy("a.state");
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+    std::vector<std::pair<int32_t, int64_t>> rows;
+    if (qb->queryPairs<int32_t, int64_t>(rows, db)) {
         return stats;
     }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return stats;
-    }
-
-    while (rt->next()) {
-        int32_t st = rt->getInt32(0);
-        int64_t cnt = rt->getInt64(1);
+    for (auto& [st, cnt] : rows) {
         stats.total += cnt;
         switch (st) {
-        case Status::CHECKING:
-            stats.pending += cnt;
-            break;
-        case Status::PUBLISHED:
-            stats.published += cnt;
-            break;
-        case Status::REJECTED:
-            stats.rejected += cnt;
-            break;
+        case Status::CHECKING:  stats.pending += cnt;   break;
+        case Status::PUBLISHED: stats.published += cnt; break;
+        case Status::REJECTED:  stats.rejected += cnt;  break;
         }
     }
 
@@ -646,32 +611,25 @@ void ArticleManager::onTimer() {
         return;
     }
 
-    auto qb = chen::QueryBuilder::Create("article");
+    auto qb = data::ArticleInfoDao::newQuery();
     qb->where("state", "!=", (int64_t)Status::PUBLISHED);
     qb->whereSQL("publish_time <= ?", (int64_t)now);
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
+    std::vector<data::ArticleInfo::ptr> infos;
+    if (data::ArticleInfoDao::QueryByBuilder(infos, qb, db)) {
+        ERROR(logger) << "onTimer QueryByBuilder failed";
         return;
     }
 
-    std::vector<data::ArticleInfo::ptr> infos;
-    while (rt->next()) {
-        auto row = parseRow(rt);
-        // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数），
-        // 避免用 DB 中的旧值覆盖内存中的正确计数
-        auto cached = m_cache.get(row->getId());
-        auto info = cached ? cached : row;
+    // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数），
+    // 避免用 DB 中的旧值覆盖内存中的正确计数
+    for (auto& info : infos) {
+        auto cached = m_cache.get(info->getId());
+        if (cached) {
+            info = cached;
+        }
         info->setState(Status::PUBLISHED);
         info->setUpdateTime(now);
-        infos.push_back(info);
     }
 
     if (infos.empty()) {
@@ -753,21 +711,12 @@ int64_t ArticleManager::getTotalViews() {
     if (!db) {
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("article");
+    auto qb = data::ArticleInfoDao::newQuery();
     qb->select("CAST(COALESCE(SUM(views), 0) AS SIGNED)");
     qb->where("state", "=", (int64_t)Status::PUBLISHED);
     qb->where("is_deleted", "=", (int64_t)0);
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
     int64_t total = 0;
-    if (rt && rt->next()) {
-        total = rt->getInt64(0);
-    }
+    qb->queryScalarInt64(total, db);
     chen::RedisUtil::Cmd("blog", "set blog:total_visits %lld", total);
     return total;
 }
@@ -820,7 +769,7 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
         return;
     }
 
-    auto qb = chen::QueryBuilder::Create("article");
+    auto qb = data::ArticleInfoDao::newQuery();
     qb->select("DISTINCT DAY(publish_time) as d");
     qb->where("user_id", "=", user_id);
     qb->where("state", "=", (int64_t)Status::PUBLISHED);
@@ -829,22 +778,7 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     qb->where("publish_time", "<", std::string(end_str));
     qb->orderBy("d", "ASC");
 
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "getCalendarDays: stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        ERROR(logger) << "getCalendarDays: query returned null";
-        return;
-    }
-
-    while (rt->next()) {
-        days.push_back(static_cast<int32_t>(rt->getInt64(0)));
-    }
+    qb->queryColumn<int32_t>(days, db, "d");
 
     // 写入 Redis 缓存（TTL 5 分钟），空结果不缓存，避免因首次查询无数据而导致
     // 后续文章发布后仍返回空

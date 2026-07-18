@@ -66,7 +66,7 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("organization");
+    auto qb = data::OrganizationInfoDao::newQuery();
     qb->select("id, name, type, description, owner_id, status, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
@@ -109,7 +109,7 @@ OrganizationManager::OrganizationStats OrganizationManager::getStats() {
 
     // Query total (non-deleted)
     {
-        auto qb = chen::QueryBuilder::Create("organization");
+        auto qb = data::OrganizationInfoDao::newQuery();
         qb->where("is_deleted", "=", (int64_t)0);
         int64_t total = 0;
         if (qb->executeCount(total, db) == 0) {
@@ -119,7 +119,7 @@ OrganizationManager::OrganizationStats OrganizationManager::getStats() {
 
     // Query active
     {
-        auto qb = chen::QueryBuilder::Create("organization");
+        auto qb = data::OrganizationInfoDao::newQuery();
         qb->where("is_deleted", "=", (int64_t)0);
         qb->where("status", "=", (int64_t)Status::ACTIVE);
         int64_t active = 0;
@@ -130,7 +130,7 @@ OrganizationManager::OrganizationStats OrganizationManager::getStats() {
 
     // Query inactive
     {
-        auto qb = chen::QueryBuilder::Create("organization");
+        auto qb = data::OrganizationInfoDao::newQuery();
         qb->where("is_deleted", "=", (int64_t)0);
         qb->where("status", "=", (int64_t)Status::INACTIVE);
         int64_t inactive = 0;

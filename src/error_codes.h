@@ -160,6 +160,12 @@ constexpr int32_t NOTIFICATION_CONTENT_TOO_LONG = 9016; // 通知内容过长
 constexpr int32_t NOTIFICATION_USERS_REQUIRED = 9017;   // 缺少目标用户
 constexpr int32_t NOTIFICATION_INVALID_TARGET = 9018;   // 无效的通知目标类型
 
+// ==================== 模块10: 反馈模块 (10001-10999) ====================
+constexpr int32_t FEEDBACK_NOT_FOUND = 10001;          // 反馈不存在
+
+// ==================== 模块11: 帮助中心模块 (11001-11999) ====================
+constexpr int32_t FAQ_NOT_FOUND = 11001;               // 常见问题不存在
+
 } // namespace errcode
 } // namespace blog
 

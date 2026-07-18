@@ -1,0 +1,26 @@
+/**
+ * @file user_achievements_servlet.h
+ * @brief 用户成就数据接口
+ * @author Christins
+ * @date 2026-07-16
+ * @copyright Apache 2.0
+ */
+#pragma once
+
+#include "../../struct.h"
+
+namespace blog {
+namespace servlet {
+
+class UserAchievementsServlet : public BlogLoginedServlet {
+public:
+    typedef std::shared_ptr<UserAchievementsServlet> ptr;
+    UserAchievementsServlet();
+    virtual int32_t handle(chen::http::HttpRequest::ptr request
+                    ,chen::http::HttpResponse::ptr response
+                    ,chen::http::HttpSession::ptr session
+                    ,Result::ptr result) override;
+};
+
+}
+}

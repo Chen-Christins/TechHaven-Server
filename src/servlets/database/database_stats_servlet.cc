@@ -5,6 +5,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/category_manager.h"
 #include "../../manager/backup_record_manager.h"
+#include "blog/data/label_info.h"
 #include "../../util.h"
 
 namespace blog {
@@ -49,13 +50,9 @@ int32_t DatabaseStatsServlet::handle(chen::http::HttpRequest::ptr request,
         int64_t total_labels = 0;
         auto db = GetDB();
         if (db) {
-            auto stmt = db->prepare("SELECT COUNT(*) FROM label WHERE is_deleted = 0");
-            if (stmt) {
-                auto rt = stmt->query();
-                if (rt && rt->next()) {
-                    total_labels = rt->getInt64(0);
-                }
-            }
+            auto qb = data::LabelInfoDao::newQuery();
+            qb->where("is_deleted", "=", (int64_t)0);
+            qb->executeCount(total_labels, db);
         }
 
         int64_t total_backups = 0;

@@ -1,6 +1,5 @@
 #include "organization_repo_pr_manager.h"
 
-#include "cache_util.h"
 #include "organization_repo_manager.h"
 #include "organization_user_rel_manager.h"
 #include "protocol_ss_github.h"
@@ -70,34 +69,17 @@ int64_t OrganizationRepoPrManager::listByRepoPages(std::vector<data::Organizatio
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery();
     qb->where("repo_id", "=", repo_id);
     qb->whereIf(!state.empty(), "state", "=", state);
     qb->orderBy("create_time", "DESC");
 
-    int64_t total = executeCountCached(qb, db, "org_pr:list:" + std::to_string(repo_id) + ":" + state);
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::OrganizationRepoPrsInfoDao::QueryByBuilderPages(prs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
+        ERROR(logger) << "listByRepoPages QueryByBuilderPages failed";
         return 0;
     }
-
-    if (limit < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)limit);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        prs.push_back(info);
+    for (auto& info : prs) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -111,7 +93,7 @@ int64_t OrganizationRepoPrManager::getCountByRepo(int64_t repo_id) {
         ERROR(logger) << "Get DB connection fail";
         return 0;
     }
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery();
     qb->where("repo_id", "=", repo_id);
     int64_t total = 0;
     if (qb->executeCount(total, db)) {
@@ -128,37 +110,19 @@ int64_t OrganizationRepoPrManager::listByOrgPages(std::vector<data::Organization
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
     qb->select("prs.*");
     qb->join("organization_repos repos", "prs.repo_id = repos.id");
     qb->where("repos.org_id", "=", org_id);
     qb->whereIf(!state.empty(), "prs.state", "=", state);
     qb->orderBy("prs.create_time", "DESC");
 
-    std::string cache_key = "org_pr:org:" + std::to_string(org_id) + ":" + state;
-    int64_t total = executeCountCached(qb, db, cache_key);
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::OrganizationRepoPrsInfoDao::QueryByBuilderPages(prs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
+        ERROR(logger) << "listByOrgPages QueryByBuilderPages failed";
         return 0;
     }
-
-    if (limit < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)limit);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        prs.push_back(info);
+    for (auto& info : prs) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -174,7 +138,7 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
         return 0;
     }
 
-    auto qb = chen::QueryBuilder::Create("organization_repo_prs prs");
+    auto qb = data::OrganizationRepoPrsInfoDao::newQuery("prs");
     qb->select("prs.*");
     qb->join("organization_repos repos", "prs.repo_id = repos.id");
     qb->join("INNER", "organization_user_rel rel", "repos.org_id = rel.org_id");
@@ -184,29 +148,12 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
     qb->whereIf(!state.empty(), "prs.state", "=", state);
     qb->orderBy("prs.create_time", "DESC");
 
-    int64_t total = executeCountCached(qb, db, "org_pr:user:" + std::to_string(uid) + ":" + state);
-    if (total == 0) {
+    int64_t total = 0;
+    if (data::OrganizationRepoPrsInfoDao::QueryByBuilderPages(prs, total, qb, (int32_t)offset, (int32_t)limit, db)) {
+        ERROR(logger) << "listByUserPages QueryByBuilderPages failed";
         return 0;
     }
-
-    if (limit < (uint64_t)INT32_MAX) {
-        qb->limit((int32_t)limit);
-        qb->offset((int32_t)offset);
-    }
-    std::string sql = qb->buildQuerySQL();
-    auto stmt = db->prepare(sql);
-    if (!stmt) {
-        ERROR(logger) << "stmt=" << sql << " errno=" << db->getErrno() << " errstr=" << db->getErrStr();
-        return 0;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt) {
-        return 0;
-    }
-    while (rt->next()) {
-        auto info = parseRow(rt);
-        prs.push_back(info);
+    for (auto& info : prs) {
         if (!m_cache.exists(info->getId())) {
             m_cache.set(info->getId(), info);
         }
@@ -571,22 +518,16 @@ data::OrganizationReposInfo::ptr OrganizationRepoPrManager::findRepoByOwnerAndNa
     }
 
     // 用 github_full_name 字段精确匹配
-    auto qb = chen::QueryBuilder::Create("organization_repos");
+    auto qb = data::OrganizationReposInfoDao::newQuery();
     qb->select("id");
     qb->where("github_full_name", "=", full_name);
     qb->limit(1);
-    auto stmt = db->prepare(qb->buildQuerySQL());
-    if (!stmt) {
-        ERROR(logger) << "findRepoByOwnerAndName: prepare failed for " << full_name;
-        return nullptr;
-    }
-    qb->bindParams(stmt);
-    auto rt = stmt->query();
-    if (!rt || !rt->next()) {
+    int64_t repoId = 0;
+    if (qb->queryScalarInt64(repoId, db)) {
         DEBUG(logger) << "findRepoByOwnerAndName: no repo found for " << full_name;
         return nullptr;
     }
-    return OrganizationRepoMgr::GetInstance()->get(rt->getInt64(0));
+    return OrganizationRepoMgr::GetInstance()->get(repoId);
 }
 
 int32_t OrganizationRepoPrManager::HandlePRWebhook(const tagGithubPRInfo& info) {

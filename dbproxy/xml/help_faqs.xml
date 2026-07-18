@@ -1,0 +1,16 @@
+<table name="help_faqs" namespace="blog.data" desc="帮助中心常见问题表">
+  <columns>
+    <column name="id" type="int64" auto_increment="true" desc="主键ID" />
+    <column name="cat" type="string" length="50" desc="分类名" />
+    <column name="q" type="string" length="500" desc="问题" />
+    <column name="a" type="string" length="2048" desc="答案" />
+    <column name="sort_order" type="int32" default="0" desc="排序权重" />
+    <column name="is_deleted" type="int32" default="0" desc="是否删除" />
+    <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间" />
+    <column name="update_time" type="datetime" update="current_timestamp" desc="更新时间" />
+  </columns>
+  <indexs>
+    <index name="pk" cols="id" type="pk" />
+    <index name="idx_cat" cols="cat" type="index" />
+  </indexs>
+</table>
