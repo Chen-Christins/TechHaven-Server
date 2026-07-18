@@ -778,19 +778,35 @@ if (!rel) {
 }
 int32_t org_role = rel->getRole();
 
-// ✅ DB 查询返回值
+// ✅ DB 查询 — 使用框架封装方法
 auto db = getDB();
 if (!db) {
     result->setErrno(errcode::DB_CONNECTION_FAILED);
     break;
 }
 
-// ✅ stmt / rt 查询中间结果
-auto stmt = db->prepare(sql);
-if (!stmt) { ... break; }
-auto rt = stmt->query();
-if (!rt) { ... break; }
-while (rt->next()) { ... }
+// ✅ 完整行查询 — QueryByBuilder（非分页）/ QueryByBuilderPages（分页）
+std::vector<XxxInfo::ptr> results;
+if (XxxDao::QueryByBuilder(results, qb, db)) {       // 非 0 = 错误
+    result->setErrno(errcode::DB_OPERATION_FAILED);
+    break;
+}
+// 分页版：
+int64_t total = 0;
+if (XxxDao::QueryByBuilderPages(results, total, qb, offset, limit, db)) { ... break; }
+
+// ✅ GROUP BY / 聚合 — queryPairs<K,V>
+std::vector<std::pair<int64_t, int64_t>> rows;
+if (qb->queryPairs<int64_t, int64_t>(rows, db)) { ... break; }
+for (auto& [key, val] : rows) { ... }
+
+// ✅ 单列查询 — queryColumn<T>
+std::vector<int64_t> ids;
+if (qb->queryColumn<int64_t>(ids, db, "id")) { ... break; }
+
+// ✅ 标量查询 — queryScalarInt64 / queryScalarDouble / executeCount
+int64_t result = 0;
+qb->queryScalarInt64(result, db);
 ```
 
 ### 11.3 常见需判空的方法速查表
@@ -803,8 +819,12 @@ while (rt->next()) { ... }
 | `*Dao::Insert/Update/Delete(...)` | 返回非 0 表示失败 |
 | `GetDB()` | 数据库连接获取失败 |
 | `getUserId(request)` | 返回 0 表示未登录 |
-| `db->prepare(sql)` | SQL 语法错误，返回 nullptr |
-| `stmt->query()` | 查询执行失败，返回 nullptr |
+| `XxxDao::QueryByBuilder(results, qb, db)` | 返回非 0 表示失败 |
+| `XxxDao::QueryByBuilderPages(...)` | 返回非 0 表示失败 |
+| `qb->queryColumn<T>(results, db)` | 返回非 0 表示失败 |
+| `qb->queryPairs<K,V>(results, db)` | 返回非 0 表示失败 |
+| `qb->queryScalarInt64/Double(result, db)` | 返回非 0 表示失败 |
+| `qb->executeCount(total, db)` | 返回非 0 表示失败 |
 | `request->getParam("key")` | 参数不存在返回空字符串 |
 | `m_cache.get(key)` | 缓存未命中返回默认值 |
 
