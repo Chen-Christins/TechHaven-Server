@@ -1,8 +1,8 @@
 #include "user_admin_recover_servlet.h"
 
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 #include <chen/log/log.h>
 
@@ -84,22 +84,10 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             // Notify recovered users
             for (auto& u : infos) {
-                chen::IOManager::GetThis()->schedule([user_id = u->getId()]() {
-                    std::string title = "账户已恢复";
-                    std::string content = "你的账户已被管理员恢复，现在可以正常使用";
-                    auto notif = NotificationMgr::GetInstance()->addNotification(
-                        user_id, title, content, "account_recovered", 0);
-                    if (notif) {
-                        Json::Value wsMsg;
-                        wsMsg["id"] = notif->getId();
-                        wsMsg["title"] = title;
-                        wsMsg["content"] = content;
-                        wsMsg["type"] = "account_recovered";
-                        wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notif->getCreateTime();
-                        NotificationMgr::GetInstance()->sendToUser(user_id, chen::JsonUtil::ToString(wsMsg));
-                    }
-                });
+                EventUserAdminData data;
+                data.type = "account_recovered";
+                data.user_id = u->getId();
+                chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
             }
         }
     }while (0);

@@ -2,8 +2,8 @@
 
 #include "../../manager/assignment_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 #include "blog/data/assignment_info.h"
 #include "blog/data/assignment_user_rel_info.h"
 
@@ -100,32 +100,22 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
                     qb->where("is_deleted", "=", (int64_t)0);
                     std::vector<data::AssignmentUserRelInfo::ptr> submitters;
                     if (data::AssignmentUserRelInfoDao::QueryByBuilder(submitters, qb, db2) == 0) {
-                            for (auto& info : submitters) {
-                                if (!info) continue;
-                                int64_t submitter_id = info->getUserId();
-                                if (notified.count(submitter_id)) continue;
-                                notified.insert(submitter_id);
-                                chen::IOManager::GetThis()->schedule([submitter_id, assign_name]() {
-                                    std::string title = "作业已删除";
-                                    std::string content = "作业「" + assign_name + "」已被管理员删除";
-                                    auto notif = NotificationMgr::GetInstance()->addNotification(
-                                        submitter_id, title, content, "assignment_deleted", 0);
-                                    if (notif) {
-                                        Json::Value wsMsg;
-                                        wsMsg["id"] = notif->getId();
-                                        wsMsg["title"] = title;
-                                        wsMsg["content"] = content;
-                                        wsMsg["type"] = "assignment_deleted";
-                                        wsMsg["is_read"] = false;
-                                        wsMsg["create_time"] = notif->getCreateTime();
-                                        NotificationMgr::GetInstance()->sendToUser(submitter_id, chen::JsonUtil::ToString(wsMsg));
-                                    }
-                                });
-                            }
+                        for (auto& info : submitters) {
+                            if (!info) continue;
+                            int64_t submitter_id = info->getUserId();
+                            if (notified.count(submitter_id)) continue;
+                            notified.insert(submitter_id);
+                            EventAssignmentData data;
+                            data.type = "deleted";
+                            data.assignment_id = assign->getId();
+                            data.assignment_name = assign_name;
+                            data.submitter_id = submitter_id;
+                            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ASSIGNMENT, std::move(data));
                         }
                     }
                 }
             }
+        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

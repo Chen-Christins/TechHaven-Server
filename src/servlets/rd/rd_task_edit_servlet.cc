@@ -1,10 +1,10 @@
 #include "rd_task_edit_servlet.h"
 
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../manager/task_manager.h"
 #include "../../permission.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 #include "rd_helper.h"
 
 namespace blog {
@@ -136,27 +136,13 @@ void RdTaskEditServlet::notifyAssignee(int64_t assignee_id, data::TaskInfo::ptr 
     if (!assignee_id) {
         return;
     }
-    
-    chen::IOManager::GetThis()->schedule([assignee_id, task]() {
-        auto assignee = UserMgr::GetInstance()->get(assignee_id);
-        std::string assignee_name = assignee ? assignee->getName() : std::to_string(assignee_id);
-        std::string title = "你有新的 Task 待处理";
-        std::string content = "Task「" + task->getTitle() + "」被分配给了你，请尽快处理";
-
-        auto notif_info = NotificationMgr::GetInstance()->addNotification(
-            assignee_id, title, content, "task_assigned", task->getCreatorId(), task->getId());
-        if (notif_info) {
-            Json::Value wsMsg;
-            wsMsg["id"] = notif_info->getId();
-            wsMsg["title"] = title;
-            wsMsg["content"] = content;
-            wsMsg["type"] = "task_assigned";
-            wsMsg["task_id"] = task->getId();
-            wsMsg["is_read"] = false;
-            wsMsg["create_time"] = notif_info->getCreateTime();
-            NotificationMgr::GetInstance()->sendToUser(assignee_id, chen::JsonUtil::ToString(wsMsg));
-        }
-    });
+    EventRdAssignData data;
+    data.type = "task";
+    data.assignee_id = assignee_id;
+    data.item_id = task->getId();
+    data.item_title = task->getTitle();
+    data.creator_id = task->getCreatorId();
+    chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_RD_ASSIGN, std::move(data));
 }
 
 }

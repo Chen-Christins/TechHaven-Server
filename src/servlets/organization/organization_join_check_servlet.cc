@@ -7,8 +7,8 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../permission.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -90,41 +90,15 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
             break;
         }
 
-        // 通知申请人审批结果
+        // Notify applicant + mark other admins' notifications as read
         {
-            const char* notif_type = (state == OrganizationUserRelManager::Status::APPROVED)
-                ? "org_join_approved" : "org_join_rejected";
-            std::string title = (state == OrganizationUserRelManager::Status::APPROVED)
-                ? "加入申请已通过" : "加入申请被拒绝";
-            std::string content = (state == OrganizationUserRelManager::Status::APPROVED)
-                ? "您申请加入组织「" + org->getName() + "」的请求已通过"
-                : "您申请加入组织「" + org->getName() + "」的请求已被拒绝";
-
-            auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                user_id, title, content, notif_type, uid);
-            if (notif_info) {
-                Json::Value wsMsg;
-                wsMsg["id"] = notif_info->getId();
-                wsMsg["title"] = title;
-                wsMsg["content"] = content;
-                wsMsg["type"] = notif_type;
-                wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notif_info->getCreateTime();
-                NotificationMgr::GetInstance()->sendToUser(
-                    user_id, chen::JsonUtil::ToString(wsMsg));
-            }
-        }
-
-        // 将该组织其他管理员的 org_join_request 通知标记已读，避免上线后看到已处理的通知
-        {
-            std::vector<data::OrganizationUserRelInfo::ptr> members;
-            OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
-            for (auto& m : members) {
-                if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                    NotificationMgr::GetInstance()->markReadByType(
-                        m->getUserId(), "org_join_request");
-                }
-            }
+            EventOrgMemberData data;
+            data.type = (state == OrganizationUserRelManager::Status::APPROVED) ? "join_approved" : "join_rejected";
+            data.org_id = org_id;
+            data.org_name = org->getName();
+            data.applicant_id = user_id;
+            data.operator_id = uid;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
         result->set("success", true);

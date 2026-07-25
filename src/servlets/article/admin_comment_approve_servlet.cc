@@ -2,8 +2,8 @@
 
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -60,27 +60,22 @@ int32_t AdminCommentApproveServlet::handle(chen::http::HttpRequest::ptr request,
         // Notify comment authors
         for (auto& cid : ids) {
             auto comment = CommentMgr::GetInstance()->get(cid);
-            if (!comment) continue;
+            if (!comment) {
+                continue;
+            }
             int64_t author_id = comment->getUserId();
-            if (author_id == uid) continue; // Don't notify self
-            chen::IOManager::GetThis()->schedule([author_id, cid, comment]() {
-                std::string title = "评论审核通过";
-                std::string content = "你的评论「" + comment->getContent() + "」已通过审核";
-                auto notif = NotificationMgr::GetInstance()->addNotification(
-                    author_id, title, content, "comment_approved", 0, comment->getArticleId(), cid);
-                if (notif) {
-                    Json::Value wsMsg;
-                    wsMsg["id"] = notif->getId();
-                    wsMsg["title"] = title;
-                    wsMsg["content"] = content;
-                    wsMsg["type"] = "comment_approved";
-                    wsMsg["article_id"] = comment->getArticleId();
-                    wsMsg["comment_id"] = cid;
-                    wsMsg["is_read"] = false;
-                    wsMsg["create_time"] = notif->getCreateTime();
-                    NotificationMgr::GetInstance()->sendToUser(author_id, chen::JsonUtil::ToString(wsMsg));
-                }
-            });
+            if (author_id == uid) {
+                continue;
+            }
+            
+            // Emit event for comment approval
+            {
+                EventCommentData data;
+                data.comment_id = cid;
+                data.author_id = author_id;
+                data.type = "comment_approved";
+                chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
+            }
         }
     } while (0);
 

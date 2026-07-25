@@ -4,7 +4,7 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
-#include "../../manager/notification_manager.h"
+#include "../../event/event_define.h"
 
 #include <chen/log/log.h>
 
@@ -111,22 +111,11 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
                     int64_t member_id = rel->getUserId();
                     if (notified_users.count(member_id)) continue;
                     notified_users.insert(member_id);
-                    chen::IOManager::GetThis()->schedule([member_id, org]() {
-                        std::string title = "组织已删除";
-                        std::string content = "组织「" + org->getName() + "」已被管理员删除";
-                        auto notif = NotificationMgr::GetInstance()->addNotification(
-                            member_id, title, content, "org_deleted", 0);
-                        if (notif) {
-                            Json::Value wsMsg;
-                            wsMsg["id"] = notif->getId();
-                            wsMsg["title"] = title;
-                            wsMsg["content"] = content;
-                            wsMsg["type"] = "org_deleted";
-                            wsMsg["is_read"] = false;
-                            wsMsg["create_time"] = notif->getCreateTime();
-                            NotificationMgr::GetInstance()->sendToUser(member_id, chen::JsonUtil::ToString(wsMsg));
-                        }
-                    });
+                    EventOrgDeletedData data;
+                    data.member_id = member_id;
+                    data.org_id = org->getId();
+                    data.org_name = org->getName();
+                    chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_DELETED, std::move(data));
                 }
             }
         }

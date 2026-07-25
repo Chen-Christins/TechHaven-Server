@@ -87,6 +87,11 @@ private:
     void registerWSServlets();
 
     /**
+     * @brief 注册RPC方法
+     */
+    void registerRPCMethods();
+
+    /**
      * @brief 清空所有已注册的 HTTP Servlet 路由
      */
     void unregisterServlets();

@@ -3,8 +3,8 @@
 #include <chen/log/log.h>
 
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -70,22 +70,12 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
         trans->commit();
 
         // Notify affected user
-        chen::IOManager::GetThis()->schedule([id]() {
-            std::string title = "密码已被重置";
-            std::string content = "你的账户密码已被管理员重置，请尽快修改密码";
-            auto notif = NotificationMgr::GetInstance()->addNotification(
-                id, title, content, "password_reset", 0);
-            if (notif) {
-                Json::Value wsMsg;
-                wsMsg["id"] = notif->getId();
-                wsMsg["title"] = title;
-                wsMsg["content"] = content;
-                wsMsg["type"] = "password_reset";
-                wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notif->getCreateTime();
-                NotificationMgr::GetInstance()->sendToUser(id, chen::JsonUtil::ToString(wsMsg));
-            }
-        });
+        {
+            EventUserAdminData data;
+            data.type = "password_reset";
+            data.user_id = id;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
+        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;
