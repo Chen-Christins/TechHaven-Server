@@ -488,7 +488,6 @@ void BlogModule::registerRPCMethods() {
         }
         s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
         s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
-        INFO(logger) << "registered RPC methods on " << s->getName();
     }
 }
 
