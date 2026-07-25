@@ -7,8 +7,8 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../permission.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -83,7 +83,7 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
             break;
         }
 
-        // 发送角色变更通知给被操作的用户
+        // Notify user about role change
         {
             auto org = OrganizationMgr::GetInstance()->get(org_id);
             std::string org_name = org ? org->getName() : std::to_string(org_id);
@@ -98,23 +98,14 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
                 role_name = "组织管理员";
             }
 
-            std::string title = "组织角色变更";
-            std::string content = "您在组织「" + org_name + "」中的角色已被更新为" + role_name;
-
-            auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                user_id, title, content, "org_role_change", uid);
-
-            if (notif_info) {
-                Json::Value wsMsg;
-                wsMsg["id"] = notif_info->getId();
-                wsMsg["title"] = title;
-                wsMsg["content"] = content;
-                wsMsg["type"] = "org_role_change";
-                wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notif_info->getCreateTime();
-                NotificationMgr::GetInstance()->sendToUser(
-                    user_id, chen::JsonUtil::ToString(wsMsg));
-            }
+            EventOrgMemberData data;
+            data.type = "role_change";
+            data.org_id = org_id;
+            data.org_name = org_name;
+            data.operator_id = uid;
+            data.target_user_id = user_id;
+            data.new_role_name = role_name;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
         auto user = blog::UserMgr::GetInstance()->get(rel->getUserId());

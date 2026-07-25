@@ -7,8 +7,8 @@
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_user_rel_manager.h"
 #include "../../manager/organization_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../permission.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -73,7 +73,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
             break;
         }
 
-        // 通知组织管理员及被踢出的用户
+        // Notify org admins and kicked user
         {
             auto org = OrganizationMgr::GetInstance()->get(org_id);
             auto kicked_user = UserMgr::GetInstance()->get(user_id);
@@ -82,48 +82,15 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
             std::string kicked_name = kicked_user ? kicked_user->getName() : std::to_string(user_id);
             std::string oper_name = oper_user ? oper_user->getName() : std::to_string(uid);
 
-            std::string title = "成员被移出组织";
-            std::string content = "「" + oper_name + "」将「" + kicked_name + "」移出了组织「" + org_name + "」";
-
-            // 通知所有管理员及拥有者
-            std::vector<data::OrganizationUserRelInfo::ptr> members;
-            OrganizationUserRelMgr::GetInstance()->getByPages(members, org_id, 0, 10000, -1, true);
-            for (auto& m : members) {
-                if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                        m->getUserId(), title, content, "org_member_kicked", uid);
-                    if (notif_info) {
-                        Json::Value wsMsg;
-                        wsMsg["id"] = notif_info->getId();
-                        wsMsg["title"] = title;
-                        wsMsg["content"] = content;
-                        wsMsg["type"] = "org_member_kicked";
-                        wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notif_info->getCreateTime();
-                        NotificationMgr::GetInstance()->sendToUser(
-                            m->getUserId(), chen::JsonUtil::ToString(wsMsg));
-                    }
-                }
-            }
-
-            // 通知被踢出的用户
-            {
-                std::string kicked_title = "您已被移出组织";
-                std::string kicked_content = "您已被移出组织「" + org_name + "」";
-                auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                    user_id, kicked_title, kicked_content, "org_member_kicked", uid);
-                if (notif_info) {
-                    Json::Value wsMsg;
-                    wsMsg["id"] = notif_info->getId();
-                    wsMsg["title"] = kicked_title;
-                    wsMsg["content"] = kicked_content;
-                    wsMsg["type"] = "org_member_kicked";
-                    wsMsg["is_read"] = false;
-                    wsMsg["create_time"] = notif_info->getCreateTime();
-                    NotificationMgr::GetInstance()->sendToUser(
-                        user_id, chen::JsonUtil::ToString(wsMsg));
-                }
-            }
+            EventOrgMemberData data;
+            data.type = "kicked";
+            data.org_id = org_id;
+            data.org_name = org_name;
+            data.operator_id = uid;
+            data.operator_name = oper_name;
+            data.kicked_user_id = user_id;
+            data.applicant_name = kicked_name;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
         result->set("success", true);

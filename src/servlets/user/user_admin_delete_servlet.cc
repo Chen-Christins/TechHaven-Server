@@ -3,8 +3,8 @@
 #include <chen/log/log.h>
 
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -71,22 +71,12 @@ int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, che
         result->set("user_id", user_id);
 
         // Notify affected user
-        chen::IOManager::GetThis()->schedule([user_id]() {
-            std::string title = "账户已被禁用";
-            std::string content = "你的账户已被管理员禁用，如有疑问请联系管理员";
-            auto notif = NotificationMgr::GetInstance()->addNotification(
-                user_id, title, content, "account_deleted", 0);
-            if (notif) {
-                Json::Value wsMsg;
-                wsMsg["id"] = notif->getId();
-                wsMsg["title"] = title;
-                wsMsg["content"] = content;
-                wsMsg["type"] = "account_deleted";
-                wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notif->getCreateTime();
-                NotificationMgr::GetInstance()->sendToUser(user_id, chen::JsonUtil::ToString(wsMsg));
-            }
-        });
+        {
+            EventUserAdminData data;
+            data.type = "account_deleted";
+            data.user_id = user_id;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
+        }
     } while (0);
     response->setBody(result->toJsonString());
     return 0;

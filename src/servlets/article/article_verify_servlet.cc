@@ -7,7 +7,7 @@
 #include "../../util.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -74,48 +74,16 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
 
-        // 异步通知作者审核结果 + 标记其他管理员通知已读
+        // Notify author about review result + mark other admins' notifications as read
         {
-            int64_t author_id = info->getUserId();
-            std::string article_title = info->getTitle();
-            bool approved = (state == ArticleManager::Status::PUBLISHED
-                || info->getState() == ArticleManager::Status::PUBLISHED);
-
-            chen::IOManager::GetThis()->schedule(
-                [author_id, reviewer_id=uid, article_id=id, article_title, approved]() {
-                    const char* notif_type = approved
-                        ? "article_review_approved" : "article_review_rejected";
-                    std::string title = approved ? "文章审核通过" : "文章审核未通过";
-                    std::string content = "您的文章「" + article_title + "」"
-                        + (approved ? "已通过审核" : "未通过审核");
-
-                    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                        author_id, title, content, notif_type, reviewer_id, article_id);
-                    if (notif_info) {
-                        Json::Value wsMsg;
-                        wsMsg["id"] = notif_info->getId();
-                        wsMsg["title"] = title;
-                        wsMsg["content"] = content;
-                        wsMsg["type"] = notif_type;
-                        wsMsg["article_id"] = article_id;
-                        wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notif_info->getCreateTime();
-                        NotificationMgr::GetInstance()->sendToUser(
-                            author_id, chen::JsonUtil::ToString(wsMsg));
-                    }
-
-                    // 将其他管理员/审核员的 article_review_request 通知标记已读
-                    std::vector<int64_t> userIds;
-                    UserMgr::GetInstance()->getAllIds(userIds, true);
-                    for (auto targetId : userIds) {
-                        auto u = UserMgr::GetInstance()->get(targetId);
-                        if (u && (u->getRole() == UserManager::Role::ADMIN
-                                || u->getRole() == UserManager::Role::CHECKER)) {
-                            NotificationMgr::GetInstance()->markReadByType(
-                                targetId, "article_review_request");
-                        }
-                    }
-                });
+            bool approved = (state == ArticleManager::Status::PUBLISHED || info->getState() == ArticleManager::Status::PUBLISHED);
+            EventArticleReviewData data;
+            data.type = approved ? "approved" : "rejected";
+            data.article_id = id;
+            data.article_title = info->getTitle();
+            data.author_id = info->getUserId();
+            data.reviewer_id = uid;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_REVIEW, std::move(data));
         }
     } while (0);
     response->setBody(result->toJsonString());

@@ -2,8 +2,8 @@
 
 #include "../../manager/user_follow_rel_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -46,26 +46,14 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
             break;
         }
 
-        // notify the followed user (only for new follows, not re-follows)
+        // Notify the followed user (only for new follows)
         if (!already_following) {
             auto follower_info = UserMgr::GetInstance()->get(uid);
-            std::string follower_name = follower_info ? follower_info->getName() : "someone";
-            std::string notify_title = "新关注";
-            std::string notify_content = follower_name + " 关注了你";
-
-            auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                following_id, notify_title, notify_content, "follow", uid);
-            if (notif_info) {
-                Json::Value wsMsg;
-                wsMsg["id"] = notif_info->getId();
-                wsMsg["title"] = notify_title;
-                wsMsg["content"] = notify_content;
-                wsMsg["type"] = "follow";
-                wsMsg["is_read"] = false;
-                wsMsg["create_time"] = notif_info->getCreateTime();
-                NotificationMgr::GetInstance()->sendToUser(following_id,
-                    chen::JsonUtil::ToString(wsMsg));
-            }
+            EventUserFollowData data;
+            data.follower_id = uid;
+            data.follower_name = follower_info ? follower_info->getName() : "someone";
+            data.following_id = following_id;
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_FOLLOW, std::move(data));
         }
 
         result->setErrno(errcode::SUCCESS);

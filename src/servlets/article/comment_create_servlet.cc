@@ -3,10 +3,9 @@
 #include "../../manager/comment_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
-#include <chen/iomanager/iomanager.h>
 #include <chen/util/util.h>
 #include <json/json.h>
 
@@ -81,52 +80,24 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         result->jsondata = item;
         result->setErrno(errcode::SUCCESS);
 
-        // 异步通知扇出：评论者信息 + 通知目标用户
-        int64_t commenter_id = uid;
-        int64_t comment_id = info->getId();
-        int64_t author_id = article->getUserId();
-        std::string article_title = article->getTitle();
-        int64_t reply_to_parent_id = parent_id;
-
-        chen::IOManager::GetThis()->schedule(
-            [commenter_id, comment_id, author_id, article_title, article_id, reply_to_parent_id]() {
-                auto commenter_info = UserMgr::GetInstance()->get(commenter_id);
-                std::string commenter_name = commenter_info ? commenter_info->getName() : "someone";
-
-                auto send_notify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
-                    if (targetUid == commenter_id) {
-                        return;
-                    }
-                    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                        targetUid, title, content, "comment", commenter_id, article_id, comment_id);
-                    if (notif_info) {
-                        Json::Value wsMsg;
-                        wsMsg["id"] = notif_info->getId();
-                        wsMsg["title"] = title;
-                        wsMsg["content"] = content;
-                        wsMsg["type"] = "comment";
-                        wsMsg["article_id"] = article_id;
-                        wsMsg["comment_id"] = comment_id;
-                        wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notif_info->getCreateTime();
-                        NotificationMgr::GetInstance()->sendToUser(targetUid,
-                            chen::JsonUtil::ToString(wsMsg));
-                    }
-                };
-
-                // notify article author
-                send_notify(author_id, "文章评论",
-                    commenter_name + " 评论了你的文章《" + article_title + "》");
-
-                // notify parent comment author on reply
-                if (reply_to_parent_id > 0) {
-                    auto parent = CommentMgr::GetInstance()->get(reply_to_parent_id);
-                    if (parent && parent->getUserId() != author_id) {
-                        send_notify(parent->getUserId(), "评论回复",
-                            commenter_name + " 回复了你的评论");
-                    }
+        // Notify article author and parent comment author asynchronously
+        {
+            auto commenter_info = UserMgr::GetInstance()->get(uid);
+            EventCommentCreatedData data;
+            data.commenter_id = uid;
+            data.commenter_name = commenter_info ? commenter_info->getName() : "someone";
+            data.article_id = article_id;
+            data.article_title = article->getTitle();
+            data.author_id = article->getUserId();
+            data.parent_comment_id = parent_id;
+            if (parent_id > 0) {
+                auto parent = CommentMgr::GetInstance()->get(parent_id);
+                if (parent) {
+                    data.parent_comment_author_id = parent->getUserId();
                 }
-            });
+            }
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT_CREATED, std::move(data));
+        }
     } while (0);
 
     response->setBody(result->toJsonString());

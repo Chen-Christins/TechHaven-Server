@@ -5,7 +5,7 @@
 #include "../../util.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/organization_apply_manager.h"
-#include "../../manager/notification_manager.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -64,29 +64,13 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
         // Notify all ADMIN users about new org application
         {
             auto applicant = UserMgr::GetInstance()->get(user_id);
-            std::string applicant_name = applicant ? applicant->getName() : std::to_string(user_id);
-            std::string title = "新的组织申请";
-            std::string content = "用户「" + applicant_name + "」申请创建组织「" + name + "」";
-
-            std::vector<data::UserInfo::ptr> admins;
-            UserMgr::GetInstance()->listByPages(admins, 0, 10000, UserManager::Role::ADMIN, -1, -1, true);
-            for (auto& admin : admins) {
-                chen::IOManager::GetThis()->schedule([admin, title, content, apply_id = info->getId()]() {
-                    auto notif = NotificationMgr::GetInstance()->addNotification(
-                        admin->getId(), title, content, "org_apply_request", 0, apply_id);
-                    if (notif) {
-                        Json::Value wsMsg;
-                        wsMsg["id"] = notif->getId();
-                        wsMsg["title"] = title;
-                        wsMsg["content"] = content;
-                        wsMsg["type"] = "org_apply_request";
-                        wsMsg["apply_id"] = apply_id;
-                        wsMsg["is_read"] = false;
-                        wsMsg["create_time"] = notif->getCreateTime();
-                        NotificationMgr::GetInstance()->sendToUser(admin->getId(), chen::JsonUtil::ToString(wsMsg));
-                    }
-                });
-            }
+            EventOrgApplyData data;
+            data.type = "created";
+            data.applicant_id = user_id;
+            data.applicant_name = applicant ? applicant->getName() : std::to_string(user_id);
+            data.org_name = name;
+            data.apply_id = info->getId();
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_APPLY, std::move(data));
         }
     } while (0);
     response->setBody(result->toJsonString());

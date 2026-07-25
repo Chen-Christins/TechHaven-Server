@@ -3,10 +3,8 @@
 #include "../../manager/article_praise_rel_manager.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
-
-#include <chen/iomanager/iomanager.h>
+#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -56,32 +54,19 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
             ArticleMgr::GetInstance()->incPraiseCount(article_id);
             result->set("is_praising", true);
 
-            // 异步通知文章作者（非自赞时）
-            int64_t author_id = article->getUserId();
-            if (author_id != uid) {
-                std::string article_title = article->getTitle();
-                chen::IOManager::GetThis()->schedule(
-                    [author_id, liker_id=uid, article_id, article_title]() {
-                        auto liker_info = UserMgr::GetInstance()->get(liker_id);
-                        std::string liker_name = liker_info ? liker_info->getName() : "someone";
-                        std::string notify_title = "文章点赞";
-                        std::string notify_content = liker_name + " 赞了你的文章《" + article_title + "》";
-
-                        auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                            author_id, notify_title, notify_content, "praise", liker_id, article_id);
-                        if (notif_info) {
-                            Json::Value wsMsg;
-                            wsMsg["id"] = notif_info->getId();
-                            wsMsg["title"] = notify_title;
-                            wsMsg["content"] = notify_content;
-                            wsMsg["type"] = "praise";
-                            wsMsg["article_id"] = article_id;
-                            wsMsg["is_read"] = false;
-                            wsMsg["create_time"] = notif_info->getCreateTime();
-                            NotificationMgr::GetInstance()->sendToUser(author_id,
-                                chen::JsonUtil::ToString(wsMsg));
-                        }
-                    });
+            // Notify article author (not self-praise)
+            if (article->getUserId() != uid) {
+                auto liker_info = UserMgr::GetInstance()->get(uid);
+                // 文章点赞事件
+                {
+                    EventArticlePraiseData data;
+                    data.author_id = article->getUserId();
+                    data.liker_id = uid;
+                    data.liker_name = liker_info ? liker_info->getName() : "someone";
+                    data.article_id = article_id;
+                    data.article_title = article->getTitle();
+                    chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_PRAISE, std::move(data));
+                }
             }
         }
 

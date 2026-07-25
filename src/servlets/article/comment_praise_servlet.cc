@@ -3,8 +3,8 @@
 #include "../../manager/comment_praise_rel_manager.h"
 #include "../../manager/comment_manager.h"
 #include "../../manager/user_manager.h"
-#include "../../manager/notification_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 #include <json/json.h>
 
@@ -51,30 +51,16 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
             }
             result->set("is_praising", true);
 
-            // notify the comment author (only if not self-liking)
-            int64_t author_id = comment->getUserId();
-            if (author_id != uid) {
+            // Notify comment author (not self-praise)
+            if (comment->getUserId() != uid) {
                 auto liker_info = UserMgr::GetInstance()->get(uid);
-                std::string liker_name = liker_info ? liker_info->getName() : "someone";
-                std::string notify_title = "评论点赞";
-                std::string notify_content = liker_name + " 赞了你的评论";
-
-                auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                    author_id, notify_title, notify_content, "comment_praise", uid,
-                    comment->getArticleId(), comment_id);
-                if (notif_info) {
-                    Json::Value wsMsg;
-                    wsMsg["id"] = notif_info->getId();
-                    wsMsg["title"] = notify_title;
-                    wsMsg["content"] = notify_content;
-                    wsMsg["type"] = "comment_praise";
-                    wsMsg["article_id"] = comment->getArticleId();
-                    wsMsg["comment_id"] = comment_id;
-                    wsMsg["is_read"] = false;
-                    wsMsg["create_time"] = notif_info->getCreateTime();
-                    NotificationMgr::GetInstance()->sendToUser(author_id,
-                        chen::JsonUtil::ToString(wsMsg));
-                }
+                EventCommentPraiseData data;
+                data.comment_author_id = comment->getUserId();
+                data.liker_id = uid;
+                data.liker_name = liker_info ? liker_info->getName() : "someone";
+                data.article_id = comment->getArticleId();
+                data.comment_id = comment_id;
+                chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT_PRAISE, std::move(data));
             }
         }
 

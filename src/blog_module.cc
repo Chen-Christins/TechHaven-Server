@@ -20,6 +20,7 @@
 #include "./chunk_upload.h"
 #include "./index.h"
 #include "protocol_ss_github.h" // IWYU pragma: keep
+#include "event/events.h"
 
 namespace blog {
 
@@ -135,33 +136,34 @@ bool BlogModule::onServerReady() {
         }
     }
 
+    // HTTP 服务
     getAllHttpServer(m_httpServers);
     if (m_httpServers.empty()) {
         ERROR(logger) << "no http server, cannot register servlets";
         return false;
     }
-    
     registerServlets();
 
+    // WS 服务
     getAllWSServer(m_wsServers);
     if (m_wsServers.empty()) {
         ERROR(logger) << "no ws server, cannot register ws servlets";
         return false;
     }
-
     registerWSServlets();
 
-    // 注册 RPC 方法
-    {
-        getAllRpcServer(m_rpcServers);
-        for (auto& s : m_rpcServers) {
-            if (!s) {
-                continue;
-            }
-            s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
-            s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
-            INFO(logger) << "registered RPC methods on " << s->getName();
-        }
+    // RPC 服务
+    getAllRpcServer(m_rpcServers);
+    if (m_rpcServers.empty()) {
+        ERROR(logger) << "no rpc server, cannot register rpc methods";
+        return false;
+    }
+    registerRPCMethods();
+
+    // 初始化事件总线
+    if (!EventMsgsInit()) {
+        ERROR(logger) << "EventMsgsInit failed";
+        return false;
     }
 
     return true;
@@ -474,6 +476,19 @@ void BlogModule::registerWSServlets() {
 
         servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
         dp->addServlet("/ws/v1/presence", presence_servlet);
+    }
+}
+
+void BlogModule::registerRPCMethods() {
+    INFO(logger) << "registerRPCMethods";
+
+    for (auto& s : m_rpcServers) {
+        if (!s) {
+            continue;
+        }
+        s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
+        s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
+        INFO(logger) << "registered RPC methods on " << s->getName();
     }
 }
 

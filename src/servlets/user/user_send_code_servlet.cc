@@ -2,12 +2,11 @@
 
 #include <chen/log/log.h>
 #include <chen/db/redis.h>
-#include <chen/email/email.h>
-#include <chen/email/smtp.h>
 
 #include "../../manager/user_manager.h"
 #include "../../manager/system_settings_manager.h"
 #include "../../util.h"
+#include "../../event/event_define.h"
 
 namespace blog {
 namespace servlet {
@@ -109,17 +108,15 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
         std::string smtp_host = sys_settings->getSmtpHost();
         int32_t smtp_port = sys_settings->getSmtpPort();
 
-        chen::IOManager::GetThis()->schedule([mail, smtp_host, smtp_port]() {
-            auto client = chen::SmtpClient::Create(smtp_host, smtp_port, true);
-            if (!client) {
-                ERROR(logger) << "connect email server fail";
-                return;
-            }
-            auto r = client->send(mail, 5000);
-            if (r->result != 0) {
-                ERROR(logger) << "send email fail: " << r->result << " " << r->msg;
-            }
-        });
+        // 异步触发事件，发送邮件
+        {
+            EventUserSendCodeData data;
+            data.email = mail;
+            data.smtp_host = smtp_host;
+            data.port = smtp_port;
+
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_SEND_CODE, data);
+        }
 
         result->setErrno(errcode::SUCCESS);
     } while (0);

@@ -1,0 +1,682 @@
+#include "events.h"
+
+#include <chen/ds/event_bus.h>
+#include <chen/log/log.h>
+#include <chen/email/smtp.h>
+#include <chen/config/config.h>
+#include <chen/db/query_builder.h>
+#include <json/json.h>
+
+#include <sys/stat.h>
+
+#include "event_define.h"
+#include "../manager/notification_manager.h"
+#include "../manager/user_manager.h"
+#include "../manager/article_manager.h"
+#include "../manager/comment_manager.h"
+#include "../manager/organization_user_rel_manager.h"
+#include "../manager/organization_manager.h"
+#include "../manager/backup_record_manager.h"
+#include "../util.h"
+
+namespace blog {
+
+static chen::Logger::ptr logger = LOG_ROOT();
+
+static void EventUserSendCode(const std::any& d) {
+    auto data = std::any_cast<const EventUserSendCodeData&>(d);
+
+    auto client = chen::SmtpClient::Create(data.smtp_host, data.port, true);
+    if (!client) {
+        ERROR(logger) << "connect email server fail";
+        return;
+    }
+
+    if (!data.email) {
+        ERROR(logger) << "email is null";
+        return;
+    }
+
+    auto r = client->send(data.email, 5000);
+    if (r->result != 0) {
+        ERROR(logger) << "send email fail: " << r->result << " " << r->msg;
+    }
+}
+
+static void EventComment(const std::any& d) {
+    auto data = std::any_cast<const EventCommentData&>(d);
+
+    auto comment = CommentMgr::GetInstance()->get(data.comment_id);
+    if (!comment) {
+        ERROR(logger) << "comment not found, id=" << data.comment_id;
+        return;
+    }
+
+    auto& type = data.type;
+    std::string title, content;
+    if (type == "comment_approved") {
+        title = "评论审核通过";
+        content = "你的评论「" + comment->getContent() + "」已通过审核";
+    } else if (type == "comment_admin_deleted") {
+        title = "评论被删除";
+        content = "你的评论「" + comment->getContent() + "」已被管理员删除";
+    } else if (type == "comment_rejected") {
+        title = "评论未通过审核";
+        content = "你的评论「" + comment->getContent() + "」未通过审核";
+    } else if (type == "comment_spam") {
+        title = "评论被标记为垃圾";
+        content = "你的评论「" + comment->getContent() + "」已被标记为垃圾评论";
+    } else {
+        return;
+    }
+
+    auto notif = NotificationMgr::GetInstance()->addNotification(
+        data.author_id, title, content, type, 0, comment->getArticleId(), data.comment_id);
+    if (notif) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif->getId();
+        wsMsg["title"] = title;
+        wsMsg["content"] = content;
+        wsMsg["type"] = type;
+        wsMsg["article_id"] = comment->getArticleId();
+        wsMsg["comment_id"] = data.comment_id;
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.author_id, chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventArticleReview(const std::any& d) {
+    auto data = std::any_cast<const EventArticleReviewData&>(d);
+
+    if (data.type == "request") {
+        // Notify admins and checkers about new article pending review
+        std::string title = "新的文章待审核";
+        std::string content = "「" + data.author_name + "」提交了文章「" + data.article_title + "」等待审核";
+
+        std::vector<int64_t> userIds;
+        UserMgr::GetInstance()->getAllIds(userIds, true);
+        for (auto targetId : userIds) {
+            auto u = UserMgr::GetInstance()->get(targetId);
+            if (u && (u->getRole() == UserManager::Role::ADMIN
+                    || u->getRole() == UserManager::Role::CHECKER)) {
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                    targetId, title, content, "article_review_request", data.author_id, data.article_id);
+                if (notif_info) {
+                    Json::Value wsMsg;
+                    wsMsg["id"] = notif_info->getId();
+                    wsMsg["title"] = title;
+                    wsMsg["content"] = content;
+                    wsMsg["type"] = "article_review_request";
+                    wsMsg["article_id"] = data.article_id;
+                    wsMsg["is_read"] = false;
+                    wsMsg["create_time"] = notif_info->getCreateTime();
+                    NotificationMgr::GetInstance()->sendToUser(targetId, chen::JsonUtil::ToString(wsMsg));
+                }
+            }
+        }
+    } else {
+        bool approved = (data.type == "approved");
+        const char* notif_type = approved ? "article_review_approved" : "article_review_rejected";
+        std::string title = approved ? "文章审核通过" : "文章审核未通过";
+        std::string content = "您的文章「" + data.article_title + "」"
+            + (approved ? "已通过审核" : "未通过审核");
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+            data.author_id, title, content, notif_type, data.reviewer_id, data.article_id);
+        if (notif_info) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif_info->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = notif_type;
+            wsMsg["article_id"] = data.article_id;
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif_info->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(data.author_id, chen::JsonUtil::ToString(wsMsg));
+        }
+
+        // Mark other admins/checkers' article_review_request as read
+        std::vector<int64_t> userIds;
+        UserMgr::GetInstance()->getAllIds(userIds, true);
+        for (auto targetId : userIds) {
+            auto u = UserMgr::GetInstance()->get(targetId);
+            if (u && (u->getRole() == UserManager::Role::ADMIN
+                    || u->getRole() == UserManager::Role::CHECKER)) {
+                NotificationMgr::GetInstance()->markReadByType(targetId, "article_review_request");
+            }
+        }
+    }
+}
+
+static void EventArticleStateChanged(const std::any& d) {
+    auto data = std::any_cast<const EventArticleStateChangedData&>(d);
+
+    std::string title = "文章状态变更";
+    std::string content = "你的文章《" + data.article_title + "》状态已被管理员变更为「" +
+        (data.new_state == ArticleManager::PUBLISHED ? "已发布" : "私密") + "」";
+    auto notif = NotificationMgr::GetInstance()->addNotification(
+        data.author_id, title, content, "article_state_changed", 0, data.article_id);
+    if (notif) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif->getId();
+        wsMsg["title"] = title;
+        wsMsg["content"] = content;
+        wsMsg["type"] = "article_state_changed";
+        wsMsg["article_id"] = data.article_id;
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.author_id, chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventArticlePraise(const std::any& d) {
+    auto data = std::any_cast<const EventArticlePraiseData&>(d);
+
+    std::string notify_title = "文章点赞";
+    std::string notify_content = data.liker_name + " 赞了你的文章《" + data.article_title + "》";
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(
+        data.author_id, notify_title, notify_content, "praise", data.liker_id, data.article_id);
+    if (notif_info) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif_info->getId();
+        wsMsg["title"] = notify_title;
+        wsMsg["content"] = notify_content;
+        wsMsg["type"] = "praise";
+        wsMsg["article_id"] = data.article_id;
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif_info->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.author_id,
+            chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventCommentCreated(const std::any& d) {
+    auto data = std::any_cast<const EventCommentCreatedData&>(d);
+
+    auto send_notify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
+        if (targetUid == data.commenter_id) return;
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+            targetUid, title, content, "comment", data.commenter_id, data.article_id);
+        if (notif_info) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif_info->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "comment";
+            wsMsg["article_id"] = data.article_id;
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif_info->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(targetUid,
+                chen::JsonUtil::ToString(wsMsg));
+        }
+    };
+
+    // notify article author
+    send_notify(data.author_id, "文章评论",
+        data.commenter_name + " 评论了你的文章《" + data.article_title + "》");
+
+    // notify parent comment author on reply
+    if (data.parent_comment_id > 0 && data.parent_comment_author_id > 0
+            && data.parent_comment_author_id != data.author_id) {
+        send_notify(data.parent_comment_author_id, "评论回复",
+            data.commenter_name + " 回复了你的评论");
+    }
+}
+
+static void EventCommentPraise(const std::any& d) {
+    auto data = std::any_cast<const EventCommentPraiseData&>(d);
+
+    std::string notify_title = "评论点赞";
+    std::string notify_content = data.liker_name + " 赞了你的评论";
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(
+        data.comment_author_id, notify_title, notify_content, "comment_praise", data.liker_id,
+        data.article_id, data.comment_id);
+    if (notif_info) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif_info->getId();
+        wsMsg["title"] = notify_title;
+        wsMsg["content"] = notify_content;
+        wsMsg["type"] = "comment_praise";
+        wsMsg["article_id"] = data.article_id;
+        wsMsg["comment_id"] = data.comment_id;
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif_info->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.comment_author_id,
+            chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventUserFollow(const std::any& d) {
+    auto data = std::any_cast<const EventUserFollowData&>(d);
+
+    std::string notify_title = "新关注";
+    std::string notify_content = data.follower_name + " 关注了你";
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(
+        data.following_id, notify_title, notify_content, "follow", data.follower_id);
+    if (notif_info) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif_info->getId();
+        wsMsg["title"] = notify_title;
+        wsMsg["content"] = notify_content;
+        wsMsg["type"] = "follow";
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif_info->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.following_id,
+            chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventUserAdminAction(const std::any& d) {
+    auto data = std::any_cast<const EventUserAdminData&>(d);
+
+    std::string title, content;
+    if (data.type == "password_reset") {
+        title = "密码已被重置";
+        content = "你的账户密码已被管理员重置，请尽快修改密码";
+    } else if (data.type == "account_recovered") {
+        title = "账户已恢复";
+        content = "你的账户已被管理员恢复，现在可以正常使用";
+    } else if (data.type == "account_deleted") {
+        title = "账户已被禁用";
+        content = "你的账户已被管理员禁用，如有疑问请联系管理员";
+    } else {
+        return;
+    }
+
+    auto notif = NotificationMgr::GetInstance()->addNotification(
+        data.user_id, title, content, data.type, 0);
+    if (notif) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif->getId();
+        wsMsg["title"] = title;
+        wsMsg["content"] = content;
+        wsMsg["type"] = data.type;
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.user_id, chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventOrgDeleted(const std::any& d) {
+    auto data = std::any_cast<const EventOrgDeletedData&>(d);
+
+    std::string title = "组织已删除";
+    std::string content = "组织「" + data.org_name + "」已被管理员删除";
+    auto notif = NotificationMgr::GetInstance()->addNotification(
+        data.member_id, title, content, "org_deleted", 0);
+    if (notif) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif->getId();
+        wsMsg["title"] = title;
+        wsMsg["content"] = content;
+        wsMsg["type"] = "org_deleted";
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.member_id, chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventOrgMember(const std::any& d) {
+    auto data = std::any_cast<const EventOrgMemberData&>(d);
+
+    if (data.type == "role_change") {
+        std::string title = "组织角色变更";
+        std::string content = "您在组织「" + data.org_name + "」中的角色已被更新为" + data.new_role_name;
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+            data.target_user_id, title, content, "org_role_change", data.operator_id);
+        if (notif_info) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif_info->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "org_role_change";
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif_info->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(data.target_user_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    } else if (data.type == "kicked") {
+        std::string title = "成员被移出组织";
+        std::string content = "「" + data.operator_name + "」将「" + data.applicant_name + "」移出了组织「" + data.org_name + "」";
+        // Notify all org admins
+        std::vector<data::OrganizationUserRelInfo::ptr> members;
+        OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
+        for (auto& m : members) {
+            if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                    m->getUserId(), title, content, "org_member_kicked", data.operator_id);
+                if (notif_info) {
+                    Json::Value wsMsg;
+                    wsMsg["id"] = notif_info->getId();
+                    wsMsg["title"] = title;
+                    wsMsg["content"] = content;
+                    wsMsg["type"] = "org_member_kicked";
+                    wsMsg["is_read"] = false;
+                    wsMsg["create_time"] = notif_info->getCreateTime();
+                    NotificationMgr::GetInstance()->sendToUser(m->getUserId(), chen::JsonUtil::ToString(wsMsg));
+                }
+            }
+        }
+        // Notify kicked user
+        {
+            std::string kicked_title = "您已被移出组织";
+            std::string kicked_content = "您已被移出组织「" + data.org_name + "」";
+            auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                data.kicked_user_id, kicked_title, kicked_content, "org_member_kicked", data.operator_id);
+            if (notif_info) {
+                Json::Value wsMsg;
+                wsMsg["id"] = notif_info->getId();
+                wsMsg["title"] = kicked_title;
+                wsMsg["content"] = kicked_content;
+                wsMsg["type"] = "org_member_kicked";
+                wsMsg["is_read"] = false;
+                wsMsg["create_time"] = notif_info->getCreateTime();
+                NotificationMgr::GetInstance()->sendToUser(data.kicked_user_id, chen::JsonUtil::ToString(wsMsg));
+            }
+        }
+    } else if (data.type == "join_request") {
+        auto applicant = UserMgr::GetInstance()->get(data.applicant_id);
+        std::string applicant_name = applicant ? applicant->getName() : std::to_string(data.applicant_id);
+        std::string title = "新的加入申请";
+        std::string content = "用户「" + applicant_name + "」申请加入组织「" + data.org_name + "」";
+        std::vector<data::OrganizationUserRelInfo::ptr> members;
+        OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
+        for (auto& m : members) {
+            if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(
+                    m->getUserId(), title, content, "org_join_request", data.applicant_id);
+                if (notif_info) {
+                    Json::Value wsMsg;
+                    wsMsg["id"] = notif_info->getId();
+                    wsMsg["title"] = title;
+                    wsMsg["content"] = content;
+                    wsMsg["type"] = "org_join_request";
+                    wsMsg["is_read"] = false;
+                    wsMsg["create_time"] = notif_info->getCreateTime();
+                    NotificationMgr::GetInstance()->sendToUser(m->getUserId(), chen::JsonUtil::ToString(wsMsg));
+                }
+            }
+        }
+    } else if (data.type == "join_approved" || data.type == "join_rejected") {
+        bool approved = (data.type == "join_approved");
+        const char* notif_type = approved ? "org_join_approved" : "org_join_rejected";
+        std::string title = approved ? "加入申请已通过" : "加入申请被拒绝";
+        std::string content = approved
+            ? "您申请加入组织「" + data.org_name + "」的请求已通过"
+            : "您申请加入组织「" + data.org_name + "」的请求已被拒绝";
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(
+            data.applicant_id, title, content, notif_type, data.operator_id);
+        if (notif_info) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif_info->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = notif_type;
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif_info->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(data.applicant_id, chen::JsonUtil::ToString(wsMsg));
+        }
+        // Mark other admins' org_join_request as read
+        std::vector<data::OrganizationUserRelInfo::ptr> members;
+        OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
+        for (auto& m : members) {
+            if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
+                NotificationMgr::GetInstance()->markReadByType(m->getUserId(), "org_join_request");
+            }
+        }
+    }
+}
+
+static void EventOrgApply(const std::any& d) {
+    auto data = std::any_cast<const EventOrgApplyData&>(d);
+
+    if (data.type == "created") {
+        std::string title = "新的组织申请";
+        std::string content = "用户「" + data.applicant_name + "」申请创建组织「" + data.org_name + "」";
+        std::vector<data::UserInfo::ptr> admins;
+        UserMgr::GetInstance()->listByPages(admins, 0, 10000, UserManager::Role::ADMIN, -1, -1, true);
+        for (auto& admin : admins) {
+            auto notif = NotificationMgr::GetInstance()->addNotification(
+                admin->getId(), title, content, "org_apply_request", 0, data.apply_id);
+            if (notif) {
+                Json::Value wsMsg;
+                wsMsg["id"] = notif->getId();
+                wsMsg["title"] = title;
+                wsMsg["content"] = content;
+                wsMsg["type"] = "org_apply_request";
+                wsMsg["apply_id"] = data.apply_id;
+                wsMsg["is_read"] = false;
+                wsMsg["create_time"] = notif->getCreateTime();
+                NotificationMgr::GetInstance()->sendToUser(admin->getId(), chen::JsonUtil::ToString(wsMsg));
+            }
+        }
+    } else if (data.type == "approved") {
+        std::string title = "组织申请已通过";
+        std::string content = "你申请创建的组织「" + data.org_name + "」已通过审核";
+        auto notif = NotificationMgr::GetInstance()->addNotification(
+            data.applicant_id, title, content, "org_apply_approved", 0, data.org_id);
+        if (notif) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "org_apply_approved";
+            wsMsg["org_id"] = data.org_id;
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(data.applicant_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    } else if (data.type == "rejected") {
+        std::string title = "组织申请被拒绝";
+        std::string reject_reason = data.reason.empty() ? "" : "，原因：" + data.reason;
+        std::string content = "你申请创建的组织「" + data.org_name + "」未通过审核" + reject_reason;
+        auto notif = NotificationMgr::GetInstance()->addNotification(
+            data.applicant_id, title, content, "org_apply_rejected", 0);
+        if (notif) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "org_apply_rejected";
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(data.applicant_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    }
+}
+
+static void EventAssignment(const std::any& d) {
+    auto data = std::any_cast<const EventAssignmentData&>(d);
+
+    if (data.type == "deleted") {
+        std::string title = "作业已删除";
+        std::string content = "作业「" + data.assignment_name + "」已被管理员删除";
+        auto notif = NotificationMgr::GetInstance()->addNotification(
+            data.submitter_id, title, content, "assignment_deleted", 0);
+        if (notif) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "assignment_deleted";
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(data.submitter_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    } else if (data.type == "created") {
+        std::string title = "新作业发布";
+        std::string content = "组织发布了新作业「" + data.assignment_name + "」（" + data.subject_name + "），请及时完成";
+        for (auto uid : data.member_user_ids) {
+            auto notif = NotificationMgr::GetInstance()->addNotification(
+                uid, title, content, "assignment_created", 0, data.assignment_id);
+            if (notif) {
+                Json::Value wsMsg;
+                wsMsg["id"] = notif->getId();
+                wsMsg["title"] = title;
+                wsMsg["content"] = content;
+                wsMsg["type"] = "assignment_created";
+                wsMsg["assignment_id"] = data.assignment_id;
+                wsMsg["is_read"] = false;
+                wsMsg["create_time"] = notif->getCreateTime();
+                NotificationMgr::GetInstance()->sendToUser(uid, chen::JsonUtil::ToString(wsMsg));
+            }
+        }
+    }
+}
+
+static void EventAssignmentSubmitted(const std::any& d) {
+    auto data = std::any_cast<const EventAssignmentSubmittedData&>(d);
+
+    std::string title = "作业提交通知";
+    std::string content = "用户「" + data.submitter_name + "」提交了作业「" + data.assignment_name + "」";
+    for (auto admin_id : data.admin_user_ids) {
+        auto notif = NotificationMgr::GetInstance()->addNotification(
+            admin_id, title, content, "assignment_submitted", 0, data.assignment_id);
+        if (notif) {
+            Json::Value wsMsg;
+            wsMsg["id"] = notif->getId();
+            wsMsg["title"] = title;
+            wsMsg["content"] = content;
+            wsMsg["type"] = "assignment_submitted";
+            wsMsg["assignment_id"] = data.assignment_id;
+            wsMsg["is_read"] = false;
+            wsMsg["create_time"] = notif->getCreateTime();
+            NotificationMgr::GetInstance()->sendToUser(admin_id, chen::JsonUtil::ToString(wsMsg));
+        }
+    }
+}
+
+static void EventRdAssign(const std::any& d) {
+    auto data = std::any_cast<const EventRdAssignData&>(d);
+
+    std::string title, notif_type;
+    if (data.type == "task") {
+        title = "你有新的 Task 待处理";
+        notif_type = "task_assigned";
+    } else if (data.type == "requirement") {
+        title = "你有新的 Requirement 待处理";
+        notif_type = "requirement_assigned";
+    } else if (data.type == "bug") {
+        title = "你有新的 Bug 待处理";
+        notif_type = "bug_assigned";
+    } else {
+        return;
+    }
+    std::string content = title.substr(0, title.find("待处理") - 1) + "「" + data.item_title + "」被分配给了你，请尽快处理";
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(
+        data.assignee_id, title, content, notif_type, data.creator_id, data.item_id);
+    if (notif_info) {
+        Json::Value wsMsg;
+        wsMsg["id"] = notif_info->getId();
+        wsMsg["title"] = title;
+        wsMsg["content"] = content;
+        wsMsg["type"] = notif_type;
+        if (data.type == "task") {
+            wsMsg["task_id"] = data.item_id;
+        } else if (data.type == "requirement") {
+            wsMsg["requirement_id"] = data.item_id;
+        } else if (data.type == "bug") {
+            wsMsg["bug_id"] = data.item_id;
+        }
+        wsMsg["is_read"] = false;
+        wsMsg["create_time"] = notif_info->getCreateTime();
+        NotificationMgr::GetInstance()->sendToUser(data.assignee_id, chen::JsonUtil::ToString(wsMsg));
+    }
+}
+
+static void EventDatabaseBackup(const std::any& d) {
+    auto data = std::any_cast<const EventDatabaseBackupData&>(d);
+
+    if (data.mysql_dbs.empty()) {
+        ERROR(logger) << "mysql config not found for backup " << data.backup_id;
+        auto info = BackupRecordMgr::GetInstance()->get(data.backup_id);
+        if (info) {
+            info->setStatus("failed");
+            info->setDescription("mysql config not found");
+            data::BackupRecordInfoDao::Update(info, GetDB());
+        }
+        return;
+    }
+    auto& dbcfg = data.mysql_dbs.begin()->second;
+    std::string host = dbcfg.at("host");
+    std::string port = dbcfg.at("port");
+    std::string user = dbcfg.at("user");
+    std::string passwd = dbcfg.at("passwd");
+    std::string dbname = dbcfg.at("dbname");
+
+    std::string backup_dir = data.work_path + "/backups";
+    mkdir(backup_dir.c_str(), 0755);
+
+    std::string filename = data.name + ".sql.gz";
+    std::string filepath = backup_dir + "/" + filename;
+
+    int64_t t0 = time(0);
+    std::string cmd = "mysqldump -h " + host + " -P " + port + " -u " + user
+                    + " -p'" + passwd + "' " + dbname + " 2>/dev/null | gzip > " + filepath;
+
+    INFO(logger) << "Backup " << data.backup_id << " starting, cmd=" << cmd;
+    int rc = std::system(cmd.c_str());
+
+    auto info = BackupRecordMgr::GetInstance()->get(data.backup_id);
+    if (!info) {
+        ERROR(logger) << "Backup record " << data.backup_id << " not found after execution";
+        return;
+    }
+
+    if (rc != 0) {
+        ERROR(logger) << "Backup " << data.backup_id << " failed, rc=" << rc;
+        info->setStatus("failed");
+        info->setDescription("mysqldump failed with exit code " + std::to_string(rc));
+        data::BackupRecordInfoDao::Update(info, GetDB());
+        return;
+    }
+
+    struct stat st;
+    int64_t fileSize = 0;
+    if (stat(filepath.c_str(), &st) == 0) {
+        fileSize = st.st_size;
+    }
+    int64_t elapsed = time(0) - t0;
+
+    info->setStatus("completed");
+    info->setSize(fileSize);
+    info->setFileCount(1);
+    info->setFilePath("backups/" + filename);
+    info->setCompletedAt(time(0));
+    info->setDescription("completed in " + std::to_string(elapsed) + "s, size "
+                          + std::to_string(fileSize) + " bytes");
+    data::BackupRecordInfoDao::Update(info, GetDB());
+
+    INFO(logger) << "Backup " << data.backup_id << " completed: " << filepath
+        << " (" << fileSize << " bytes, " << elapsed << "s)";
+}
+
+bool EventMsgsInit() {
+    auto bus = chen::EventBusMgr::GetInstance();
+    
+    // Register event handlers
+    bus->on(EVENT_ID_USER_SEND_CODE, EventUserSendCode);
+    bus->on(EVENT_ID_COMMENT, EventComment);
+    bus->on(EVENT_ID_ARTICLE_REVIEW, EventArticleReview);
+    bus->on(EVENT_ID_ARTICLE_STATE_CHANGED, EventArticleStateChanged);
+    bus->on(EVENT_ID_ARTICLE_PRAISE, EventArticlePraise);
+    bus->on(EVENT_ID_COMMENT_CREATED, EventCommentCreated);
+    bus->on(EVENT_ID_COMMENT_PRAISE, EventCommentPraise);
+    bus->on(EVENT_ID_USER_FOLLOW, EventUserFollow);
+    bus->on(EVENT_ID_USER_ADMIN, EventUserAdminAction);
+    bus->on(EVENT_ID_ORG_DELETED, EventOrgDeleted);
+    bus->on(EVENT_ID_ORG_MEMBER, EventOrgMember);
+    bus->on(EVENT_ID_ORG_APPLY, EventOrgApply);
+    bus->on(EVENT_ID_ASSIGNMENT, EventAssignment);
+    bus->on(EVENT_ID_ASSIGNMENT_SUBMITTED, EventAssignmentSubmitted);
+    bus->on(EVENT_ID_RD_ASSIGN, EventRdAssign);
+    bus->on(EVENT_ID_DATABASE_BACKUP, EventDatabaseBackup);
+
+    return true;
+};
+
+} // namespace blog
