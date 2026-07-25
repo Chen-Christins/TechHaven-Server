@@ -98,8 +98,7 @@ static void EventArticleReview(const std::any& d) {
         UserMgr::GetInstance()->getAllIds(userIds, true);
         for (auto targetId : userIds) {
             auto u = UserMgr::GetInstance()->get(targetId);
-            if (u && (u->getRole() == UserManager::Role::ADMIN
-                    || u->getRole() == UserManager::Role::CHECKER)) {
+            if (u && (u->getRole() == UserManager::Role::ADMIN || u->getRole() == UserManager::Role::CHECKER)) {
                 auto notif_info = NotificationMgr::GetInstance()->addNotification(
                     targetId, title, content, "article_review_request", data.author_id, data.article_id);
                 if (notif_info) {
@@ -119,8 +118,7 @@ static void EventArticleReview(const std::any& d) {
         bool approved = (data.type == "approved");
         const char* notif_type = approved ? "article_review_approved" : "article_review_rejected";
         std::string title = approved ? "文章审核通过" : "文章审核未通过";
-        std::string content = "您的文章「" + data.article_title + "」"
-            + (approved ? "已通过审核" : "未通过审核");
+        std::string content = "您的文章「" + data.article_title + "」" + (approved ? "已通过审核" : "未通过审核");
 
         auto notif_info = NotificationMgr::GetInstance()->addNotification(
             data.author_id, title, content, notif_type, data.reviewer_id, data.article_id);
@@ -141,8 +139,7 @@ static void EventArticleReview(const std::any& d) {
         UserMgr::GetInstance()->getAllIds(userIds, true);
         for (auto targetId : userIds) {
             auto u = UserMgr::GetInstance()->get(targetId);
-            if (u && (u->getRole() == UserManager::Role::ADMIN
-                    || u->getRole() == UserManager::Role::CHECKER)) {
+            if (u && (u->getRole() == UserManager::Role::ADMIN || u->getRole() == UserManager::Role::CHECKER)) {
                 NotificationMgr::GetInstance()->markReadByType(targetId, "article_review_request");
             }
         }
@@ -196,12 +193,14 @@ static void EventCommentCreated(const std::any& d) {
     auto data = std::any_cast<const EventCommentCreatedData&>(d);
 
     auto send_notify = [&](int64_t targetUid, const std::string& title, const std::string& content) {
-        if (targetUid == data.commenter_id) return;
+        if (targetUid == data.commenter_id) {
+            return;
+        }
         auto notif_info = NotificationMgr::GetInstance()->addNotification(
             targetUid, title, content, "comment", data.commenter_id, data.article_id);
         if (notif_info) {
             Json::Value wsMsg;
-            wsMsg["id"] = notif_info->getId();
+            wsMsg["id"] = notif_info->getId(); 
             wsMsg["title"] = title;
             wsMsg["content"] = content;
             wsMsg["type"] = "comment";
@@ -214,14 +213,11 @@ static void EventCommentCreated(const std::any& d) {
     };
 
     // notify article author
-    send_notify(data.author_id, "文章评论",
-        data.commenter_name + " 评论了你的文章《" + data.article_title + "》");
+    send_notify(data.author_id, "文章评论", data.commenter_name + " 评论了你的文章《" + data.article_title + "》");
 
     // notify parent comment author on reply
-    if (data.parent_comment_id > 0 && data.parent_comment_author_id > 0
-            && data.parent_comment_author_id != data.author_id) {
-        send_notify(data.parent_comment_author_id, "评论回复",
-            data.commenter_name + " 回复了你的评论");
+    if (data.parent_comment_id > 0 && data.parent_comment_author_id > 0 && data.parent_comment_author_id != data.author_id) {
+        send_notify(data.parent_comment_author_id, "评论回复", data.commenter_name + " 回复了你的评论");
     }
 }
 
@@ -232,8 +228,7 @@ static void EventCommentPraise(const std::any& d) {
     std::string notify_content = data.liker_name + " 赞了你的评论";
 
     auto notif_info = NotificationMgr::GetInstance()->addNotification(
-        data.comment_author_id, notify_title, notify_content, "comment_praise", data.liker_id,
-        data.article_id, data.comment_id);
+        data.comment_author_id, notify_title, notify_content, "comment_praise", data.liker_id, data.article_id, data.comment_id);
     if (notif_info) {
         Json::Value wsMsg;
         wsMsg["id"] = notif_info->getId();
@@ -244,8 +239,7 @@ static void EventCommentPraise(const std::any& d) {
         wsMsg["comment_id"] = data.comment_id;
         wsMsg["is_read"] = false;
         wsMsg["create_time"] = notif_info->getCreateTime();
-        NotificationMgr::GetInstance()->sendToUser(data.comment_author_id,
-            chen::JsonUtil::ToString(wsMsg));
+        NotificationMgr::GetInstance()->sendToUser(data.comment_author_id, chen::JsonUtil::ToString(wsMsg));
     }
 }
 
@@ -265,8 +259,7 @@ static void EventUserFollow(const std::any& d) {
         wsMsg["type"] = "follow";
         wsMsg["is_read"] = false;
         wsMsg["create_time"] = notif_info->getCreateTime();
-        NotificationMgr::GetInstance()->sendToUser(data.following_id,
-            chen::JsonUtil::ToString(wsMsg));
+        NotificationMgr::GetInstance()->sendToUser(data.following_id, chen::JsonUtil::ToString(wsMsg));
     }
 }
 
@@ -615,8 +608,7 @@ static void EventDatabaseBackup(const std::any& d) {
     std::string filepath = backup_dir + "/" + filename;
 
     int64_t t0 = time(0);
-    std::string cmd = "mysqldump -h " + host + " -P " + port + " -u " + user
-                    + " -p'" + passwd + "' " + dbname + " 2>/dev/null | gzip > " + filepath;
+    std::string cmd = "mysqldump -h " + host + " -P " + port + " -u " + user + " -p'" + passwd + "' " + dbname + " 2>/dev/null | gzip > " + filepath;
 
     INFO(logger) << "Backup " << data.backup_id << " starting, cmd=" << cmd;
     int rc = std::system(cmd.c_str());
@@ -647,8 +639,7 @@ static void EventDatabaseBackup(const std::any& d) {
     info->setFileCount(1);
     info->setFilePath("backups/" + filename);
     info->setCompletedAt(time(0));
-    info->setDescription("completed in " + std::to_string(elapsed) + "s, size "
-                          + std::to_string(fileSize) + " bytes");
+    info->setDescription("completed in " + std::to_string(elapsed) + "s, size " + std::to_string(fileSize) + " bytes");
     data::BackupRecordInfoDao::Update(info, GetDB());
 
     INFO(logger) << "Backup " << data.backup_id << " completed: " << filepath
