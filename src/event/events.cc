@@ -5,9 +5,8 @@
 #include <chen/email/smtp.h>
 #include <chen/config/config.h>
 #include <chen/db/query_builder.h>
+#include <chen/util/fs_util.h>
 #include <json/json.h>
-
-#include <sys/stat.h>
 
 #include "event_define.h"
 #include "../manager/notification_manager.h"
@@ -602,7 +601,7 @@ static void EventDatabaseBackup(const std::any& d) {
     std::string dbname = dbcfg.at("dbname");
 
     std::string backup_dir = data.work_path + "/backups";
-    mkdir(backup_dir.c_str(), 0755);
+    chen::FSUtil::Mkdir(backup_dir.c_str());
 
     std::string filename = data.name + ".sql.gz";
     std::string filepath = backup_dir + "/" + filename;
@@ -627,11 +626,7 @@ static void EventDatabaseBackup(const std::any& d) {
         return;
     }
 
-    struct stat st;
-    int64_t fileSize = 0;
-    if (stat(filepath.c_str(), &st) == 0) {
-        fileSize = st.st_size;
-    }
+    int64_t fileSize = chen::FSUtil::FileSize(filepath);
     int64_t elapsed = time(0) - t0;
 
     info->setStatus("completed");
