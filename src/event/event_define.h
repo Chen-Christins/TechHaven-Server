@@ -19,22 +19,22 @@ namespace blog {
 
 // 事件类型
 enum EVENT_ID {
-    EVENT_ID_USER_SEND_CODE = 1,     // 用户发送验证码
-    EVENT_ID_COMMENT = 2,            // 评论审核事件
-    EVENT_ID_ARTICLE_REVIEW = 3,     // 文章审核
+    EVENT_ID_USER_SEND_CODE = 1,        // 用户发送验证码
+    EVENT_ID_COMMENT = 2,               // 评论审核事件
+    EVENT_ID_ARTICLE_REVIEW = 3,        // 文章审核
     EVENT_ID_ARTICLE_STATE_CHANGED = 4, // 文章状态变更
-    EVENT_ID_ARTICLE_PRAISE = 5,     // 文章点赞
-    EVENT_ID_COMMENT_CREATED = 6,    // 评论创建
-    EVENT_ID_COMMENT_PRAISE = 7,     // 评论点赞
-    EVENT_ID_USER_FOLLOW = 8,        // 用户关注
-    EVENT_ID_USER_ADMIN = 9,         // 管理员操作用户
-    EVENT_ID_ORG_DELETED = 10,       // 组织删除
-    EVENT_ID_ORG_MEMBER = 11,        // 组织成员变更
-    EVENT_ID_ORG_APPLY = 12,         // 组织申请
-    EVENT_ID_ASSIGNMENT = 13,        // 作业
+    EVENT_ID_ARTICLE_PRAISE = 5,        // 文章点赞
+    EVENT_ID_COMMENT_CREATED = 6,       // 评论创建
+    EVENT_ID_COMMENT_PRAISE = 7,        // 评论点赞
+    EVENT_ID_USER_FOLLOW = 8,           // 用户关注
+    EVENT_ID_USER_ADMIN = 9,            // 管理员操作用户
+    EVENT_ID_ORG_DELETED = 10,          // 组织删除
+    EVENT_ID_ORG_MEMBER = 11,           // 组织成员变更
+    EVENT_ID_ORG_APPLY = 12,            // 组织申请
+    EVENT_ID_ASSIGNMENT = 13,           // 作业
     EVENT_ID_ASSIGNMENT_SUBMITTED = 14, // 作业提交
-    EVENT_ID_RD_ASSIGN = 15,         // RD 指派
-    EVENT_ID_DATABASE_BACKUP = 16,   // 数据库备份
+    EVENT_ID_RD_ASSIGN = 15,            // RD 指派
+    EVENT_ID_DATABASE_BACKUP = 16,      // 数据库备份
 };
 
 struct EventUserSendCodeData {
