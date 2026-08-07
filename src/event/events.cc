@@ -69,8 +69,16 @@ static void EventComment(const std::any& d) {
         return;
     }
 
-    auto notif = NotificationMgr::GetInstance()->addNotification(
-        data.author_id, title, content, type, 0, comment->getArticleId(), data.comment_id);
+    NotificationData notif_data {};
+    notif_data.user_id = data.author_id;
+    notif_data.title = title;
+    notif_data.content = content;
+    notif_data.type = type;
+    notif_data.sender_id = 0;
+    notif_data.article_id = comment->getArticleId();
+    notif_data.comment_id = data.comment_id;
+
+    auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif) {
         Json::Value wsMsg;
         wsMsg["id"] = notif->getId();
@@ -98,8 +106,15 @@ static void EventArticleReview(const std::any& d) {
         for (auto targetId : userIds) {
             auto u = UserMgr::GetInstance()->get(targetId);
             if (u && (u->getRole() == UserManager::Role::ADMIN || u->getRole() == UserManager::Role::CHECKER)) {
-                auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                    targetId, title, content, "article_review_request", data.author_id, data.article_id);
+                NotificationData notif_data {};
+                notif_data.user_id = targetId;
+                notif_data.title = title;
+                notif_data.content = content;
+                notif_data.type = "article_review_request";
+                notif_data.sender_id = data.author_id;
+                notif_data.article_id = data.article_id;
+
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
                 if (notif_info) {
                     Json::Value wsMsg;
                     wsMsg["id"] = notif_info->getId();
@@ -119,8 +134,15 @@ static void EventArticleReview(const std::any& d) {
         std::string title = approved ? "文章审核通过" : "文章审核未通过";
         std::string content = "您的文章「" + data.article_title + "」" + (approved ? "已通过审核" : "未通过审核");
 
-        auto notif_info = NotificationMgr::GetInstance()->addNotification(
-            data.author_id, title, content, notif_type, data.reviewer_id, data.article_id);
+        NotificationData notif_data {};
+        notif_data.user_id = data.author_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = notif_type;
+        notif_data.sender_id = data.reviewer_id;
+        notif_data.article_id = data.article_id;
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif_info) {
             Json::Value wsMsg;
             wsMsg["id"] = notif_info->getId();
@@ -151,8 +173,16 @@ static void EventArticleStateChanged(const std::any& d) {
     std::string title = "文章状态变更";
     std::string content = "你的文章《" + data.article_title + "》状态已被管理员变更为「" +
         (data.new_state == ArticleManager::PUBLISHED ? "已发布" : "私密") + "」";
-    auto notif = NotificationMgr::GetInstance()->addNotification(
-        data.author_id, title, content, "article_state_changed", 0, data.article_id);
+
+    NotificationData notif_data {};
+    notif_data.user_id = data.author_id;
+    notif_data.title = title;
+    notif_data.content = content;
+    notif_data.type = "article_state_changed";
+    notif_data.sender_id = 0;
+    notif_data.article_id = data.article_id;
+
+    auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif) {
         Json::Value wsMsg;
         wsMsg["id"] = notif->getId();
@@ -172,8 +202,15 @@ static void EventArticlePraise(const std::any& d) {
     std::string notify_title = "文章点赞";
     std::string notify_content = data.liker_name + " 赞了你的文章《" + data.article_title + "》";
 
-    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-        data.author_id, notify_title, notify_content, "praise", data.liker_id, data.article_id);
+    NotificationData notif_data {};
+    notif_data.user_id = data.author_id;
+    notif_data.title = notify_title;
+    notif_data.content = notify_content;
+    notif_data.type = "praise";
+    notif_data.sender_id = data.liker_id;
+    notif_data.article_id = data.article_id;
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif_info) {
         Json::Value wsMsg;
         wsMsg["id"] = notif_info->getId();
@@ -195,8 +232,16 @@ static void EventCommentCreated(const std::any& d) {
         if (targetUid == data.commenter_id) {
             return;
         }
-        auto notif_info = NotificationMgr::GetInstance()->addNotification(
-            targetUid, title, content, "comment", data.commenter_id, data.article_id);
+
+        NotificationData notif_data {};
+        notif_data.user_id = targetUid;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = "comment";
+        notif_data.sender_id = data.commenter_id;
+        notif_data.article_id = data.article_id;
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif_info) {
             Json::Value wsMsg;
             wsMsg["id"] = notif_info->getId(); 
@@ -226,8 +271,16 @@ static void EventCommentPraise(const std::any& d) {
     std::string notify_title = "评论点赞";
     std::string notify_content = data.liker_name + " 赞了你的评论";
 
-    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-        data.comment_author_id, notify_title, notify_content, "comment_praise", data.liker_id, data.article_id, data.comment_id);
+    NotificationData notif_data {};
+    notif_data.user_id = data.comment_author_id;
+    notif_data.title = notify_title;
+    notif_data.content = notify_content;
+    notif_data.type = "comment_praise";
+    notif_data.sender_id = data.liker_id;
+    notif_data.article_id = data.article_id;
+    notif_data.comment_id = data.comment_id;
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif_info) {
         Json::Value wsMsg;
         wsMsg["id"] = notif_info->getId();
@@ -248,8 +301,14 @@ static void EventUserFollow(const std::any& d) {
     std::string notify_title = "新关注";
     std::string notify_content = data.follower_name + " 关注了你";
 
-    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-        data.following_id, notify_title, notify_content, "follow", data.follower_id);
+    NotificationData notif_data {};
+    notif_data.user_id = data.following_id;
+    notif_data.title = notify_title;
+    notif_data.content = notify_content;
+    notif_data.type = "follow";
+    notif_data.sender_id = data.follower_id;
+
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif_info) {
         Json::Value wsMsg;
         wsMsg["id"] = notif_info->getId();
@@ -279,8 +338,14 @@ static void EventUserAdminAction(const std::any& d) {
         return;
     }
 
-    auto notif = NotificationMgr::GetInstance()->addNotification(
-        data.user_id, title, content, data.type, 0);
+    NotificationData notif_data {};
+    notif_data.user_id = data.user_id;
+    notif_data.title = title;
+    notif_data.content = content;
+    notif_data.type = data.type;
+    notif_data.sender_id = 0;
+
+    auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif) {
         Json::Value wsMsg;
         wsMsg["id"] = notif->getId();
@@ -298,8 +363,15 @@ static void EventOrgDeleted(const std::any& d) {
 
     std::string title = "组织已删除";
     std::string content = "组织「" + data.org_name + "」已被管理员删除";
-    auto notif = NotificationMgr::GetInstance()->addNotification(
-        data.member_id, title, content, "org_deleted", 0);
+
+    NotificationData notif_data {};
+    notif_data.user_id = data.member_id;
+    notif_data.title = title;
+    notif_data.content = content;
+    notif_data.type = "org_deleted";
+    notif_data.sender_id = 0;
+    
+    auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif) {
         Json::Value wsMsg;
         wsMsg["id"] = notif->getId();
@@ -318,8 +390,15 @@ static void EventOrgMember(const std::any& d) {
     if (data.type == "role_change") {
         std::string title = "组织角色变更";
         std::string content = "您在组织「" + data.org_name + "」中的角色已被更新为" + data.new_role_name;
-        auto notif_info = NotificationMgr::GetInstance()->addNotification(
-            data.target_user_id, title, content, "org_role_change", data.operator_id);
+
+        NotificationData notif_data {};
+        notif_data.user_id = data.target_user_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = "org_role_change";
+        notif_data.sender_id = data.operator_id;
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif_info) {
             Json::Value wsMsg;
             wsMsg["id"] = notif_info->getId();
@@ -338,8 +417,14 @@ static void EventOrgMember(const std::any& d) {
         OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
         for (auto& m : members) {
             if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                    m->getUserId(), title, content, "org_member_kicked", data.operator_id);
+                NotificationData notif_data {};
+                notif_data.user_id = m->getUserId();
+                notif_data.title = title;
+                notif_data.content = content;
+                notif_data.type = "org_member_kicked";
+                notif_data.sender_id = data.operator_id;
+                
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
                 if (notif_info) {
                     Json::Value wsMsg;
                     wsMsg["id"] = notif_info->getId();
@@ -356,8 +441,15 @@ static void EventOrgMember(const std::any& d) {
         {
             std::string kicked_title = "您已被移出组织";
             std::string kicked_content = "您已被移出组织「" + data.org_name + "」";
-            auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                data.kicked_user_id, kicked_title, kicked_content, "org_member_kicked", data.operator_id);
+
+            NotificationData notif_data {};
+            notif_data.user_id = data.kicked_user_id;
+            notif_data.title = kicked_title;
+            notif_data.content = kicked_content;
+            notif_data.type = "org_member_kicked";
+            notif_data.sender_id = data.operator_id;
+
+            auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
             if (notif_info) {
                 Json::Value wsMsg;
                 wsMsg["id"] = notif_info->getId();
@@ -378,8 +470,14 @@ static void EventOrgMember(const std::any& d) {
         OrganizationUserRelMgr::GetInstance()->getByPages(members, data.org_id, 0, 10000, -1, true);
         for (auto& m : members) {
             if (m->getRole() == OrganizationManager::Role::ORG_ADMIN) {
-                auto notif_info = NotificationMgr::GetInstance()->addNotification(
-                    m->getUserId(), title, content, "org_join_request", data.applicant_id);
+                NotificationData notif_data {};
+                notif_data.user_id = m->getUserId();
+                notif_data.title = title;
+                notif_data.content = content;
+                notif_data.type = "org_join_request";
+                notif_data.sender_id = data.applicant_id;
+                
+                auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
                 if (notif_info) {
                     Json::Value wsMsg;
                     wsMsg["id"] = notif_info->getId();
@@ -399,8 +497,15 @@ static void EventOrgMember(const std::any& d) {
         std::string content = approved
             ? "您申请加入组织「" + data.org_name + "」的请求已通过"
             : "您申请加入组织「" + data.org_name + "」的请求已被拒绝";
-        auto notif_info = NotificationMgr::GetInstance()->addNotification(
-            data.applicant_id, title, content, notif_type, data.operator_id);
+
+        NotificationData notif_data {};
+        notif_data.user_id = data.applicant_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = notif_type;
+        notif_data.sender_id = data.operator_id;
+
+        auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif_info) {
             Json::Value wsMsg;
             wsMsg["id"] = notif_info->getId();
@@ -431,8 +536,15 @@ static void EventOrgApply(const std::any& d) {
         std::vector<data::UserInfo::ptr> admins;
         UserMgr::GetInstance()->listByPages(admins, 0, 10000, UserManager::Role::ADMIN, -1, -1, true);
         for (auto& admin : admins) {
-            auto notif = NotificationMgr::GetInstance()->addNotification(
-                admin->getId(), title, content, "org_apply_request", 0, data.apply_id);
+            NotificationData notif_data {};
+            notif_data.user_id = admin->getId();
+            notif_data.title = title;
+            notif_data.content = content;
+            notif_data.type = "org_apply_request";
+            notif_data.sender_id = 0;
+            notif_data.article_id = data.apply_id;
+
+            auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
             if (notif) {
                 Json::Value wsMsg;
                 wsMsg["id"] = notif->getId();
@@ -448,8 +560,16 @@ static void EventOrgApply(const std::any& d) {
     } else if (data.type == "approved") {
         std::string title = "组织申请已通过";
         std::string content = "你申请创建的组织「" + data.org_name + "」已通过审核";
-        auto notif = NotificationMgr::GetInstance()->addNotification(
-            data.applicant_id, title, content, "org_apply_approved", 0, data.org_id);
+
+        NotificationData notif_data {};
+        notif_data.user_id = data.applicant_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = "org_apply_approved";
+        notif_data.sender_id = 0;
+        notif_data.article_id = data.org_id;
+
+        auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif) {
             Json::Value wsMsg;
             wsMsg["id"] = notif->getId();
@@ -465,8 +585,15 @@ static void EventOrgApply(const std::any& d) {
         std::string title = "组织申请被拒绝";
         std::string reject_reason = data.reason.empty() ? "" : "，原因：" + data.reason;
         std::string content = "你申请创建的组织「" + data.org_name + "」未通过审核" + reject_reason;
-        auto notif = NotificationMgr::GetInstance()->addNotification(
-            data.applicant_id, title, content, "org_apply_rejected", 0);
+        
+        NotificationData notif_data {};
+        notif_data.user_id = data.applicant_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = "org_apply_rejected";
+        notif_data.sender_id = 0;
+        
+        auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif) {
             Json::Value wsMsg;
             wsMsg["id"] = notif->getId();
@@ -486,8 +613,15 @@ static void EventAssignment(const std::any& d) {
     if (data.type == "deleted") {
         std::string title = "作业已删除";
         std::string content = "作业「" + data.assignment_name + "」已被管理员删除";
-        auto notif = NotificationMgr::GetInstance()->addNotification(
-            data.submitter_id, title, content, "assignment_deleted", 0);
+
+        NotificationData notif_data {};
+        notif_data.user_id = data.submitter_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = "assignment_deleted";
+        notif_data.sender_id = 0;
+        
+        auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif) {
             Json::Value wsMsg;
             wsMsg["id"] = notif->getId();
@@ -502,8 +636,15 @@ static void EventAssignment(const std::any& d) {
         std::string title = "新作业发布";
         std::string content = "组织发布了新作业「" + data.assignment_name + "」（" + data.subject_name + "），请及时完成";
         for (auto uid : data.member_user_ids) {
-            auto notif = NotificationMgr::GetInstance()->addNotification(
-                uid, title, content, "assignment_created", 0, data.assignment_id);
+            NotificationData notif_data {};
+            notif_data.user_id = uid;
+            notif_data.title = title;
+            notif_data.content = content;
+            notif_data.type = "assignment_created";
+            notif_data.sender_id = 0;
+            notif_data.article_id = data.assignment_id;
+
+            auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
             if (notif) {
                 Json::Value wsMsg;
                 wsMsg["id"] = notif->getId();
@@ -525,8 +666,15 @@ static void EventAssignmentSubmitted(const std::any& d) {
     std::string title = "作业提交通知";
     std::string content = "用户「" + data.submitter_name + "」提交了作业「" + data.assignment_name + "」";
     for (auto admin_id : data.admin_user_ids) {
-        auto notif = NotificationMgr::GetInstance()->addNotification(
-            admin_id, title, content, "assignment_submitted", 0, data.assignment_id);
+        NotificationData notif_data {};
+        notif_data.user_id = admin_id;
+        notif_data.title = title;
+        notif_data.content = content;
+        notif_data.type = "assignment_submitted";
+        notif_data.sender_id = 0;
+        notif_data.article_id = data.assignment_id;
+
+        auto notif = NotificationMgr::GetInstance()->addNotification(notif_data);
         if (notif) {
             Json::Value wsMsg;
             wsMsg["id"] = notif->getId();
@@ -559,8 +707,15 @@ static void EventRdAssign(const std::any& d) {
     }
     std::string content = title.substr(0, title.find("待处理") - 1) + "「" + data.item_title + "」被分配给了你，请尽快处理";
 
-    auto notif_info = NotificationMgr::GetInstance()->addNotification(
-        data.assignee_id, title, content, notif_type, data.creator_id, data.item_id);
+    NotificationData notif_data {};
+    notif_data.user_id = data.assignee_id;
+    notif_data.title = title;
+    notif_data.content = content;
+    notif_data.type = notif_type;
+    notif_data.sender_id = data.creator_id;
+    notif_data.article_id = data.item_id;
+    
+    auto notif_info = NotificationMgr::GetInstance()->addNotification(notif_data);
     if (notif_info) {
         Json::Value wsMsg;
         wsMsg["id"] = notif_info->getId();

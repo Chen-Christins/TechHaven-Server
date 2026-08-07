@@ -11,6 +11,7 @@ public:
     FaqManager();
 
     bool listAll(std::vector<data::HelpFaqsInfo::ptr>& infos);
+
     bool searchByKeyword(const std::string& keyword, std::vector<data::HelpFaqsInfo::ptr>& infos);
 
     /**

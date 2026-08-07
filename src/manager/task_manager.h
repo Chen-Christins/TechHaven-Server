@@ -26,9 +26,12 @@ public:
     TaskManager();
 
     void add(data::TaskInfo::ptr info);
+
     data::TaskInfo::ptr get(int64_t id);
+    
     uint64_t listByPages(std::vector<data::TaskInfo::ptr>& infos,
         uint64_t offset, uint64_t size, int32_t status, bool isValid);
+    
     uint64_t listByOrg(std::vector<data::TaskInfo::ptr>& infos,
         int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid);
 

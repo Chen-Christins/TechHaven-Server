@@ -20,8 +20,11 @@ public:
     OrganizationUserRelManager();
 
     void add(data::OrganizationUserRelInfo::ptr info);
+    
     data::OrganizationUserRelInfo::ptr get(int64_t id);
+    
     data::OrganizationUserRelInfo::ptr getByOrgAndUser(int64_t o_id, int64_t u_id);
+    
     int64_t getByPages(std::vector<data::OrganizationUserRelInfo::ptr>& results
         , int64_t o_id, uint64_t offset, uint64_t size, int32_t status, bool isValid);
 
@@ -36,6 +39,7 @@ public:
         int64_t org_admin_count = 0;
         int64_t regular_count = 0;
     };
+    
     Stats getStats(int64_t org_id);
 
 private:

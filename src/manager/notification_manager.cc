@@ -109,12 +109,7 @@ int32_t NotificationManager::getPresenceOnlineCount() {
 // ========== DB persistence ==========
 
 
-data::NotificationInfo::ptr NotificationManager::addNotification(
-    int64_t user_id, const std::string& title,
-    const std::string& content, const std::string& type, int64_t sender_id,
-    int64_t article_id, int64_t comment_id,
-    int32_t is_broadcast, const std::string& level,
-    int64_t start_time, int64_t end_time) {
+data::NotificationInfo::ptr NotificationManager::addNotification(const NotificationData& data) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "Get DB connection fail";
@@ -122,20 +117,20 @@ data::NotificationInfo::ptr NotificationManager::addNotification(
     }
 
     auto info = std::make_shared<data::NotificationInfo>();
-    info->setUserId(user_id);
-    info->setTitle(title);
-    info->setContent(content);
-    info->setType(type);
-    info->setSenderId(sender_id);
-    info->setArticleId(article_id);
-    info->setCommentId(comment_id);
+    info->setUserId(data.user_id);
+    info->setTitle(data.title);
+    info->setContent(data.content);
+    info->setType(data.type);
+    info->setSenderId(data.sender_id);
+    info->setArticleId(data.article_id);
+    info->setCommentId(data.comment_id);
     info->setIsRead(0);
     info->setReadTime(0);
     info->setIsDeleted(0);
-    info->setIsBroadcast(is_broadcast);
-    info->setLevel(level);
-    info->setStartTime(start_time);
-    info->setEndTime(end_time);
+    info->setIsBroadcast(data.is_broadcast);
+    info->setLevel(data.level);
+    info->setStartTime(data.start_time);
+    info->setEndTime(data.end_time);
     info->setCreateTime(time(0));
     info->setUpdateTime(time(0));
 

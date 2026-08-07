@@ -19,7 +19,9 @@ public:
     AssignmentUserRelManager();
 
     void add(blog::data::AssignmentUserRelInfo::ptr info);
+    
     blog::data::AssignmentUserRelInfo::ptr get(int64_t id);
+    
     blog::data::AssignmentUserRelInfo::ptr getByAssignAndUser(int64_t assign_id, int64_t user_id);
 
 private:
