@@ -11,8 +11,11 @@ namespace blog {
 class SystemSettingsManager {
 public:
     void add(blog::data::SystemSettingsInfo::ptr info);
+
     blog::data::SystemSettingsInfo::ptr get();
+    
     bool update(blog::data::SystemSettingsInfo::ptr info);
+    
 private:
     std::mutex m_mutex;
     blog::data::SystemSettingsInfo::ptr m_data;

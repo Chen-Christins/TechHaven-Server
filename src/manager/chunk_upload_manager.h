@@ -15,6 +15,7 @@ public:
     ChunkUploadManager();
 
     void add(data::ChunkUploadInfo::ptr info);
+    
     data::ChunkUploadInfo::ptr get(int64_t id);
 
 private:

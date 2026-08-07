@@ -13,21 +13,27 @@ public:
     UserFollowRelManager();
 
     void add(data::UserFollowRelInfo::ptr info);
+
     data::UserFollowRelInfo::ptr get(int64_t id);
+    
     data::UserFollowRelInfo::ptr getByFollowerAndFollowing(int64_t follower_id, int64_t following_id);
 
     // follow/unfollow
     data::UserFollowRelInfo::ptr follow(int64_t follower_id, int64_t following_id);
+    
     bool unfollow(int64_t follower_id, int64_t following_id);
+    
     bool isFollowing(int64_t follower_id, int64_t following_id);
 
     // queries with pagination
     void listFollowing(std::vector<data::UserFollowRelInfo::ptr>& results,
         int64_t follower_id, uint64_t offset, uint64_t size);
+    
     void listFollowers(std::vector<data::UserFollowRelInfo::ptr>& results,
         int64_t following_id, uint64_t offset, uint64_t size);
 
     int64_t countFollowing(int64_t follower_id);
+    
     int64_t countFollowers(int64_t following_id);
     
 private:

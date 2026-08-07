@@ -33,11 +33,14 @@ public:
     BugManager();
 
     void add(data::BugInfo::ptr info);
+
     data::BugInfo::ptr get(int64_t id);
-    uint64_t listByPages(std::vector<data::BugInfo::ptr>& infos,
-        uint64_t offset, uint64_t size, int32_t status, bool isValid);
-    uint64_t listByOrg(std::vector<data::BugInfo::ptr>& infos,
-        int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid);
+    
+    uint64_t listByPages(std::vector<data::BugInfo::ptr>& infos, uint64_t offset, 
+                         uint64_t size, int32_t status, bool isValid);
+    
+    uint64_t listByOrg(std::vector<data::BugInfo::ptr>& infos, int64_t orgId, 
+                       uint64_t offset, uint64_t size, int32_t status, bool isValid);
 
 private:
     static data::BugInfo::ptr parseRow(chen::ISQLData::ptr rt);

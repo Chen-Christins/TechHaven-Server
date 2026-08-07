@@ -78,22 +78,29 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
             std::vector<int64_t> user_ids;
             UserMgr::GetInstance()->getAllIds(user_ids, true);
 
+            NotificationData ntf {};
+            ntf.title = title;
+            ntf.content = content;
+            ntf.type = type;
+            ntf.sender_id = uid;
+            ntf.article_id = article_id;
+            ntf.comment_id = comment_id;
+            ntf.is_broadcast = is_broadcast;
+            ntf.level = level;
+            ntf.start_time = start_time;
+            ntf.end_time = end_time;
+
             if (is_broadcast) {
                 // 广播只落一条记录（user_id=0），前端 GET /broadcast/list 只显示这一条
-                NotificationMgr::GetInstance()->addNotification(
-                    0, title, content, type, uid, article_id, comment_id,
-                    is_broadcast, level, start_time, end_time);
+                NotificationMgr::GetInstance()->addNotification(ntf);
             }
 
             // 给每个用户创建普通通知（is_broadcast=0）并 WS 推送
             chen::IOManager::GetThis()->schedule(
-                [user_ids, title, content, type, sender_id = uid, article_id, comment_id,
-                 level, start_time, end_time, msg]() {
+                [&ntf, msg, user_ids]() {
                     for (auto target_uid : user_ids) {
-                        NotificationMgr::GetInstance()->addNotification(
-                            target_uid, title, content, type, sender_id,
-                            article_id, comment_id, 0, level,
-                            start_time, end_time);
+                        ntf.user_id = target_uid;
+                        NotificationMgr::GetInstance()->addNotification(ntf);
                     }
                     NotificationMgr::GetInstance()->broadcast(msg);
                 });
@@ -117,7 +124,16 @@ int32_t NotificationSendServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             int32_t sent = 0;
             for (auto id : ids) {
-                notifMgr.addNotification(id, title, content, type, uid, article_id, comment_id);
+                NotificationData ntf {};
+                ntf.user_id = id;
+                ntf.title = title;
+                ntf.content = content;
+                ntf.type = type;
+                ntf.sender_id = uid;
+                ntf.article_id = article_id;
+                ntf.comment_id = comment_id;
+                
+                notifMgr.addNotification(ntf);
                 if (notifMgr.sendToUser(id, msg) == 0) {
                     sent++;
                 }

@@ -27,9 +27,12 @@ public:
     RequirementManager();
 
     void add(data::RequirementInfo::ptr info);
+
     data::RequirementInfo::ptr get(int64_t id);
+    
     uint64_t listByPages(std::vector<data::RequirementInfo::ptr>& infos,
         uint64_t offset, uint64_t size, int32_t status, bool isValid);
+    
     uint64_t listByOrg(std::vector<data::RequirementInfo::ptr>& infos,
         int64_t orgId, uint64_t offset, uint64_t size, int32_t status, bool isValid);
 

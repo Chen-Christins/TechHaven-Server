@@ -13,8 +13,11 @@ public:
     CategoryManager();
 
     void listAll(std::vector<blog::data::CategoryInfo::ptr>& infos, bool isValid = false);
+
     void add(blog::data::CategoryInfo::ptr info);
+    
     blog::data::CategoryInfo::ptr get(int64_t id);
+    
     blog::data::CategoryInfo::ptr getByName(const std::string& name);
 private:
     static data::CategoryInfo::ptr parseRow(chen::ISQLData::ptr rt);

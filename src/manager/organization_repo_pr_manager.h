@@ -25,8 +25,11 @@ public:
     OrganizationRepoPrManager();
 
     void add(data::OrganizationRepoPrsInfo::ptr info);
+
     void del(int64_t id);
+    
     data::OrganizationRepoPrsInfo::ptr get(int64_t id);
+    
     data::OrganizationRepoPrsInfo::ptr getByRepoAndPrId(int64_t repo_id, int32_t github_pr_id);
 
     int64_t listByRepoPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs

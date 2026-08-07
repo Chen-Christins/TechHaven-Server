@@ -29,6 +29,7 @@ public:
     ResourceType GetResourceType(const std::string& filename);
 
     void add(blog::data::ResourceInfo::ptr info);
+    
     data::ResourceInfo::ptr get(int64_t id);
 
     void getByBizUid(std::vector<data::ResourceInfo::ptr>& results
