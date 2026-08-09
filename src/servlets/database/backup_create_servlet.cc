@@ -69,7 +69,7 @@ int32_t BackupCreateServlet::handle(chen::http::HttpRequest::ptr request,
 
         // Trigger async backup via event bus
         {
-            EventDatabaseBackupData data;
+            EventDatabaseBackupData data = {};
             data.backup_id = backup_id;
             data.type = type;
             data.name = name;

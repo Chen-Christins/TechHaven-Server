@@ -101,15 +101,21 @@ int32_t AssignmentDeleteServlet::handle(chen::http::HttpRequest::ptr request, ch
                     std::vector<data::AssignmentUserRelInfo::ptr> submitters;
                     if (data::AssignmentUserRelInfoDao::QueryByBuilder(submitters, qb, db2) == 0) {
                         for (auto& info : submitters) {
-                            if (!info) continue;
+                            if (!info) {
+                                continue;
+                            }
                             int64_t submitter_id = info->getUserId();
-                            if (notified.count(submitter_id)) continue;
+                            if (notified.count(submitter_id)) {
+                                continue;
+                            }
                             notified.insert(submitter_id);
-                            EventAssignmentData data;
+
+                            EventAssignmentData data = {};
                             data.type = "deleted";
                             data.assignment_id = assign->getId();
                             data.assignment_name = assign_name;
                             data.submitter_id = submitter_id;
+
                             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ASSIGNMENT, std::move(data));
                         }
                     }

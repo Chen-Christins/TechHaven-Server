@@ -82,7 +82,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
             std::string kicked_name = kicked_user ? kicked_user->getName() : std::to_string(user_id);
             std::string oper_name = oper_user ? oper_user->getName() : std::to_string(uid);
 
-            EventOrgMemberData data;
+            EventOrgMemberData data = {};
             data.type = "kicked";
             data.org_id = org_id;
             data.org_name = org_name;
@@ -90,6 +90,7 @@ int32_t OrganizationUserKickServlet::handle(chen::http::HttpRequest::ptr request
             data.operator_name = oper_name;
             data.kicked_user_id = user_id;
             data.applicant_name = kicked_name;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 

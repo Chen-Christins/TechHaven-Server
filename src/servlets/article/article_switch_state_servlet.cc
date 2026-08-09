@@ -81,11 +81,12 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
 
         // Notify article author if admin changed state
         if (role == UserManager::Role::ADMIN && article->getUserId() != uid) {
-            EventArticleStateChangedData data;
+            EventArticleStateChangedData data = {};
             data.author_id = article->getUserId();
             data.article_id = article->getId();
             data.article_title = article->getTitle();
             data.new_state = new_state;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_STATE_CHANGED, std::move(data));
         }
     } while (0);

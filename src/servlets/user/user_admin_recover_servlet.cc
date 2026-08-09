@@ -84,9 +84,10 @@ int32_t UserAdminRecoverServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             // Notify recovered users
             for (auto& u : infos) {
-                EventUserAdminData data;
+                EventUserAdminData data = {};
                 data.type = "account_recovered";
                 data.user_id = u->getId();
+                
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
             }
         }

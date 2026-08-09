@@ -110,7 +110,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
 
         // 异步触发事件，发送邮件
         {
-            EventUserSendCodeData data;
+            EventUserSendCodeData data = {};
             data.email = mail;
             data.smtp_host = smtp_host;
             data.port = smtp_port;

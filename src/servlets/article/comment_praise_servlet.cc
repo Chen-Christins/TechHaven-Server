@@ -54,12 +54,14 @@ int32_t CommentPraiseServlet::handle(chen::http::HttpRequest::ptr request, chen:
             // Notify comment author (not self-praise)
             if (comment->getUserId() != uid) {
                 auto liker_info = UserMgr::GetInstance()->get(uid);
-                EventCommentPraiseData data;
+                
+                EventCommentPraiseData data = {};
                 data.comment_author_id = comment->getUserId();
                 data.liker_id = uid;
                 data.liker_name = liker_info ? liker_info->getName() : "someone";
                 data.article_id = comment->getArticleId();
                 data.comment_id = comment_id;
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT_PRAISE, std::move(data));
             }
         }

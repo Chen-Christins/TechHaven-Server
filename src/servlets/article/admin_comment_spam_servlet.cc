@@ -70,10 +70,11 @@ int32_t AdminCommentSpamServlet::handle(chen::http::HttpRequest::ptr request, ch
 
             // 评论被标记为垃圾事件
             {
-                EventCommentData data;
+                EventCommentData data = {};
                 data.comment_id = cid;
                 data.author_id = author_id;
                 data.type = "comment_spam";
+                
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
             }
         }

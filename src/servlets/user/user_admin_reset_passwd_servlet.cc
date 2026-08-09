@@ -71,9 +71,10 @@ int32_t UserAdminResetPasswdServlet::handle(chen::http::HttpRequest::ptr request
 
         // Notify affected user
         {
-            EventUserAdminData data;
+            EventUserAdminData data = {};
             data.type = "password_reset";
             data.user_id = id;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
         }
     } while (0);

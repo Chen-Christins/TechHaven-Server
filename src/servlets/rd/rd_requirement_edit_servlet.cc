@@ -139,12 +139,14 @@ void RdRequirementEditServlet::notifyAssignee(int64_t assignee_id, data::Require
     if (!assignee_id) {
         return;
     }
-    EventRdAssignData data;
+
+    EventRdAssignData data = {};
     data.type = "requirement";
     data.assignee_id = assignee_id;
     data.item_id = requirement->getId();
     data.item_title = requirement->getTitle();
     data.creator_id = requirement->getCreatorId();
+    
     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_RD_ASSIGN, std::move(data));
 }
 

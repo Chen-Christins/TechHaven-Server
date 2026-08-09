@@ -72,12 +72,13 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
         // Notify admins and checkers about new article
         {
             auto author = UserMgr::GetInstance()->get(uid);
-            EventArticleReviewData data;
+            EventArticleReviewData data = {};
             data.type = "request";
             data.article_id = id;
             data.article_title = info->getTitle();
             data.author_id = uid;
             data.author_name = author ? author->getName() : std::to_string(uid);
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_REVIEW, std::move(data));
         }
     } while (0);

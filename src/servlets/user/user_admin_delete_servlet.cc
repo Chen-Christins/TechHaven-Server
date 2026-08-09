@@ -72,9 +72,10 @@ int32_t UserAdminDeleteServlet::handle(chen::http::HttpRequest::ptr request, che
 
         // Notify affected user
         {
-            EventUserAdminData data;
+            EventUserAdminData data = {};
             data.type = "account_deleted";
             data.user_id = user_id;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_ADMIN, std::move(data));
         }
     } while (0);

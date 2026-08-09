@@ -68,10 +68,11 @@ int32_t AdminCommentDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
             }
             // 评论被管理员删除事件
             {
-                EventCommentData data;
+                EventCommentData data = {};
                 data.comment_id = cid;
                 data.author_id = author_id;
                 data.type = "comment_admin_deleted";
+                
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
             }
         }

@@ -77,12 +77,13 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // Notify author about review result + mark other admins' notifications as read
         {
             bool approved = (state == ArticleManager::Status::PUBLISHED || info->getState() == ArticleManager::Status::PUBLISHED);
-            EventArticleReviewData data;
+            EventArticleReviewData data = {};
             data.type = approved ? "approved" : "rejected";
             data.article_id = id;
             data.article_title = info->getTitle();
             data.author_id = info->getUserId();
             data.reviewer_id = uid;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_REVIEW, std::move(data));
         }
     } while (0);

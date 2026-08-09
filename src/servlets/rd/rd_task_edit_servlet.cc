@@ -136,12 +136,14 @@ void RdTaskEditServlet::notifyAssignee(int64_t assignee_id, data::TaskInfo::ptr 
     if (!assignee_id) {
         return;
     }
-    EventRdAssignData data;
+
+    EventRdAssignData data = {};
     data.type = "task";
     data.assignee_id = assignee_id;
     data.item_id = task->getId();
     data.item_title = task->getTitle();
     data.creator_id = task->getCreatorId();
+    
     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_RD_ASSIGN, std::move(data));
 }
 

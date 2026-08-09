@@ -111,10 +111,12 @@ int32_t OrganizationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
                     int64_t member_id = rel->getUserId();
                     if (notified_users.count(member_id)) continue;
                     notified_users.insert(member_id);
-                    EventOrgDeletedData data;
+
+                    EventOrgDeletedData data = {};
                     data.member_id = member_id;
                     data.org_id = org->getId();
                     data.org_name = org->getName();
+                    
                     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_DELETED, std::move(data));
                 }
             }

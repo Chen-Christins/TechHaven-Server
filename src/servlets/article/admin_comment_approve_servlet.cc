@@ -70,10 +70,11 @@ int32_t AdminCommentApproveServlet::handle(chen::http::HttpRequest::ptr request,
             
             // Emit event for comment approval
             {
-                EventCommentData data;
+                EventCommentData data = {};
                 data.comment_id = cid;
                 data.author_id = author_id;
                 data.type = "comment_approved";
+                
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
             }
         }

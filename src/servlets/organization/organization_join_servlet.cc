@@ -70,11 +70,12 @@ int32_t OrganizationJoinServlet::handle(chen::http::HttpRequest::ptr request, ch
 
         // Notify org admins about join request
         {
-            EventOrgMemberData data;
+            EventOrgMemberData data = {};
             data.type = "join_request";
             data.org_id = id;
             data.org_name = org->getName();
             data.applicant_id = uid;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 
