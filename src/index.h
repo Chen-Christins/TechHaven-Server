@@ -5,8 +5,7 @@
  * @date 2025-08-30
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_INDEX_H__
-#define __BLOG_INDEX_H__
+#pragma once
 
 #include <atomic>
 #include <memory>
@@ -118,5 +117,3 @@ private:
 typedef chen::Singleton<Index> IndexMgr;
 
 }
-
-#endif // __BLOG_INDEX_H__

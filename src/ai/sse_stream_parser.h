@@ -5,8 +5,7 @@
  * @date 2026-06-10
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_AI_SSE_STREAM_PARSER_H__
-#define __BLOG_AI_SSE_STREAM_PARSER_H__
+#pragma once
 
 #include <memory>
 #include <string>
@@ -44,4 +43,4 @@ private:
 }  // namespace ai
 }  // namespace blog
 
-#endif  // __BLOG_AI_SSE_STREAM_PARSER_H__
+

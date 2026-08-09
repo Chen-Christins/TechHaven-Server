@@ -1,5 +1,4 @@
-#ifndef __BLOG_SERVLET_USER_STATS_SERVLET_H__
-#define __BLOG_SERVLET_USER_STATS_SERVLET_H__
+#pragma once
 
 #include "../../struct.h"
 
@@ -17,5 +16,3 @@ public:
 
 }
 }
-
-#endif // __BLOG_SERVLET_USER_STATS_SERVLET_H__

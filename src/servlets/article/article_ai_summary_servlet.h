@@ -5,8 +5,7 @@
  * @date 2026-06-10
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_SERVLETS_ARTICLE_AI_SUMMARY_SERVLET_H__
-#define __BLOG_SERVLETS_ARTICLE_AI_SUMMARY_SERVLET_H__
+#pragma once
 
 #include <chen/http/sse_servlet.h>
 #include <chen/http/sse_session.h>
@@ -27,5 +26,3 @@ public:
 
 }
 }
-
-#endif // __BLOG_SERVLETS_ARTICLE_AI_SUMMARY_SERVLET_H__
