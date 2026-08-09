@@ -1,26 +1,26 @@
 #include "blog_module.h"
 
-#include <chen/http/http_server.h>
-#include <chen/log/log.h>
+#include <chen/application.h>
+#include <chen/config/config.h>
+#include <chen/db/mysql.h>
 #include <chen/db/query_builder.h>
 #include <chen/db/sqlite3.h>
-#include <chen/db/mysql.h>
-#include <chen/config/config.h>
-#include <chen/application.h>
+#include <chen/http/http_server.h>
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
-#include <chen/util/env.h>
 #include <chen/iomanager/worker.h>
+#include <chen/log/log.h>
+#include <chen/util/env.h>
 
 #include <ranges>
 
-#include "./include/tables.h"
+#include "./chunk_upload.h"
 #include "./include/managers.h"
 #include "./include/servlets.h"
-#include "./chunk_upload.h"
+#include "./include/tables.h"
 #include "./index.h"
-#include "protocol_ss_github.h" // IWYU pragma: keep
 #include "event/events.h"
+#include "protocol_ss_github.h" // IWYU pragma: keep
 
 namespace blog {
 
@@ -28,9 +28,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
-BlogModule::BlogModule()
-    :chen::Module("Blog", "1.0", "blog_module") {
-}
+BlogModule::BlogModule() : chen::Module("Blog", "1.0", "blog_module") {}
 
 bool BlogModule::onLoad() {
     INFO(logger) << "onLoad";
@@ -190,79 +188,78 @@ bool BlogModule::initMySQL() {
         ERROR(logger) << "create " table_name " table failed"; \
         return false;                                          \
     }
-    XX(EmailVerificationInfoDao, "email_verification")
-    XX(UserInfoDao, "user")
-    XX(ArticleInfoDao, "article")
-    XX(CategoryInfoDao, "category")
-    XX(LabelInfoDao, "label")
-    XX(ArticleCategoryRelInfoDao, "article_category_rel")
-    XX(ArticleLabelRelInfoDao, "article_label_rel")
-    XX(AssignmentInfoDao, "assignment")
-    XX(OrganizationApplyInfoDao, "organization_apply")
-    XX(OrganizationInfoDao, "organization")
-    XX(OrganizationRepoPrsInfoDao, "organization_repo_prs")
-    XX(OrganizationReposInfoDao, "organization_repos")
-    XX(OrganizationUserRelInfoDao, "organization_user_rel")
-    XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
-    XX(AssignmentUserRelInfoDao, "assignment_user_rel")
-    XX(ResourceInfoDao, "resource")
-    XX(ChunkUploadInfoDao, "chunk_upload")
-    XX(NotificationInfoDao, "notification")
-    XX(UserFollowRelInfoDao, "user_follow_rel")
-    XX(ArticlePraiseRelInfoDao, "article_praise_rel")
-    XX(BackupRecordInfoDao, "backup_record")
-    XX(ExportRecordInfoDao, "export_record")
-    XX(CommentInfoDao, "comment")
-    XX(CommentPraiseRelInfoDao, "comment_praise_rel")
-    XX(RequirementInfoDao, "requirement")
-    XX(BugInfoDao, "bug")
-    XX(TaskInfoDao, "task")
-    XX(SystemSettingsInfoDao, "system_settings")
-    XX(BadgeInfoDao, "badge")
-    XX(HelpFaqsInfoDao, "help_faqs")
-    XX(UserFeedbackInfoDao, "user_feedback")
-    XX(UserAiConfigInfoDao, "user_ai_config")
+        XX(EmailVerificationInfoDao, "email_verification")
+        XX(UserInfoDao, "user")
+        XX(ArticleInfoDao, "article")
+        XX(CategoryInfoDao, "category")
+        XX(LabelInfoDao, "label")
+        XX(ArticleCategoryRelInfoDao, "article_category_rel")
+        XX(ArticleLabelRelInfoDao, "article_label_rel")
+        XX(AssignmentInfoDao, "assignment")
+        XX(OrganizationApplyInfoDao, "organization_apply")
+        XX(OrganizationInfoDao, "organization")
+        XX(OrganizationRepoPrsInfoDao, "organization_repo_prs")
+        XX(OrganizationReposInfoDao, "organization_repos")
+        XX(OrganizationUserRelInfoDao, "organization_user_rel")
+        XX(AssignmentOrganizationRelInfoDao, "assignment_organization_rel")
+        XX(AssignmentUserRelInfoDao, "assignment_user_rel")
+        XX(ResourceInfoDao, "resource")
+        XX(ChunkUploadInfoDao, "chunk_upload")
+        XX(NotificationInfoDao, "notification")
+        XX(UserFollowRelInfoDao, "user_follow_rel")
+        XX(ArticlePraiseRelInfoDao, "article_praise_rel")
+        XX(BackupRecordInfoDao, "backup_record")
+        XX(ExportRecordInfoDao, "export_record")
+        XX(CommentInfoDao, "comment")
+        XX(CommentPraiseRelInfoDao, "comment_praise_rel")
+        XX(RequirementInfoDao, "requirement")
+        XX(BugInfoDao, "bug")
+        XX(TaskInfoDao, "task")
+        XX(SystemSettingsInfoDao, "system_settings")
+        XX(BadgeInfoDao, "badge")
+        XX(HelpFaqsInfoDao, "help_faqs")
+        XX(UserFeedbackInfoDao, "user_feedback")
+        XX(UserAiConfigInfoDao, "user_ai_config")
 #undef XX
 
-    // 数据库迁移：为已有表补充新增列
-    {
-        INFO(logger) << "migrate database begin";
+        // 数据库迁移：为已有表补充新增列
+        {
+            INFO(logger) << "migrate database begin";
 #define XX(clazz) blog::data::clazz::MigrateTableMySQL(mysql);
-        XX(EmailVerificationInfoDao)
-        XX(UserInfoDao)
-        XX(ArticleInfoDao)
-        XX(CategoryInfoDao)
-        XX(LabelInfoDao)
-        XX(ArticleCategoryRelInfoDao)
-        XX(ArticleLabelRelInfoDao)
-        XX(AssignmentInfoDao)
-        XX(OrganizationApplyInfoDao)
-        XX(OrganizationInfoDao)
-        XX(OrganizationRepoPrsInfoDao)
-        XX(OrganizationReposInfoDao)
-        XX(OrganizationUserRelInfoDao)
-        XX(AssignmentOrganizationRelInfoDao)
-        XX(AssignmentUserRelInfoDao)
-        XX(ResourceInfoDao)
-        XX(ChunkUploadInfoDao)
-        XX(NotificationInfoDao)
-        XX(UserFollowRelInfoDao)
-        XX(ArticlePraiseRelInfoDao)
-        XX(CommentInfoDao)
-        XX(CommentPraiseRelInfoDao)
-        XX(BackupRecordInfoDao)
-        XX(ExportRecordInfoDao)
-        XX(RequirementInfoDao)
-        XX(BugInfoDao)
-        XX(TaskInfoDao)
-        XX(BadgeInfoDao)
-        XX(HelpFaqsInfoDao)
-        XX(UserFeedbackInfoDao)
-        XX(UserAiConfigInfoDao)
+            XX(EmailVerificationInfoDao)
+            XX(UserInfoDao)
+            XX(ArticleInfoDao)
+            XX(CategoryInfoDao)
+            XX(LabelInfoDao)
+            XX(ArticleCategoryRelInfoDao)
+            XX(ArticleLabelRelInfoDao)
+            XX(AssignmentInfoDao)
+            XX(OrganizationApplyInfoDao)
+            XX(OrganizationInfoDao)
+            XX(OrganizationRepoPrsInfoDao)
+            XX(OrganizationReposInfoDao)
+            XX(OrganizationUserRelInfoDao)
+            XX(AssignmentOrganizationRelInfoDao)
+            XX(AssignmentUserRelInfoDao)
+            XX(ResourceInfoDao)
+            XX(ChunkUploadInfoDao)
+            XX(NotificationInfoDao)
+            XX(UserFollowRelInfoDao)
+            XX(ArticlePraiseRelInfoDao)
+            XX(CommentInfoDao)
+            XX(CommentPraiseRelInfoDao)
+            XX(BackupRecordInfoDao)
+            XX(ExportRecordInfoDao)
+            XX(RequirementInfoDao)
+            XX(BugInfoDao)
+            XX(TaskInfoDao)
+            XX(BadgeInfoDao)
+            XX(HelpFaqsInfoDao)
+            XX(UserFeedbackInfoDao)
+            XX(UserAiConfigInfoDao)
 #undef XX
-        INFO(logger) << "migrate database end";
-    }
-
+            INFO(logger) << "migrate database end";
+        }
     }
 
     return true;
@@ -458,7 +455,6 @@ void BlogModule::registerServlets() {
         dp->addServlet("/api/v1/rd/organizations/members", XX(RdOrganizationMembersServlet));
 #undef XX
     }
-
 }
 
 void BlogModule::registerWSServlets() {
@@ -523,7 +519,7 @@ void BlogModule::unregisterRPCMethods() {
     m_rpcServers.clear();
 }
 
-}
+} // namespace blog
 
 extern "C" {
 
@@ -532,8 +528,5 @@ chen::Module* CreateModule() {
     return module;
 }
 
-void DestroyModule(chen::Module* module) {
-    delete module;
-}
-
+void DestroyModule(chen::Module* module) { delete module; }
 }
