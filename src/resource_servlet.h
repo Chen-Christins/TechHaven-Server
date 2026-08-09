@@ -5,8 +5,7 @@
  * @date 2025-05-05
  * @copyright Apache 2.0
  */
-#ifndef __RESOURCE_SERVLET_H__
-#define __RESOURCE_SERVLET_H__
+#pragma once
 
 #include <string>
 #include <memory>
@@ -32,5 +31,3 @@ private:
 
 }
 }
-
-#endif // __RESOURCE_SERVLET_H__

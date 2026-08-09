@@ -259,12 +259,14 @@ assembly_done:
                     }
                 }
             }
-            EventAssignmentSubmittedData data;
+
+            EventAssignmentSubmittedData data = {};
             data.submitter_id = uid;
             data.submitter_name = submitter_name;
             data.assignment_id = assign_id;
             data.assignment_name = assign_name;
             data.admin_user_ids = admin_ids;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ASSIGNMENT_SUBMITTED, std::move(data));
         }
 

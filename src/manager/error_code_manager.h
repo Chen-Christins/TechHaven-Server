@@ -5,8 +5,7 @@
  * @date 2026-06-11
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_ERROR_CODE_MANAGER_H__
-#define __BLOG_ERROR_CODE_MANAGER_H__
+#pragma once
 
 #include <string>
 #include <map>
@@ -83,5 +82,3 @@ private:
 typedef chen::Singleton<ErrorCodeManager> ErrorCodeMgr;
 
 } // namespace blog
-
-#endif // __BLOG_ERROR_CODE_MANAGER_H__

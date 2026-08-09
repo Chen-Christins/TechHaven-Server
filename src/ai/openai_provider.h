@@ -5,8 +5,7 @@
  * @date 2026-06-10
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_AI_OPENAI_PROVIDER_H__
-#define __BLOG_AI_OPENAI_PROVIDER_H__
+#pragma once
 
 #include "ai_provider.h"
 
@@ -37,5 +36,3 @@ public:
 
 } // namespace ai
 } // namespace blog
-
-#endif // __BLOG_AI_OPENAI_PROVIDER_H__

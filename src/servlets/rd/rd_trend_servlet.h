@@ -5,8 +5,7 @@
  * @date 2026-06-25
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_SERVLETS_RD_TREND_SERVLET_H__
-#define __BLOG_SERVLETS_RD_TREND_SERVLET_H__
+#pragma once
 
 #include "../../struct.h"
 #include <json/json.h>
@@ -59,5 +58,3 @@ private:
 
 }
 }
-
-#endif // __BLOG_SERVLETS_RD_TREND_SERVLET_H__

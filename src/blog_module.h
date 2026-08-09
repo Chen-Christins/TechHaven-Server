@@ -5,8 +5,7 @@
  * @date 2025-05-10
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_MY_MODULE_H__
-#define __BLOG_MY_MODULE_H__
+#pragma once
 
 #include <chen/module/module.h>
 #include <chen/http/http_server.h>
@@ -116,5 +115,3 @@ private:
 };
 
 }
-
-#endif // __BLOG_MY_MODULE_H__

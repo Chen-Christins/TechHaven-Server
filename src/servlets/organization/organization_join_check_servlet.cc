@@ -92,12 +92,13 @@ int32_t OrganizationJoinCheckServlet::handle(chen::http::HttpRequest::ptr reques
 
         // Notify applicant + mark other admins' notifications as read
         {
-            EventOrgMemberData data;
+            EventOrgMemberData data = {};
             data.type = (state == OrganizationUserRelManager::Status::APPROVED) ? "join_approved" : "join_rejected";
             data.org_id = org_id;
             data.org_name = org->getName();
             data.applicant_id = user_id;
             data.operator_id = uid;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 

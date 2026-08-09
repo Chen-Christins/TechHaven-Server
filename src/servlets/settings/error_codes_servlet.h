@@ -1,5 +1,4 @@
-#ifndef __BLOG_SERVLETS_SETTINGS_ERROR_CODES_SERVLET_H__
-#define __BLOG_SERVLETS_SETTINGS_ERROR_CODES_SERVLET_H__
+#pragma once
 
 #include "../../struct.h"
 
@@ -21,5 +20,3 @@ public:
 };
 
 } // namespace blog::servlet
-
-#endif // __BLOG_SERVLETS_SETTINGS_ERROR_CODES_SERVLET_H__

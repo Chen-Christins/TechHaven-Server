@@ -83,7 +83,8 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         // Notify article author and parent comment author asynchronously
         {
             auto commenter_info = UserMgr::GetInstance()->get(uid);
-            EventCommentCreatedData data;
+            
+            EventCommentCreatedData data = {};
             data.commenter_id = uid;
             data.commenter_name = commenter_info ? commenter_info->getName() : "someone";
             data.article_id = article_id;
@@ -96,6 +97,7 @@ int32_t CommentCreateServlet::handle(chen::http::HttpRequest::ptr request, chen:
                     data.parent_comment_author_id = parent->getUserId();
                 }
             }
+
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT_CREATED, std::move(data));
         }
     } while (0);

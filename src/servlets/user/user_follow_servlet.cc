@@ -49,10 +49,11 @@ int32_t UserFollowServlet::handle(chen::http::HttpRequest::ptr request,
         // Notify the followed user (only for new follows)
         if (!already_following) {
             auto follower_info = UserMgr::GetInstance()->get(uid);
-            EventUserFollowData data;
+            EventUserFollowData data = {};
             data.follower_id = uid;
             data.follower_name = follower_info ? follower_info->getName() : "someone";
             data.following_id = following_id;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_FOLLOW, std::move(data));
         }
 

@@ -11,8 +11,7 @@
  *
  * 与 errors.json 保持同步
  */
-#ifndef __BLOG_ERROR_CODES_H__
-#define __BLOG_ERROR_CODES_H__
+#pragma once
 
 #include <cstdint>
 
@@ -168,5 +167,3 @@ constexpr int32_t FAQ_NOT_FOUND = 11001;               // 常见问题不存在
 
 } // namespace errcode
 } // namespace blog
-
-#endif // __BLOG_ERROR_CODES_H__

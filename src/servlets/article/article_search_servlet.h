@@ -5,8 +5,7 @@
  * @date 2026-06-30
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_SERVLETS_ARTICLE_SEARCH_SERVLET_H__
-#define __BLOG_SERVLETS_ARTICLE_SEARCH_SERVLET_H__
+#pragma once
 
 #include "../../struct.h"
 
@@ -25,5 +24,3 @@ public:
 
 }
 }
-
-#endif // __BLOG_SERVLETS_ARTICLE_SEARCH_SERVLET_H__

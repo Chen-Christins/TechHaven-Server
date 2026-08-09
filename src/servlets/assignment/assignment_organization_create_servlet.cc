@@ -145,12 +145,14 @@ int32_t AssignmentOrganizationCreateServlet::handle(chen::http::HttpRequest::ptr
                     if (m->getUserId() == uid) continue;
                     member_ids.push_back(m->getUserId());
                 }
-                EventAssignmentData data;
+                
+                EventAssignmentData data = {};
                 data.type = "created";
                 data.assignment_id = assign_info->getId();
                 data.assignment_name = name;
                 data.subject_name = subject_name;
                 data.member_user_ids = member_ids;
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ASSIGNMENT, std::move(data));
             }
         }

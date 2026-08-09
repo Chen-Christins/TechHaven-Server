@@ -59,12 +59,13 @@ int32_t ArticlePraiseServlet::handle(chen::http::HttpRequest::ptr request,
                 auto liker_info = UserMgr::GetInstance()->get(uid);
                 // 文章点赞事件
                 {
-                    EventArticlePraiseData data;
+                    EventArticlePraiseData data = {};
                     data.author_id = article->getUserId();
                     data.liker_id = uid;
                     data.liker_name = liker_info ? liker_info->getName() : "someone";
                     data.article_id = article_id;
                     data.article_title = article->getTitle();
+                    
                     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ARTICLE_PRAISE, std::move(data));
                 }
             }

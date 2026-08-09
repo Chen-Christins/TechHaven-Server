@@ -124,11 +124,12 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
 
             // Notify applicant
             {
-                EventOrgApplyData data;
+                EventOrgApplyData data = {};
                 data.type = "approved";
                 data.applicant_id = apply->getUserId();
                 data.org_name = apply->getOrgName();
                 data.org_id = org->getId();
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_APPLY, std::move(data));
             }
         } else {
@@ -148,11 +149,12 @@ int32_t OrganizationApplyReviewServlet::handle(chen::http::HttpRequest::ptr requ
 
             // Notify applicant
             {
-                EventOrgApplyData data;
+                EventOrgApplyData data = {};
                 data.type = "rejected";
                 data.applicant_id = apply->getUserId();
                 data.org_name = apply->getOrgName();
                 data.reason = reason;
+                
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_APPLY, std::move(data));
             }
         }

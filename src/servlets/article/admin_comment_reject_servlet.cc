@@ -69,10 +69,11 @@ int32_t AdminCommentRejectServlet::handle(chen::http::HttpRequest::ptr request, 
             }
 
             {
-                EventCommentData data;
+                EventCommentData data = {};
                 data.comment_id = cid;
                 data.author_id = author_id;
                 data.type = "comment_rejected";
+
                 chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_COMMENT, std::move(data));
             }
         }

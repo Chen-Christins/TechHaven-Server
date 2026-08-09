@@ -1,5 +1,4 @@
-#ifndef __BLOG_SERVLETS_ARTICLE_UPDATE_SERVLET_H__
-#define __BLOG_SERVLETS_ARTICLE_UPDATE_SERVLET_H__
+#pragma once
 
 #include "../../struct.h"
 #include "blog/data/article_info.h"
@@ -26,5 +25,3 @@ private:
 
 }
 }
-
-#endif // __BLOG_SERVLETS_ARTICLE_UPDATE_SERVLET_H__

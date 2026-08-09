@@ -5,8 +5,7 @@
  * @date 2025-05-11
  * @copyright Apache 2.0
  */
-#ifndef __BLOG_STRUCT_H__
-#define __BLOG_STRUCT_H__
+#pragma once
 
 #include <string>
 #include <memory>
@@ -117,5 +116,3 @@ public:
 };
 
 }
-
-#endif // __BLOG_STRUCT_H__

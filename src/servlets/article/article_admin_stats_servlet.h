@@ -1,5 +1,4 @@
-#ifndef __BLOG_SERVLETS_ARTICLE_ARTICLE_ADMIN_STATS_SERVLET_H__
-#define __BLOG_SERVLETS_ARTICLE_ARTICLE_ADMIN_STATS_SERVLET_H__
+#pragma once
 
 #include "../../struct.h"
 
@@ -18,5 +17,3 @@ public:
 
 }
 }
-
-#endif // __BLOG_SERVLETS_ARTICLE_ARTICLE_ADMIN_STATS_SERVLET_H__

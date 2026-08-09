@@ -98,13 +98,14 @@ int32_t OrganizationUserSwitchRoleServlet::handle(chen::http::HttpRequest::ptr r
                 role_name = "组织管理员";
             }
 
-            EventOrgMemberData data;
+            EventOrgMemberData data = {};
             data.type = "role_change";
             data.org_id = org_id;
             data.org_name = org_name;
             data.operator_id = uid;
             data.target_user_id = user_id;
             data.new_role_name = role_name;
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_MEMBER, std::move(data));
         }
 

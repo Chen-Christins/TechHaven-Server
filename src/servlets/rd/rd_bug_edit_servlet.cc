@@ -144,12 +144,14 @@ void RdBugEditServlet::notifyAssignee(int64_t assignee_id, data::BugInfo::ptr bu
     if (!assignee_id) {
         return;
     }
-    EventRdAssignData data;
+    
+    EventRdAssignData data = {};
     data.type = "bug";
     data.assignee_id = assignee_id;
     data.item_id = bug->getId();
     data.item_title = bug->getTitle();
     data.creator_id = bug->getCreatorId();
+
     chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_RD_ASSIGN, std::move(data));
 }
 

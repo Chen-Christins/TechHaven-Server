@@ -64,12 +64,13 @@ int32_t OrganizationApplyCreateServlet::handle(chen::http::HttpRequest::ptr requ
         // Notify all ADMIN users about new org application
         {
             auto applicant = UserMgr::GetInstance()->get(user_id);
-            EventOrgApplyData data;
+            EventOrgApplyData data = {};
             data.type = "created";
             data.applicant_id = user_id;
             data.applicant_name = applicant ? applicant->getName() : std::to_string(user_id);
             data.org_name = name;
             data.apply_id = info->getId();
+            
             chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_ORG_APPLY, std::move(data));
         }
     } while (0);
