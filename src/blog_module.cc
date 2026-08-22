@@ -4,14 +4,13 @@
 #include <chen/config/config.h>
 #include <chen/db/mysql.h>
 #include <chen/db/query_builder.h>
-#include <chen/db/sqlite3.h>
 #include <chen/http/http_server.h>
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
 #include <chen/iomanager/worker.h>
 #include <chen/log/log.h>
-#include <chen/util/env.h>
 
+#include <memory>
 #include <ranges>
 
 #include "./chunk_upload.h"
@@ -28,7 +27,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
 
-BlogModule::BlogModule() : chen::Module("Blog", "1.0", "blog_module") {}
+BlogModule::BlogModule() : Module("Blog", "1.0", "blog_module") {}
 
 bool BlogModule::onLoad() {
     INFO(logger) << "onLoad";
@@ -62,13 +61,12 @@ bool BlogModule::onGracefulUnload() {
 static void SyncAllReposFromGitHub() {
     std::vector<data::OrganizationReposInfo::ptr> repos;
     OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
-    for (auto& repo : repos) {
-        int64_t repo_id = repo->getId();
+    for (const auto& repo : repos) {
         std::string url = repo->getUrl();
         std::string token = repo->getToken();
-        chen::Scheduler::GetThis()->schedule([repo_id, url, token]() {
-            OrganizationRepoManager::SyncFromGitHub(repo_id, url, token);
-            OrganizationRepoPrManager::SyncFromGitHub(repo_id, url, token);
+        chen::Scheduler::GetThis()->schedule([id = repo->getId(), url, token]() {
+            OrganizationRepoManager::SyncFromGitHub(id, url, token);
+            OrganizationRepoPrManager::SyncFromGitHub(id, url, token);
         });
     }
 }
@@ -177,7 +175,7 @@ bool BlogModule::initMySQL() {
 
     const auto& mysql_dbs = g_mysql_dbs->getValue();
     for (const auto& params : mysql_dbs | std::views::values) {
-        chen::MySQL::ptr mysql(new chen::MySQL(params));
+        auto mysql = std::make_shared<chen::MySQL>(params);
         if (!mysql->connect()) {
             ERROR(logger) << "connect mysql failed";
             return false;
@@ -265,12 +263,12 @@ bool BlogModule::initMySQL() {
     return true;
 }
 
-void BlogModule::registerServlets() {
+void BlogModule::registerServlets() const {
     INFO(logger) << "registerServlets";
 
     for (auto& i : m_httpServers) {
-        auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
-        auto dp = hs->getServletDispatch();
+        const auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
+        const auto dp = hs->getServletDispatch();
 
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
         // 用户相关
@@ -457,7 +455,7 @@ void BlogModule::registerServlets() {
     }
 }
 
-void BlogModule::registerWSServlets() {
+void BlogModule::registerWSServlets() const {
     INFO(logger) << "registerWSServlets";
 
     for (auto& i : m_wsServers) {
@@ -475,10 +473,10 @@ void BlogModule::registerWSServlets() {
     }
 }
 
-void BlogModule::registerRPCMethods() {
+void BlogModule::registerRPCMethods() const {
     INFO(logger) << "registerRPCMethods";
 
-    for (auto& s : m_rpcServers) {
+    for (const auto& s : m_rpcServers) {
         if (!s) {
             continue;
         }
@@ -510,7 +508,7 @@ void BlogModule::unregisterWSServlets() {
 void BlogModule::unregisterRPCMethods() {
     std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
     getAllRpcServer(rpc_servers);
-    for (auto& s : rpc_servers) {
+    for (const auto& s : rpc_servers) {
         if (!s) {
             continue;
         }
@@ -528,5 +526,5 @@ chen::Module* CreateModule() {
     return module;
 }
 
-void DestroyModule(chen::Module* module) { delete module; }
+void DestroyModule(const chen::Module* module) { delete module; }
 }

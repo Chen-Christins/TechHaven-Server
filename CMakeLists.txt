@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.22)
-project(Blog)
+project(TechHaven-Server)
 
 include(cmake/common.cmake)
 include(cmake/utils.cmake)
-include(cmake/dependcies.cmake)
+include(cmake/dependencies.cmake)
 
 include_directories(.)
 include_directories(${PROJECT_SOURCE_DIR}/protocol/include)

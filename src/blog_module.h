@@ -73,22 +73,22 @@ private:
     /**
      * @brief 初始化数据库
      */
-    bool initMySQL();
+    static bool initMySQL();
 
     /**
      * @brief 注册Servlet
      */
-    void registerServlets();
+    void registerServlets() const;
 
     /**
      * @brief 注册WebSocket Servlet
      */
-    void registerWSServlets();
+    void registerWSServlets() const;
 
     /**
      * @brief 注册RPC方法
      */
-    void registerRPCMethods();
+    void registerRPCMethods() const;
 
     /**
      * @brief 清空所有已注册的 HTTP Servlet 路由
