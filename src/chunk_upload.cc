@@ -8,7 +8,7 @@ static chen::Logger::ptr g_logger = LOG_ROOT();
 ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upload_id
         , const std::string& file_name, size_t total_size, size_t chunk_size, size_t total_chunks
         , const std::string& biz_type, int64_t biz_id, const std::string& dir_name) {
-    std::lock_guard<std::shared_mutex> lock(m_mtx);
+    std::lock_guard lock(m_mtx);
 
     auto session = std::make_shared<ChunkUploadSession>();
     session->upload_id = upload_id;
@@ -29,7 +29,7 @@ ChunkUploadSession::ptr ChunkUploadManager::createSession(const std::string& upl
 }
 
 ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload_id) {
-    std::shared_lock<std::shared_mutex> lock(m_mtx);
+    std::shared_lock lock(m_mtx);
     auto it = m_sessions.find(upload_id);
     if (it != m_sessions.end()) {
         return it->second;
@@ -38,7 +38,7 @@ ChunkUploadSession::ptr ChunkUploadManager::getSession(const std::string& upload
 }
 
 void ChunkUploadManager::removeSession(const std::string& upload_id) {
-    std::lock_guard<std::shared_mutex> lock(m_mtx);
+    std::lock_guard lock(m_mtx);
     m_sessions.erase(upload_id);
 }
 
@@ -48,7 +48,7 @@ void ChunkUploadManager::cleanupExpiredSessions() {
     std::vector<std::string> temp_files_to_remove;
 
     {
-        std::shared_lock<std::shared_mutex> lock(m_mtx);
+        std::shared_lock lock(m_mtx);
         for (auto& kv : m_sessions) {
             auto& session = kv.second;
             if (now - session->created_at > k_session_ttl) {
@@ -71,7 +71,7 @@ void ChunkUploadManager::cleanupExpiredSessions() {
 
     // 移除过期会话
     if (!expired_ids.empty()) {
-        std::lock_guard<std::shared_mutex> lock(m_mtx);
+        std::lock_guard lock(m_mtx);
         for (auto& id : expired_ids) {
             m_sessions.erase(id);
         }
