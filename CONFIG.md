@@ -8,8 +8,8 @@
 |------|------|
 | `bin/conf/system.yml.tpl` | 运行时配置模板：服务端口、日志、MySQL、Redis、工作线程 |
 | `bin/conf/TechHaven.yml.tpl` | 业务配置模板：AI、超级管理员、分词字典/索引路径 |
-| `bin/conf/system.yml` | 由模板渲染出的**实际生效**配置（被框架加载） |
-| `bin/conf/TechHaven.yml` | 由模板渲染出的**实际生效**配置（被框架加载） |
+| `bin/conf/system.yml` | 由模板渲染出的**实际生效**配置（被框架加载，**不入库**） |
+| `bin/conf/TechHaven.yml` | 由模板渲染出的**实际生效**配置（被框架加载，**不入库**） |
 | `bin/conf/dev.env` | 开发环境变量（入库） |
 | `bin/conf/prod.env.example` | 生产环境变量模板（入库） |
 | `bin/conf/prod.env` | 生产环境变量（**不入库**，由运维从 example 复制后填写真实值） |
@@ -118,3 +118,4 @@ uint64_t id = g_upload_dir->addListener([](const std::string& old_val, const std
 3. **改模板后必须重新渲染**：直接改 `system.yml` / `TechHaven.yml` 会在下次 `switch-env.sh` 时被覆盖，请始终改 `.tpl` 和 `.env`。
 4. **未定义变量会报错**：模板中出现 `${...}` 但 env 文件里没有对应变量时，脚本会终止并提示。
 5. **常量不走占位符**：不会随环境变化的项直接写死，减少 env 文件噪音。
+6. **`WORK_PATH` 是内置变量**：部署目录（`work_path`）可直接在 env 文件里配置（如 `prod.env` 中 `WORK_PATH=/home/web/apps/server`）；若未设置则回退为仓库根目录。

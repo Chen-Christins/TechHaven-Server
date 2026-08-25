@@ -7,7 +7,7 @@
 #   ./switch-env.sh prod    # 使用 bin/conf/prod.env 渲染配置（不存在则提示先复制 prod.env.example）
 #
 # 说明:
-#   - 根据仓库根目录自动推导 WORK_PATH，无需按机器手动修改绝对路径
+#   - WORK_PATH 优先取自 <ENV>.env（如 prod.env 中的部署路径），未设置时自动用仓库根目录
 #   - 将 bin/conf/ 下所有 *.yml.tpl 渲染为 *.yml（自动发现，无需在脚本中登记文件名）
 #   - 使用 envsubst 渲染模板；未安装 envsubst 时回退到 sed
 #   - 仅切换配置，不重启服务（如需生效请自行重启或发送 SIGHUP 热重载）
@@ -16,6 +16,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CONF_DIR="$ROOT_DIR/bin/conf"
+# 渲染输出目录（默认与模板同目录；打包时可覆盖为 dist/conf）
+OUT_CONF_DIR="${OUT_CONF_DIR:-$CONF_DIR}"
 
 ENV_NAME="${1:-}"
 
@@ -46,7 +48,8 @@ set -a
 . "$ENV_FILE"
 set +a
 
-export WORK_PATH="$ROOT_DIR"
+# WORK_PATH 可由调用方覆盖（如打包时指定远程部署目录）
+export WORK_PATH="${WORK_PATH:-$ROOT_DIR}"
 
 # 渲染单个模板文件
 render() {
@@ -84,11 +87,13 @@ if [ ${#tpls[@]} -eq 0 ]; then
     exit 1
 fi
 
+mkdir -p "$OUT_CONF_DIR"
 for tpl in "${tpls[@]}"; do
-    out="${tpl%.tpl}"
+    out="$OUT_CONF_DIR/$(basename "${tpl%.tpl}")"
     render "$tpl" "$out"
     echo "  已生成 $(basename "$out")"
 done
 
-echo "已切换到 [$ENV_NAME] 配置"
+echo "配置已生成 [$ENV_NAME]"
 echo "  work_path: $WORK_PATH"
+echo "  输出目录: $OUT_CONF_DIR"
