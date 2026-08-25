@@ -3,9 +3,13 @@
 .vscode
 /build
 lib*.so         
-!/bin/conf
-/bin
+/bin/*
+!/bin/conf/
+bin/conf/prod.env
+bin/conf/*.yml
 *.log
+/dist
+*.tar.gz
 /thirdpart
 /uploads
 *3rdparty*
@@ -27,3 +31,4 @@ tools
 *.dat
 *.sql*
 dbproxy/data
+*upload*

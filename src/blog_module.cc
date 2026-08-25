@@ -112,6 +112,9 @@ bool BlogModule::onServerReady() {
     // 确保默认徽章数据存在
     BadgeMgr::GetInstance()->ensureDefaults();
 
+    // 确保存在超级管理员（否则无法配置 SMTP，进而无法注册新用户）
+    UserMgr::GetInstance()->ensureSuperAdmin();
+
     ArticleMgr::GetInstance()->start();
 
     // 初始化搜索索引（优先从磁盘加载，失败则后台异步构建）
@@ -129,6 +132,7 @@ bool BlogModule::onServerReady() {
         std::string errorsPath = workPath + "/errors.json";
         if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
             ERROR(logger) << "Failed to load error codes from " << errorsPath;
+            return false;
         }
     }
 
