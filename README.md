@@ -56,6 +56,25 @@
    docker run -p 8080:8080 blog-backend
    ```
 
+## 配置切换（开发/生产）
+
+配置位于 `bin/conf/`，通过 `switch-env.sh` 在开发与生产环境之间快速切换（日志路径、MySQL、Redis 等）：
+
+```sh
+# 切换为开发配置
+./switch-env.sh dev
+
+# 切换为生产配置（首次需先复制并填写 prod.env）
+cp bin/conf/prod.env.example bin/conf/prod.env
+./switch-env.sh prod
+```
+
+- 模板文件：`bin/conf/system.yml.tpl`、`bin/conf/TechHaven.yml.tpl`
+- 环境变量：`bin/conf/dev.env`、`bin/conf/prod.env`（生产密钥不入库）
+- 脚本会根据仓库根目录自动推导 `work_path`，无需按机器修改绝对路径
+
+详细的新增配置项方法见 [CONFIG.md](CONFIG.md)。
+
 ## 相关文档
 - [API_DOCS.md](API_DOCS.md) 详细接口说明
 - `orm_config/` 下 XML 文件定义所有表结构

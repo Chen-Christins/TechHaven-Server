@@ -43,39 +43,39 @@ workers:
 
 # Server configuration, including work path, PID file, and email service settings for sending notifications or alerts.
 server:
-  work_path: /home/chen/workspace/TechHaven-Server
+  work_path: ${WORK_PATH}
   pid_file: server.pid
 
 # Logging configuration, defining different loggers for root, system, and access logs with their respective levels, formatters, and appenders.
 logs:
   - name: root
-    level: debug
+    level: ${LOG_LEVEL}
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/TechHaven-Server/logs/root.log
+        file: ${WORK_PATH}/logs/root.log
       - type: StdoutLogAppender
   - name: system
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/TechHaven-Server/logs/system.log
+        file: ${WORK_PATH}/logs/system.log
       - type: StdoutLogAppender
   - name: access
     level: info
     appenders:
       - type: FileLogAppender
-        file: /home/chen/workspace/TechHaven-Server/logs/access.log
+        file: ${WORK_PATH}/logs/access.log
       - type: StdoutLogAppender
 
 # Database configuration for MySQL, defining the database path and SQL settings for the blog database.
 mysql:
   dbs:
     techhaven:
-      dbname: techhaven
-      host: 192.168.139.3
-      port: 3306
-      user: root
-      passwd: 123456
+      dbname: ${MYSQL_DBNAME}
+      host: ${MYSQL_HOST}
+      port: ${MYSQL_PORT}
+      user: ${MYSQL_USER}
+      passwd: ${MYSQL_PASSWD}
 
 # Redis configuration for Fox Thread, defining the Redis settings for the Fox Thread component, including the name, number of connections, and advance settings.
 fox_thread:
@@ -88,7 +88,7 @@ fox_thread:
 redis:
   config:
     blog:
-      host: 127.0.0.1:6379
+      host: ${REDIS_HOST}
       type: fox_redis
       pool: 1
       timeout: 100

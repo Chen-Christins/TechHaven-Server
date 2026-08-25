@@ -3,8 +3,9 @@
 .vscode
 /build
 lib*.so         
-!/bin/conf
-/bin
+/bin/*
+!/bin/conf/
+bin/conf/prod.env
 *.log
 /thirdpart
 /uploads
