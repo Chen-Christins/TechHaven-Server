@@ -30,6 +30,11 @@ public:
     
     void getAllIds(std::vector<int64_t>& ids, bool isValid);
 
+    /**
+     * @brief 确保存在超级管理员（启动时无管理员则按配置自动创建）
+     */
+    void ensureSuperAdmin();
+
     uint64_t listByPages(std::vector<blog::data::UserInfo::ptr>& infos, uint64_t offset, uint64_t size
         , int32_t role, int32_t state, int32_t days, bool isValid);
 

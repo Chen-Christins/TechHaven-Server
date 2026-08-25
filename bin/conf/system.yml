@@ -50,21 +50,18 @@ server:
 logs:
   - name: root
     level: debug
-    formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/TechHaven-Server/logs/root.log
       - type: StdoutLogAppender
   - name: system
     level: info
-    formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/TechHaven-Server/logs/system.log
       - type: StdoutLogAppender
   - name: access
     level: info
-    formatter: "[%d{%Y-%m-%d %H:%M:%S.%f}]%T%t%T%N%T[%p]%T[%c]%T%f:%l%T%m%n"
     appenders:
       - type: FileLogAppender
         file: /home/chen/workspace/TechHaven-Server/logs/access.log
@@ -96,9 +93,3 @@ redis:
       pool: 1
       timeout: 100
   desc: "type: redis,redis_cluster,fox_redis,fox_redis_cluster"
-
-# system default ai model for article summmary
-ai:
-  type: glm
-  model: glm-4.7-flash
-  api_key: # system default AI API key, used when user has not configured their own AI settings

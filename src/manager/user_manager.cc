@@ -3,6 +3,7 @@
 #include "cache_util.h"
 #include "../util.h"
 
+#include <chen/config/config.h>
 #include <chen/log/log.h>
 
 namespace blog {
@@ -10,6 +11,13 @@ namespace blog {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 1000;
+
+static chen::ConfigVar<std::string>::ptr g_admin_account =
+    chen::Config::Lookup("admin.account", std::string("admin"), "default super admin account");
+static chen::ConfigVar<std::string>::ptr g_admin_passwd =
+    chen::Config::Lookup("admin.passwd", std::string("admin123456"), "default super admin password");
+static chen::ConfigVar<std::string>::ptr g_admin_email =
+    chen::Config::Lookup("admin.email", std::string("admin@example.com"), "default super admin email");
 
 UserManager::UserManager()
     :m_cache(32, kCacheMaxSize, 0) {
@@ -126,6 +134,53 @@ blog::data::UserInfo::ptr UserManager::getByEmail(const std::string& v) {
         cacheIdMapping("usr:eml:" + v, info->getId());
     }
     return info;
+}
+
+void UserManager::ensureSuperAdmin() {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return;
+    }
+
+    // 查询是否已存在有效的管理员
+    auto qb = data::UserInfoDao::newQuery();
+    qb->select("id");
+    qb->where("role", "=", (int64_t)Role::ADMIN);
+    qb->where("is_deleted", "=", (int64_t)0);
+    std::vector<int64_t> ids;
+    if (qb->queryColumn<int64_t>(ids, db, "id")) {
+        ERROR(logger) << "query admin fail";
+        return;
+    }
+    if (!ids.empty()) {
+        return;
+    }
+
+    std::string account = g_admin_account->getValue();
+    std::string passwd = g_admin_passwd->getValue();
+    std::string email = g_admin_email->getValue();
+    if (account.empty() || passwd.empty()) {
+        ERROR(logger) << "admin account or password empty, skip seeding super admin";
+        return;
+    }
+
+    data::UserInfo::ptr info(new data::UserInfo);
+    info->setName(account);
+    info->setAccount(account);
+    info->setEmail(email);
+    info->setPasswd(chen::EncryptorUtil::MD5(passwd));
+    info->setRole(Role::ADMIN);
+    info->setState(Status::ACTIVE);
+    info->setIsDeleted(0);
+
+    if (data::UserInfoDao::Insert(info, db)) {
+        ERROR(logger) << "insert super admin failed: errno=" << db->getErrno() << " errstr=" << db->getErrStr();
+        return;
+    }
+    m_cache.set(info->getId(), info);
+
+    INFO(logger) << "seeded super admin account=" << account << " email=" << email;
 }
 
 blog::data::UserInfo::ptr UserManager::getByName(const std::string& v) {

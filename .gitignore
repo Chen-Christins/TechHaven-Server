@@ -27,3 +27,4 @@ tools
 *.dat
 *.sql*
 dbproxy/data
+*upload*
