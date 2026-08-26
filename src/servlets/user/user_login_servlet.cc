@@ -97,9 +97,18 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             UserLoginDeviceMgr::GetInstance()->kick(same_platform);
         }
 
+        LoginParam param = {};
+        param.uid = info->getId();
+        param.device_id = device_id;
+        param.platform = platform;
+        param.device_name = device_name;
+        param.user_agent = ua;
+        param.ip = ip;
+        param.token = token;
+        param.token_time = token_time;
+
         // 记录本次登录
-        UserLoginDeviceMgr::GetInstance()->recordLogin(info->getId(), device_id, platform
-                , device_name, ua, ip, token, token_time);
+        UserLoginDeviceMgr::GetInstance()->recordLogin(param);
 
         info->setLoginTime(now);
         data::UserInfoDao::Update(info, db);

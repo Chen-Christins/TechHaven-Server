@@ -14,6 +14,17 @@
 
 namespace blog {
 
+struct LoginParam {
+    int64_t uid;
+    std::string device_id;
+    std::string platform;
+    std::string device_name;
+    std::string user_agent;
+    std::string ip;
+    std::string token;
+    int64_t token_time;
+};
+
 class UserLoginDeviceManager {
 public:
     UserLoginDeviceManager();
@@ -22,9 +33,7 @@ public:
      * @brief 记录一次登录（插入一条活跃设备记录并缓存 token）
      * @return 0 成功，负数失败
      */
-    int recordLogin(int64_t uid, const std::string& device_id, const std::string& platform
-        , const std::string& device_name, const std::string& user_agent, const std::string& ip
-        , const std::string& token, int64_t token_time);
+    int recordLogin(const LoginParam& param);
 
     /**
      * @brief 校验 token 是否属于 uid 且未过期（Redis 优先，DB 兜底）

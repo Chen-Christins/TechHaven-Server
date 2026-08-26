@@ -35,32 +35,31 @@ void UserLoginDeviceManager::removeTokenCache(const std::string& token) {
     chen::RedisUtil::Cmd("blog", "del %s", key.c_str());
 }
 
-int UserLoginDeviceManager::recordLogin(int64_t uid, const std::string& device_id, const std::string& platform
-        , const std::string& device_name, const std::string& user_agent, const std::string& ip
-        , const std::string& token, int64_t token_time) {
+int UserLoginDeviceManager::recordLogin(const LoginParam& param) {
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "recordLogin: GetDB failed";
         return -1;
     }
     auto info = std::make_shared<data::UserLoginDeviceInfo>();
-    info->setUserId(uid);
-    info->setDeviceId(device_id);
-    info->setPlatform(platform);
-    info->setDeviceName(device_name);
-    info->setUserAgent(user_agent);
-    info->setIp(ip);
-    info->setToken(token);
-    info->setTokenTime(token_time);
+    info->setUserId(param.uid);
+    info->setDeviceId(param.device_id);
+    info->setPlatform(param.platform);
+    info->setDeviceName(param.device_name);
+    info->setUserAgent(param.user_agent);
+    info->setIp(param.ip);
+    info->setToken(param.token);
+    info->setTokenTime(param.token_time);
     info->setIsActive(1);
     info->setLoginTime(time(0));
     info->setLastActiveTime(time(0));
     info->setLogoutTime(EmptyTimestamp());
     if (data::UserLoginDeviceInfoDao::Insert(info, db)) {
-        ERROR(logger) << "recordLogin: Insert failed";
+        ERROR(logger) << "recordLogin: Insert failed"
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
-    cacheToken(token, uid, token_time);
+    cacheToken(param.token, param.uid, param.token_time);
     return 0;
 }
 
@@ -155,7 +154,8 @@ int UserLoginDeviceManager::kick(data::UserLoginDeviceInfo::ptr info) {
     info->setLogoutTime(time(0));
     info->setUpdateTime(time(0));
     if (data::UserLoginDeviceInfoDao::Update(info, db)) {
-        ERROR(logger) << "kick: Update failed";
+        ERROR(logger) << "kick: Update failed"
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
     removeTokenCache(info->getToken());
@@ -185,7 +185,8 @@ int UserLoginDeviceManager::updateToken(const std::string& old_token, const std:
     info->setLastActiveTime(time(0));
     info->setUpdateTime(time(0));
     if (data::UserLoginDeviceInfoDao::Update(info, db)) {
-        ERROR(logger) << "updateToken: Update failed";
+        ERROR(logger) << "updateToken: Update failed"
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return -1;
     }
     removeTokenCache(old_token);
@@ -207,7 +208,8 @@ int UserLoginDeviceManager::listActiveByUser(std::vector<data::UserLoginDeviceIn
     qb->where("is_active", "=", (int64_t)1);
     qb->orderBy("last_active_time", "DESC");
     if (data::UserLoginDeviceInfoDao::QueryByBuilder(results, qb, db)) {
-        ERROR(logger) << "listActiveByUser: QueryByBuilder failed";
+        ERROR(logger) << "listActiveByUser: QueryByBuilder failed"
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return 0;
     }
     return (int)results.size();
