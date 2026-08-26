@@ -1,0 +1,25 @@
+<table name="user_login_device" namespace="blog.data" desc="用户登录设备记录表">
+    <columns>
+        <column name="id" type="int64" auto_increment="true" desc="主键"/>
+        <column name="user_id" type="int64" desc="用户ID"/>
+        <column name="device_id" type="string" length="64" desc="设备唯一标识（客户端 X-Device-Id）"/>
+        <column name="platform" type="string" length="16" desc="平台: mobile/pc"/>
+        <column name="device_name" type="string" length="128" desc="设备名称（浏览器·系统，如 Chrome · macOS）"/>
+        <column name="user_agent" type="string" length="512" desc="User-Agent"/>
+        <column name="ip" type="string" length="64" desc="登录IP"/>
+        <column name="token" type="string" length="64" desc="该设备会话 token"/>
+        <column name="token_time" type="int64" desc="token 过期时间戳"/>
+        <column name="is_active" type="int32" default="1" desc="是否有效登录: 1有效, 0已退出/被顶掉"/>
+        <column name="login_time" type="datetime" desc="登录时间"/>
+        <column name="last_active_time" type="datetime" desc="最近活跃时间"/>
+        <column name="logout_time" type="datetime" desc="退出时间"/>
+        <column name="create_time" type="datetime" default="current_timestamp" desc="记录创建时间"/>
+        <column name="update_time" type="datetime" default="current_timestamp" desc="记录更新时间"/>
+    </columns>
+    <indexs>
+        <index name="pk" cols="id" type="pk"/>
+        <index name="uniq_token" cols="token" type="uniq"/>
+        <index name="idx_device" cols="device_id" type="index"/>
+        <index name="idx_user_platform" cols="user_id,platform" type="index"/>
+    </indexs>
+</table>

@@ -138,6 +138,8 @@
 #include "../servlets/user/user_ai_config_servlet.h"                        // IWYU pragma: keep
 #include "../servlets/user/user_assignment_list_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/user/user_create_servlet.h"                           // IWYU pragma: keep
+#include "../servlets/user/user_device_kick_servlet.h"                      // IWYU pragma: keep
+#include "../servlets/user/user_device_list_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/user/user_exists_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_follow_servlet.h"                           // IWYU pragma: keep
 #include "../servlets/user/user_follower_list_servlet.h"                    // IWYU pragma: keep

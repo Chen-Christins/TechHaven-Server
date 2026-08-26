@@ -3,7 +3,7 @@
 #include <chen/log/log.h>
 
 #include "../../manager/session_manager.h"
-#include "../../manager/user_manager.h"
+#include "../../manager/user_login_device_manager.h"
 #include "../../include/tables.h"
 
 namespace blog {
@@ -24,18 +24,12 @@ int32_t UserLogoutServlet::handle(chen::http::HttpRequest::ptr request, chen::ht
             break;
         }
 
-        int64_t uid = sdata->getData<int64_t>(CookieKey::USER_ID);
         result->setErrno(errcode::SUCCESS);
 
-        // 清除数据库中存储的 token，使其他设备登录失效
-        auto uinfo = UserMgr::GetInstance()->get(uid);
-        if (uinfo) {
-            uinfo->setToken("");
-            uinfo->setTokenTime(0);
-            auto db = getDB();
-            if (db) {
-                data::UserInfoDao::Update(uinfo, db);
-            }
+        // 只退出当前设备（另一平台/设备不受影响）
+        std::string token = request->getCookie(CookieKey::TOKEN);
+        if (!token.empty()) {
+            UserLoginDeviceMgr::GetInstance()->logout(token);
         }
 
         int64_t token_time = time(0) - 3600 * 24;

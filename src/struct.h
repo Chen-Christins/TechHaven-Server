@@ -19,6 +19,9 @@
 
 namespace blog {
 
+/// 获取客户端真实 IP（优先 X-Real-IP 头，否则取会话远端地址）
+std::string GetRemoteIP(chen::http::HttpRequest::ptr request, chen::http::HttpSession::ptr session);
+
 struct Result {
     typedef std::shared_ptr<Result> ptr;
     Result(int32_t ec = 0, const std::string& msg = "ok");
@@ -72,6 +75,7 @@ struct CookieKey {
     static const std::string TOKEN_TIME;
     static const std::string IS_AUTH;
     static const std::string EMAIL_LAST_TIME;
+    static const std::string DEVICE_ID;
 };
 
 class BlogServlet: public chen::http::Servlet {

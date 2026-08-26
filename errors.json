@@ -29,6 +29,8 @@
     { "errno": 2015,  "key": "USER_NOT_FOLLOWING",          "zh": "未关注该用户",              "en": "Not following this user" },
     { "errno": 2016,  "key": "USER_FOLLOW_FAILED",          "zh": "关注操作失败",              "en": "Follow operation failed" },
     { "errno": 2017,  "key": "SEND_CODE_FREQUENT",         "zh": "验证码发送过于频繁，请稍后再试", "en": "Verification code sent too frequently, please try again later" },
+    { "errno": 2018,  "key": "DEVICE_NOT_FOUND",           "zh": "登录设备不存在",              "en": "Login device not found" },
+    { "errno": 2019,  "key": "DEVICE_KICK_FAILED",         "zh": "设备下线失败",               "en": "Failed to kick device" },
 
     { "errno": 3001,  "key": "ARTICLE_NOT_FOUND",           "zh": "文章不存在",               "en": "Article not found" },
     { "errno": 3002,  "key": "ARTICLE_INVALID_TYPE",        "zh": "文章类型错误",              "en": "Invalid article type" },

@@ -2,6 +2,7 @@
 
 #include "../../error_codes.h"
 #include "../../manager/user_manager.h"
+#include "../../manager/user_login_device_manager.h"
 #include "../../manager/notification_manager.h"
 
 #include <chen/log/log.h>
@@ -68,16 +69,9 @@ int32_t PresenceServlet::onConnect(chen::http::HttpRequest::ptr header, chen::ht
         return -1;
     }
 
-    bool token_valid = false;
-    const std::string& stored_token = uinfo->getToken();
-    if (!stored_token.empty()) {
-        token_valid = (stored_token == token);
-    } else {
-        token_valid = (UserManager::GetToken(uinfo, token_time) == token);
-    }
-    if (!token_valid) {
-        INFO(logger) << "[Presence] onConnect FAIL: token mismatch, stored="
-            << (stored_token.empty() ? "(empty)" : "***") << " got=" << token;
+    // 以设备表 token 为准校验（Redis 优先，DB 兜底）
+    if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, token, time(0))) {
+        INFO(logger) << "[Presence] onConnect FAIL: token mismatch, uid=" << uid;
         sendError(session, errcode::NOT_LOGIN, "Token mismatch, please re-login");
         return -1;
     }

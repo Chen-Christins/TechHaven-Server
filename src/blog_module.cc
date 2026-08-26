@@ -223,6 +223,7 @@ bool BlogModule::initMySQL() {
         XX(HelpFaqsInfoDao, "help_faqs")
         XX(UserFeedbackInfoDao, "user_feedback")
         XX(UserAiConfigInfoDao, "user_ai_config")
+        XX(UserLoginDeviceInfoDao, "user_login_device")
 #undef XX
 
         // 数据库迁移：为已有表补充新增列
@@ -260,6 +261,7 @@ bool BlogModule::initMySQL() {
             XX(HelpFaqsInfoDao)
             XX(UserFeedbackInfoDao)
             XX(UserAiConfigInfoDao)
+            XX(UserLoginDeviceInfoDao)
 #undef XX
             INFO(logger) << "migrate database end";
         }
@@ -284,6 +286,8 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/user/list", XX(UserListServlet));
         dp->addServlet("/api/v1/user/logout", XX(UserLogoutServlet));
         dp->addServlet("/api/v1/user/refresh_token", XX(UserRefreshTokenServlet));
+        dp->addServlet("/api/v1/user/device/list", XX(UserDeviceListServlet));
+        dp->addServlet("/api/v1/user/device/kick", XX(UserDeviceKickServlet));
         dp->addServlet("/api/v1/user/forget_passwd", XX(UserResetPasswdServlet));
         dp->addServlet("/api/v1/user/exists", XX(UserExistsServlet));
         dp->addServlet("/api/v1/user/update", XX(UserUpdateServlet));

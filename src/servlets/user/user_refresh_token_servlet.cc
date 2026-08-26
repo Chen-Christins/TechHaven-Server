@@ -3,6 +3,7 @@
 #include <chen/log/log.h>
 
 #include "../../manager/user_manager.h"
+#include "../../manager/user_login_device_manager.h"
 #include "../../manager/system_settings_manager.h"
 #include "../../util.h"
 
@@ -47,19 +48,9 @@ int32_t UserRefreshTokenServlet::handle(chen::http::HttpRequest::ptr request, ch
             break;
         }
 
-        const std::string& stored_token = info->getToken();
-        if (stored_token.empty()) {
-            result->setErrno(errcode::NOT_LOGIN, "no stored token, please re-login");
-            break;
-        }
-        if (stored_token != token) {
+        // 校验 token：以设备表 token 为准
+        if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, token, time(0))) {
             result->setErrno(errcode::NOT_LOGIN, "token mismatch, please re-login");
-            break;
-        }
-
-        auto db = getDB();
-        if (!db) {
-            result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
 
@@ -72,9 +63,10 @@ int32_t UserRefreshTokenServlet::handle(chen::http::HttpRequest::ptr request, ch
         int64_t token_time = now + 3600 * session_timeout;
         std::string new_token = UserManager::generateToken();
 
-        info->setToken(new_token);
-        info->setTokenTime(token_time);
-        data::UserInfoDao::Update(info, db);
+        if (UserLoginDeviceMgr::GetInstance()->updateToken(token, new_token, token_time)) {
+            result->setErrno(errcode::DB_OPERATION_FAILED);
+            break;
+        }
 
         response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");
         response->setCookie(CookieKey::TOKEN, new_token, token_time, "/");
