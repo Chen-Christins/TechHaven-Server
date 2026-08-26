@@ -43,8 +43,9 @@ public:
     int64_t listByUserPages(std::vector<data::OrganizationRepoPrsInfo::ptr>& prs
         , int64_t uid, const std::string& state, uint64_t offset, uint64_t limit);
 
-    /// 从 GitHub API 全量同步某个仓库的 PR
-    static void SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token);
+    /// 从 GitHub API 同步某个仓库的 PR
+    /// @param max_prs 最多同步的 PR 条数，0 表示全量同步
+    static void SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token, int max_prs = 0);
 
     // ==================== RPC Webhook 处理 ====================
 

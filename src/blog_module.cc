@@ -66,7 +66,7 @@ static void SyncAllReposFromGitHub() {
         std::string token = repo->getToken();
         chen::Scheduler::GetThis()->schedule([id = repo->getId(), url, token]() {
             OrganizationRepoManager::SyncFromGitHub(id, url, token);
-            OrganizationRepoPrManager::SyncFromGitHub(id, url, token);
+            OrganizationRepoPrManager::SyncFromGitHub(id, url, token, 20);
         });
     }
 }

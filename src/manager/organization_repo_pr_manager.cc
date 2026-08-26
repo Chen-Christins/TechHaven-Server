@@ -161,6 +161,12 @@ int64_t OrganizationRepoPrManager::listByUserPages(std::vector<data::Organizatio
     return total;
 }
 
+/// MySQL TIMESTAMP 无法存储 0（1970-01-01），空时间统一写 DB 默认哨兵 '1980-01-01 00:00:00'
+static time_t emptyTimestamp() {
+    static time_t s_empty = chen::Str2Time("1980-01-01 00:00:00");
+    return s_empty;
+}
+
 /// 从 GitHub URL 提取 owner/repo
 static std::string extractGithubRepo(const std::string& url) {
     auto uri = chen::Uri::Create(url);
@@ -386,18 +392,20 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
             auto it = reviewers_json.find(si.number);
             info->setReviewers(it != reviewers_json.end() ? it->second : "[]");
         }
-        info->setClosedAt(si.closed_at);
-        info->setMergedAt(si.merged_at);
+        info->setClosedAt(si.closed_at > 0 ? si.closed_at : emptyTimestamp());
+        info->setMergedAt(si.merged_at > 0 ? si.merged_at : emptyTimestamp());
         info->setUpdateTime(time(0));
 
         if (existing) {
             if (data::OrganizationRepoPrsInfoDao::Update(info, db)) {
-                ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << info->getGithubPrId();
+                ERROR(logger) << "SyncPrFromGitHub: Update failed for PR #" << info->getGithubPrId()
+                    << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
                 continue;
             }
         } else {
             if (data::OrganizationRepoPrsInfoDao::Insert(info, db)) {
-                ERROR(logger) << "SyncPrFromGitHub: Insert failed for PR #" << info->getGithubPrId();
+                ERROR(logger) << "SyncPrFromGitHub: Insert failed for PR #" << info->getGithubPrId()
+                    << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
                 continue;
             }
             OrganizationRepoPrMgr::GetInstance()->add(info);
@@ -407,7 +415,7 @@ static int syncPage(const Json::Value& arr, int64_t repo_id, const std::string& 
     return synced;
 }
 
-void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token) {
+void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::string& repo_url, const std::string& token, int max_prs) {
     std::string repo_path = extractGithubRepo(repo_url);
     if (repo_path.empty()) {
         ERROR(logger) << "SyncPrFromGitHub: invalid repo url=" << repo_url;
@@ -443,7 +451,8 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
     const int kMaxPages = 10;
     int page_no = 0;
     int total_synced = 0;
-    std::string api_url = "https://api.github.com/repos/" + repo_path + "/pulls?state=all&per_page=50";
+    int per_page = max_prs > 0 ? max_prs : 50;
+    std::string api_url = "https://api.github.com/repos/" + repo_path + "/pulls?state=all&per_page=" + std::to_string(per_page);
 
     auto doGetWithRetry = [&](const std::string& url, int max_retries) -> chen::http::HttpResult::ptr {
         for (int retry = 0; retry <= max_retries; ++retry) {
@@ -477,6 +486,11 @@ void OrganizationRepoPrManager::SyncFromGitHub(int64_t repo_id, const std::strin
         }
 
         total_synced += syncPage(arr, repo_id, repo_path, headers, db);
+
+        // 限制条数时只取第一页，不再翻页
+        if (max_prs > 0) {
+            break;
+        }
 
         // 检查下一页
         std::string link = result->response->getHeader("link");
@@ -597,13 +611,14 @@ int32_t OrganizationRepoPrManager::HandlePRWebhook(const tagGithubPRInfo& info) 
         pr->setCommitSha(info.HeadSha);
     }
 
-    pr->setClosedAt(closed_at);
-    pr->setMergedAt(merged_at);
+    pr->setClosedAt(closed_at > 0 ? closed_at : emptyTimestamp());
+    pr->setMergedAt(merged_at > 0 ? merged_at : emptyTimestamp());
     pr->setUpdateTime(time(0));
 
     // 6. 写入 DB
     if (data::OrganizationRepoPrsInfoDao::InsertOrUpdate(pr, db)) {
-        ERROR(logger) << "HandlePRWebhook: Update failed for repo " << repo_id << " PR #" << info.Number;
+        ERROR(logger) << "HandlePRWebhook: Update failed for repo " << repo_id << " PR #" << info.Number
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return GITHUB_DB_OPERATION_FAILED;
     }
     DEBUG(logger) << "HandlePRWebhook: updated PR #" << info.Number
@@ -701,7 +716,8 @@ int32_t OrganizationRepoPrManager::HandlePRReviewWebhook(const tagGithubPRReview
 
     // 6. 写入 DB
     if (data::OrganizationRepoPrsInfoDao::InsertOrUpdate(pr, db)) {
-        ERROR(logger) << "HandlePRReviewWebhook: Update failed for repo " << repo_id << " PR #" << info.PRNumber;
+        ERROR(logger) << "HandlePRReviewWebhook: Update failed for repo " << repo_id << " PR #" << info.PRNumber
+            << ", errstr=" << db->getErrStr() << ", errno=" << db->getErrno();
         return GITHUB_DB_OPERATION_FAILED;
     }
 
