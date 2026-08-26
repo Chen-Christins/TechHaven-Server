@@ -1,6 +1,6 @@
 # 业务配置
 
-# system default ai model for article summmary
+# system default ai model for article summary
 ai:
   type: glm
   model: glm-4.7-flash
