@@ -9,7 +9,6 @@
 #include "../manager/assignment_user_rel_manager.h"         // IWYU pragma: keep
 #include "../manager/bug_manager.h"                         // IWYU pragma: keep
 #include "../manager/category_manager.h"                    // IWYU pragma: keep
-#include "../manager/chunk_upload_manager.h"                // IWYU pragma: keep
 #include "../manager/comment_manager.h"                     // IWYU pragma: keep
 #include "../manager/error_code_manager.h"                  // IWYU pragma: keep
 #include "../manager/export_record_manager.h"                // IWYU pragma: keep

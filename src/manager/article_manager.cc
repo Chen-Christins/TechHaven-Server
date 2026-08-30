@@ -1,6 +1,7 @@
 #include "article_manager.h"
 
 #include "cache_util.h"
+#include "../index.h"
 #include "../util.h"
 
 #include <chen/log/log.h>
@@ -646,6 +647,7 @@ void ArticleManager::onTimer() {
         m_cache.set(i->getId(), i);
         // 文章定时发布后，清除对应月份的日历缓存
         clearCalendarCache(i->getUserId(), i->getPublishTime());
+        IndexMgr::GetInstance()->updateArticle(i);
     }
     trans->commit();
 }

@@ -5,6 +5,7 @@
 #include <json/json.h>
 
 #include "../../util.h"
+#include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../event/event_define.h"
@@ -73,6 +74,8 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
                 << " errstr=" << db->getErrStr();
             break;
         }
+
+        IndexMgr::GetInstance()->updateArticle(info);
 
         // Notify author about review result + mark other admins' notifications as read
         {

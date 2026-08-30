@@ -7,8 +7,8 @@
 #include <chen/http/http_server.h>
 #include <chen/http/ws_server.h>
 #include <chen/http/ws_servlet.h>
-#include <chen/iomanager/worker.h>
 #include <chen/log/log.h>
+#include <chen/util/util.h>
 
 #include <memory>
 #include <ranges>
@@ -24,13 +24,22 @@
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
+
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
+static chen::ConfigVar<std::string>::ptr g_work_path =
+    chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
 
 BlogModule::BlogModule() : Module("Blog", "1.0", "blog_module") {}
 
 bool BlogModule::onLoad() {
     INFO(logger) << "onLoad";
+
+    if (g_work_path->getValue().empty()) {
+        ERROR(logger) << "work path is empty";
+        return false;
+    }
+
     return true;
 }
 
@@ -82,7 +91,7 @@ void BlogModule::onTick() {
     NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
 
     // 4. 清理过期的分块上传会话及临时文件
-    ::ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
+    ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
     // 5. 定时同步有 token 的仓库及其 PR（每 30 分钟）
     static int s_pr_sync_tick = 0;
@@ -117,23 +126,15 @@ bool BlogModule::onServerReady() {
 
     ArticleMgr::GetInstance()->start();
 
-    // 初始化搜索索引（优先从磁盘加载，失败则后台异步构建）
-    {
-        std::string workPath = chen::Config::Lookup<std::string>("server.work_path")->getValue();
-        std::string indexPath = workPath + "/search_index.dat";
-        if (!IndexMgr::GetInstance()->load(indexPath)) {
-            INFO(logger) << "index load failed, scheduling async build...";
-            chen::IOManager::GetThis()->schedule([indexPath]() {
-                IndexMgr::GetInstance()->build();
-                IndexMgr::GetInstance()->save(indexPath);
-            });
-        }
+    if (!IndexMgr::GetInstance()->initFromFile()) {
+        INFO(logger) << "index load failed";
+        // return false;
+    }
 
-        std::string errorsPath = workPath + "/errors.json";
-        if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
-            ERROR(logger) << "Failed to load error codes from " << errorsPath;
-            return false;
-        }
+    std::string errorsPath = g_work_path->getValue() + "/errors.json";
+    if (!ErrorCodeMgr::GetInstance()->load(errorsPath)) {
+        ERROR(logger) << "Failed to load error codes from " << errorsPath;
+        return false;
     }
 
     // HTTP 服务
