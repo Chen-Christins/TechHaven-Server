@@ -18,7 +18,6 @@ ArticleSearchServlet::ArticleSearchServlet()
 int32_t ArticleSearchServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        // keyword 预留，等 jiebacpp 接入后再启用 WORD 索引
         std::string keyword = request->getParam("keyword");
 
         int64_t category_id = request->getParamAs<int64_t>("category_id");
@@ -68,38 +67,10 @@ int32_t ArticleSearchServlet::handle(chen::http::HttpRequest::ptr request, chen:
             }
         }
 
-        auto index = IndexMgr::GetInstance();
-
-        // 无过滤条件时直接分页查 DB
-        if (params.empty()) {
-            int offset = (page - 1) * page_size;
-            std::vector<data::ArticleInfo::ptr> infos;
-            int64_t total = ArticleMgr::GetInstance()->listByUserIdPages(infos, 0, offset, page_size, true, 0);
-            result->set("total", total);
-            Json::Value list(Json::arrayValue);
-            for (auto& i : infos) {
-                Json::Value item;
-                auto uinfo = UserMgr::GetInstance()->get(i->getUserId());
-                item["id"] = i->getId();
-                item["author"] = uinfo ? uinfo->getName() : "";
-                item["title"] = i->getTitle();
-                item["summary"] = i->getContent().substr(0, 100);
-                item["type"] = i->getType();
-                item["state"] = i->getState();
-                item["views"] = i->getViews();
-                item["praise"] = i->getPraise();
-                item["favorites"] = i->getFavorites();
-                item["publish_time"] = i->getPublishTime();
-                list.append(item);
-            }
-            result->jsondata["list"] = list;
-            break;
-        }
-
         // 有过滤条件时，走位图索引
         uint32_t max_need = page * page_size;
         std::vector<uint64_t> ids;
-        int32_t total = index->search(ids, params, max_need);
+        int32_t total = IndexMgr::GetInstance()->search(ids, params, max_need);
 
         if (total < 0) {
             result->set("total", 0);

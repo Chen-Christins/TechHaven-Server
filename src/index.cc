@@ -10,9 +10,9 @@
 
 #include <chen/util/fs_util.h>
 
-#include "manager/article_manager.h"
 #include "manager/article_category_rel_manager.h"
 #include "manager/article_label_rel_manager.h"
+#include "manager/article_manager.h"
 #include "manager/category_manager.h"
 #include "manager/label_manager.h"
 
@@ -25,16 +25,7 @@ static chen::ConfigVar<std::string>::ptr g_jieba_dict_path =
 static chen::ConfigVar<std::string>::ptr g_index_path =
     chen::Config::Lookup("search.index_path", std::string(""), "search index file path");
 
-struct ParamArgsInfo {
-    std::string name;
-    uint64_t key;
-    uint32_t type;
-};
-
-Index::Index()
-    :m_createTime(0)
-    ,m_endTime(0) {
-}
+Index::Index() : m_createTime(0), m_endTime(0) {}
 
 Index::~Index() = default;
 
@@ -58,20 +49,14 @@ chen::ds::Bitmap::ptr Index::get(uint64_t type, uint64_t key) {
 }
 
 void Index::initJieba() {
-    if (m_jieba) {
+    if (hasJieba()) {
         return;
     }
     std::string dict_path = g_jieba_dict_path->getValue();
-    if (dict_path.empty()) {
-        dict_path = CPPJIEBA_DICT_PATH;
-    }
     try {
-        m_jieba.reset(new cppjieba::Jieba(
-            dict_path + "/jieba.dict.utf8",
-            dict_path + "/hmm_model.utf8",
-            dict_path + "/user.dict.utf8",
-            dict_path + "/idf.utf8",
-            dict_path + "/stop_words.utf8"));
+        m_jieba.reset(new cppjieba::Jieba(dict_path + "/jieba.dict.utf8", dict_path + "/hmm_model.utf8",
+                                          dict_path + "/user.dict.utf8", dict_path + "/idf.utf8",
+                                          dict_path + "/stop_words.utf8"));
         INFO(logger) << "jieba initialized, dict_path=" << dict_path;
     } catch (const std::exception& e) {
         ERROR(logger) << "jieba init failed: " << e.what();
@@ -106,8 +91,7 @@ void Index::build() {
     }
     m_endTime = time(0);
     m_isReady.store(true);
-    INFO(logger) << "Index build over... used="
-        << (m_endTime - m_createTime) << " doc.size=" << m_docs.size();
+    INFO(logger) << "Index build over... used=" << (m_endTime - m_createTime) << " doc.size=" << m_docs.size();
 }
 
 void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
@@ -146,9 +130,10 @@ void Index::buildIdx(data::ArticleInfo::ptr info, uint32_t idx) {
     }
 }
 
-int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params
-        , uint32_t max_size) {
-    if (!m_isReady.load()) {
+int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::set<uint64_t>>& params,
+                      uint32_t max_size) {
+    if (!isReady()) {
+        WARN(logger) << "Index not initialized";
         return -1;
     }
     auto v = query(params);
@@ -162,9 +147,9 @@ int32_t Index::search(std::vector<uint64_t>& ids, const std::map<uint64_t, std::
     return v->getCount();
 }
 
-int32_t Index::property(std::map<uint64_t, std::map<uint64_t, uint64_t>>& props
-        , const std::map<uint64_t, std::set<uint64_t>>& params
-        , std::map<uint64_t, std::set<uint64_t>>& querys) {
+int32_t Index::property(std::map<uint64_t, std::map<uint64_t, uint64_t>>& props,
+                        const std::map<uint64_t, std::set<uint64_t>>& params,
+                        std::map<uint64_t, std::set<uint64_t>>& querys) {
     // TODO: Index::property
     return -1;
 }
@@ -237,7 +222,7 @@ uint64_t Index::hash(const std::string& str, bool save) {
 }
 
 void Index::buildWordIdx(const std::string& str, uint32_t idx) {
-    if (!m_jieba || str.empty()) {
+    if (!hasJieba() || str.empty()) {
         return;
     }
     std::vector<std::string> words;
@@ -255,7 +240,7 @@ void Index::buildWordIdx(const std::string& str, uint32_t idx) {
 }
 
 void Index::cutWord(const std::string& str, std::vector<std::string>& words) {
-    if (m_jieba) {
+    if (hasJieba()) {
         m_jieba->Cut(str, words, true);
     }
 }
@@ -291,7 +276,9 @@ void Index::addArticle(data::ArticleInfo::ptr info) {
     buildIdx(info, idx);
 
     std::string path = g_index_path->getValue();
-    if (!path.empty()) save(path);
+    if (!path.empty()) {
+        save(path);
+    }
 }
 
 void Index::removeArticle(uint64_t article_id) {
@@ -310,7 +297,9 @@ void Index::removeArticle(uint64_t article_id) {
     m_docMap.erase(article_id);
 
     std::string path = g_index_path->getValue();
-    if (!path.empty()) save(path);
+    if (!path.empty()) {
+        save(path);
+    }
 }
 
 void Index::updateArticle(data::ArticleInfo::ptr info) {
@@ -322,13 +311,13 @@ void Index::updateArticle(data::ArticleInfo::ptr info) {
 }
 
 bool Index::save(const std::string& path) {
-    if (!m_isReady.load()) {
+    if (!isReady()) {
         ERROR(logger) << "index not ready, skip save";
         return false;
     }
     chen::ByteArray::ptr ba(new chen::ByteArray);
-    ba->writeUint32(0x42494458);       // magic 'BIDX'
-    ba->writeUint32(1);                // version
+    ba->writeUint32(0x42494458); // magic 'BIDX'
+    ba->writeUint32(1);          // version
     ba->writeInt64(m_docs.size());
     for (auto id : m_docs) {
         ba->writeInt64(id);
@@ -350,7 +339,7 @@ bool Index::save(const std::string& path) {
         for (auto& [key, bitmap] : keyMap) {
             ba->writeInt64(key);
             size_t pos_before = ba->getPosition();
-            ba->writeUint32(0);  // placeholder
+            ba->writeUint32(0); // placeholder
             bitmap->writeTo(ba);
             size_t pos_after = ba->getPosition();
             ba->setPosition(pos_before);
@@ -358,6 +347,7 @@ bool Index::save(const std::string& path) {
             ba->setPosition(pos_after);
         }
     }
+    ba->setPosition(0);
     if (!ba->writeToFile(path)) {
         ERROR(logger) << "failed to write index file: " << path;
         return false;
@@ -377,6 +367,7 @@ bool Index::load(const std::string& path) {
         ERROR(logger) << "failed to read index file: " << path;
         return false;
     }
+    ba->setPosition(0);
     if (ba->getSize() < 12) {
         return false;
     }
@@ -422,7 +413,7 @@ bool Index::load(const std::string& path) {
         uint32_t key_count = ba->readUint32();
         for (uint32_t ki = 0; ki < key_count; ++ki) {
             uint64_t key = ba->readInt64();
-            ba->readUint32();  // bm_size, consumed by readFrom below
+            ba->readUint32(); // bm_size, consumed by readFrom below
             auto bm = std::make_shared<chen::ds::Bitmap>(0);
             if (!bm->readFrom(ba)) {
                 ERROR(logger) << "failed to read bitmap type=" << type << " key=" << key;
@@ -437,4 +428,21 @@ bool Index::load(const std::string& path) {
     return true;
 }
 
+bool Index::initFromFile() {
+    if (g_index_path->getValue().empty()) {
+        ERROR(logger) << "index path is empty";
+        return false;
+    }
+
+    std::string index_path = g_index_path->getValue();
+    if (!load(index_path)) {
+        WARN(logger) << "index load failed, building index from " << index_path;
+        build();
+        save(index_path);
+        return false;
+    }
+
+    return true;
 }
+
+} // namespace blog
