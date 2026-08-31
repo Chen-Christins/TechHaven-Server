@@ -3,7 +3,9 @@
 #include <chen/log/log.h>
 
 #include "../../util.h"
+#include "../../util/ua_parser.h"
 #include "../../manager/user_manager.h"
+#include "../../manager/user_login_device_manager.h"
 #include "../../manager/system_settings_manager.h"
 
 namespace blog {
@@ -66,12 +68,52 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         int64_t token_time = now + 3600 * session_timeout;
         std::string token = UserManager::generateToken();
 
-        info->setToken(token);
-        info->setTokenTime(token_time);
+        // 设备信息
+        std::string ua = request->getHeader("User-Agent");
+        const char* platform = DetectPlatform(ua);
+        std::string device_name = ParseDeviceName(ua);
+        std::string ip = GetRemoteIP(request, session);
+
+        // 设备标识：优先客户端上报 X-Device-Id，否则回退/生成持久 DEVICE_ID cookie
+        std::string device_id = request->getHeader("X-Device-Id");
+        if (device_id.empty()) {
+            device_id = request->getCookie(CookieKey::DEVICE_ID);
+        }
+        if (device_id.empty()) {
+            device_id = UserManager::generateToken();
+            // 长期持久 cookie（约 10 年），保证网页端设备标识稳定
+            response->setCookie(CookieKey::DEVICE_ID, device_id, time(0) + 10 * 365 * 24 * 3600, "/");
+        }
+
+        // 设备唯一：同一设备被其他账号占用时顶掉
+        auto device_owner = UserLoginDeviceMgr::GetInstance()->getActiveByDevice(device_id);
+        if (device_owner && device_owner->getUserId() != info->getId()) {
+            UserLoginDeviceMgr::GetInstance()->kick(device_owner);
+        }
+
+        // 同平台互顶：顶掉该用户同平台旧设备
+        auto same_platform = UserLoginDeviceMgr::GetInstance()->getActiveByUserAndPlatform(info->getId(), platform);
+        if (same_platform) {
+            UserLoginDeviceMgr::GetInstance()->kick(same_platform);
+        }
+
+        LoginParam param = {};
+        param.uid = info->getId();
+        param.device_id = device_id;
+        param.platform = platform;
+        param.device_name = device_name;
+        param.user_agent = ua;
+        param.ip = ip;
+        param.token = token;
+        param.token_time = token_time;
+
+        // 记录本次登录
+        UserLoginDeviceMgr::GetInstance()->recordLogin(param);
+
         info->setLoginTime(now);
-        uint64_t ts1 = chen::GetCurrentUs();
         data::UserInfoDao::Update(info, db);
-        INFO(logger) << "update used: " << (chen::GetCurrentUs() - ts1) / 1000.0 << " ms";
+        INFO(logger) << "login user=" << info->getId() << " platform=" << platform
+            << " device=" << device_name;
 
         response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");
         response->setCookie(CookieKey::TOKEN, token, token_time, "/");

@@ -28,3 +28,5 @@
 #include "blog/data/task_info.h"                        // IWYU pragma: keep
 #include "blog/data/user_ai_config_info.h"              // IWYU pragma: keep
 #include "blog/data/user_follow_rel_info.h"             // IWYU pragma: keep
+#include "blog/data/user_info.h"                        // IWYU pragma: keep
+#include "blog/data/user_login_device_info.h"           // IWYU pragma: keep

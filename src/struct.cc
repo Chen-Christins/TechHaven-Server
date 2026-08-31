@@ -4,6 +4,7 @@
 
 #include "blog/data/user_info.h"
 #include "manager/session_manager.h"
+#include "manager/user_login_device_manager.h"
 #include "manager/user_manager.h"
 #include "manager/error_code_manager.h"
 #include "error_codes.h"
@@ -19,6 +20,7 @@ const std::string CookieKey::TOKEN = "S_TOKEN";
 const std::string CookieKey::TOKEN_TIME = "S_TOKEN_TIME";
 const std::string CookieKey::IS_AUTH = "IS_AUTH";
 const std::string CookieKey::EMAIL_LAST_TIME = "EMAIL_LAST_TIME";
+const std::string CookieKey::DEVICE_ID = "DEVICE_ID";
 
 std::string GetRemoteIP(chen::http::HttpRequest::ptr request, chen::http::HttpSession::ptr session) {
     auto rt = request->getHeader("X-Real-IP");
@@ -139,18 +141,15 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
     auto data = getSessionData(request, response);
     int64_t uid = data->getData<int64_t>(CookieKey::USER_ID);
     if (uid) {
-        // 即使 session 已登录，也要校验 token 是否仍然有效（单设备登录）
+        // 即使 session 已登录，也要校验 token 是否仍然有效（同平台互顶 / 设备唯一）
         data::UserInfo::ptr uinfo = UserMgr::GetInstance()->get(uid);
         if (uinfo && uinfo->getState() == 1) {
-            const std::string& stored_token = uinfo->getToken();
-            if (!stored_token.empty()) {
-                auto cookie_token = request->getCookie(CookieKey::TOKEN);
-                if (stored_token != cookie_token) {
-                    // token 不匹配，已被其他设备登录顶掉
-                    data->setData(CookieKey::USER_ID, (int64_t)0);
-                    data->setData(CookieKey::IS_AUTH, (int32_t)1);
-                    return false;
-                }
+            auto cookie_token = request->getCookie(CookieKey::TOKEN);
+            if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, cookie_token, time(0))) {
+                // token 不匹配，已被其他设备/平台登录顶掉
+                data->setData(CookieKey::USER_ID, (int64_t)0);
+                data->setData(CookieKey::IS_AUTH, (int32_t)1);
+                return false;
             }
         }
         // 刷新 Redis 会话持久化
@@ -182,20 +181,8 @@ bool BlogServlet::initLogin(chen::http::HttpRequest::ptr request
         if (uinfo->getState() != 1) {
             break;
         }
-        // 验证 token：优先用数据库存储的随机 token（单设备登录），
-        // 若为空则回退到旧的 MD5 计算方式（兼容旧账号）
-        bool token_valid = false;
-        const std::string& stored_token = uinfo->getToken();
-        if (!stored_token.empty()) {
-            if (stored_token == token) {
-                token_valid = true;
-            }
-        } else {
-            if (UserManager::GetToken(uinfo, token_time) == token) {
-                token_valid = true;
-            }
-        }
-        if (!token_valid) {
+        // 验证 token：以设备表 token 为准（Redis 优先，DB 兜底）
+        if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, token, time(0))) {
             INFO(logger)
                 << GetRemoteIP(request, session) << "\t"
                 << request->getCookie(CookieKey::SESSION_KEY, "-") << "\t"
