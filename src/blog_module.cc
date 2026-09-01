@@ -47,6 +47,7 @@ bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
     ArticleMgr::GetInstance()->stop();
     NotificationMgr::GetInstance()->closeAllConnections();
+    MessageMgr::GetInstance()->closeAllChatConnections();
     unregisterWSServlets();
     unregisterServlets();
     unregisterRPCMethods();
@@ -57,6 +58,7 @@ bool BlogModule::onDrain() {
     INFO(logger) << "onDrain";
     ArticleMgr::GetInstance()->stop();
     NotificationMgr::GetInstance()->closeAllConnections();
+    MessageMgr::GetInstance()->closeAllChatConnections();
     return true;
 }
 
@@ -488,6 +490,9 @@ void BlogModule::registerWSServlets() const {
 
         servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
         dp->addServlet("/ws/v1/presence", presence_servlet);
+
+        servlet::MessageWSServlet::ptr message_ws_servlet(std::make_shared<servlet::MessageWSServlet>());
+        dp->addServlet("/ws/v1/messages", message_ws_servlet);
     }
 }
 

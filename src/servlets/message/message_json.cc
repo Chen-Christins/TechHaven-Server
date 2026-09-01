@@ -1,6 +1,6 @@
 #include "message_json.h"
 
-#include "../../manager/notification_manager.h"
+#include "../../manager/message_manager.h"
 #include "../../manager/user_manager.h"
 
 namespace blog {
@@ -19,7 +19,7 @@ void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, 
 
     json["id"] = (Json::Int64)conv->getId();
     json["peer_id"] = (Json::Int64)peer_id;
-    json["online"] = NotificationMgr::GetInstance()->isPresenceConnected(peer_id);
+    json["online"] = MessageMgr::GetInstance()->isChatConnected(peer_id);
 
     auto user = UserMgr::GetInstance()->get(peer_id);
     json["name"] = user ? user->getName() : "";

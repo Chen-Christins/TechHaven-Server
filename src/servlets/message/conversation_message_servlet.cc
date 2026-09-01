@@ -4,7 +4,6 @@
 #include <json/json.h>
 
 #include "../../manager/message_manager.h"
-#include "../../manager/notification_manager.h"
 #include "message_json.h"
 
 namespace blog {
@@ -86,14 +85,14 @@ int32_t ConversationMessageServlet::handle(chen::http::HttpRequest::ptr request,
             BuildMessageJson(result->jsondata, msg, uid);
             result->setErrno(errcode::SUCCESS);
 
-            // 通过现有 notification WS 通道推送给接收方
+            // HTTP 兜底发送也走聊天 WS 推送给接收方
             Json::Value frame;
             frame["type"] = "message";
             frame["conversation_id"] = (Json::Int64)conversation_id;
             Json::Value msg_json;
             BuildMessageJson(msg_json, msg, peer_id);
             frame["message"] = msg_json;
-            NotificationMgr::GetInstance()->sendToUser(peer_id, chen::JsonUtil::ToString(frame));
+            MessageMgr::GetInstance()->sendToUser(peer_id, chen::JsonUtil::ToString(frame));
             break;
         }
 

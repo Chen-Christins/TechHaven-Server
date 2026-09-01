@@ -249,4 +249,52 @@ bool MessageManager::markRead(int64_t conversation_id, int64_t uid) {
     return true;
 }
 
+// ========== 聊天 WS 连接管理 ==========
+
+void MessageManager::addChatConnection(int64_t user_id, chen::http::WSSession::ptr session) {
+    std::unique_lock lock(m_chatMutex);
+    m_chatConnections[user_id] = session;
+    INFO(logger) << "Chat WS connected: user_id=" << user_id;
+}
+
+void MessageManager::removeChatConnection(int64_t user_id) {
+    std::unique_lock lock(m_chatMutex);
+    m_chatConnections.erase(user_id);
+    INFO(logger) << "Chat WS disconnected: user_id=" << user_id;
+}
+
+bool MessageManager::isChatConnected(int64_t user_id) {
+    std::shared_lock lock(m_chatMutex);
+    return m_chatConnections.find(user_id) != m_chatConnections.end();
+}
+
+int32_t MessageManager::sendToUser(int64_t user_id, const std::string& message) {
+    std::shared_lock lock(m_chatMutex);
+    auto it = m_chatConnections.find(user_id);
+    if (it == m_chatConnections.end()) {
+        return -1;
+    }
+    return it->second->sendMessage(message);
+}
+
+void MessageManager::closeAllChatConnections() {
+    std::unique_lock lock(m_chatMutex);
+    for (auto& [user_id, session] : m_chatConnections) {
+        session->close();
+        INFO(logger) << "Chat WS closed: user_id=" << user_id;
+    }
+    m_chatConnections.clear();
+    INFO(logger) << "All Chat WS connections closed";
+}
+
+int64_t MessageManager::getUidBySession(chen::http::WSSession::ptr session) {
+    std::shared_lock lock(m_chatMutex);
+    for (auto& [user_id, conn] : m_chatConnections) {
+        if (conn == session) {
+            return user_id;
+        }
+    }
+    return 0;
+}
+
 }

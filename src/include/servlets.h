@@ -63,6 +63,7 @@
 #include "../servlets/message/conversation_message_servlet.h"              // IWYU pragma: keep
 #include "../servlets/message/conversation_read_servlet.h"                  // IWYU pragma: keep
 #include "../servlets/message/conversation_servlet.h"                       // IWYU pragma: keep
+#include "../servlets/message/message_ws_servlet.h"                         // IWYU pragma: keep
 #include "../servlets/notify/broadcast_close_servlet.h"                     // IWYU pragma: keep
 #include "../servlets/notify/broadcast_list_servlet.h"                      // IWYU pragma: keep
 #include "../servlets/notify/notification_list_servlet.h"                   // IWYU pragma: keep
