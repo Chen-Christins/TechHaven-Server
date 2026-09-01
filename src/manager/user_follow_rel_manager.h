@@ -35,6 +35,9 @@ public:
     int64_t countFollowing(int64_t follower_id);
     
     int64_t countFollowers(int64_t following_id);
+
+    /// 互相关注的用户ID列表（无分页，集合通常较小）
+    void listMutualFollowing(std::vector<int64_t>& user_ids, int64_t uid);
     
 private:
     static data::UserFollowRelInfo::ptr parseRow(chen::ISQLData::ptr rt);

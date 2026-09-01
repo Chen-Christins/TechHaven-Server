@@ -5,6 +5,9 @@
 
 #include <chen/log/log.h>
 
+#include <algorithm>
+#include <unordered_set>
+
 namespace blog {
 
 static chen::Logger::ptr logger = LOG_ROOT();
@@ -210,6 +213,47 @@ int64_t UserFollowRelManager::countFollowers(int64_t following_id) {
         return 0;
     }
     return total;
+}
+
+void UserFollowRelManager::listMutualFollowing(std::vector<int64_t>& user_ids, int64_t uid) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return;
+    }
+
+    // 我关注的人
+    auto qb = data::UserFollowRelInfoDao::newQuery();
+    qb->select("following_id");
+    qb->where("follower_id", "=", uid);
+    qb->where("is_deleted", "=", (int64_t)0);
+    std::vector<int64_t> following_ids;
+    if (qb->queryColumn<int64_t>(following_ids, db, "following_id")) {
+        ERROR(logger) << "listMutualFollowing queryColumn fail";
+        return;
+    }
+    if (following_ids.empty()) {
+        return;
+    }
+    std::unordered_set<int64_t> following_set(following_ids.begin(), following_ids.end());
+
+    // 粉丝中同时是我关注的人 = 互相关注
+    auto qb2 = data::UserFollowRelInfoDao::newQuery();
+    qb2->select("follower_id");
+    qb2->where("following_id", "=", uid);
+    qb2->where("is_deleted", "=", (int64_t)0);
+    qb2->orderBy("id", "DESC");
+    std::vector<int64_t> follower_ids;
+    if (qb2->queryColumn<int64_t>(follower_ids, db, "follower_id")) {
+        ERROR(logger) << "listMutualFollowing queryColumn fail";
+        return;
+    }
+    user_ids.reserve(std::min(following_ids.size(), follower_ids.size()));
+    for (auto follower_id : follower_ids) {
+        if (following_set.count(follower_id)) {
+            user_ids.push_back(follower_id);
+        }
+    }
 }
 
 } // namespace blog

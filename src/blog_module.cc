@@ -314,6 +314,7 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/user/unfollow", XX(UserUnfollowServlet));
         dp->addServlet("/api/v1/user/following/list", XX(UserFollowingListServlet));
         dp->addServlet("/api/v1/user/follower/list", XX(UserFollowerListServlet));
+        dp->addServlet("/api/v1/user/mutual_following/list", XX(UserMutualFollowingListServlet));
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
