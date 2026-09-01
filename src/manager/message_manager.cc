@@ -68,8 +68,7 @@ data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t u
         if (conv->getUserAId() == uid_a && conv->getUserADeleted()) {
             conv->setUserADeleted(0);
             need_update = true;
-        }
-        if (conv->getUserBId() == uid_b && conv->getUserBDeleted()) {
+        } else if (conv->getUserBId() == uid_a && conv->getUserBDeleted()) {
             conv->setUserBDeleted(0);
             need_update = true;
         }
