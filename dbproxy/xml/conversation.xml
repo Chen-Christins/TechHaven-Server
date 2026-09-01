@@ -12,6 +12,8 @@
         <column name="is_deleted" type="int32" default="0" desc="是否删除"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="创建时间"/>
         <column name="update_time" type="datetime" default="current_timestamp" desc="更新时间"/>
+        <column name="user_a_deleted" type="int32" default="0" desc="A是否在本端隐藏该会话"/>
+        <column name="user_b_deleted" type="int32" default="0" desc="B是否在本端隐藏该会话"/>
     </columns>
     <indexs>
         <index name="pk" cols="id" type="pk"/>

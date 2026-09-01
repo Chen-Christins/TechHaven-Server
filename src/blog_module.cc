@@ -329,6 +329,7 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/messages/conversations", XX(ConversationServlet));
         dp->addServlet("/api/v1/messages/conversations/:id", XX(ConversationMessageServlet));
         dp->addServlet("/api/v1/messages/conversations/:id/read", XX(ConversationReadServlet));
+        dp->addServlet("/api/v1/messages/conversations/:id/delete", XX(ConversationDeleteServlet));
         // 文章相关
         dp->addServlet("/api/v1/article/calendar", XX(ArticleCalendarServlet));
         dp->addServlet("/api/v1/article/admin/lists", XX(ArticleAdminListsServlet));

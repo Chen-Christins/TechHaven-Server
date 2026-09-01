@@ -16,8 +16,6 @@ MessageManager::MessageManager()
     :m_cache(16, kCacheMaxSize, 0) {
 }
 
-// ========== 会话相关 ==========
-
 data::ConversationInfo::ptr MessageManager::get(int64_t id) {
     auto v = m_cache.get(id);
     if (v) {
@@ -60,6 +58,27 @@ data::ConversationInfo::ptr MessageManager::getByUsers(int64_t uid_a, int64_t ui
 data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t uid_b) {
     auto conv = getByUsers(uid_a, uid_b);
     if (conv) {
+        // 本端曾隐藏过该会话，重新发起时复活
+        auto db = GetDB();
+        if (!db) {
+            ERROR(logger) << "Get DB connection fail";
+            return nullptr;
+        }
+        bool need_update = false;
+        if (conv->getUserAId() == uid_a && conv->getUserADeleted()) {
+            conv->setUserADeleted(0);
+            need_update = true;
+        }
+        if (conv->getUserBId() == uid_b && conv->getUserBDeleted()) {
+            conv->setUserBDeleted(0);
+            need_update = true;
+        }
+        if (need_update) {
+            conv->setUpdateTime(time(0));
+            if (data::ConversationInfoDao::Update(conv, db) == 0) {
+                m_cache.set(conv->getId(), conv);
+            }
+        }
         return conv;
     }
 
@@ -78,6 +97,8 @@ data::ConversationInfo::ptr MessageManager::getOrCreate(int64_t uid_a, int64_t u
     info->setLastMessageTime(0);
     info->setUnreadA(0);
     info->setUnreadB(0);
+    info->setUserADeleted(0);
+    info->setUserBDeleted(0);
     info->setIsDeleted(0);
     info->setCreateTime(time(0));
     info->setUpdateTime(time(0));
@@ -103,10 +124,11 @@ void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>&
         return;
     }
 
-    // 分两次查询（user_a_id / user_b_id），避免 OR 优先级问题
+    // 分两次查询（user_a_id / user_b_id），避免 OR 优先级问题；并按本端隐藏标志过滤
     auto qb = data::ConversationInfoDao::newQuery();
     qb->where("user_a_id", "=", uid);
     qb->where("is_deleted", "=", (int64_t)0);
+    qb->where("user_a_deleted", "=", (int64_t)0);
     if (data::ConversationInfoDao::QueryByBuilder(results, qb, db)) {
         ERROR(logger) << "QueryByBuilder failed";
         return;
@@ -115,6 +137,7 @@ void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>&
     auto qb2 = data::ConversationInfoDao::newQuery();
     qb2->where("user_b_id", "=", uid);
     qb2->where("is_deleted", "=", (int64_t)0);
+    qb2->where("user_b_deleted", "=", (int64_t)0);
     std::vector<data::ConversationInfo::ptr> part;
     if (data::ConversationInfoDao::QueryByBuilder(part, qb2, db)) {
         ERROR(logger) << "QueryByBuilder failed";
@@ -132,8 +155,6 @@ void MessageManager::listConversations(std::vector<data::ConversationInfo::ptr>&
         }
     }
 }
-
-// ========== 消息相关 ==========
 
 void MessageManager::listMessages(std::vector<data::ConversationMessageInfo::ptr>& results
         , int64_t conversation_id, int32_t offset, int32_t limit) {
@@ -192,8 +213,15 @@ data::ConversationMessageInfo::ptr MessageManager::sendMessage(int64_t conversat
         conv->setUpdateTime(msg->getCreateTime());
         if (sender_id == conv->getUserAId()) {
             conv->setUnreadB(conv->getUnreadB() + 1);
+            // 对端曾隐藏过该会话，收到新消息时复活
+            if (conv->getUserBDeleted()) {
+                conv->setUserBDeleted(0);
+            }
         } else {
             conv->setUnreadA(conv->getUnreadA() + 1);
+            if (conv->getUserADeleted()) {
+                conv->setUserADeleted(0);
+            }
         }
         if (data::ConversationInfoDao::Update(conv, db) == 0) {
             m_cache.set(conv->getId(), conv);
@@ -249,7 +277,37 @@ bool MessageManager::markRead(int64_t conversation_id, int64_t uid) {
     return true;
 }
 
-// ========== 聊天 WS 连接管理 ==========
+bool MessageManager::deleteForUser(int64_t conversation_id, int64_t uid) {
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "Get DB connection fail";
+        return false;
+    }
+
+    auto conv = get(conversation_id);
+    if (!conv) {
+        return false;
+    }
+    if (uid == conv->getUserAId()) {
+        if (conv->getUserADeleted()) {
+            return true;
+        }
+        conv->setUserADeleted(1);
+    } else if (uid == conv->getUserBId()) {
+        if (conv->getUserBDeleted()) {
+            return true;
+        }
+        conv->setUserBDeleted(1);
+    } else {
+        return false;
+    }
+    conv->setUpdateTime(time(0));
+    if (data::ConversationInfoDao::Update(conv, db)) {
+        return false;
+    }
+    m_cache.set(conv->getId(), conv);
+    return true;
+}
 
 void MessageManager::addChatConnection(int64_t user_id, chen::http::WSSession::ptr session) {
     std::unique_lock lock(m_chatMutex);

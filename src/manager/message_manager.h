@@ -45,6 +45,9 @@ public:
 
     bool markRead(int64_t conversation_id, int64_t uid);
 
+    /// 在本端隐藏会话（不影响对方与消息数据）
+    bool deleteForUser(int64_t conversation_id, int64_t uid);
+
     /// 聊天 WS 连接管理（标准双向通道，连接即在线；支持多标签页/多设备）
     void addChatConnection(int64_t user_id, chen::http::WSSession::ptr session);
 

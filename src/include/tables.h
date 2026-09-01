@@ -1,13 +1,12 @@
 #include "blog/data/article_category_rel_info.h"        // IWYU pragma: keep
-#include "blog/data/badge_info.h"                         // IWYU pragma: keep
-#include "blog/data/backup_record_info.h"               // IWYU pragma: keep
-#include "blog/data/help_faqs_info.h"                   // IWYU pragma: keep
 #include "blog/data/article_info.h"                     // IWYU pragma: keep
 #include "blog/data/article_label_rel_info.h"           // IWYU pragma: keep
 #include "blog/data/article_praise_rel_info.h"          // IWYU pragma: keep
 #include "blog/data/assignment_info.h"                  // IWYU pragma: keep
 #include "blog/data/assignment_organization_rel_info.h" // IWYU pragma: keep
 #include "blog/data/assignment_user_rel_info.h"         // IWYU pragma: keep
+#include "blog/data/backup_record_info.h"               // IWYU pragma: keep
+#include "blog/data/badge_info.h"                       // IWYU pragma: keep
 #include "blog/data/bug_info.h"                         // IWYU pragma: keep
 #include "blog/data/category_info.h"                    // IWYU pragma: keep
 #include "blog/data/chunk_upload_info.h"                // IWYU pragma: keep
@@ -16,8 +15,8 @@
 #include "blog/data/conversation_info.h"                // IWYU pragma: keep
 #include "blog/data/conversation_message_info.h"        // IWYU pragma: keep
 #include "blog/data/email_verification_info.h"          // IWYU pragma: keep
-#include "blog/data/user_feedback_info.h"               // IWYU pragma: keep
 #include "blog/data/export_record_info.h"               // IWYU pragma: keep
+#include "blog/data/help_faqs_info.h"                   // IWYU pragma: keep
 #include "blog/data/notification_info.h"                // IWYU pragma: keep
 #include "blog/data/organization_apply_info.h"          // IWYU pragma: keep
 #include "blog/data/organization_info.h"                // IWYU pragma: keep
@@ -29,6 +28,7 @@
 #include "blog/data/system_settings_info.h"             // IWYU pragma: keep
 #include "blog/data/task_info.h"                        // IWYU pragma: keep
 #include "blog/data/user_ai_config_info.h"              // IWYU pragma: keep
+#include "blog/data/user_feedback_info.h"               // IWYU pragma: keep
 #include "blog/data/user_follow_rel_info.h"             // IWYU pragma: keep
 #include "blog/data/user_info.h"                        // IWYU pragma: keep
 #include "blog/data/user_login_device_info.h"           // IWYU pragma: keep
