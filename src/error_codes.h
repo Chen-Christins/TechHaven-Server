@@ -167,5 +167,12 @@ constexpr int32_t FEEDBACK_NOT_FOUND = 10001;          // 反馈不存在
 // ==================== 模块11: 帮助中心模块 (11001-11999) ====================
 constexpr int32_t FAQ_NOT_FOUND = 11001;               // 常见问题不存在
 
+// ==================== 模块12: 私信模块 (12001-12999) ====================
+constexpr int32_t MESSAGE_CONVERSATION_NOT_FOUND = 12001; // 会话不存在
+constexpr int32_t MESSAGE_SEND_FAILED = 12002;           // 消息发送失败
+constexpr int32_t MESSAGE_TEXT_TOO_LONG = 12003;         // 消息内容过长
+constexpr int32_t MESSAGE_PEER_NOT_FOUND = 12004;        // 对端用户不存在
+constexpr int32_t MESSAGE_CANNOT_SELF = 12005;           // 不能与自己私信
+
 } // namespace errcode
 } // namespace blog

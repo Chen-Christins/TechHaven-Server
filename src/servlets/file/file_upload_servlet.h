@@ -9,6 +9,7 @@ class FileUploadServlet : public BlogLoginedServlet {
 public:
     typedef std::shared_ptr<FileUploadServlet> ptr;
     FileUploadServlet();
+protected:
     virtual int32_t handle(chen::http::HttpRequest::ptr request
                     ,chen::http::HttpResponse::ptr response
                     ,chen::http::HttpSession::ptr session

@@ -16,6 +16,7 @@
 #include "../manager/feedback_manager.h"                     // IWYU pragma: keep
 #include "../manager/comment_praise_rel_manager.h"          // IWYU pragma: keep
 #include "../manager/label_manager.h"                       // IWYU pragma: keep
+#include "../manager/message_manager.h"                    // IWYU pragma: keep
 #include "../manager/notification_manager.h"                // IWYU pragma: keep
 #include "../manager/organization_apply_manager.h"          // IWYU pragma: keep
 #include "../manager/organization_manager.h"                // IWYU pragma: keep

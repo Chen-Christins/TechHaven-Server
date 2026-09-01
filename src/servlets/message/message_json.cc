@@ -1,0 +1,43 @@
+#include "message_json.h"
+
+#include "../../manager/notification_manager.h"
+#include "../../manager/user_manager.h"
+
+namespace blog {
+namespace servlet {
+
+void BuildMessageJson(Json::Value& json, data::ConversationMessageInfo::ptr msg, int64_t uid) {
+    json["id"] = (Json::Int64)msg->getId();
+    json["fromMe"] = (msg->getSenderId() == uid);
+    json["text"] = msg->getContent();
+    json["create_time"] = (Json::Int64)msg->getCreateTime();
+}
+
+void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, int64_t uid) {
+    int64_t peer_id = (conv->getUserAId() == uid) ? conv->getUserBId() : conv->getUserAId();
+    int32_t unread = (conv->getUserAId() == uid) ? conv->getUnreadA() : conv->getUnreadB();
+
+    json["id"] = (Json::Int64)conv->getId();
+    json["peer_id"] = (Json::Int64)peer_id;
+    json["online"] = NotificationMgr::GetInstance()->isPresenceConnected(peer_id);
+
+    auto user = UserMgr::GetInstance()->get(peer_id);
+    json["name"] = user ? user->getName() : "";
+
+    json["last_time"] = (Json::Int64)conv->getLastMessageTime();
+    json["unread"] = unread;
+
+    Json::Value arr(Json::arrayValue);
+    if (conv->getLastMessageId() > 0) {
+        Json::Value last;
+        last["id"] = (Json::Int64)conv->getLastMessageId();
+        last["fromMe"] = (conv->getLastSenderId() == uid);
+        last["text"] = conv->getLastMessage();
+        last["create_time"] = (Json::Int64)conv->getLastMessageTime();
+        arr.append(last);
+    }
+    json["messages"] = arr;
+}
+
+}
+}

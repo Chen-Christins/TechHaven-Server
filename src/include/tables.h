@@ -13,6 +13,8 @@
 #include "blog/data/chunk_upload_info.h"                // IWYU pragma: keep
 #include "blog/data/comment_info.h"                     // IWYU pragma: keep
 #include "blog/data/comment_praise_rel_info.h"          // IWYU pragma: keep
+#include "blog/data/conversation_info.h"                // IWYU pragma: keep
+#include "blog/data/conversation_message_info.h"        // IWYU pragma: keep
 #include "blog/data/email_verification_info.h"          // IWYU pragma: keep
 #include "blog/data/user_feedback_info.h"               // IWYU pragma: keep
 #include "blog/data/export_record_info.h"               // IWYU pragma: keep

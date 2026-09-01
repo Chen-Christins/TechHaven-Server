@@ -215,6 +215,8 @@ bool BlogModule::initMySQL() {
         XX(ExportRecordInfoDao, "export_record")
         XX(CommentInfoDao, "comment")
         XX(CommentPraiseRelInfoDao, "comment_praise_rel")
+        XX(ConversationInfoDao, "conversation")
+        XX(ConversationMessageInfoDao, "conversation_message")
         XX(RequirementInfoDao, "requirement")
         XX(BugInfoDao, "bug")
         XX(TaskInfoDao, "task")
@@ -252,6 +254,8 @@ bool BlogModule::initMySQL() {
             XX(ArticlePraiseRelInfoDao)
             XX(CommentInfoDao)
             XX(CommentPraiseRelInfoDao)
+            XX(ConversationInfoDao)
+            XX(ConversationMessageInfoDao)
             XX(BackupRecordInfoDao)
             XX(ExportRecordInfoDao)
             XX(RequirementInfoDao)
@@ -318,6 +322,10 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));
+        // 私信相关
+        dp->addServlet("/api/v1/messages/conversations", XX(ConversationServlet));
+        dp->addServlet("/api/v1/messages/conversations/:id", XX(ConversationMessageServlet));
+        dp->addServlet("/api/v1/messages/conversations/:id/read", XX(ConversationReadServlet));
         // 文章相关
         dp->addServlet("/api/v1/article/calendar", XX(ArticleCalendarServlet));
         dp->addServlet("/api/v1/article/admin/lists", XX(ArticleAdminListsServlet));

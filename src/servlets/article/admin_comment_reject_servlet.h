@@ -8,6 +8,7 @@ namespace servlet {
 class AdminCommentRejectServlet : public BlogLoginedServlet {
 public:
     AdminCommentRejectServlet();
+protected:
     int32_t handle(chen::http::HttpRequest::ptr request,
                    chen::http::HttpResponse::ptr response,
                    chen::http::HttpSession::ptr session,
