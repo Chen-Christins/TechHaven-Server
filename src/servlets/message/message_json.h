@@ -31,5 +31,5 @@ void BuildMessageJson(Json::Value& json, data::ConversationMessageInfo::ptr msg,
  */
 void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, int64_t uid);
 
-}
-}
+} // namespace servlet
+} // namespace blog

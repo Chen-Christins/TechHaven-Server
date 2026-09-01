@@ -8,8 +8,8 @@
 #pragma once
 
 #include "../../struct.h"
-#include <json/json.h>
 #include <ctime>
+#include <json/json.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -41,11 +41,10 @@ class RdTrendServlet : public BlogLoginedServlet {
 public:
     typedef std::shared_ptr<RdTrendServlet> ptr;
     RdTrendServlet();
+
 protected:
-    int32_t handle(chen::http::HttpRequest::ptr request
-                    ,chen::http::HttpResponse::ptr response
-                    ,chen::http::HttpSession::ptr session
-                    ,Result::ptr result) override;
+    int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                   chen::http::HttpSession::ptr session, Result::ptr result) override;
 
 private:
     static time_t parseDate(const std::string& date_str);
@@ -57,5 +56,5 @@ private:
     void addSeriesBySql(TrendContext& ctx, const std::string& table, int32_t min_status, const std::string& field_name);
 };
 
-}
-}
+} // namespace servlet
+} // namespace blog

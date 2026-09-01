@@ -18,11 +18,9 @@ public:
     typedef std::shared_ptr<ArticleAISummaryServlet> ptr;
     ArticleAISummaryServlet();
 
-    virtual int32_t onConnect(chen::http::HttpRequest::ptr request
-                    ,chen::http::SSESession::ptr session) override;
-    virtual int32_t onClose(chen::http::HttpRequest::ptr request
-                    ,chen::http::SSESession::ptr session) override;
+    virtual int32_t onConnect(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session) override;
+    virtual int32_t onClose(chen::http::HttpRequest::ptr request, chen::http::SSESession::ptr session) override;
 };
 
-}
-}
+} // namespace servlet
+} // namespace blog
