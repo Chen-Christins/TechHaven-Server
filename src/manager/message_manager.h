@@ -45,10 +45,10 @@ public:
 
     bool markRead(int64_t conversation_id, int64_t uid);
 
-    /// 聊天 WS 连接管理（标准双向通道，连接即在线）
+    /// 聊天 WS 连接管理（标准双向通道，连接即在线；支持多标签页/多设备）
     void addChatConnection(int64_t user_id, chen::http::WSSession::ptr session);
 
-    void removeChatConnection(int64_t user_id);
+    void removeChatConnection(int64_t user_id, chen::http::WSSession::ptr session);
 
     bool isChatConnected(int64_t user_id);
 
@@ -72,8 +72,8 @@ private:
     /// 会话缓存
     chen::ds::HashLruCache<int64_t, data::ConversationInfo::ptr> m_cache;
 
-    /// 聊天 WS 连接: user_id -> session
-    std::unordered_map<int64_t, chen::http::WSSession::ptr> m_chatConnections;
+    /// 聊天 WS 连接: user_id -> 该用户的所有在线连接
+    std::unordered_map<int64_t, std::vector<chen::http::WSSession::ptr>> m_chatConnections;
     std::shared_mutex m_chatMutex;
 };
 
