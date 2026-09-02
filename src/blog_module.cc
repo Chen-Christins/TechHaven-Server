@@ -101,6 +101,8 @@ void BlogModule::onTick() {
     if (++s_pr_sync_tick >= 30) {
         s_pr_sync_tick = 0;
         SyncAllReposFromGitHub();
+
+        INFO(logger) << "module status: " << Module::statusString();
     }
 }
 
