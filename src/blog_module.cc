@@ -283,8 +283,9 @@ void BlogModule::registerServlets() const {
 
     for (auto& i : m_httpServers) {
         const auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
+        ASSERT_RET(hs != nullptr);
         const auto dp = hs->getServletDispatch();
-
+        ASSERT_RET(hs != nullptr);
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
         // 用户相关
         dp->addServlet("/api/v1/user/send_code", XX(UserSendCodeServlet));
@@ -483,10 +484,10 @@ void BlogModule::registerWSServlets() const {
 
     for (auto& i : m_wsServers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
-        ASSERT(ws);
+        ASSERT_RET(ws != nullptr);
 
         chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
-        ASSERT(dp);
+        ASSERT_RET(dp != nullptr);
 
         servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
         dp->addServlet("/ws/v1/notification", notify_servlet);

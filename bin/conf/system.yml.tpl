@@ -12,6 +12,10 @@ servers:
     process_worker: io
     type: http
     negotiateH2: 1
+    args:
+      accept_qps: 1000      # 每秒最多接受的新连接数
+      accept_burst: 2000    # 瞬时突发上限（缺省 = accept_qps）
+      max_conn: 10000       # 最大并发连接数
 
   - address: ["0.0.0.0:8091"]
     keepalive: 1
