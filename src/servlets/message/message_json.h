@@ -7,6 +7,8 @@
  */
 #pragma once
 
+#include "../../struct.h"
+
 #include <json/json.h>
 
 #include "blog/data/conversation_info.h"
@@ -30,6 +32,14 @@ void BuildMessageJson(Json::Value& json, data::ConversationMessageInfo::ptr msg,
  * @param uid 当前用户 ID（用于计算 name/online/unread/fromMe）
  */
 void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, int64_t uid);
+
+/**
+ * @brief 校验私信使用权限（仅非普通用户可用，防止滥用打爆数据库）
+ * @param result 用于写入错误码
+ * @param uid 当前用户 ID
+ * @return errcode::SUCCESS 有权限；否则为错误码
+ */
+int32_t CheckChatPermission(Result::ptr result, int64_t uid);
 
 } // namespace servlet
 } // namespace blog

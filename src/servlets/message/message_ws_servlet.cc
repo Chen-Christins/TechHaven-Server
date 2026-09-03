@@ -62,6 +62,16 @@ int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::h
         sendError(session, errcode::ACCOUNT_INVALID, "Account status abnormal");
         return -1;
     }
+    if (uinfo->getRole() == UserManager::Role::USER) {
+        INFO(logger) << "[ChatWS] onConnect FAIL: no permission uid=" << uid;
+        sendError(session, errcode::ACCESS_DENIED, "Chat not available for normal users");
+        return -1;
+    }
+    if (uinfo->getRole() == UserManager::Role::ADMIN) {
+        INFO(logger) << "[ChatWS] onConnect FAIL: role=" << uinfo->getRole() << " is not permitted";
+        sendError(session, errcode::ACCOUNT_INVALID, "Role not permitted");
+        return -1;
+    }
 
     // 以设备表 token 为准校验（Redis 优先，DB 兜底）
     if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, token, time(0))) {
@@ -98,6 +108,12 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
         }
         if (!uid) {
             sendError(session, errcode::NOT_LOGIN, "Not logged in");
+            break;
+        }
+        // 兜底：连接鉴权之外的二次校验（防止角色变动后仍持有连接）
+        auto user = UserMgr::GetInstance()->get(uid);
+        if (!user || user->getRole() == UserManager::Role::USER) {
+            sendError(session, errcode::ACCESS_DENIED, "Chat not available for normal users");
             break;
         }
 

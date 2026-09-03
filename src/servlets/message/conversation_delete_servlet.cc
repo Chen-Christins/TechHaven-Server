@@ -1,6 +1,7 @@
 #include "conversation_delete_servlet.h"
 
 #include "../../manager/message_manager.h"
+#include "message_json.h"
 
 namespace blog {
 namespace servlet {
@@ -15,6 +16,9 @@ int32_t ConversationDeleteServlet::handle(chen::http::HttpRequest::ptr request, 
         int64_t uid = getUserId(request);
         if (!uid) {
             result->setErrno(errcode::NOT_LOGIN);
+            break;
+        }
+        if (CheckChatPermission(result, uid) != errcode::SUCCESS) {
             break;
         }
 

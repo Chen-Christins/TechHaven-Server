@@ -21,6 +21,9 @@ int32_t ConversationMessageServlet::handle(chen::http::HttpRequest::ptr request,
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
+        if (CheckChatPermission(result, uid) != errcode::SUCCESS) {
+            break;
+        }
 
         std::string id_str = request->getParam("id");
         if (id_str.empty()) {

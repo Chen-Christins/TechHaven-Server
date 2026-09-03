@@ -39,5 +39,18 @@ void BuildConversationJson(Json::Value& json, data::ConversationInfo::ptr conv, 
     json["messages"] = arr;
 }
 
+int32_t CheckChatPermission(Result::ptr result, int64_t uid) {
+    auto user = UserMgr::GetInstance()->get(uid);
+    if (!user) {
+        result->setErrno(errcode::USER_NOT_FOUND);
+        return errcode::USER_NOT_FOUND;
+    }
+    if (user->getRole() == UserManager::Role::USER) {
+        result->setErrno(errcode::ACCESS_DENIED, "私信仅对内部成员开放");
+        return errcode::ACCESS_DENIED;
+    }
+    return errcode::SUCCESS;
+}
+
 }
 }

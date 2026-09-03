@@ -21,6 +21,9 @@ int32_t ConversationServlet::handle(chen::http::HttpRequest::ptr request, chen::
             result->setErrno(errcode::NOT_LOGIN);
             break;
         }
+        if (CheckChatPermission(result, uid) != errcode::SUCCESS) {
+            break;
+        }
 
         if (request->getMethod() == chen::http::HttpMethod::GET) {
             // 会话列表
