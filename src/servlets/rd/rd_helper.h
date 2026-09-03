@@ -7,17 +7,17 @@
  */
 #pragma once
 
-#include "blog/data/requirement_info.h"
-#include "blog/data/bug_info.h"
-#include "blog/data/task_info.h"
-#include "../../manager/user_manager.h"
+#include "../../manager/bug_manager.h"
 #include "../../manager/organization_manager.h"
 #include "../../manager/requirement_manager.h"
-#include "../../manager/bug_manager.h"
 #include "../../manager/task_manager.h"
+#include "../../manager/user_manager.h"
+#include "blog/data/bug_info.h"
+#include "blog/data/requirement_info.h"
+#include "blog/data/task_info.h"
 
-#include <json/json.h>
 #include <chen/http/http.h>
+#include <json/json.h>
 
 #include <string>
 

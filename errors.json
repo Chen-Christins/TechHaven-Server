@@ -130,6 +130,12 @@
     { "errno": 9015,  "key": "NOTIFICATION_TITLE_TOO_LONG", "zh": "通知标题过长",              "en": "Notification title too long" },
     { "errno": 9016,  "key": "NOTIFICATION_CONTENT_TOO_LONG","zh": "通知内容过长",              "en": "Notification content too long" },
     { "errno": 9017,  "key": "NOTIFICATION_USERS_REQUIRED", "zh": "缺少目标用户",              "en": "Target users required" },
-    { "errno": 9018,  "key": "NOTIFICATION_INVALID_TARGET", "zh": "无效的通知目标类型",          "en": "Invalid notification target type" }
+    { "errno": 9018,  "key": "NOTIFICATION_INVALID_TARGET", "zh": "无效的通知目标类型",          "en": "Invalid notification target type" },
+
+    { "errno": 12001, "key": "MESSAGE_CONVERSATION_NOT_FOUND", "zh": "会话不存在",              "en": "Conversation not found" },
+    { "errno": 12002, "key": "MESSAGE_SEND_FAILED",            "zh": "消息发送失败",            "en": "Failed to send message" },
+    { "errno": 12003, "key": "MESSAGE_TEXT_TOO_LONG",          "zh": "消息内容过长",            "en": "Message content too long" },
+    { "errno": 12004, "key": "MESSAGE_PEER_NOT_FOUND",         "zh": "对端用户不存在",          "en": "Peer user not found" },
+    { "errno": 12005, "key": "MESSAGE_CANNOT_SELF",            "zh": "不能与自己私信",          "en": "Cannot message yourself" }
   ]
 }

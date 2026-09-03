@@ -54,6 +54,8 @@ public:
     
     int32_t getPresenceOnlineCount();
 
+    bool isPresenceConnected(int64_t user_id);
+
     // DB persistence
     data::NotificationInfo::ptr get(int64_t id);
     

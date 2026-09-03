@@ -47,6 +47,7 @@ bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
     ArticleMgr::GetInstance()->stop();
     NotificationMgr::GetInstance()->closeAllConnections();
+    MessageMgr::GetInstance()->closeAllChatConnections();
     unregisterWSServlets();
     unregisterServlets();
     unregisterRPCMethods();
@@ -57,6 +58,7 @@ bool BlogModule::onDrain() {
     INFO(logger) << "onDrain";
     ArticleMgr::GetInstance()->stop();
     NotificationMgr::GetInstance()->closeAllConnections();
+    MessageMgr::GetInstance()->closeAllChatConnections();
     return true;
 }
 
@@ -99,6 +101,8 @@ void BlogModule::onTick() {
     if (++s_pr_sync_tick >= 30) {
         s_pr_sync_tick = 0;
         SyncAllReposFromGitHub();
+
+        INFO(logger) << "module status: " << Module::statusString();
     }
 }
 
@@ -215,6 +219,8 @@ bool BlogModule::initMySQL() {
         XX(ExportRecordInfoDao, "export_record")
         XX(CommentInfoDao, "comment")
         XX(CommentPraiseRelInfoDao, "comment_praise_rel")
+        XX(ConversationInfoDao, "conversation")
+        XX(ConversationMessageInfoDao, "conversation_message")
         XX(RequirementInfoDao, "requirement")
         XX(BugInfoDao, "bug")
         XX(TaskInfoDao, "task")
@@ -252,6 +258,8 @@ bool BlogModule::initMySQL() {
             XX(ArticlePraiseRelInfoDao)
             XX(CommentInfoDao)
             XX(CommentPraiseRelInfoDao)
+            XX(ConversationInfoDao)
+            XX(ConversationMessageInfoDao)
             XX(BackupRecordInfoDao)
             XX(ExportRecordInfoDao)
             XX(RequirementInfoDao)
@@ -275,8 +283,9 @@ void BlogModule::registerServlets() const {
 
     for (auto& i : m_httpServers) {
         const auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
+        ASSERT_RET(hs != nullptr);
         const auto dp = hs->getServletDispatch();
-
+        ASSERT_RET(hs != nullptr);
 #define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
         // 用户相关
         dp->addServlet("/api/v1/user/send_code", XX(UserSendCodeServlet));
@@ -310,6 +319,7 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/user/unfollow", XX(UserUnfollowServlet));
         dp->addServlet("/api/v1/user/following/list", XX(UserFollowingListServlet));
         dp->addServlet("/api/v1/user/follower/list", XX(UserFollowerListServlet));
+        dp->addServlet("/api/v1/user/mutual_following/list", XX(UserMutualFollowingListServlet));
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
@@ -318,6 +328,11 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/notification/unread_count", XX(NotificationUnreadCountServlet));
         dp->addServlet("/api/v1/notification/read", XX(NotificationReadServlet));
         dp->addServlet("/api/v1/notification/read_all", XX(NotificationReadAllServlet));
+        // 私信相关
+        dp->addServlet("/api/v1/messages/conversations", XX(ConversationServlet));
+        dp->addServlet("/api/v1/messages/conversations/:id", XX(ConversationMessageServlet));
+        dp->addServlet("/api/v1/messages/conversations/:id/read", XX(ConversationReadServlet));
+        dp->addServlet("/api/v1/messages/conversations/:id/delete", XX(ConversationDeleteServlet));
         // 文章相关
         dp->addServlet("/api/v1/article/calendar", XX(ArticleCalendarServlet));
         dp->addServlet("/api/v1/article/admin/lists", XX(ArticleAdminListsServlet));
@@ -469,16 +484,19 @@ void BlogModule::registerWSServlets() const {
 
     for (auto& i : m_wsServers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
-        ASSERT(ws);
+        ASSERT_RET(ws != nullptr);
 
         chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
-        ASSERT(dp);
+        ASSERT_RET(dp != nullptr);
 
         servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
         dp->addServlet("/ws/v1/notification", notify_servlet);
 
         servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
         dp->addServlet("/ws/v1/presence", presence_servlet);
+
+        servlet::MessageWSServlet::ptr message_ws_servlet(std::make_shared<servlet::MessageWSServlet>());
+        dp->addServlet("/ws/v1/messages", message_ws_servlet);
     }
 }
 

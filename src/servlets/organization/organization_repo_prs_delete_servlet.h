@@ -16,11 +16,11 @@ class OrganizationRepoPrsDeleteServlet : public BlogLoginedServlet {
 public:
     typedef std::shared_ptr<OrganizationRepoPrsDeleteServlet> ptr;
     OrganizationRepoPrsDeleteServlet();
-    virtual int32_t handle(chen::http::HttpRequest::ptr request
-                    ,chen::http::HttpResponse::ptr response
-                    ,chen::http::HttpSession::ptr session
-                    ,Result::ptr result) override;
+
+protected:
+    int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                   chen::http::HttpSession::ptr session, Result::ptr result) override;
 };
 
-}
-}
+} // namespace servlet
+} // namespace blog
