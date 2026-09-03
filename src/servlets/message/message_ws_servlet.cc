@@ -67,11 +67,6 @@ int32_t MessageWSServlet::onConnect(chen::http::HttpRequest::ptr header, chen::h
         sendError(session, errcode::ACCESS_DENIED, "Chat not available for normal users");
         return -1;
     }
-    if (uinfo->getRole() == UserManager::Role::ADMIN) {
-        INFO(logger) << "[ChatWS] onConnect FAIL: role=" << uinfo->getRole() << " is not permitted";
-        sendError(session, errcode::ACCOUNT_INVALID, "Role not permitted");
-        return -1;
-    }
 
     // 以设备表 token 为准校验（Redis 优先，DB 兜底）
     if (!UserLoginDeviceMgr::GetInstance()->validateToken(uid, token, time(0))) {
