@@ -7,6 +7,7 @@
 #include <chen/log/log.h>
 #include <chen/iomanager/iomanager.h>
 #include <chen/db/redis.h>
+#include <chen/config/config.h>
 
 #include <ctime>
 #include <set>
@@ -16,6 +17,9 @@ namespace blog {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 1000;
+
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
+    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 ArticleManager::ArticleManager()
     :m_cache(32, kCacheMaxSize, 0) {
@@ -449,14 +453,14 @@ bool ArticleManager::incViews(uint64_t id, const std::string& cookie_id, uint64_
         info->setViews(info->getViews() + 1);
         addUpdate(id);
         chen::IOManager::GetThis()->schedule([user_id]() {
-            chen::RedisUtil::Cmd("blog", "incr blog:total_visits");
-            auto rpy = chen::RedisUtil::Cmd("blog", "incr blog:today_visits");
+            chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:total_visits");
+            auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "incr blog:today_visits");
             if (rpy && rpy->integer == 1) {
                 int64_t now = time(0);
                 int64_t tomorrow_midnight = now - (now % 86400) + 86400;
-                chen::RedisUtil::Cmd("blog", "expireat blog:today_visits %lld", tomorrow_midnight);
+                chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "expireat blog:today_visits %lld", tomorrow_midnight);
             }
-            chen::RedisUtil::Cmd("blog", "pfadd blog:visitors %lld", user_id);
+            chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "pfadd blog:visitors %lld", user_id);
         });
     }
     return true;
@@ -467,7 +471,7 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
     if (!info) {
         return false;
     }
-    auto rpy = chen::RedisUtil::Cmd("blog", "hexist pra_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hexist pra_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hexists fail";
         return false;
@@ -475,13 +479,13 @@ bool ArticleManager::incPraise(uint64_t id, const std::string& cookie_id, uint64
     if (rpy->integer == 1) {
         return true;
     }
-    rpy = chen::RedisUtil::Cmd("blog", "hset pra_a2u:%lld %lld %lld", id, user_id, time(0));
+    rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset pra_a2u:%lld %lld %lld", id, user_id, time(0));
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
     }
     chen::IOManager::GetThis()->schedule([id, user_id]() {
-        chen::RedisUtil::Cmd("blog", "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
+        chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset pra_u2a:%lld %lld %lld", user_id, id, time(0));
     });
     info->setPraise(info->getPraise() + 1);
     addUpdate(id);
@@ -494,7 +498,7 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
     if (!info) {
         return false;
     }
-    auto rpy = chen::RedisUtil::Cmd("blog", "hexist fav_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hexist fav_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hexists fail";
         return false;
@@ -502,13 +506,13 @@ bool ArticleManager::incFavorites(uint64_t id, const std::string& cookie_id, uin
     if (rpy->integer == 1) {
         return true;
     }
-    rpy = chen::RedisUtil::Cmd("blog", "hset fav_a2u:%lld %lld %lld", id, user_id, time(0));
+    rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset fav_a2u:%lld %lld %lld", id, user_id, time(0));
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
     }
     chen::IOManager::GetThis()->schedule([id, user_id]() {
-        chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
+        chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset fav_u2a:%lld %lld %lld", user_id, id, time(0));
     });
     info->setFavorites(info->getFavorites() + 1);
     addUpdate(id);
@@ -522,7 +526,7 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
         return false;
     }
     bool v = false;
-    auto rpy = chen::RedisUtil::Cmd("blog", "hdel pra_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hdel pra_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hdel fail";
         return false;
@@ -530,7 +534,7 @@ bool ArticleManager::decPraise(uint64_t id, const std::string& cookie_id, uint64
     if (rpy->integer == 1) {
         v = true;
     }
-    rpy = chen::RedisUtil::Cmd("blog", "hdel pra_u2a:%lld %lld", user_id, id);
+    rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hdel pra_u2a:%lld %lld", user_id, id);
     if (!rpy) {
         ERROR(logger) << "hdel fail";
         return false;
@@ -552,7 +556,7 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
         return false;
     }
     bool v = false;
-    auto rpy = chen::RedisUtil::Cmd("blog", "hdel fav_a2u:%lld %lld", id, user_id);
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hdel fav_a2u:%lld %lld", id, user_id);
     if (!rpy) {
         ERROR(logger) << "hdel fail";
         return false;
@@ -560,7 +564,7 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
     if (rpy->integer == 1) {
         v = true;
     }
-    rpy = chen::RedisUtil::Cmd("blog", "hset fav_u2a:%lld %lld", user_id, id);
+    rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "hset fav_u2a:%lld %lld", user_id, id);
     if (!rpy) {
         ERROR(logger) << "hset fail";
         return false;
@@ -578,7 +582,7 @@ bool ArticleManager::decFavorites(uint64_t id, const std::string& cookie_id, uin
 
 bool ArticleManager::listUserFav(int64_t id, std::map<int64_t, int64_t>& articles) {
 #define PROC(id, mask, articles)                                                                               \
-    auto rpy = chen::RedisUtil::Cmd("blog", mask, id);                                                         \
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), mask, id);                                  \
     if (!rpy) {                                                                                                \
         ERROR(logger) << "hgetall fail";                                                                       \
         return false;                                                                                          \
@@ -696,7 +700,7 @@ void ArticleManager::decPraiseCount(int64_t id) {
 }
 
 int64_t ArticleManager::getTodayViews() {
-    auto rpy = chen::RedisUtil::Cmd("blog", "get blog:today_visits");
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get blog:today_visits");
     if (rpy && rpy->str) {
         return chen::TypeUtil::Atoi(rpy->str);
     }
@@ -704,7 +708,7 @@ int64_t ArticleManager::getTodayViews() {
 }
 
 int64_t ArticleManager::getTotalViews() {
-    auto rpy = chen::RedisUtil::Cmd("blog", "get blog:total_visits");
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get blog:total_visits");
     if (rpy && rpy->str) {
         return chen::TypeUtil::Atoi(rpy->str);
     }
@@ -719,12 +723,12 @@ int64_t ArticleManager::getTotalViews() {
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;
     qb->queryScalarInt64(total, db);
-    chen::RedisUtil::Cmd("blog", "set blog:total_visits %lld", total);
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "set blog:total_visits %lld", total);
     return total;
 }
 
 int64_t ArticleManager::getTotalVisitors() {
-    auto rpy = chen::RedisUtil::Cmd("blog", "pfcount blog:visitors");
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "pfcount blog:visitors");
     if (rpy) {
         return rpy->integer;
     }
@@ -732,7 +736,7 @@ int64_t ArticleManager::getTotalVisitors() {
 }
 
 void ArticleManager::syncStatsFromDB() {
-    chen::RedisUtil::Cmd("blog", "del blog:total_visits");
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del blog:total_visits");
     int64_t total = getTotalViews();
     INFO(logger) << "syncStatsFromDB: blog:total_visits recalculated from DB = " << total;
 }
@@ -740,7 +744,7 @@ void ArticleManager::syncStatsFromDB() {
 void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t month, std::vector<int32_t>& days) {
     // 先查 Redis 缓存
     {
-        auto rpy = chen::RedisUtil::Cmd("blog", "GET calendar:%lld:%d:%d", user_id, year, month);
+        auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "GET calendar:%lld:%d:%d", user_id, year, month);
         if (rpy && rpy->str && strlen(rpy->str) > 0) {
             Json::Value cached;
             if (chen::JsonUtil::FromString(cached, rpy->str) && cached.isArray() && cached.size() > 0) {
@@ -790,7 +794,7 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
             daysJson.append(d);
         }
         std::string jsonStr = chen::JsonUtil::ToString(daysJson);
-        chen::RedisUtil::Cmd("blog", "SETEX calendar:%lld:%d:%d 300 %s", user_id, year, month, jsonStr.c_str());
+        chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "SETEX calendar:%lld:%d:%d 300 %s", user_id, year, month, jsonStr.c_str());
     }
 }
 
@@ -800,7 +804,7 @@ void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime) {
     localtime_r(&pt, &tm_pt);
     int32_t year = tm_pt.tm_year + 1900;
     int32_t month = tm_pt.tm_mon + 1;
-    chen::RedisUtil::Cmd("blog", "DEL calendar:%lld:%d:%d", user_id, year, month);
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "DEL calendar:%lld:%d:%d", user_id, year, month);
 }
 
 } // namespace blog
