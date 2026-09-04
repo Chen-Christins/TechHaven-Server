@@ -4,6 +4,7 @@
 
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
+#include <chen/config/config.h>
 
 namespace blog {
 
@@ -11,6 +12,9 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 /// Redis token 缓存 key 前缀
 static const char* kTokenKeyPrefix = "login_token:";
+
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
+    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 UserLoginDeviceManager::UserLoginDeviceManager() {
 }
@@ -24,7 +28,7 @@ void UserLoginDeviceManager::cacheToken(const std::string& token, int64_t uid, i
         ttl = 1;
     }
     std::string key = std::string(kTokenKeyPrefix) + token;
-    chen::RedisUtil::Cmd("blog", "setex %s %lld %lld", key.c_str(), (long long)ttl, (long long)uid);
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "setex %s %lld %lld", key.c_str(), (long long)ttl, (long long)uid);
 }
 
 void UserLoginDeviceManager::removeTokenCache(const std::string& token) {
@@ -32,7 +36,7 @@ void UserLoginDeviceManager::removeTokenCache(const std::string& token) {
         return;
     }
     std::string key = std::string(kTokenKeyPrefix) + token;
-    chen::RedisUtil::Cmd("blog", "del %s", key.c_str());
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.c_str());
 }
 
 int UserLoginDeviceManager::recordLogin(const LoginParam& param) {
@@ -80,7 +84,7 @@ bool UserLoginDeviceManager::validateToken(int64_t uid, const std::string& token
         return false;
     }
     std::string key = std::string(kTokenKeyPrefix) + token;
-    auto rpy = chen::RedisUtil::Cmd("blog", "get %s", key.c_str());
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get %s", key.c_str());
     if (rpy && rpy->type == REDIS_REPLY_STRING && rpy->str) {
         std::string val(rpy->str, rpy->len);
         try {

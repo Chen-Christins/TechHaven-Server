@@ -4,7 +4,7 @@
 #include <chen/db/redis.h>
 #include <chen/http/http_connection.h>
 #include <chen/http/uri.h>
-#include <chen/iomanager/worker.h>
+#include <chen/config/config.h>
 #include <json/json.h>
 
 #include "cache_util.h"
@@ -15,6 +15,9 @@ namespace blog {
 static chen::Logger::ptr logger = LOG_ROOT();
 
 static const size_t kCacheMaxSize = 500;
+
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
+    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 OrganizationRepoManager::OrganizationRepoManager()
     :m_cache(4, kCacheMaxSize, 30) {
@@ -124,12 +127,12 @@ void OrganizationRepoManager::invalidateCountCache(int64_t org_id) {
     {
         std::stringstream key;
         key << "cache:count:org_repo:count:" << org_id;
-        chen::RedisUtil::Cmd("blog", "del %s", key.str().c_str());
+        chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.str().c_str());
     }
     {
         std::stringstream key;
         key << "cache:count:org_repo:list:" << org_id;
-        chen::RedisUtil::Cmd("blog", "del %s", key.str().c_str());
+        chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.str().c_str());
     }
 }
 

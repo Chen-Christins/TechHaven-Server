@@ -90,8 +90,9 @@ fox_thread:
 
 # Redis configuration for the blog, defining the host, type, pool size, and timeout settings for the Redis connection used by the blog.
 redis:
+  name: ${REDIS_DBNAME}
   config:
-    blog:
+    ${REDIS_DBNAME}:
       host: ${REDIS_HOST}
       type: fox_redis
       pool: 1

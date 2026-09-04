@@ -2,6 +2,7 @@
 
 #include <chen/log/log.h>
 #include <chen/db/redis.h>
+#include <chen/config/config.h>
 
 #include "../../manager/user_manager.h"
 #include "../../util.h"
@@ -10,6 +11,9 @@ namespace blog {
 namespace servlet {
 
 static chen::Logger::ptr logger = LOG_ROOT();
+
+static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
+    chen::Config::Lookup("redis.name", std::string("blog"), "Redis connection pool name");
 
 UserResetPasswdServlet::UserResetPasswdServlet()
     :BlogServlet("UserResetPasswdServlet") {
@@ -62,7 +66,7 @@ int32_t UserResetPasswdServlet::handle(chen::http::HttpRequest::ptr request, che
 }
 
 bool UserResetPasswdServlet::verificationEmailCode(const std::string& email, const std::string& code) {
-    auto rpy = chen::RedisUtil::Cmd("blog", "GET email:verify:3:%s", email.c_str());
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "GET email:verify:3:%s", email.c_str());
     if (!rpy || rpy->type != REDIS_REPLY_STRING) {
         return false;
     }
@@ -70,7 +74,7 @@ bool UserResetPasswdServlet::verificationEmailCode(const std::string& email, con
         return false;
     }
     // 一次性使用，校验通过后删除
-    chen::RedisUtil::Cmd("blog", "DEL email:verify:3:%s", email.c_str());
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "DEL email:verify:3:%s", email.c_str());
     return true;
 }
 
