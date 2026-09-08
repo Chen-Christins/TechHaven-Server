@@ -53,11 +53,9 @@ bool BlogModule::onUnload() {
 
     MessageMgr::GetInstance()->closeAllChatConnections();
 
-    unregisterWSServlets();
-
-    unregisterServlets();
-
-    unregisterRPCMethods();
+    m_httpServers.clear();
+    m_wsServers.clear();
+    m_rpcServers.clear();
 
     return true;
 }
@@ -526,38 +524,6 @@ void BlogModule::registerRPCMethods() const {
         s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
         s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
     }
-}
-
-void BlogModule::unregisterServlets() {
-    for (auto& s : m_httpServers) {
-        auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(s);
-        if (hs) {
-            hs->getServletDispatch()->clear();
-        }
-    }
-    m_httpServers.clear();
-}
-
-void BlogModule::unregisterWSServlets() {
-    for (auto& s : m_wsServers) {
-        auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(s);
-        if (ws) {
-            ws->getWSServletDispatch()->clear();
-        }
-    }
-    m_wsServers.clear();
-}
-
-void BlogModule::unregisterRPCMethods() {
-    std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
-    getAllRpcServer(rpc_servers);
-    for (const auto& s : rpc_servers) {
-        if (!s) {
-            continue;
-        }
-        s->clearRegistrations();
-    }
-    m_rpcServers.clear();
 }
 
 } // namespace blog

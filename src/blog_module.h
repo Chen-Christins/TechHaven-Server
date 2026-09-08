@@ -90,21 +90,6 @@ private:
      */
     void registerRPCMethods() const;
 
-    /**
-     * @brief 清空所有已注册的 HTTP Servlet 路由
-     */
-    void unregisterServlets();
-
-    /**
-     * @brief 清空所有已注册的 WebSocket Servlet 路由
-     */
-    void unregisterWSServlets();
-
-    /**
-     * @brief 清空所有已注册的 RPC 方法（热重载时避免旧 .so 的 lambda 残留）
-     */
-    void unregisterRPCMethods();
-
 private:
     /// 持有的 HTTP Server 列表（用于 onUnload 中注销 Servlet）
     std::vector<chen::http::HttpServer::ptr> m_httpServers;
