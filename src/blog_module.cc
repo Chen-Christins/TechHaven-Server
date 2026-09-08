@@ -27,6 +27,7 @@ static chen::Logger::ptr logger = LOG_ROOT();
 
 static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>>::ptr g_mysql_dbs =
     chen::Config::Lookup("mysql.dbs", std::map<std::string, std::map<std::string, std::string>>(), "mysql dbs");
+
 static chen::ConfigVar<std::string>::ptr g_work_path =
     chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
 
@@ -45,20 +46,31 @@ bool BlogModule::onLoad() {
 
 bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
+
     ArticleMgr::GetInstance()->stop();
+
     NotificationMgr::GetInstance()->closeAllConnections();
+
     MessageMgr::GetInstance()->closeAllChatConnections();
+
     unregisterWSServlets();
+
     unregisterServlets();
+
     unregisterRPCMethods();
+
     return true;
 }
 
 bool BlogModule::onDrain() {
     INFO(logger) << "onDrain";
+
     ArticleMgr::GetInstance()->stop();
+
     NotificationMgr::GetInstance()->closeAllConnections();
+
     MessageMgr::GetInstance()->closeAllChatConnections();
+
     return true;
 }
 
@@ -73,9 +85,11 @@ static void SyncAllReposFromGitHub() {
     std::vector<data::OrganizationReposInfo::ptr> repos;
     OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
     for (const auto& repo : repos) {
-        std::string url = repo->getUrl();
-        std::string token = repo->getToken();
-        chen::Scheduler::GetThis()->schedule([id = repo->getId(), url, token]() {
+        chen::Scheduler::GetThis()->schedule([repo] {
+            int64_t id = repo->getId();
+            std::string url = repo->getUrl();
+            std::string token = repo->getToken();
+
             OrganizationRepoManager::SyncFromGitHub(id, url, token);
             OrganizationRepoPrManager::SyncFromGitHub(id, url, token, 20);
         });
@@ -232,47 +246,48 @@ bool BlogModule::initMySQL() {
         XX(UserLoginDeviceInfoDao, "user_login_device")
 #undef XX
 
-        // 数据库迁移：为已有表补充新增列
-        {
-            INFO(logger) << "migrate database begin";
-#define XX(clazz) blog::data::clazz::MigrateTableMySQL(mysql);
-            XX(EmailVerificationInfoDao)
-            XX(UserInfoDao)
-            XX(ArticleInfoDao)
-            XX(CategoryInfoDao)
-            XX(LabelInfoDao)
-            XX(ArticleCategoryRelInfoDao)
-            XX(ArticleLabelRelInfoDao)
-            XX(AssignmentInfoDao)
-            XX(OrganizationApplyInfoDao)
-            XX(OrganizationInfoDao)
-            XX(OrganizationRepoPrsInfoDao)
-            XX(OrganizationReposInfoDao)
-            XX(OrganizationUserRelInfoDao)
-            XX(AssignmentOrganizationRelInfoDao)
-            XX(AssignmentUserRelInfoDao)
-            XX(ResourceInfoDao)
-            XX(ChunkUploadInfoDao)
-            XX(NotificationInfoDao)
-            XX(UserFollowRelInfoDao)
-            XX(ArticlePraiseRelInfoDao)
-            XX(CommentInfoDao)
-            XX(CommentPraiseRelInfoDao)
-            XX(ConversationInfoDao)
-            XX(ConversationMessageInfoDao)
-            XX(BackupRecordInfoDao)
-            XX(ExportRecordInfoDao)
-            XX(RequirementInfoDao)
-            XX(BugInfoDao)
-            XX(TaskInfoDao)
-            XX(BadgeInfoDao)
-            XX(HelpFaqsInfoDao)
-            XX(UserFeedbackInfoDao)
-            XX(UserAiConfigInfoDao)
-            XX(UserLoginDeviceInfoDao)
+        INFO(logger) << "migrate database begin";
+#define XX(clazz)                                           \
+    if (blog::data::clazz::MigrateTableMySQL(mysql) != 0) { \
+        ERROR(logger) << "migrate table mysql failed";      \
+        return false;                                       \
+    }
+        XX(EmailVerificationInfoDao)
+        XX(UserInfoDao)
+        XX(ArticleInfoDao)
+        XX(CategoryInfoDao)
+        XX(LabelInfoDao)
+        XX(ArticleCategoryRelInfoDao)
+        XX(ArticleLabelRelInfoDao)
+        XX(AssignmentInfoDao)
+        XX(OrganizationApplyInfoDao)
+        XX(OrganizationInfoDao)
+        XX(OrganizationRepoPrsInfoDao)
+        XX(OrganizationReposInfoDao)
+        XX(OrganizationUserRelInfoDao)
+        XX(AssignmentOrganizationRelInfoDao)
+        XX(AssignmentUserRelInfoDao)
+        XX(ResourceInfoDao)
+        XX(ChunkUploadInfoDao)
+        XX(NotificationInfoDao)
+        XX(UserFollowRelInfoDao)
+        XX(ArticlePraiseRelInfoDao)
+        XX(CommentInfoDao)
+        XX(CommentPraiseRelInfoDao)
+        XX(ConversationInfoDao)
+        XX(ConversationMessageInfoDao)
+        XX(BackupRecordInfoDao)
+        XX(ExportRecordInfoDao)
+        XX(RequirementInfoDao)
+        XX(BugInfoDao)
+        XX(TaskInfoDao)
+        XX(BadgeInfoDao)
+        XX(HelpFaqsInfoDao)
+        XX(UserFeedbackInfoDao)
+        XX(UserAiConfigInfoDao)
+        XX(UserLoginDeviceInfoDao)
 #undef XX
-            INFO(logger) << "migrate database end";
-        }
+        INFO(logger) << "migrate database end";
     }
 
     return true;
@@ -284,9 +299,11 @@ void BlogModule::registerServlets() const {
     for (auto& i : m_httpServers) {
         const auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         ASSERT_RET(hs != nullptr);
+
         const auto dp = hs->getServletDispatch();
         ASSERT_RET(hs != nullptr);
-#define XX(clazz) chen::http::Servlet::ptr(new servlet::clazz)
+
+#define XX(clazz) std::make_shared<servlet::clazz>()
         // 用户相关
         dp->addServlet("/api/v1/user/send_code", XX(UserSendCodeServlet));
         dp->addServlet("/api/v1/user/create", XX(UserCreateServlet));
@@ -476,6 +493,7 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/rd/organizations", XX(RdOrganizationsServlet));
         dp->addServlet("/api/v1/rd/organizations/members", XX(RdOrganizationMembersServlet));
 #undef XX
+
     }
 }
 
@@ -489,14 +507,12 @@ void BlogModule::registerWSServlets() const {
         chen::http::ServletDispatch::ptr dp = ws->getWSServletDispatch();
         ASSERT_RET(dp != nullptr);
 
-        servlet::NotifyServlet::ptr notify_servlet(std::make_shared<servlet::NotifyServlet>());
-        dp->addServlet("/ws/v1/notification", notify_servlet);
+#define XX(clazz) std::make_shared<servlet::clazz>()
+        dp->addServlet("/ws/v1/notification", XX(NotifyServlet));
+        dp->addServlet("/ws/v1/presence", XX(PresenceServlet));
+        dp->addServlet("/ws/v1/messages", XX(MessageWSServlet));
+#undef XX
 
-        servlet::PresenceServlet::ptr presence_servlet(std::make_shared<servlet::PresenceServlet>());
-        dp->addServlet("/ws/v1/presence", presence_servlet);
-
-        servlet::MessageWSServlet::ptr message_ws_servlet(std::make_shared<servlet::MessageWSServlet>());
-        dp->addServlet("/ws/v1/messages", message_ws_servlet);
     }
 }
 
