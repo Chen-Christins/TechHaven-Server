@@ -157,5 +157,15 @@ inline bool CanAssignTask(int32_t org_role) {
     return org_role >= OrgRole::REPORTER;
 }
 
+// ============================================================================
+// 文章 (Article) 权限
+// ============================================================================
+
+/// 管理员和审核员发布的文章跳过审核，直接发布
+inline bool CanBypassReview(int32_t system_role) {
+    return system_role == UserManager::Role::ADMIN
+        || system_role == UserManager::Role::CHECKER;
+}
+
 } // namespace permission
 } // namespace blog

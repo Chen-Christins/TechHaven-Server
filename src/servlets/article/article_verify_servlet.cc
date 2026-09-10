@@ -75,6 +75,9 @@ int32_t ArticleVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
 
+        // 审核通过或拒绝后，从定时发布调度中移除
+        ArticleMgr::GetInstance()->unscheduleArticle(id);
+
         IndexMgr::GetInstance()->updateArticle(info);
 
         // Notify author about review result + mark other admins' notifications as read

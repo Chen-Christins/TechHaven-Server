@@ -62,8 +62,22 @@ public:
 
     /**
      * @brief 定时发布已到发布时间的文章（由 BlogModule::onTick 调用）
+     * @note 从 Redis sorted set 获取到期文章，避免 DB 全表扫描
      */
     void onTimer();
+
+    /**
+     * @brief 将文章加入定时发布调度（Redis sorted set）
+     * @param article_id 文章 ID
+     * @param publish_time 发布时间戳
+     */
+    void scheduleArticle(int64_t article_id, int64_t publish_time);
+
+    /**
+     * @brief 将文章从定时发布调度中移除
+     * @param article_id 文章 ID
+     */
+    void unscheduleArticle(int64_t article_id);
 
     /**
      * @brief 定时 flush 脏数据（浏览/点赞/收藏数）到数据库（由 BlogModule::onTick 调用）
