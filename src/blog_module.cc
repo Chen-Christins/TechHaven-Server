@@ -83,6 +83,9 @@ static void SyncAllReposFromGitHub() {
     std::vector<data::OrganizationReposInfo::ptr> repos;
     OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
     for (const auto& repo : repos) {
+        if (!repo) {
+            continue;
+        }
         chen::Scheduler::GetThis()->schedule([repo] {
             int64_t id = repo->getId();
             std::string url = repo->getUrl();
@@ -517,12 +520,12 @@ void BlogModule::registerWSServlets() const {
 void BlogModule::registerRPCMethods() const {
     INFO(logger) << "registerRPCMethods";
 
-    for (const auto& s : m_rpcServers) {
-        if (!s) {
+    for (const auto& server : m_rpcServers) {
+        if (!server) {
             continue;
         }
-        s->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
-        s->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
+        server->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
+        server->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
     }
 }
 
