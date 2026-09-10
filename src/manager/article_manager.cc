@@ -117,7 +117,7 @@ int64_t ArticleManager::listByLabelPages(std::vector<data::ArticleInfo::ptr>& in
     qb->join("article_label_rel alr", "a.id = alr.article_id");
     qb->where("alr.label_id", "=", label_id);
     qb->where("alr.is_deleted", "=", (int64_t)0);
-    qb->where("a.state", "=", (int64_t)Status::PUBLISHED);
+    qb->where("a.state", "=", (int64_t)PUBLISHED);
     qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
     qb->orderBy("a.id", "DESC");
 
@@ -159,7 +159,7 @@ int64_t ArticleManager::listByCategoryPages(std::vector<data::ArticleInfo::ptr>&
     qb->join("article_category_rel acr", "a.id = acr.article_id");
     qb->where("acr.category_id", "=", category_id);
     qb->where("acr.is_deleted", "=", (int64_t)0);
-    qb->where("a.state", "=", (int64_t)Status::PUBLISHED);
+    qb->where("a.state", "=", (int64_t)PUBLISHED);
     qb->whereIf(valid, "a.is_deleted", "=", (int64_t)0);
     qb->orderBy("a.id", "DESC");
 
@@ -253,7 +253,7 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
     }
     auto qb = data::ArticleInfoDao::newQuery();
     qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
-    qb->where("state", "=", (int64_t)Status::CHECKING);
+    qb->where("state", "=", (int64_t)CHECKING);
     qb->orderBy("id", "DESC");
 
     int64_t total = 0;
@@ -281,7 +281,7 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
     {
         auto qb = data::ArticleInfoDao::newQuery();
         qb->whereSQL("id < ?", id);
-        qb->where("state", "=", (int64_t)Status::PUBLISHED);
+        qb->where("state", "=", (int64_t)PUBLISHED);
         qb->where("is_deleted", "=", (int64_t)0);
         qb->orderBy("id", "DESC");
         qb->limit(1);
@@ -302,7 +302,7 @@ std::pair<data::ArticleInfo::ptr, data::ArticleInfo::ptr> ArticleManager::nearby
     {
         auto qb = data::ArticleInfoDao::newQuery();
         qb->whereSQL("id > ?", id);
-        qb->where("state", "=", (int64_t)Status::PUBLISHED);
+        qb->where("state", "=", (int64_t)PUBLISHED);
         qb->where("is_deleted", "=", (int64_t)0);
         qb->orderBy("id", "ASC");
         qb->limit(1);
@@ -379,9 +379,9 @@ ArticleManager::ArticleStats ArticleManager::getStats(int32_t category, int32_t 
     for (auto& [st, cnt] : rows) {
         stats.total += cnt;
         switch (st) {
-        case Status::CHECKING:  stats.pending += cnt;   break;
-        case Status::PUBLISHED: stats.published += cnt; break;
-        case Status::REJECTED:  stats.rejected += cnt;  break;
+        case CHECKING:  stats.pending += cnt;   break;
+        case PUBLISHED: stats.published += cnt; break;
+        case REJECTED:  stats.rejected += cnt;  break;
         }
     }
 
@@ -608,50 +608,78 @@ bool ArticleManager::listArticlePra(int64_t id, std::map<int64_t, int64_t>& user
 }
 #undef PROC
 
+static const char* kScheduleKey = "article:schedule";
+
+void ArticleManager::scheduleArticle(int64_t article_id, int64_t publish_time) {
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zadd %s %lld %lld", kScheduleKey, (long long)publish_time, (long long)article_id);
+}
+
+void ArticleManager::unscheduleArticle(int64_t article_id) {
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrem %s %lld", kScheduleKey, (long long)article_id);
+}
+
 void ArticleManager::onTimer() {
     time_t now = time(0);
+
+    // 从 Redis sorted set 获取已到期的文章 ID
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrangebyscore %s 0 %lld", kScheduleKey, (long long)now);
+    if (!rpy || rpy->type != REDIS_REPLY_ARRAY || rpy->elements == 0) {
+        return;
+    }
+
+    // 收集需要发布的文章 ID
+    std::vector<int64_t> article_ids;
+    for (size_t i = 0; i < rpy->elements; ++i) {
+        if (rpy->element[i]->type == REDIS_REPLY_STRING && rpy->element[i]->str) {
+            article_ids.push_back(chen::TypeUtil::Atoi(rpy->element[i]->str));
+        }
+    }
+
+    if (article_ids.empty()) {
+        return;
+    }
+
     auto db = GetDB();
     if (!db) {
         ERROR(logger) << "getDB error";
         return;
     }
 
-    auto qb = data::ArticleInfoDao::newQuery();
-    qb->where("state", "!=", (int64_t)Status::PUBLISHED);
-    qb->whereSQL("publish_time <= ?", (int64_t)now);
-
-    std::vector<data::ArticleInfo::ptr> infos;
-    if (data::ArticleInfoDao::QueryByBuilder(infos, qb, db)) {
-        ERROR(logger) << "onTimer QueryByBuilder failed";
-        return;
+    // 批量从 sorted set 中移除（原子操作）
+    std::string zrem_cmd = "zrem " + std::string(kScheduleKey);
+    for (auto id : article_ids) {
+        zrem_cmd += " " + std::to_string(id);
     }
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), zrem_cmd.c_str());
 
-    // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数），
-    // 避免用 DB 中的旧值覆盖内存中的正确计数
-    for (auto& info : infos) {
-        auto cached = m_cache.get(info->getId());
+    // 逐个更新文章状态
+    auto trans = db->openTransaction();
+    for (auto id : article_ids) {
+        auto info = get(id);
+        if (!info || info->getIsDeleted()) {
+            continue;
+        }
+        if (info->getState() == PUBLISHED) {
+            continue;
+        }
+
+        // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数）
+        auto cached = m_cache.get(id);
         if (cached) {
             info = cached;
         }
-        info->setState(Status::PUBLISHED);
+        info->setState(PUBLISHED);
         info->setUpdateTime(now);
-    }
 
-    if (infos.empty()) {
-        return;
-    }
-
-    auto trans = db->openTransaction();
-    for (auto& i : infos) {
-        if (data::ArticleInfoDao::Update(i, db)) {
-            ERROR(logger) << "Update error errno=" << errno
-                << db->getErrno() << " errstr=" << db->getErrStr()
-                << " data=" << i->toJsonString();
+        if (data::ArticleInfoDao::Update(info, db)) {
+            ERROR(logger) << "Update error errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr()
+                << " data=" << info->toJsonString();
+            continue;
         }
-        m_cache.set(i->getId(), i);
-        // 文章定时发布后，清除对应月份的日历缓存
-        clearCalendarCache(i->getUserId(), i->getPublishTime());
-        IndexMgr::GetInstance()->updateArticle(i);
+        m_cache.set(id, info);
+        clearCalendarCache(info->getUserId(), info->getPublishTime());
+        IndexMgr::GetInstance()->updateArticle(info);
     }
     trans->commit();
 }
@@ -719,7 +747,7 @@ int64_t ArticleManager::getTotalViews() {
     }
     auto qb = data::ArticleInfoDao::newQuery();
     qb->select("CAST(COALESCE(SUM(views), 0) AS SIGNED)");
-    qb->where("state", "=", (int64_t)Status::PUBLISHED);
+    qb->where("state", "=", (int64_t)PUBLISHED);
     qb->where("is_deleted", "=", (int64_t)0);
     int64_t total = 0;
     qb->queryScalarInt64(total, db);
@@ -778,7 +806,7 @@ void ArticleManager::getCalendarDays(int64_t user_id, int32_t year, int32_t mont
     auto qb = data::ArticleInfoDao::newQuery();
     qb->select("DISTINCT DAY(publish_time) as d");
     qb->where("user_id", "=", user_id);
-    qb->where("state", "=", (int64_t)Status::PUBLISHED);
+    qb->where("state", "=", (int64_t)PUBLISHED);
     qb->where("is_deleted", "=", (int64_t)0);
     qb->where("publish_time", ">=", std::string(start_str));
     qb->where("publish_time", "<", std::string(end_str));

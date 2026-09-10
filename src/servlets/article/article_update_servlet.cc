@@ -11,6 +11,7 @@
 #include "../../manager/article_category_rel_manager.h"
 #include "../../manager/article_label_rel_manager.h"
 #include "../../util.h"
+#include "../../permission.h"
 
 namespace blog {
 namespace servlet {
@@ -52,8 +53,18 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
             break;
         }
 
+        // 检查文章作者是否可以跳过审核（管理员和审核员编辑后直接发布）
+        bool bypass_review = false;
+        auto article_author = UserMgr::GetInstance()->get(info->getUserId());
+        if (article_author) {
+            bypass_review = permission::CanBypassReview(article_author->getRole());
+        }
+
         if (old_state == ArticleManager::Status::PUBLISHED) {
-            info->setState(ArticleManager::Status::CHECKING);
+            // 可以跳过审核时，保持已发布状态不变
+            if (!bypass_review) {
+                info->setState(ArticleManager::Status::CHECKING);
+            }
         } else if (old_state == ArticleManager::Status::REJECTED) {
             info->setState(ArticleManager::Status::PRIVATE);
         }
@@ -90,6 +101,16 @@ int32_t ArticleUpdateServlet::handle(chen::http::HttpRequest::ptr request, chen:
         if (!trans->commit()) {
             result->setErrno(errcode::DB_COMMIT_FAILED);
             break;
+        }
+
+        // 更新定时发布调度：先移除旧的，再按需添加新的
+        ArticleMgr::GetInstance()->unscheduleArticle(id);
+        time_t now_publish = chen::TimeUtil::GetCurrentSec();
+        int32_t new_state = info->getState();
+        if ((new_state == ArticleManager::Status::CHECKING
+                || new_state == ArticleManager::Status::PRIVATE)
+                && info->getPublishTime() > now_publish) {
+            ArticleMgr::GetInstance()->scheduleArticle(id, info->getPublishTime());
         }
 
         IndexMgr::GetInstance()->updateArticle(info);

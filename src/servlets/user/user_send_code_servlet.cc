@@ -119,7 +119,7 @@ int32_t UserSendCodeServlet::handle(chen::http::HttpRequest::ptr request, chen::
             data.smtp_host = smtp_host;
             data.port = smtp_port;
 
-            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_SEND_CODE, data);
+            chen::EventBusMgr::GetInstance()->emitAsync(EVENT_ID_USER_SEND_CODE, std::move(data));
         }
 
         result->setErrno(errcode::SUCCESS);

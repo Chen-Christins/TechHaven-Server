@@ -1,14 +1,13 @@
 #include "article_publish_servlet.h"
 
 #include <chen/log/log.h>
-#include <chen/iomanager/iomanager.h>
-#include <json/json.h>
 
 #include "../../index.h"
 #include "../../manager/article_manager.h"
 #include "../../manager/user_manager.h"
 #include "../../util.h"
 #include "../../event/event_define.h"
+#include "../../permission.h"
 
 namespace blog {
 namespace servlet {
@@ -54,6 +53,22 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
         }
         info->setUpdateTime(now);
 
+        // 检查是否可以跳过审核（管理员和审核员直接发布）
+        auto author = UserMgr::GetInstance()->get(uid);
+        bool bypass_review = false;
+        if (author) {
+            bypass_review = permission::CanBypassReview(author->getRole());
+        }
+
+        if (bypass_review) {
+            // 跳过审核，直接发布或设为私密（定时发布）
+            if (info->getPublishTime() <= now) {
+                info->setState(ArticleManager::Status::PUBLISHED);
+            } else {
+                info->setState(ArticleManager::Status::PRIVATE);
+            }
+        }
+
         auto db = getDB();
         if (!db) {
             result->setErrno(errcode::DB_CONNECTION_FAILED);
@@ -69,9 +84,13 @@ int32_t ArticlePublishServlet::handle(chen::http::HttpRequest::ptr request, chen
         // 清除对应月份的日历缓存
         ArticleMgr::GetInstance()->clearCalendarCache(info->getUserId(), info->getPublishTime());
 
-        // Notify admins and checkers about new article
-        {
-            auto author = UserMgr::GetInstance()->get(uid);
+        // 定时发布文章加入 Redis sorted set 调度
+        if (info->getPublishTime() > now && info->getState() != ArticleManager::Status::PUBLISHED) {
+            ArticleMgr::GetInstance()->scheduleArticle(id, info->getPublishTime());
+        }
+
+        // 未跳过审核时，通知审核员
+        if (!bypass_review) {
             EventArticleReviewData data = {};
             data.type = "request";
             data.article_id = id;

@@ -70,6 +70,9 @@ int32_t ArticleSwitchStateServlet::handle(chen::http::HttpRequest::ptr request, 
         ArticleMgr::GetInstance()->add(article);
         IndexMgr::GetInstance()->updateArticle(article);
 
+        // 状态变更后，从定时发布调度中移除
+        ArticleMgr::GetInstance()->unscheduleArticle(article->getId());
+
         // 清除旧发布时间对应月份的日历缓存
         if (oldPublishTime > 0) {
             ArticleMgr::GetInstance()->clearCalendarCache(article->getUserId(), oldPublishTime);
