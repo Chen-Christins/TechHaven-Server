@@ -18,6 +18,8 @@
         <column name="is_deleted" type="int32" desc="账号是否已经删除"/>
         <column name="create_time" type="datetime" default="current_timestamp" desc="账号创建时间"/>
         <column name="update_time" type="datetime" default="current_timestamp" desc="账号信息上一次更新时间"/>
+        <column name="totp_secret" type="string" length="64" default="" desc="TOTP密钥(Base32编码)"/>
+        <column name="totp_enabled" type="int32" default="0" desc="是否启用2FA: 0否 1是"/>
     </columns>
     <indexs>
         <index name="pk" cols="id" type="pk"/>

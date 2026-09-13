@@ -245,6 +245,7 @@ bool BlogModule::initMySQL() {
         XX(UserFeedbackInfoDao, "user_feedback")
         XX(UserAiConfigInfoDao, "user_ai_config")
         XX(UserLoginDeviceInfoDao, "user_login_device")
+        XX(UserRecoveryCodeInfoDao, "user_recovery_code")
 #undef XX
 
         INFO(logger) << "migrate database begin";
@@ -287,6 +288,7 @@ bool BlogModule::initMySQL() {
         XX(UserFeedbackInfoDao)
         XX(UserAiConfigInfoDao)
         XX(UserLoginDeviceInfoDao)
+        XX(UserRecoveryCodeInfoDao)
 #undef XX
         INFO(logger) << "migrate database end";
     }
@@ -338,6 +340,13 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/user/following/list", XX(UserFollowingListServlet));
         dp->addServlet("/api/v1/user/follower/list", XX(UserFollowerListServlet));
         dp->addServlet("/api/v1/user/mutual_following/list", XX(UserMutualFollowingListServlet));
+        // 双因素认证相关
+        dp->addServlet("/api/v1/user/2fa/enable", XX(User2faEnableServlet));
+        dp->addServlet("/api/v1/user/2fa/confirm", XX(User2faConfirmServlet));
+        dp->addServlet("/api/v1/user/2fa/disable", XX(User2faDisableServlet));
+        dp->addServlet("/api/v1/user/2fa/verify", XX(User2faVerifyServlet));
+        dp->addServlet("/api/v1/user/2fa/reset", XX(User2faResetServlet));
+        dp->addServlet("/api/v1/user/2fa/recovery", XX(User2faRecoveryServlet));
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));

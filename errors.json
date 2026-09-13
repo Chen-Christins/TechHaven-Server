@@ -31,6 +31,13 @@
     { "errno": 2017,  "key": "SEND_CODE_FREQUENT",         "zh": "验证码发送过于频繁，请稍后再试", "en": "Verification code sent too frequently, please try again later" },
     { "errno": 2018,  "key": "DEVICE_NOT_FOUND",           "zh": "登录设备不存在",              "en": "Login device not found" },
     { "errno": 2019,  "key": "DEVICE_KICK_FAILED",         "zh": "设备下线失败",               "en": "Failed to kick device" },
+    { "errno": 2020,  "key": "TOTP_INVALID_CODE",          "zh": "验证码错误",                 "en": "Invalid TOTP code" },
+    { "errno": 2021,  "key": "TOTP_NOT_ENABLED",           "zh": "双因素认证未启用",            "en": "Two-factor authentication not enabled" },
+    { "errno": 2022,  "key": "TOTP_ALREADY_ENABLED",       "zh": "双因素认证已启用",            "en": "Two-factor authentication already enabled" },
+    { "errno": 2023,  "key": "TOTP_ENABLE_FAILED",         "zh": "启用双因素认证失败",          "en": "Failed to enable two-factor authentication" },
+    { "errno": 2024,  "key": "TOTP_CONFIRM_FAILED",        "zh": "确认双因素认证失败",          "en": "Failed to confirm two-factor authentication" },
+    { "errno": 2025,  "key": "RECOVERY_CODE_INVALID",      "zh": "恢复码无效或已使用",          "en": "Recovery code invalid or already used" },
+    { "errno": 2026,  "key": "TEMP_TOKEN_INVALID",         "zh": "临时凭证无效或已过期",        "en": "Temporary token invalid or expired" },
 
     { "errno": 3001,  "key": "ARTICLE_NOT_FOUND",           "zh": "文章不存在",               "en": "Article not found" },
     { "errno": 3002,  "key": "ARTICLE_INVALID_TYPE",        "zh": "文章类型错误",              "en": "Invalid article type" },
