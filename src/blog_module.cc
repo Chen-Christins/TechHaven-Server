@@ -18,6 +18,7 @@
 #include "./include/servlets.h"
 #include "./include/tables.h"
 #include "./index.h"
+#include "chen/ds/event_bus.h"
 #include "event/events.h"
 #include "protocol_ss_github.h" // IWYU pragma: keep
 
@@ -49,31 +50,21 @@ bool BlogModule::onUnload() {
 
     ArticleMgr::GetInstance()->stop();
 
-    NotificationMgr::GetInstance()->closeAllConnections();
-
-    MessageMgr::GetInstance()->closeAllChatConnections();
-
-    m_httpServers.clear();
-    m_wsServers.clear();
-    m_rpcServers.clear();
-
     return true;
 }
 
-bool BlogModule::onDrain() {
-    INFO(logger) << "onDrain";
+bool BlogModule::onActivate() {
+    INFO(logger) << "onActivate";
+    return true;
+}
+
+bool BlogModule::onDeactivate() {
+    INFO(logger) << "onDeactivate";
 
     ArticleMgr::GetInstance()->stop();
 
-    NotificationMgr::GetInstance()->closeAllConnections();
+    chen::EventBusMgr::GetInstance()->clearAll();
 
-    MessageMgr::GetInstance()->closeAllChatConnections();
-
-    return true;
-}
-
-bool BlogModule::onGracefulUnload() {
-    INFO(logger) << "onGracefulUnload";
     return true;
 }
 
@@ -156,28 +147,10 @@ bool BlogModule::onServerReady() {
         return false;
     }
 
-    // HTTP 服务
-    getAllHttpServer(m_httpServers);
-    if (m_httpServers.empty()) {
-        ERROR(logger) << "no http server, cannot register servlets";
-        return false;
-    }
     registerServlets();
 
-    // WS 服务
-    getAllWSServer(m_wsServers);
-    if (m_wsServers.empty()) {
-        ERROR(logger) << "no ws server, cannot register ws servlets";
-        return false;
-    }
     registerWSServlets();
 
-    // RPC 服务
-    getAllRpcServer(m_rpcServers);
-    if (m_rpcServers.empty()) {
-        ERROR(logger) << "no rpc server, cannot register rpc methods";
-        return false;
-    }
     registerRPCMethods();
 
     // 初始化事件总线
@@ -296,10 +269,18 @@ bool BlogModule::initMySQL() {
     return true;
 }
 
-void BlogModule::registerServlets() const {
+void BlogModule::registerServlets() {
     INFO(logger) << "registerServlets";
 
-    for (auto& i : m_httpServers) {
+    std::vector<chen::http::HttpServer::ptr> http_servers;
+    getAllHttpServer(http_servers);
+
+    if (http_servers.empty()) {
+        ERROR(logger) << "No HTTP server found";
+        return;
+    }
+
+    for (auto& i : http_servers) {
         const auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         ASSERT_RET(hs != nullptr);
 
@@ -507,10 +488,18 @@ void BlogModule::registerServlets() const {
     }
 }
 
-void BlogModule::registerWSServlets() const {
+void BlogModule::registerWSServlets() {
     INFO(logger) << "registerWSServlets";
 
-    for (auto& i : m_wsServers) {
+    std::vector<chen::http::WSServer::ptr> ws_servers;
+    getAllWSServer(ws_servers);
+
+    if (ws_servers.empty()) {
+        ERROR(logger) << "No WS server found";
+        return;
+    }
+
+    for (auto& i : ws_servers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
         ASSERT_RET(ws != nullptr);
 
@@ -526,10 +515,18 @@ void BlogModule::registerWSServlets() const {
     }
 }
 
-void BlogModule::registerRPCMethods() const {
+void BlogModule::registerRPCMethods() {
     INFO(logger) << "registerRPCMethods";
 
-    for (const auto& server : m_rpcServers) {
+    std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
+    getAllRpcServer(rpc_servers);
+
+    if (rpc_servers.empty()) {
+        ERROR(logger) << "No RPC server found";
+        return;
+    }
+
+    for (const auto& server : rpc_servers) {
         if (!server) {
             continue;
         }
@@ -544,8 +541,12 @@ extern "C" {
 
 chen::Module* CreateModule() {
     chen::Module* module = new blog::BlogModule;
+    INFO(blog::logger) << "BlogModule::CreateModule";
     return module;
 }
 
-void DestroyModule(const chen::Module* module) { delete module; }
+void DestroyModule(const chen::Module* module) {
+    INFO(blog::logger) << "BlogModule::DestroyModule";
+    delete module;
+}
 }

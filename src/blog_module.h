@@ -8,8 +8,6 @@
 #pragma once
 
 #include <chen/module/module.h>
-#include <chen/http/http_server.h>
-#include <chen/http/ws_server.h>
 
 namespace blog {
 
@@ -57,17 +55,20 @@ public:
     bool onServerUp() override;
 
     /**
-     * @brief 热重载排空阶段（蓝绿部署）：关闭 WS 连接、停止定时器
+     * @brief 模块激活：新模块接管流量时调用（热重载）
+     * @details 在所有 server 的 dispatch 切换后调用。模块应在此方法中
+     *          注册新的 servlet/handler。默认实现调用 onServerReady()。
      * @return bool
      */
-    bool onDrain() override;
+    bool onActivate() override;
 
     /**
-     * @brief 热重载排空完成（蓝绿部署）：释放非 dispatch 资源
+     * @brief 模块停用：旧模块被替换时调用（热重载）
+     * @details 新模块已接管，旧模块停止接收新请求。
+     *          用于关闭 WebSocket 连接等长连接。默认实现返回 true。
      * @return bool
      */
-    bool onGracefulUnload() override;
-
+    bool onDeactivate() override;
 private:
 
     /**
@@ -78,25 +79,17 @@ private:
     /**
      * @brief 注册Servlet
      */
-    void registerServlets() const;
+    void registerServlets();
 
     /**
      * @brief 注册WebSocket Servlet
      */
-    void registerWSServlets() const;
+    void registerWSServlets();
 
     /**
      * @brief 注册RPC方法
      */
-    void registerRPCMethods() const;
-
-private:
-    /// 持有的 HTTP Server 列表（用于 onUnload 中注销 Servlet）
-    std::vector<chen::http::HttpServer::ptr> m_httpServers;
-    /// 持有的 WebSocket Server 列表（用于 onUnload 中注销 WS Servlet）
-    std::vector<chen::http::WSServer::ptr> m_wsServers;
-    /// 持有的 RPC Server 列表（用于 onUnload 中注销 RPC 方法）
-    std::vector<chen::rpc::RpcServer::ptr> m_rpcServers;
+    void registerRPCMethods();
 };
 
 }
