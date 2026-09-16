@@ -48,6 +48,8 @@ bool BlogModule::onLoad() {
 bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
 
+    chen::EventBusMgr::GetInstance()->clearAll();
+
     ArticleMgr::GetInstance()->stop();
 
     return true;
@@ -63,13 +65,9 @@ bool BlogModule::onDeactivate() {
 
     ArticleMgr::GetInstance()->stop();
 
-    chen::EventBusMgr::GetInstance()->clearAll();
-
     return true;
 }
 
-/// 遍历所有含 token 的仓库，为每个仓库调度【一个】异步任务，
-/// 在该任务内串行执行仓库信息同步与 PR 同步，避免两个 manager 各起任务导致的并发写竞争
 static void SyncAllReposFromGitHub() {
     std::vector<data::OrganizationReposInfo::ptr> repos;
     OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
@@ -89,19 +87,14 @@ static void SyncAllReposFromGitHub() {
 }
 
 void BlogModule::onTick() {
-    // 1. 定时发布已到发布时间的文章
     ArticleMgr::GetInstance()->onTimer();
 
-    // 2. 定时 flush 脏数据（浏览/点赞/收藏数）到数据库
     ArticleMgr::GetInstance()->onUpdateTimer();
 
-    // 3. 关闭已过期的广播
     NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
 
-    // 4. 清理过期的分块上传会话及临时文件
     ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
-    // 5. 定时同步有 token 的仓库及其 PR（每 30 分钟）
     static int s_pr_sync_tick = 0;
 
     if (++s_pr_sync_tick >= 30) {
@@ -120,18 +113,17 @@ uint64_t BlogModule::getTickIntervalMs() {
 bool BlogModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
+    chen::EventBusMgr::GetInstance()->clearAll();
+
     if (!initMySQL()) {
         ERROR(logger) << "initDB failed";
         return false;
     }
 
-    // 启动时从 DB 同步统计计数到 Redis，覆盖旧实例可能残留的数据
     ArticleMgr::GetInstance()->syncStatsFromDB();
 
-    // 确保默认徽章数据存在
     BadgeMgr::GetInstance()->ensureDefaults();
 
-    // 确保存在超级管理员（否则无法配置 SMTP，进而无法注册新用户）
     UserMgr::GetInstance()->ensureSuperAdmin();
 
     ArticleMgr::GetInstance()->start();
@@ -153,7 +145,6 @@ bool BlogModule::onServerReady() {
 
     registerRPCMethods();
 
-    // 初始化事件总线
     if (!EventMsgsInit()) {
         ERROR(logger) << "EventMsgsInit failed";
         return false;

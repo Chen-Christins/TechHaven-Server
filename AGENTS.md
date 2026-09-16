@@ -104,7 +104,26 @@ New header files (`.h`) require a Doxygen file comment. **Always ask the user wh
 
 Source files (`.cc`) do NOT need this header.
 
-## 4. New Feature Checklist
+## 4. Module Lifecycle & EventBus Safety
+
+**Module lifecycle methods:**
+```
+启动:          onLoad() → onServerReady() → onServerUp() → [onTick()...]
+关机:          onDeactivate() → onUnload() → dlclose
+热重载(新模块): onLoad() → onServerReady() → onServerUp()
+热重载(旧模块):                  onDeactivate() → dlclose
+```
+
+**EventBus listener 中的 `std::function` 通过 type-erasure 存储函数指针，指向 `.so` 中的代码。
+`dlclose()` 后指针悬空，销毁会 SIGSEGV。`clearAll()` 必须在 dlclose 之前调用。**
+
+| 方法 | 调 `clearAll()` | 原因 |
+|------|-----------------|------|
+| `onServerReady()` 开头 | ✅ 安全 | 旧 .so 还未 dlclose |
+| `onDeactivate()` | ❌ 禁止 | 会清掉新模块刚注册的 listener |
+| `onUnload()` | ✅ 安全 | 仅关机，.so 尚未 dlclose |
+
+## 5. New Feature Checklist
 
 When adding a new feature:
 
@@ -115,7 +134,7 @@ When adding a new feature:
 5. **Registration** — `blog_module.cc`: table create, migrate, servlet route
 6. **Error codes** — `src/error_codes.h` + `errors.json`
 
-## 4. Code Style Quick Reference
+## 6. Code Style Quick Reference
 
 | Element | Convention |
 |---------|-----------|
