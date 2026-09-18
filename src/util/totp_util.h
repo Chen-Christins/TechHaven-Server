@@ -43,15 +43,6 @@ public:
     static std::string HashRecoveryCode(const std::string& code);
 
 private:
-    /// Base32 编码（RFC 4648，大写字母 + '=' padding）
-    static std::string Base32Encode(const uint8_t* data, size_t len);
-
-    /// Base32 解码
-    static std::vector<uint8_t> Base32Decode(const std::string& encoded);
-
-    /// HMAC-SHA1（原始二进制输出）
-    static std::string HmacSha1(const std::string& key, const std::string& message);
-
     /// 动态截断（RFC 4226 §5.4）
     static uint32_t DynamicTruncation(const std::string& hmacResult);
 
