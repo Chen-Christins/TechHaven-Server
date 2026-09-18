@@ -68,25 +68,15 @@ bool BlogModule::onDeactivate() {
     return true;
 }
 
-static void SyncAllReposFromGitHub() {
-    std::vector<data::OrganizationReposInfo::ptr> repos;
-    OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
-    for (const auto& repo : repos) {
-        if (!repo) {
-            continue;
-        }
-        chen::Scheduler::GetThis()->schedule([repo] {
-            int64_t id = repo->getId();
-            std::string url = repo->getUrl();
-            std::string token = repo->getToken();
-
-            OrganizationRepoManager::SyncFromGitHub(id, url, token);
-            OrganizationRepoPrManager::SyncFromGitHub(id, url, token, 20);
-        });
-    }
-}
-
 void BlogModule::onTick() {
+    static int s_pr_sync_tick = 0;
+
+    if (chen::TimeUtil::IsZeroOfDay()) {
+        s_pr_sync_tick = 0;
+
+        OrganizationRepoMgr::GetInstance()->onTimer();
+    }
+
     ArticleMgr::GetInstance()->onTimer();
 
     ArticleMgr::GetInstance()->onUpdateTimer();
@@ -95,12 +85,11 @@ void BlogModule::onTick() {
 
     ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
-    static int s_pr_sync_tick = 0;
+    if (s_pr_sync_tick % 45 == 0) {
+        OrganizationRepoPrMgr::GetInstance()->onTimer();
+    }
 
-    if (++s_pr_sync_tick >= 30) {
-        s_pr_sync_tick = 0;
-        SyncAllReposFromGitHub();
-
+    if (s_pr_sync_tick % 60 == 0) {
         INFO(logger) << "module status: " << Module::statusString();
     }
 }

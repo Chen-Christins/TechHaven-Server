@@ -27,6 +27,8 @@ public:
     void add(data::OrganizationRepoPrsInfo::ptr info);
 
     void del(int64_t id);
+
+    void onTimer();
     
     data::OrganizationRepoPrsInfo::ptr get(int64_t id);
     

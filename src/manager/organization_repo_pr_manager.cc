@@ -35,6 +35,23 @@ void OrganizationRepoPrManager::del(int64_t id) {
     m_cache.del(id);
 }
 
+void OrganizationRepoPrManager::onTimer() {
+    std::vector<data::OrganizationReposInfo::ptr> repos;
+    OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
+
+    constexpr int kMaxPrCount = 15;
+    for (const auto& repo : repos) {
+        if (!repo) {
+            continue;
+        }
+        int64_t id = repo->getId();
+        std::string url = repo->getUrl();
+        std::string token = repo->getToken();
+
+        SyncFromGitHub(id, url, token, kMaxPrCount);
+    }
+}
+
 data::OrganizationRepoPrsInfo::ptr OrganizationRepoPrManager::get(int64_t id) {
     auto v = m_cache.get(id);
     if (v) {

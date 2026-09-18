@@ -15,6 +15,8 @@ public:
     void add(data::OrganizationReposInfo::ptr info);
 
     void del(int64_t id);
+
+    void onTimer();
     
     data::OrganizationReposInfo::ptr get(int64_t id);
     
