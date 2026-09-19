@@ -92,6 +92,8 @@ void BlogModule::onTick() {
     if (s_pr_sync_tick % 60 == 0) {
         INFO(logger) << "module status: " << Module::statusString();
     }
+
+    s_pr_sync_tick++;
 }
 
 uint64_t BlogModule::getTickIntervalMs() {
