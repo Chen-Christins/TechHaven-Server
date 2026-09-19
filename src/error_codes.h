@@ -53,6 +53,13 @@ constexpr int32_t USER_FOLLOW_FAILED = 2016;      // 关注操作失败
 constexpr int32_t SEND_CODE_FREQUENT = 2017;       // 验证码发送过于频繁
 constexpr int32_t DEVICE_NOT_FOUND = 2018;         // 登录设备不存在
 constexpr int32_t DEVICE_KICK_FAILED = 2019;       // 设备下线失败
+constexpr int32_t TOTP_INVALID_CODE = 2020;        // TOTP验证码错误
+constexpr int32_t TOTP_NOT_ENABLED = 2021;         // 2FA未启用
+constexpr int32_t TOTP_ALREADY_ENABLED = 2022;     // 2FA已启用
+constexpr int32_t TOTP_ENABLE_FAILED = 2023;       // 2FA启用失败
+constexpr int32_t TOTP_CONFIRM_FAILED = 2024;      // 2FA确认失败
+constexpr int32_t RECOVERY_CODE_INVALID = 2025;    // 恢复码无效或已使用
+constexpr int32_t TEMP_TOKEN_INVALID = 2026;       // 临时凭证无效或已过期
 
 // ==================== 模块03: 文章模块 (03001-03999) ====================
 constexpr int32_t ARTICLE_NOT_FOUND = 3001;      // 文章不存在

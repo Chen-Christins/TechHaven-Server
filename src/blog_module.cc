@@ -18,6 +18,7 @@
 #include "./include/servlets.h"
 #include "./include/tables.h"
 #include "./index.h"
+#include "chen/ds/event_bus.h"
 #include "event/events.h"
 #include "protocol_ss_github.h" // IWYU pragma: keep
 
@@ -47,78 +48,52 @@ bool BlogModule::onLoad() {
 bool BlogModule::onUnload() {
     INFO(logger) << "onUnload";
 
-    ArticleMgr::GetInstance()->stop();
-
-    NotificationMgr::GetInstance()->closeAllConnections();
-
-    MessageMgr::GetInstance()->closeAllChatConnections();
-
-    m_httpServers.clear();
-    m_wsServers.clear();
-    m_rpcServers.clear();
-
-    return true;
-}
-
-bool BlogModule::onDrain() {
-    INFO(logger) << "onDrain";
+    chen::EventBusMgr::GetInstance()->clearAll();
 
     ArticleMgr::GetInstance()->stop();
 
-    NotificationMgr::GetInstance()->closeAllConnections();
-
-    MessageMgr::GetInstance()->closeAllChatConnections();
-
     return true;
 }
 
-bool BlogModule::onGracefulUnload() {
-    INFO(logger) << "onGracefulUnload";
+bool BlogModule::onActivate() {
+    INFO(logger) << "onActivate";
     return true;
 }
 
-/// 遍历所有含 token 的仓库，为每个仓库调度【一个】异步任务，
-/// 在该任务内串行执行仓库信息同步与 PR 同步，避免两个 manager 各起任务导致的并发写竞争
-static void SyncAllReposFromGitHub() {
-    std::vector<data::OrganizationReposInfo::ptr> repos;
-    OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
-    for (const auto& repo : repos) {
-        if (!repo) {
-            continue;
-        }
-        chen::Scheduler::GetThis()->schedule([repo] {
-            int64_t id = repo->getId();
-            std::string url = repo->getUrl();
-            std::string token = repo->getToken();
+bool BlogModule::onDeactivate() {
+    INFO(logger) << "onDeactivate";
 
-            OrganizationRepoManager::SyncFromGitHub(id, url, token);
-            OrganizationRepoPrManager::SyncFromGitHub(id, url, token, 20);
-        });
-    }
+    ArticleMgr::GetInstance()->stop();
+
+    return true;
 }
 
 void BlogModule::onTick() {
-    // 1. 定时发布已到发布时间的文章
-    ArticleMgr::GetInstance()->onTimer();
-
-    // 2. 定时 flush 脏数据（浏览/点赞/收藏数）到数据库
-    ArticleMgr::GetInstance()->onUpdateTimer();
-
-    // 3. 关闭已过期的广播
-    NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
-
-    // 4. 清理过期的分块上传会话及临时文件
-    ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
-
-    // 5. 定时同步有 token 的仓库及其 PR（每 30 分钟）
     static int s_pr_sync_tick = 0;
 
-    if (++s_pr_sync_tick >= 30) {
+    if (chen::TimeUtil::IsZeroOfDay()) {
         s_pr_sync_tick = 0;
-        SyncAllReposFromGitHub();
 
+        OrganizationRepoMgr::GetInstance()->onTimer();
+    }
+
+    ArticleMgr::GetInstance()->onTimer();
+
+    ArticleMgr::GetInstance()->onUpdateTimer();
+
+    NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
+
+    ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
+
+    if (s_pr_sync_tick % 45 == 0) {
+        OrganizationRepoPrMgr::GetInstance()->onTimer();
+    }
+
+    if (s_pr_sync_tick % 60 == 0) {
         INFO(logger) << "module status: " << Module::statusString();
     }
+
+    s_pr_sync_tick++;
 }
 
 uint64_t BlogModule::getTickIntervalMs() {
@@ -129,18 +104,17 @@ uint64_t BlogModule::getTickIntervalMs() {
 bool BlogModule::onServerReady() {
     INFO(logger) << "onServerReady";
 
+    chen::EventBusMgr::GetInstance()->clearAll();
+
     if (!initMySQL()) {
         ERROR(logger) << "initDB failed";
         return false;
     }
 
-    // 启动时从 DB 同步统计计数到 Redis，覆盖旧实例可能残留的数据
     ArticleMgr::GetInstance()->syncStatsFromDB();
 
-    // 确保默认徽章数据存在
     BadgeMgr::GetInstance()->ensureDefaults();
 
-    // 确保存在超级管理员（否则无法配置 SMTP，进而无法注册新用户）
     UserMgr::GetInstance()->ensureSuperAdmin();
 
     ArticleMgr::GetInstance()->start();
@@ -156,31 +130,12 @@ bool BlogModule::onServerReady() {
         return false;
     }
 
-    // HTTP 服务
-    getAllHttpServer(m_httpServers);
-    if (m_httpServers.empty()) {
-        ERROR(logger) << "no http server, cannot register servlets";
-        return false;
-    }
     registerServlets();
 
-    // WS 服务
-    getAllWSServer(m_wsServers);
-    if (m_wsServers.empty()) {
-        ERROR(logger) << "no ws server, cannot register ws servlets";
-        return false;
-    }
     registerWSServlets();
 
-    // RPC 服务
-    getAllRpcServer(m_rpcServers);
-    if (m_rpcServers.empty()) {
-        ERROR(logger) << "no rpc server, cannot register rpc methods";
-        return false;
-    }
     registerRPCMethods();
 
-    // 初始化事件总线
     if (!EventMsgsInit()) {
         ERROR(logger) << "EventMsgsInit failed";
         return false;
@@ -245,6 +200,7 @@ bool BlogModule::initMySQL() {
         XX(UserFeedbackInfoDao, "user_feedback")
         XX(UserAiConfigInfoDao, "user_ai_config")
         XX(UserLoginDeviceInfoDao, "user_login_device")
+        XX(UserRecoveryCodeInfoDao, "user_recovery_code")
 #undef XX
 
         INFO(logger) << "migrate database begin";
@@ -287,6 +243,7 @@ bool BlogModule::initMySQL() {
         XX(UserFeedbackInfoDao)
         XX(UserAiConfigInfoDao)
         XX(UserLoginDeviceInfoDao)
+        XX(UserRecoveryCodeInfoDao)
 #undef XX
         INFO(logger) << "migrate database end";
     }
@@ -294,10 +251,18 @@ bool BlogModule::initMySQL() {
     return true;
 }
 
-void BlogModule::registerServlets() const {
+void BlogModule::registerServlets() {
     INFO(logger) << "registerServlets";
 
-    for (auto& i : m_httpServers) {
+    std::vector<chen::http::HttpServer::ptr> http_servers;
+    getAllHttpServer(http_servers);
+
+    if (http_servers.empty()) {
+        ERROR(logger) << "No HTTP server found";
+        return;
+    }
+
+    for (auto& i : http_servers) {
         const auto hs = std::dynamic_pointer_cast<chen::http::HttpServer>(i);
         ASSERT_RET(hs != nullptr);
 
@@ -338,6 +303,13 @@ void BlogModule::registerServlets() const {
         dp->addServlet("/api/v1/user/following/list", XX(UserFollowingListServlet));
         dp->addServlet("/api/v1/user/follower/list", XX(UserFollowerListServlet));
         dp->addServlet("/api/v1/user/mutual_following/list", XX(UserMutualFollowingListServlet));
+        // 双因素认证相关
+        dp->addServlet("/api/v1/user/2fa/enable", XX(User2faEnableServlet));
+        dp->addServlet("/api/v1/user/2fa/confirm", XX(User2faConfirmServlet));
+        dp->addServlet("/api/v1/user/2fa/disable", XX(User2faDisableServlet));
+        dp->addServlet("/api/v1/user/2fa/verify", XX(User2faVerifyServlet));
+        dp->addServlet("/api/v1/user/2fa/reset", XX(User2faResetServlet));
+        dp->addServlet("/api/v1/user/2fa/recovery", XX(User2faRecoveryServlet));
         // 通知相关
         dp->addServlet("/api/v1/notification/send", XX(NotificationSendServlet));
         dp->addServlet("/api/v1/notification/list", XX(NotificationListServlet));
@@ -498,10 +470,18 @@ void BlogModule::registerServlets() const {
     }
 }
 
-void BlogModule::registerWSServlets() const {
+void BlogModule::registerWSServlets() {
     INFO(logger) << "registerWSServlets";
 
-    for (auto& i : m_wsServers) {
+    std::vector<chen::http::WSServer::ptr> ws_servers;
+    getAllWSServer(ws_servers);
+
+    if (ws_servers.empty()) {
+        ERROR(logger) << "No WS server found";
+        return;
+    }
+
+    for (auto& i : ws_servers) {
         auto ws = std::dynamic_pointer_cast<chen::http::WSServer>(i);
         ASSERT_RET(ws != nullptr);
 
@@ -517,10 +497,18 @@ void BlogModule::registerWSServlets() const {
     }
 }
 
-void BlogModule::registerRPCMethods() const {
+void BlogModule::registerRPCMethods() {
     INFO(logger) << "registerRPCMethods";
 
-    for (const auto& server : m_rpcServers) {
+    std::vector<chen::rpc::RpcServer::ptr> rpc_servers;
+    getAllRpcServer(rpc_servers);
+
+    if (rpc_servers.empty()) {
+        ERROR(logger) << "No RPC server found";
+        return;
+    }
+
+    for (const auto& server : rpc_servers) {
         if (!server) {
             continue;
         }
@@ -535,8 +523,12 @@ extern "C" {
 
 chen::Module* CreateModule() {
     chen::Module* module = new blog::BlogModule;
+    INFO(blog::logger) << "BlogModule::CreateModule";
     return module;
 }
 
-void DestroyModule(const chen::Module* module) { delete module; }
+void DestroyModule(const chen::Module* module) {
+    INFO(blog::logger) << "BlogModule::DestroyModule";
+    delete module;
+}
 }

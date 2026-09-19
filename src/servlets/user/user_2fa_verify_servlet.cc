@@ -1,14 +1,15 @@
-#include "user_login_servlet.h"
+#include "user_2fa_verify_servlet.h"
 
 #include <chen/config/config.h>
 #include <chen/db/redis.h>
 #include <chen/log/log.h>
 
-#include "../../util.h"
-#include "../../util/ua_parser.h"
 #include "../../manager/user_manager.h"
 #include "../../manager/user_login_device_manager.h"
 #include "../../manager/system_settings_manager.h"
+#include "../../util.h"
+#include "../../util/totp_util.h"
+#include "../../util/ua_parser.h"
 
 namespace blog {
 namespace servlet {
@@ -20,41 +21,39 @@ static chen::ConfigVar<std::string>::ptr g_redis_pool_name =
 
 /// Redis 2FA 临时凭证 key 前缀（5分钟有效）
 static const char* k2faPendingPrefix = "2fa_pending:";
-/// 2FA 临时凭证 TTL（秒）
-static const int k2faPendingTTL = 300;
 
-UserLoginServlet::UserLoginServlet()
-    :BlogServlet("UserLoginServlet") {
+User2faVerifyServlet::User2faVerifyServlet()
+    :BlogServlet("User2faVerifyServlet") {
 }
 
-int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
+int32_t User2faVerifyServlet::handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response
         ,chen::http::HttpSession::ptr session, Result::ptr result) {
     do {
-        DEFINE_AND_CHECK_STRING(result, auth_id, "auth_id");
-        DEFINE_AND_CHECK_STRING(result, passwd, "passwd");
+        DEFINE_AND_CHECK_STRING(result, tempToken, "temp_token");
+        DEFINE_AND_CHECK_STRING(result, code, "code");
 
-        auto sdata = getSessionData(request, response);
-        if (sdata->getData<int64_t>(CookieKey::USER_ID)) {
-            result->setErrno(errcode::USER_ALREADY_LOGIN);
+        // 从Redis获取临时凭证对应的用户ID
+        std::string key = std::string(k2faPendingPrefix) + tempToken;
+        auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "get %s", key.c_str());
+        int64_t uid = 0;
+        if (rpy && rpy->type == REDIS_REPLY_STRING && rpy->str) {
+            try {
+                uid = std::stoll(std::string(rpy->str, rpy->len));
+            } catch (...) {
+                uid = 0;
+            }
+        }
+        if (!uid) {
+            result->setErrno(errcode::TEMP_TOKEN_INVALID);
             break;
         }
 
-        data::UserInfo::ptr info;
-        if (IsEmail(auth_id)) {
-            info = UserMgr::GetInstance()->getByEmail(auth_id);
-        } else if (IsValidAccount(auth_id)) {
-            info = UserMgr::GetInstance()->getByAccount(auth_id);
-        } else {
-            result->setErrno(errcode::USER_INVALID_ACCOUNT);
-            break;
-        }
+        // 删除临时凭证（一次性）
+        chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "del %s", key.c_str());
 
+        auto info = UserMgr::GetInstance()->get(uid);
         if (!info) {
-            result->setErrno(errcode::AUTH_CODE_INVALID);
-            break;
-        }
-        if (info->getPasswd() != chen::EncryptorUtil::MD5(passwd)) {
-            result->setErrno(errcode::USER_PASSWORD_WRONG);
+            result->setErrno(errcode::USER_NOT_FOUND);
             break;
         }
 
@@ -63,19 +62,15 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
             break;
         }
 
-        // 2FA: 密码验证通过后，如果启用了TOTP，返回临时凭证等待第二步验证
-        if (info->getTotpEnabled()) {
-            std::string tempToken = UserManager::generateToken();
-            std::string redisKey = std::string(k2faPendingPrefix) + tempToken;
-            chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "setex %s %d %lld", redisKey.c_str(), k2faPendingTTL, (long long)info->getId());
-            result->set("require_2fa", true);
-            result->set("temp_token", tempToken);
-            INFO(logger) << "login user=" << info->getId() << " require 2fa verification";
+        // 验证TOTP码
+        if (!TotpUtil::VerifyCode(info->getTotpSecret(), code, 1)) {
+            result->setErrno(errcode::TOTP_INVALID_CODE);
             break;
         }
 
+        // TOTP验证通过，完成登录（复用login servlet的逻辑）
         auto db = getDB();
-        if(!db) {
+        if (!db) {
             result->setErrno(errcode::DB_OPERATION_FAILED);
             break;
         }
@@ -95,14 +90,12 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         std::string device_name = ParseDeviceName(ua);
         std::string ip = GetRemoteIP(request, session);
 
-        // 设备标识：优先客户端上报 X-Device-Id，否则回退/生成持久 DEVICE_ID cookie
         std::string device_id = request->getHeader("X-Device-Id");
         if (device_id.empty()) {
             device_id = request->getCookie(CookieKey::DEVICE_ID);
         }
         if (device_id.empty()) {
             device_id = UserManager::generateToken();
-            // 长期持久 cookie（约 10 年），保证网页端设备标识稳定
             response->setCookie(CookieKey::DEVICE_ID, device_id, time(0) + 10 * 365 * 24 * 3600, "/");
         }
 
@@ -128,14 +121,14 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
         param.token = token;
         param.token_time = token_time;
 
-        // 记录本次登录
         UserLoginDeviceMgr::GetInstance()->recordLogin(param);
 
         info->setLoginTime(now);
         data::UserInfoDao::Update(info, db);
-        INFO(logger) << "login user=" << info->getId() << " platform=" << platform
+        INFO(logger) << "2fa login user=" << info->getId() << " platform=" << platform
             << " device=" << device_name;
 
+        auto sdata = getSessionData(request, response);
         response->setCookie(CookieKey::USER_ID, EncryptUserId(info->getId()), token_time, "/");
         response->setCookie(CookieKey::TOKEN, token, token_time, "/");
         response->setCookie(CookieKey::TOKEN_TIME, std::to_string(token_time), token_time, "/");
@@ -145,5 +138,5 @@ int32_t UserLoginServlet::handle(chen::http::HttpRequest::ptr request, chen::htt
     return 0;
 }
 
-}
-}
+} // namespace servlet
+} // namespace blog

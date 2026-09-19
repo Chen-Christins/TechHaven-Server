@@ -4,7 +4,6 @@
 #include <chen/log/log.h>
 #include <chen/email/smtp.h>
 #include <chen/config/config.h>
-#include <chen/db/query_builder.h>
 #include <chen/util/fs_util.h>
 #include <json/json.h>
 
