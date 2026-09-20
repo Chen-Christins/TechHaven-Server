@@ -72,7 +72,6 @@ uint64_t AssignmentManager::listByPages(std::vector<data::AssignmentInfo::ptr>& 
         return 0;
     }
     auto qb = data::AssignmentInfoDao::newQuery();
-    qb->select("id, name, subject_name, priority, status, description, max_size, file_type, deadline, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");

@@ -96,6 +96,14 @@ int32_t PresenceServlet::onClose(chen::http::HttpRequest::ptr header, chen::http
 
 int32_t PresenceServlet::handle(chen::http::HttpRequest::ptr header
         , chen::http::WSFrameMessage::ptr msg, chen::http::WSSession::ptr session) {
+    // 心跳处理
+    Json::Value root;
+    if (chen::JsonUtil::FromString(root, msg->getData()) && root.isObject()) {
+        if (root["type"].asString() == "ping") {
+            session->sendMessage("{\"type\":\"pong\"}");
+            return 0;
+        }
+    }
     return 0;
 }
 

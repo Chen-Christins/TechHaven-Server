@@ -68,7 +68,6 @@ int64_t OrganizationUserRelManager::getByPages(std::vector<data::OrganizationUse
         return 0;
     }
     auto qb = data::OrganizationUserRelInfoDao::newQuery();
-    qb->select("id, org_id, user_id, role, status, is_deleted, create_time, update_time");
     qb->where("org_id", "=", o_id);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);

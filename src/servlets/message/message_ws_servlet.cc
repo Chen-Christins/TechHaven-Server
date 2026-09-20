@@ -119,6 +119,12 @@ int32_t MessageWSServlet::handle(chen::http::HttpRequest::ptr header, chen::http
         }
         std::string type = root.get("type", "").asString();
 
+        // 心跳处理
+        if (type == "ping") {
+            session->sendMessage("{\"type\":\"pong\"}");
+            break;
+        }
+
         if (type == "send") {
             std::string client_id = root.get("client_id", "").asString();
             int64_t conversation_id = root.get("conversation_id", (Json::Int64)0).asInt64();

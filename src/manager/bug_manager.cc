@@ -47,7 +47,6 @@ uint64_t BugManager::listByPages(std::vector<data::BugInfo::ptr>& infos,
         return 0;
     }
     auto qb = data::BugInfoDao::newQuery();
-    qb->select("id, org_id, title, description, severity, priority, status, creator_id, assignee_id, requirement_id, module, steps_to_reproduce, environment, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -72,7 +71,6 @@ uint64_t BugManager::listByOrg(std::vector<data::BugInfo::ptr>& infos,
         return 0;
     }
     auto qb = data::BugInfoDao::newQuery();
-    qb->select("id, org_id, title, description, severity, priority, status, creator_id, assignee_id, requirement_id, module, steps_to_reproduce, environment, is_deleted, create_time, update_time");
     qb->where("org_id", "=", orgId);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);

@@ -84,7 +84,6 @@ int64_t ArticleManager::listByUserIdPages(std::vector<data::ArticleInfo::ptr>& i
         return 0;
     }
     auto qb = data::ArticleInfoDao::newQuery();
-    qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
     qb->whereIf(id != 0, "user_id", "=", id);
     qb->whereIf(state != 0, "state", "=", (int64_t)state);
     qb->whereIf(valid, "is_deleted", "=", (int64_t)0);
@@ -252,7 +251,6 @@ int64_t ArticleManager::listVerifyPages(std::vector<data::ArticleInfo::ptr>& inf
         return 0;
     }
     auto qb = data::ArticleInfoDao::newQuery();
-    qb->select("id, user_id, title, content, type, state, channel, is_deleted, publish_time, weight, views, praise, favorites, create_time, update_time");
     qb->where("state", "=", (int64_t)CHECKING);
     qb->orderBy("id", "DESC");
 
