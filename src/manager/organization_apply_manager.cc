@@ -52,7 +52,6 @@ int64_t OrganizationApplyManager::listByPages(std::vector<data::OrganizationAppl
         return 0;
     }
     auto qb = data::OrganizationApplyInfoDao::newQuery();
-    qb->select("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("created_at", "DESC");
@@ -77,7 +76,6 @@ int64_t OrganizationApplyManager::listByUserId(std::vector<data::OrganizationApp
         return 0;
     }
     auto qb = data::OrganizationApplyInfoDao::newQuery();
-    qb->select("id, user_id, org_name, org_type, org_description, status, review_reason, created_at, reviewed_at, is_deleted");
     qb->where("user_id", "=", user_id);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("created_at", "DESC");

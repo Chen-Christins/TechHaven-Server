@@ -48,7 +48,6 @@ uint64_t TaskManager::listByPages(std::vector<data::TaskInfo::ptr>& infos,
         return 0;
     }
     auto qb = data::TaskInfoDao::newQuery();
-    qb->select("id, org_id, title, description, priority, status, creator_id, assignee_id, requirement_id, bug_id, deadline, estimated_hours, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
@@ -73,7 +72,6 @@ uint64_t TaskManager::listByOrg(std::vector<data::TaskInfo::ptr>& infos,
         return 0;
     }
     auto qb = data::TaskInfoDao::newQuery();
-    qb->select("id, org_id, title, description, priority, status, creator_id, assignee_id, requirement_id, bug_id, deadline, estimated_hours, is_deleted, create_time, update_time");
     qb->where("org_id", "=", orgId);
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);

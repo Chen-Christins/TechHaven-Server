@@ -62,7 +62,6 @@ uint64_t UserManager::listByPages(std::vector<blog::data::UserInfo::ptr>& infos,
     }
 
     auto qb = data::UserInfoDao::newQuery();
-    qb->select("id, name, account, avatar, email, role, passwd, state, bio, website, github, location, token, token_time, login_time, is_deleted, create_time, update_time");
     qb->whereIf(role != -1, "role", "=", (int64_t)role);
     qb->whereIf(state != -1, "state", "=", (int64_t)state);
     qb->whereIf(days > 0, "create_time", ">=", start_time);

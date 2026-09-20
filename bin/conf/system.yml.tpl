@@ -19,7 +19,7 @@ servers:
 
   - address: ["0.0.0.0:8091"]
     keepalive: 1
-    timeout: 300000
+    timeout: 120000
     name: chen-ws/1.0.0
     accept_worker: accept
     io_worker: io

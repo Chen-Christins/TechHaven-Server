@@ -67,7 +67,6 @@ int64_t OrganizationManager::listByPages(std::vector<data::OrganizationInfo::ptr
         return 0;
     }
     auto qb = data::OrganizationInfoDao::newQuery();
-    qb->select("id, name, type, description, owner_id, status, is_deleted, create_time, update_time");
     qb->whereIf(status != -1, "status", "=", (int64_t)status);
     qb->whereIf(isValid, "is_deleted", "=", (int64_t)0);
     qb->orderBy("id", "DESC");
