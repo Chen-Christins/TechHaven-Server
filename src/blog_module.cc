@@ -508,7 +508,7 @@ void BlogModule::registerRPCMethods() {
         return;
     }
 
-    for (const auto& server : rpc_servers) {
+    for (auto& server : rpc_servers) {
         if (!server) {
             continue;
         }
