@@ -9,6 +9,7 @@
 #include <chen/http/ws_servlet.h>
 #include <chen/log/log.h>
 #include <chen/util/util.h>
+#include <chen/ds/event_bus.h>
 
 #include <memory>
 #include <ranges>
@@ -18,9 +19,8 @@
 #include "./include/servlets.h"
 #include "./include/tables.h"
 #include "./index.h"
-#include "chen/ds/event_bus.h"
-#include "event/events.h"
-#include "protocol_ss_github.h" // IWYU pragma: keep
+#include "./event/events.h"
+#include "./logic/BlogMsgFromBot.h"
 
 namespace blog {
 
@@ -512,8 +512,7 @@ void BlogModule::registerRPCMethods() {
         if (!server) {
             continue;
         }
-        server->registerMethod("GithubPRWebhook", OrganizationRepoPrManager::HandlePRWebhook);
-        server->registerMethod("GithubPRReviewWebhook", OrganizationRepoPrManager::HandlePRReviewWebhook);
+        BlogMsgFromBotInit(server);
     }
 }
 
