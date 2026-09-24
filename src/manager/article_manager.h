@@ -80,11 +80,6 @@ public:
     void unscheduleArticle(int64_t article_id);
 
     /**
-     * @brief 定时 flush 脏数据（浏览/点赞/收藏数）到数据库（由 BlogModule::onTick 调用）
-     */
-    void onUpdateTimer();
-
-    /**
      * @brief 将脏数据（浏览/点赞/收藏数）刷新到数据库
      * @note 由 onUpdateTimer 定期调用，也在 stop 时调用以避免 reload/stop 时丢失增量
      */
@@ -128,11 +123,6 @@ public:
     int64_t getTotalVisitors();
 
     /**
-     * @brief 启动时从 DB 同步统计数到 Redis，覆盖可能存在的旧实例残留数据
-     */
-    void syncStatsFromDB();
-
-    /**
      * @brief 获取指定月份中有已发布文章的日期列表
      * @param[in] year 年份
      * @param[in] month 月份（1-12）
@@ -147,11 +137,18 @@ public:
     void clearCalendarCache(int64_t user_id, int64_t publishTime);
 
 private:
+    /**
+     * @brief 启动时从 DB 同步统计数到 Redis，覆盖可能存在的旧实例残留数据
+     */
+    void syncStatsFromDB();
+
     bool addViews(uint64_t id, const std::string& cookie_id);
     
     void addUpdate(int64_t id);
 
     static data::ArticleInfo::ptr parseRow(chen::ISQLData::ptr rt);
+
+    void doArticlePublishSchedule();
 
 private:
     /// 文章浏览数锁

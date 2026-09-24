@@ -32,7 +32,7 @@ static chen::ConfigVar<std::map<std::string, std::map<std::string, std::string>>
 static chen::ConfigVar<std::string>::ptr g_work_path =
     chen::Config::Lookup<std::string>("server.work_path", std::string(""), "server work path");
 
-BlogModule::BlogModule() : Module("Blog", "1.0", "blog_module") {}
+BlogModule::BlogModule() : Module("Blog", "1.0.0", "blog_module") {}
 
 bool BlogModule::onLoad() {
     INFO(logger) << "onLoad";
@@ -79,8 +79,6 @@ void BlogModule::onTick() {
 
     ArticleMgr::GetInstance()->onTimer();
 
-    ArticleMgr::GetInstance()->onUpdateTimer();
-
     NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
 
     ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
@@ -111,12 +109,6 @@ bool BlogModule::onServerReady() {
         return false;
     }
 
-    ArticleMgr::GetInstance()->syncStatsFromDB();
-
-    BadgeMgr::GetInstance()->ensureDefaults();
-
-    UserMgr::GetInstance()->ensureSuperAdmin();
-
     ArticleMgr::GetInstance()->start();
 
     if (!IndexMgr::GetInstance()->initFromFile()) {
@@ -146,6 +138,11 @@ bool BlogModule::onServerReady() {
 
 bool BlogModule::onServerUp() {
     INFO(logger) << "onServerUp";
+
+    UserMgr::GetInstance()->ensureSuperAdmin();
+
+    BadgeMgr::GetInstance()->ensureDefaults();
+
     return true;
 }
 

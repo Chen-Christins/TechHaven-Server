@@ -29,7 +29,6 @@ data::ArticleInfo::ptr ArticleManager::parseRow(chen::ISQLData::ptr rt) {
     return data::ArticleInfoDao::ParseRow(rt);
 }
 
-
 void ArticleManager::add(blog::data::ArticleInfo::ptr info) {
     m_cache.set(info->getId(), info);
 }
@@ -400,7 +399,7 @@ std::string ArticleManager::statusString() {
 }
 
 void ArticleManager::start() {
-    // 定时任务已迁移至 BlogModule::onTick() 统一调度
+    syncStatsFromDB();
 }
 
 void ArticleManager::stop() {
@@ -617,72 +616,8 @@ void ArticleManager::unscheduleArticle(int64_t article_id) {
 }
 
 void ArticleManager::onTimer() {
-    time_t now = time(0);
+    doArticlePublishSchedule();
 
-    // 从 Redis sorted set 获取已到期的文章 ID
-    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrangebyscore %s 0 %lld", kScheduleKey, (long long)now);
-    if (!rpy || rpy->type != REDIS_REPLY_ARRAY || rpy->elements == 0) {
-        return;
-    }
-
-    // 收集需要发布的文章 ID
-    std::vector<int64_t> article_ids;
-    for (size_t i = 0; i < rpy->elements; ++i) {
-        if (rpy->element[i]->type == REDIS_REPLY_STRING && rpy->element[i]->str) {
-            article_ids.push_back(chen::TypeUtil::Atoi(rpy->element[i]->str));
-        }
-    }
-
-    if (article_ids.empty()) {
-        return;
-    }
-
-    auto db = GetDB();
-    if (!db) {
-        ERROR(logger) << "getDB error";
-        return;
-    }
-
-    // 批量从 sorted set 中移除（原子操作）
-    std::string zrem_cmd = "zrem " + std::string(kScheduleKey);
-    for (auto id : article_ids) {
-        zrem_cmd += " " + std::to_string(id);
-    }
-    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), zrem_cmd.c_str());
-
-    // 逐个更新文章状态
-    auto trans = db->openTransaction();
-    for (auto id : article_ids) {
-        auto info = get(id);
-        if (!info || info->getIsDeleted()) {
-            continue;
-        }
-        if (info->getState() == PUBLISHED) {
-            continue;
-        }
-
-        // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数）
-        auto cached = m_cache.get(id);
-        if (cached) {
-            info = cached;
-        }
-        info->setState(PUBLISHED);
-        info->setUpdateTime(now);
-
-        if (data::ArticleInfoDao::Update(info, db)) {
-            ERROR(logger) << "Update error errno=" << db->getErrno()
-                << " errstr=" << db->getErrStr()
-                << " data=" << info->toJsonString();
-            continue;
-        }
-        m_cache.set(id, info);
-        clearCalendarCache(info->getUserId(), info->getPublishTime());
-        IndexMgr::GetInstance()->updateArticle(info);
-    }
-    trans->commit();
-}
-
-void ArticleManager::onUpdateTimer() {
     flushDirty();
 }
 
@@ -831,6 +766,73 @@ void ArticleManager::clearCalendarCache(int64_t user_id, int64_t publishTime) {
     int32_t year = tm_pt.tm_year + 1900;
     int32_t month = tm_pt.tm_mon + 1;
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "DEL calendar:%lld:%d:%d", user_id, year, month);
+}
+
+void ArticleManager::doArticlePublishSchedule() {
+    time_t now = chen::GetCurrentSec();
+
+    // 从 Redis sorted set 获取已到期的文章 ID
+    auto rpy = chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrangebyscore %s 0 %lld", kScheduleKey, now);
+    if (!rpy || rpy->type != REDIS_REPLY_ARRAY || rpy->elements == 0) {
+        return;
+    }
+
+    // 收集需要发布的文章 ID
+    std::vector<int64_t> article_ids;
+    for (size_t i = 0; i < rpy->elements; ++i) {
+        if (rpy->element[i]->type == REDIS_REPLY_STRING && rpy->element[i]->str) {
+            article_ids.push_back(chen::TypeUtil::Atoi(rpy->element[i]->str));
+        }
+    }
+
+    if (article_ids.empty()) {
+        return;
+    }
+
+    auto db = GetDB();
+    if (!db) {
+        ERROR(logger) << "getDB error";
+        return;
+    }
+
+    // 批量从 sorted set 中移除（原子操作）
+    std::string zrem_cmd = "zrem " + std::string(kScheduleKey);
+    for (auto id : article_ids) {
+        zrem_cmd += " " + std::to_string(id);
+    }
+    chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), zrem_cmd.c_str());
+
+    // 逐个更新文章状态
+    auto trans = db->openTransaction();
+    for (auto id : article_ids) {
+        auto info = get(id);
+        if (!info || info->getIsDeleted()) {
+            continue;
+        }
+        if (info->getState() == PUBLISHED) {
+            continue;
+        }
+
+        // 优先使用缓存中的版本（可能已有累积的浏览/点赞/收藏数）
+        auto cached = m_cache.get(id);
+        if (cached) {
+            info = cached;
+        }
+        info->setState(PUBLISHED);
+        info->setUpdateTime(now);
+
+        if (data::ArticleInfoDao::Update(info, db)) {
+            ERROR(logger) << "Update error errno=" << db->getErrno()
+                << " errstr=" << db->getErrStr() << " data=" << info->toJsonString();
+            continue;
+        }
+        m_cache.set(id, info);
+
+        clearCalendarCache(info->getUserId(), info->getPublishTime());
+
+        IndexMgr::GetInstance()->updateArticle(info);
+    }
+    trans->commit();
 }
 
 } // namespace blog
