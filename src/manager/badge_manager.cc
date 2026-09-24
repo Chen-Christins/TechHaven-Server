@@ -1,10 +1,3 @@
-/**
- * @file badge_manager.cc
- * @brief 成就徽章管理器实现
- * @author Christins
- * @date 2026-07-16
- * @copyright Apache 2.0
- */
 #include "badge_manager.h"
 
 #include "../util.h"
@@ -34,18 +27,12 @@ void BadgeManager::ensureDefaults() {
 
     INFO(logger) << "seeding default badges...";
 
-    insertDefault("初出茅庐", "发布第一篇", "seedling", "#22c55e",
-                  "published_articles", 1, 1);
-    insertDefault("笔耕不辍", "累计发布 50 篇文章", "pen-nib", "#3b82f6",
-                  "published_articles", 50, 2);
-    insertDefault("著作等身", "累计发布 100 篇文章", "book-open", "#8b5cf6",
-                  "published_articles", 100, 3);
-    insertDefault("人气爆棚", "获得 100 个点赞", "heart", "#ef4444",
-                  "total_likes", 100, 4);
-    insertDefault("广受好评", "获得 500 个点赞", "trophy", "#f59e0b",
-                  "total_likes", 500, 5);
-    insertDefault("社区之星", "获得 1000 个关注", "star", "#eab308",
-                  "total_followers", 1000, 6);
+    insertDefault("初出茅庐", "发布第一篇", "seedling", "#22c55e", "published_articles", 1, 1);
+    insertDefault("笔耕不辍", "累计发布 50 篇文章", "pen-nib", "#3b82f6", "published_articles", 50, 2);
+    insertDefault("著作等身", "累计发布 100 篇文章", "book-open", "#8b5cf6", "published_articles", 100, 3);
+    insertDefault("人气爆棚", "获得 100 个点赞", "heart", "#ef4444", "total_likes", 100, 4);
+    insertDefault("广受好评", "获得 500 个点赞", "trophy", "#f59e0b", "total_likes", 500, 5);
+    insertDefault("社区之星", "获得 1000 个关注", "star", "#eab308", "total_followers", 1000, 6);
 }
 
 void BadgeManager::insertDefault(const std::string& name, const std::string& desc,

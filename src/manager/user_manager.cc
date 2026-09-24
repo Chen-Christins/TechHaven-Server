@@ -142,29 +142,19 @@ void UserManager::ensureSuperAdmin() {
         return;
     }
 
-    // 查询是否已存在有效的管理员
-    auto qb = data::UserInfoDao::newQuery();
-    qb->select("id");
-    qb->where("role", "=", (int64_t)Role::ADMIN);
-    qb->where("is_deleted", "=", (int64_t)0);
-    std::vector<int64_t> ids;
-    if (qb->queryColumn<int64_t>(ids, db, "id")) {
-        ERROR(logger) << "query admin fail";
-        return;
-    }
-    if (!ids.empty()) {
-        return;
-    }
-
     std::string account = g_admin_account->getValue();
     std::string passwd = g_admin_passwd->getValue();
     std::string email = g_admin_email->getValue();
-    if (account.empty() || passwd.empty()) {
+    if (account.empty() || passwd.empty() || email.empty()) {
         ERROR(logger) << "admin account or password empty, skip seeding super admin";
         return;
     }
 
-    data::UserInfo::ptr info(new data::UserInfo);
+    auto info = data::UserInfoDao::QueryByEmail(email, db);
+    if (!info) {
+        info.reset(new data::UserInfo);
+    }
+
     info->setName(account);
     info->setAccount(account);
     info->setEmail(email);
@@ -173,7 +163,7 @@ void UserManager::ensureSuperAdmin() {
     info->setState(Status::ACTIVE);
     info->setIsDeleted(0);
 
-    if (data::UserInfoDao::Insert(info, db)) {
+    if (data::UserInfoDao::InsertOrUpdate(info, db)) {
         ERROR(logger) << "insert super admin failed: errno=" << db->getErrno() << " errstr=" << db->getErrStr();
         return;
     }
