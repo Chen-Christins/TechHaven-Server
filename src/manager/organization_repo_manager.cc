@@ -40,7 +40,7 @@ void OrganizationRepoManager::del(int64_t id) {
     m_cache.del(id);
 }
 
-void OrganizationRepoManager::onTimer() {
+void OrganizationRepoManager::onTick() {
     std::vector<data::OrganizationReposInfo::ptr> repos;
     getAllWithToken(repos);
     
@@ -200,8 +200,7 @@ void OrganizationRepoManager::SyncFromGitHub(int64_t repo_id, const std::string&
 
     INFO(logger) << "SyncFromGitHub: calling " << api_url;
     auto result = chen::http::HttpConnection::DoGet(api_url, 15000, headers);
-    if (!result || result->result != 0 || !result->response
-            || result->response->getStatus() != chen::http::HttpStatus::OK) {
+    if (!result || result->result != 0 || !result->response || result->response->getStatus() != chen::http::HttpStatus::OK) {
         ERROR(logger) << "SyncFromGitHub: HTTP request failed"
             << " result=" << (result ? result->result : -1)
             << " status=" << (result && result->response ? (int)result->response->getStatus() : 0)

@@ -113,7 +113,9 @@ private:
 
 private:
     uint64_t m_createTime;
+
     uint64_t m_endTime;
+
     std::vector<uint64_t> m_docs;
     /// article_id → m_docs 下标
     std::unordered_map<uint64_t, uint32_t> m_docMap;

@@ -35,7 +35,7 @@ void OrganizationRepoPrManager::del(int64_t id) {
     m_cache.del(id);
 }
 
-void OrganizationRepoPrManager::onTimer() {
+void OrganizationRepoPrManager::onTick() {
     std::vector<data::OrganizationReposInfo::ptr> repos;
     OrganizationRepoMgr::GetInstance()->getAllWithToken(repos);
 

@@ -615,7 +615,7 @@ void ArticleManager::unscheduleArticle(int64_t article_id) {
     chen::RedisUtil::Cmd(g_redis_pool_name->getValue(), "zrem %s %lld", kScheduleKey, (long long)article_id);
 }
 
-void ArticleManager::onTimer() {
+void ArticleManager::onTick() {
     doArticlePublishSchedule();
 
     flushDirty();
