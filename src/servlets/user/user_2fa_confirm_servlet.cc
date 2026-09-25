@@ -103,8 +103,8 @@ int32_t User2faConfirmServlet::handle(chen::http::HttpRequest::ptr request, chen
 
         // 返回恢复码（仅此一次展示）
         Json::Value codesArr;
-        for (auto& code : recoveryCodes) {
-            codesArr.append(code);
+        for (std::string& c : recoveryCodes) {
+            codesArr.append(c);
         }
         result->set("recovery_codes", codesArr);
         INFO(logger) << "user=" << uid << " enabled 2fa";

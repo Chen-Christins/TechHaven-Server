@@ -7,13 +7,13 @@
  */
 #pragma once
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include <json/json.h>
-#include <chen/http/servlet.h>
 #include <chen/db/db.h>
+#include <chen/http/servlet.h>
 #include <chen/http/session_data.h>
+#include <json/json.h>
 
 #include "error_codes.h" // IWYU pragma: keep
 
@@ -26,7 +26,7 @@ struct Result {
     typedef std::shared_ptr<Result> ptr;
     Result(int32_t ec = 0, const std::string& msg = "ok");
 
-    int32_t errno_;       // 统一业务错误码（默认 0 = 成功）
+    int32_t errno_; // 统一业务错误码（默认 0 = 成功）
     int64_t used;
     std::string msg;
     Json::Value jsondata;
@@ -35,14 +35,10 @@ struct Result {
     void set(const std::string& key, const T& v) {
         jsondata[key] = v;
     }
-    void set(const std::string& key, const char* v) {
-        jsondata[key] = v;
-    }
-    void set(const std::string& key, const std::string& v) {
-        jsondata[key] = v;
-    }
+    void set(const std::string& key, const char* v) { jsondata[key] = v; }
+    void set(const std::string& key, const std::string& v) { jsondata[key] = v; }
 
-    template<class T>
+    template <class T>
     void append(const std::string& key, const T& v) {
         jsondata[key].append(v);
     }
@@ -74,37 +70,35 @@ struct CookieKey {
     static const std::string TOKEN;
     static const std::string TOKEN_TIME;
     static const std::string IS_AUTH;
-    static const std::string EMAIL_LAST_TIME;
     static const std::string DEVICE_ID;
 };
 
-class BlogServlet: public chen::http::Servlet {
+class BlogServlet : public chen::http::Servlet {
 public:
     BlogServlet(const std::string& name);
-    int32_t handle(chen::http::HttpRequest::ptr request
-                ,chen::http::HttpResponse::ptr response
-                ,chen::http::HttpSession::ptr session) override;
+
+    int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                   chen::http::HttpSession::ptr session) override;
 
     int64_t getUserId(chen::http::HttpRequest::ptr request);
+
 protected:
-    virtual bool handlePre(chen::http::HttpRequest::ptr request
-                           ,chen::http::HttpResponse::ptr response
-                           ,chen::http::HttpSession::ptr session
-                           ,Result::ptr result);
-    virtual int32_t handle(chen::http::HttpRequest::ptr request
-                           ,chen::http::HttpResponse::ptr response
-                           ,chen::http::HttpSession::ptr session
-                           ,Result::ptr result) = 0;
-    virtual bool handlePost(chen::http::HttpRequest::ptr request
-                           ,chen::http::HttpResponse::ptr response
-                           ,chen::http::HttpSession::ptr session
-                           ,Result::ptr result);
+    virtual bool handlePre(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                           chen::http::HttpSession::ptr session, Result::ptr result);
+
+    virtual int32_t handle(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                           chen::http::HttpSession::ptr session, Result::ptr result) = 0;
+
+    virtual bool handlePost(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                            chen::http::HttpSession::ptr session, Result::ptr result);
+
 protected:
-    chen::http::SessionData::ptr getSessionData(chen::http::HttpRequest::ptr request
-                                                 ,chen::http::HttpResponse::ptr response);
-    bool initLogin(chen::http::HttpRequest::ptr request
-                   ,chen::http::HttpResponse::ptr response
-                   ,chen::http::HttpSession::ptr session);
+    chen::http::SessionData::ptr getSessionData(chen::http::HttpRequest::ptr request,
+                                                chen::http::HttpResponse::ptr response);
+
+    bool initLogin(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                   chen::http::HttpSession::ptr session);
+
 protected:
     chen::IDB::ptr getDB();
 };
@@ -114,10 +108,8 @@ public:
     BlogLoginedServlet(const std::string& name);
 
 protected:
-    bool handlePre(chen::http::HttpRequest::ptr request
-                   ,chen::http::HttpResponse::ptr response
-                   ,chen::http::HttpSession::ptr session
-                   ,Result::ptr result) override;
+    bool handlePre(chen::http::HttpRequest::ptr request, chen::http::HttpResponse::ptr response,
+                   chen::http::HttpSession::ptr session, Result::ptr result) override;
 };
 
-}
+} // namespace blog

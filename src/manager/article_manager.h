@@ -64,7 +64,7 @@ public:
      * @brief 定时发布已到发布时间的文章（由 BlogModule::onTick 调用）
      * @note 从 Redis sorted set 获取到期文章，避免 DB 全表扫描
      */
-    void onTimer();
+    void onTick();
 
     /**
      * @brief 将文章加入定时发布调度（Redis sorted set）

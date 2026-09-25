@@ -74,21 +74,19 @@ void BlogModule::onTick() {
     if (chen::TimeUtil::IsZeroOfDay()) {
         s_pr_sync_tick = 0;
 
-        OrganizationRepoMgr::GetInstance()->onTimer();
+        OrganizationRepoMgr::GetInstance()->onTick();
+
+        OrganizationRepoPrMgr::GetInstance()->onTick();
     }
 
-    ArticleMgr::GetInstance()->onTimer();
+    ArticleMgr::GetInstance()->onTick();
 
     NotificationMgr::GetInstance()->cleanupExpiredBroadcasts();
 
     ChunkUploadMgr::GetInstance()->cleanupExpiredSessions();
 
-    if (s_pr_sync_tick % 45 == 0) {
-        OrganizationRepoPrMgr::GetInstance()->onTimer();
-    }
-
     if (s_pr_sync_tick % 60 == 0) {
-        INFO(logger) << "module status: " << Module::statusString();
+        INFO(logger) << "module status: \n" << Module::statusString();
     }
 
     s_pr_sync_tick++;

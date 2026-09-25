@@ -28,7 +28,7 @@ public:
 
     void del(int64_t id);
 
-    void onTimer();
+    void onTick();
     
     data::OrganizationRepoPrsInfo::ptr get(int64_t id);
     

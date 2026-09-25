@@ -19,7 +19,6 @@ const std::string CookieKey::USER_ID = "S_UID";
 const std::string CookieKey::TOKEN = "S_TOKEN";
 const std::string CookieKey::TOKEN_TIME = "S_TOKEN_TIME";
 const std::string CookieKey::IS_AUTH = "IS_AUTH";
-const std::string CookieKey::EMAIL_LAST_TIME = "EMAIL_LAST_TIME";
 const std::string CookieKey::DEVICE_ID = "DEVICE_ID";
 
 std::string GetRemoteIP(chen::http::HttpRequest::ptr request, chen::http::HttpSession::ptr session) {
@@ -75,8 +74,7 @@ int32_t BlogServlet::handle(chen::http::HttpRequest::ptr request
     // response->setHeader("Access-Control-Allow-Origin", "*");
     // response->setHeader("Access-Control-Allow-Credentials", "true");
 
-    TRACE(logger) << "path=" << request->getPath() << " - query=" << request->getQuery()
-        << " - method=" << chen::http::HttpMethodToString(request->getMethod()) << " - body=" << request->getBody();
+    TRACE(logger) << "path=" << request->getPath() << " - method=" << chen::http::HttpMethodToString(request->getMethod());
 
     if (handlePre(request, response, session, result)) {
         handle(request, response, session, result);
@@ -94,8 +92,7 @@ bool BlogServlet::handlePre(chen::http::HttpRequest::ptr request, chen::http::Ht
     if (request->getPath() != "/user/login" && request->getPath() != "/user/logout") {
         initLogin(request, response, session);
     }
-    if (request->getMethod() != chen::http::HttpMethod::GET
-            && request->getMethod() != chen::http::HttpMethod::POST) {
+    if (request->getMethod() != chen::http::HttpMethod::GET && request->getMethod() != chen::http::HttpMethod::POST) {
         result->setErrno(errcode::INVALID_METHOD);
         return false;
     }

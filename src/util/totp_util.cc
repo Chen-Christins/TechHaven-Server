@@ -3,9 +3,6 @@
 #include <chen/util/encryptor_util.h>
 #include <chen/util/string_util.h>
 
-#include <openssl/hmac.h>
-#include <openssl/sha.h>
-
 #include <algorithm>
 #include <cstring>
 #include <ctime>
